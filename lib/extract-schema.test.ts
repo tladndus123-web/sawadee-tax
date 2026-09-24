@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import sample from "@/docs/reference/sample-document.json";
-import { extractedToRaw, extractSchema } from "./extract-schema";
+import { extractedToRaw, extractSchema, parseReply } from "./extract-schema";
 import { normalize } from "./normalize";
 
 // The hand-checked sample is exactly what a perfect AI reading looks like.
@@ -24,5 +24,14 @@ describe("AI reading schema", () => {
     // Boxes with the wrong number of values are dropped
     expect(doc.fieldBoxes).toEqual({ "customer.name": [0.075, 0.258, 0.15, 0.022] });
     expect({ ...doc, fieldBoxes: {} }).toEqual({ ...normalize(sample), fieldBoxes: {} });
+  });
+});
+
+describe("reading the reply", () => {
+  it("finds the JSON object around fences or prose", () => {
+    expect(parseReply('```json\n{"docNo":"A1"}\n```')).toEqual({ docNo: "A1" });
+    expect(parseReply('Here it is: {"notDocument": true}')).toEqual({ notDocument: true });
+    expect(parseReply("no json")).toBeNull();
+    expect(parseReply("{broken")).toBeNull();
   });
 });

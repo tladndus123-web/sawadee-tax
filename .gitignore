@@ -41,3 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 public/_ref/
+
+# AI accuracy runs (scripts/eval-extract.ts)
+/eval-results/

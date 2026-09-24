@@ -1,6 +1,8 @@
-// Shape of the AI reading (step 6). Mirrors docs/reference/extract-prompt.txt, written so it can be
-// sent as a structured-output JSON schema: every field required, "not printed" expressed as null,
-// and field boxes as a list (open-ended object keys are not allowed in structured outputs).
+// Shape of the AI reading (step 6). Mirrors docs/reference/extract-prompt.txt: every field present,
+// "not printed" totals as null, field boxes as a list of {path, box}.
+// Not sent as a structured-output schema: with ~60 fields (20 of them th/en/ja objects) the API rejects it
+// ("compiled grammar is too large"). The prompt asks for this JSON; replies are checked against this schema
+// and then cleaned by normalize(), which tolerates missing or loosely typed fields.
 
 import { z } from "zod";
 import { CATEGORIES, CONFIDENCES, COPY_KINDS, DOC_TYPES, PAYMENTS } from "./types";
@@ -71,13 +73,31 @@ export type ExtractErrorCode = "rate" | "notDoc" | "badImage" | "aiFail" | "busy
 
 /** Added to the prototype prompt: the photo positions used to zoom into unclear fields. */
 export const FIELD_BOX_RULE = `- fieldBoxes: for each field you could locate on the photo (always include every path listed in "unclear"), give {"path": "<field path>", "box": [x, y, w, h]} where x, y are the top-left corner and w, h the size, all as fractions 0-1 of the image width and height. Omit fields you cannot locate.
-- If the image is not a receipt or invoice, set notDocument true and leave every other field empty.`;
+- If the image is not a receipt or invoice, set notDocument true and leave every other field empty.
+Reply with the single JSON object only (including "fieldBoxes"), no prose and no code fences.`;
 
-/** AI reading → the loose object normalize() expects (fieldBoxes back to a path → box record). */
-export function extractedToRaw(x: Extracted): Record<string, unknown> {
+/** The JSON object in a text reply (tolerates ```json fences or a stray sentence around it). */
+export function parseReply(text: string): Record<string, unknown> | null {
+  const a = text.indexOf("{");
+  const b = text.lastIndexOf("}");
+  if (a < 0 || b <= a) return null;
+  try {
+    const v: unknown = JSON.parse(text.slice(a, b + 1));
+    return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** AI reading → the loose object normalize() expects (fieldBoxes list back to a path → box record). */
+export function extractedToRaw(x: Record<string, unknown>): Record<string, unknown> {
   // notDocument stays in; normalize() only picks the fields it knows
   const { fieldBoxes, ...rest } = x;
-  const boxes: Record<string, number[]> = {};
-  for (const { path, box } of fieldBoxes) if (path && box.length === 4) boxes[path] = box;
+  const boxes: Record<string, unknown> = {};
+  if (Array.isArray(fieldBoxes)) {
+    for (const f of fieldBoxes as { path?: unknown; box?: unknown }[]) {
+      if (typeof f?.path === "string" && Array.isArray(f.box) && f.box.length === 4) boxes[f.path] = f.box;
+    }
+  } else if (fieldBoxes && typeof fieldBoxes === "object") Object.assign(boxes, fieldBoxes);
   return { ...rest, fieldBoxes: boxes };
 }

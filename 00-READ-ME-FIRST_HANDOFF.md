@@ -23,7 +23,7 @@
 **지금 된 것**
 - 계산 규칙과 테스트(외부 검수 결함 9건 수정 포함), 정리된 양식(보기 / 고치기 / 인쇄), 양식 설정
 - 애플 인텔리전스풍 UI (라이트 · 다크), 로고 · 파비콘
-- 사진 올리기: **한 번에 최대 5장 동시 AI 읽기** + `/api/extract` (단, 실제 API 키로는 아직 한 번도 안 돌려 봤어요 — 5번 참고)
+- 사진 올리기: **한 번에 최대 5장 동시 AI 읽기** + `/api/extract` (실제 키로 확인 완료 · 정확도 평가 스크립트 있음 — 5번 ②)
 - 서명: 보기 화면에서 직접 타이핑 또는 "서명 있음" 표시, 인쇄 시 편집 표시 숨김
 - 장부: **월별 보관함("2026년 9월분")**, 색 스티커 7종 + 필터, **임시저장**, 관리자만 삭제 · **삭제 사유 필수 · 휴지통(소프트 삭제) · 복원**, 분쇄기 애니메이션
 - 설정: 내 권한(관리자/직원, 임시), 스티커 이름, 양식 설정
@@ -39,7 +39,8 @@
 ```bash
 npm install
 npm run dev -- -p 3100      # http://localhost:3100/ko
-npm test                    # Vitest 85개 (lib/**/*.test.ts)
+npm test                    # Vitest 89개 (lib/**/*.test.ts)
+npm run eval:extract        # AI 정확도 평가 (.env.local의 ANTHROPIC_API_KEY 필요, 유료 호출 1회)
 npx tsc --noEmit            # .next/types 관련 TS6053은 오래된 빌드 캐시 — 무시하거나 .next 삭제
 npx eslint app components lib
 ```
@@ -69,7 +70,7 @@ npx eslint app components lib
 | 아이콘 | lucide-react (ISC) | 로고도 lucide 모양으로 그림 (`components/layout/app-mark.tsx`) |
 | 폼 | react-hook-form + zod v4 | `lib/doc-schema.ts` |
 | 다국어 | next-intl v4 | `messages/{ko,th,en,ja}.json` |
-| AI | `@anthropic-ai/sdk` — `messages.parse` + `zodOutputFormat` | 모델 `claude-opus-5-5`(기본), effort `medium`(기본) |
+| AI | `@anthropic-ai/sdk` — `messages.create`, 프롬프트로 JSON → zod 검사 → `normalize()` | 모델 `claude-opus-5-5`(기본), effort `medium`(기본). 읽기 코드 `lib/extract-server.ts` |
 | 사진 | browser-image-compression · heic2any · react-zoom-pan-pinch | 올리기 전 방향 보정 · 아이폰 HEIC → JPG · 축소 |
 | 임시 저장소 | IndexedDB(장부 · 사진) · localStorage(설정류) | 5단계에서 Supabase로 교체 (6번) |
 | 테스트 | Vitest | Playwright는 설치돼 있지만 프로젝트 안에 테스트는 아직 없어요 (8번 참고) |
@@ -116,7 +117,9 @@ lib/                           규칙과 데이터 (UI와 무관, 테스트 있�
   normalize.ts       AI 답 / 저장본 → LedgerDoc
   checks.ts          runChecks(자동 확인 13개), flagsFor, claimable
   doc-schema.ts      zod (편집 폼)
-  extract-schema.ts  zod (AI 답 모양 = 구조화 출력 스키마), MAX_PHOTOS, 오류 코드
+  extract-schema.ts  zod (AI 답 모양), parseReply, MAX_PHOTOS, 오류 코드
+  extract-server.ts  (서버 전용) 사진 1장 읽기 — /api/extract와 평가 스크립트가 함께 씀
+  extract-eval.ts    AI 답 ↔ 정답 칸별 비교 (scripts/eval-extract.ts에서 사용)
   archive.ts         월별 묶기(monthKey, groupByMonth), 스티커 · 미지급 필터
   form-labels.ts / form-config.ts      양식 칸 이름 · 양식 설정
   ── 임시 저장소 (5단계에서 교체) ──
@@ -130,7 +133,7 @@ messages/        화면 문구 4개 언어. labels.*는 양식 칸 이름(th/en/
 docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review-findings/(외부 검수 결과)
 ```
 
-**데이터 흐름:** 사진(최대 5장) → 브라우저에서 정리(HEIC 변환 · 방향 · 축소) → `/api/extract`에서 Claude가 구조화 출력으로 읽음 → `normalize()` → 올리기 화면 목록 → 확인하기(`DocumentReview`) → **장부에 저장**(final) 또는 **임시저장**(draft) → 장부(월별 보관함)
+**데이터 흐름:** 사진(최대 5장) → 브라우저에서 정리(HEIC 변환 · 방향 · 축소) → `/api/extract`에서 Claude가 JSON으로 읽음(zod로 모양 검사) → `normalize()` → 올리기 화면 목록 → 확인하기(`DocumentReview`) → **장부에 저장**(final) 또는 **임시저장**(draft) → 장부(월별 보관함)
 
 ---
 
@@ -155,11 +158,15 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - 2 · 3 · 5 · 6은 시제품에서 옮겨 온 동작을 바꾼 거라, 기존 테스트 2개의 기대값도 바꿨어요 (`claimable(doc, "")` → false, 빈 수량 → 0). 각 줄에 이유를 주석으로 남겼어요.
 - 알아 둘 점: 수량이 없고 단가 · 금액만 있는 줄은 이제 품목 검사에서 "확인 필요"로 잡혀요 (수량을 알 수 없으니까요).
 
-### ② AI 읽기 실제 확인 (6단계 마무리)
+### ② AI 읽기 실제 확인 — ✅ 완료 (6단계)
 
-- `/api/extract`와 올리기 화면은 **예시 응답을 흉내 낸 브라우저 테스트로만** 확인했어요. 실제 키로 한 번도 안 돌려 봤어요.
-- 남은 것: `scripts/eval-extract.ts` (예시 사진을 실제로 읽혀 `sample-document.json`과 칸마다 비교) — 지시서 6번.
-- `claude-opus-5-5`는 **강제 tool_choice를 400으로 거절**해요. 그래서 tool use 대신 구조화 출력(`output_config.format`)을 써요. 지시서의 "tool use로 받기"와 다르지만 같은 목적(스키마 보장)이에요.
+- ✅ 실제 키로 확인했어요 (2026-09-25). `npm run eval:extract` = 예시 사진을 실제로 읽혀 `sample-document.json`과 칸마다 비교 (`--effort high`, `--runs 3` 가능, 결과는 `eval-results/`, git 제외).
+- 첫 결과 (effort medium, 1회, 47.6초, 약 $0.13): **숫자 · 코드 · 날짜 33/34**, 인쇄된 태국어 12/15, 영어 9/15, 자동 확인은 "흐린 칸" 외 전부 통과.
+  - 틀린 숫자 · 코드 1개(`seller.branchCode`)는 AI가 스스로 흐림 표시.
+  - 태국어: 단위 ลัง → กล่อง(실제 오류), 제목에 "ต้นฉบับ(원본)"이 붙음(프롬프트 모호), 지역명 한 글자 누락(흐림 표시함).
+  - 영어 불일치 대부분은 표기 차이(Rd. ↔ Road, Sunyu ↔ Sanyu 등). 채점이 엄격해서예요 — 필요하면 `lib/extract-eval.ts`의 비교 규칙을 조정하세요.
+- **답 받는 방식:** 프롬프트로 JSON을 받고 zod로 검사해요. `claude-opus-5-5`는 강제 tool_choice를 400으로 거절하고, 이 크기(약 60칸)의 구조화 출력 스키마는 "compiled grammar is too large"로 거절해요 (totals의 null 허용 10개를 빼면 통과하는 한계선). 그래서 시제품처럼 JSON을 받아 `extractSchema.safeParse`로 모양을 확인(평가 스크립트에 불일치 수 표시)하고 `normalize()`로 정리해요.
+- 다음에 해 볼 것: effort `high` 비교, 다른 영수증 사진으로 평가 세트 늘리기, 제목에 원본/사본 표시를 넣지 말라는 규칙을 프롬프트에 추가.
 
 ### ③ 5단계: Supabase (DB · 로그인 · 권한)
 
