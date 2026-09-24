@@ -1,0 +1,19 @@
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { FormSettings } from "@/components/settings/FormSettings";
+import { RoleSettings } from "@/components/settings/RoleSettings";
+import { StickerNameSettings } from "@/components/ledger/Stickers";
+import type { Locale } from "@/i18n/routing";
+
+export default async function SettingsPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale as Locale);
+  const t = await getTranslations("settings");
+  return (
+    <div className="grid gap-8">
+      <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("title")}</h1>
+      <RoleSettings />
+      <StickerNameSettings />
+      <FormSettings />
+    </div>
+  );
+}

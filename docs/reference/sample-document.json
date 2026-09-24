@@ -1,0 +1,172 @@
+{
+ "docType": "full",
+ "docTitle": {
+  "th": "ใบกำกับภาษี/ใบส่งของ/ใบแจ้งหนี้",
+  "en": "Tax Invoice / Invoice / Debit Note",
+  "ja": "税務インボイス／納品書／請求書"
+ },
+ "copyKind": "original",
+ "formSerial": "548139",
+ "docNo": "IV690923-0128",
+ "date": "2026-09-23",
+ "dateWasBuddhist": false,
+ "seller": {
+  "name": {
+   "th": "บริษัท แพนฟู้ด จำกัด",
+   "en": "PANFOOD CO., LTD.",
+   "ja": "パンフード株式会社"
+  },
+  "taxId": "0745538001265",
+  "branchCode": "RW00055",
+  "address": {
+   "th": "71/9, 71/15 หมู่ 6 ซอยรุ่งปรีชา ถ.เศรษฐกิจ ต.ท่าทราย อ.เมืองสมุทรสาคร จ.สมุทรสาคร 74000",
+   "en": "71/9, 71/15 Moo 6, Soi Rungpreecha, Setthakit Rd., Tambol Tasai, Amphur Mueang Samut Sakhon, Samut Sakhon 74000",
+   "ja": "〒74000 サムットサーコーン県 ムアンサムットサーコーン郡 ターサーイ地区 セータキット通り ソイ・ルンプリーチャー 6村 71/9, 71/15"
+  },
+  "tel": "034-815419, 034-424775, 034-423813",
+  "fax": "034-815425, 034-815426",
+  "saleOffice": "Tel 02-0263535 · Fax 034-423040, 034-815425"
+ },
+ "customer": {
+  "code": "R-0728",
+  "name": {
+   "th": "บริษัท ซันยู ครีเอท จำกัด",
+   "en": "Sunyu Create Co., Ltd.",
+   "ja": "サンユー・クリエイト株式会社"
+  },
+  "taxId": "0105557035035",
+  "branch": {
+   "th": "สำนักงานใหญ่",
+   "en": "Head office",
+   "ja": "本社"
+  },
+  "address": {
+   "th": "เลขที่ 155/18-19 ถนนสุขุมวิท แขวงคลองเตยเหนือ เขตวัฒนา กรุงเทพมหานคร 10110",
+   "en": "155/18-19 Sukhumvit Rd., Khlong Toei Nuea, Watthana, Bangkok 10110",
+   "ja": "〒10110 バンコク都 ワッタナー区 クローントゥーイヌア地区 スクンビット通り 155/18-19"
+  }
+ },
+ "orderNo": "",
+ "term": {
+  "th": "เครดิต 15 วัน",
+  "en": "Credit 15 days",
+  "ja": "掛け 15日"
+ },
+ "creditDays": 15,
+ "dueDate": "2026-10-08",
+ "sales": {
+  "name": {
+   "th": "นางสาว วรรณพงศ์ ณรงค์ทัพช้าย",
+   "en": "Ms. Wannapong Narongthapchai",
+   "ja": "ワンナポン・ナロンタップチャーイ様"
+  },
+  "area": {
+   "th": "ชลบุรี 2 (ดี 4)",
+   "en": "Chonburi 2 (D4)",
+   "ja": "チョンブリー2（D4）"
+  },
+  "ref": "SO690921-070"
+ },
+ "items": [
+  {
+   "code": "6F24100000",
+   "desc": {
+    "th": "แป้งโดแช่แข็ง 3.5 กก. x 6 แพ็ค",
+    "en": "Frozen Dough 3.5kg x 6 pack",
+    "ja": "冷凍生地 3.5kg × 6パック"
+   },
+   "wh": "0000",
+   "qty": 10,
+   "unit": {
+    "th": "ลัง",
+    "en": "Carton",
+    "ja": "ケース"
+   },
+   "price": 6000,
+   "amount": 60000
+  }
+ ],
+ "delivery": {
+  "note": {
+   "th": "ส่งสินค้าพร้อมวางบิล",
+   "en": "Deliver goods together with the bill",
+   "ja": "納品と同時に請求書を提出"
+  },
+  "place": {
+   "th": "Truffle Donuts ศรีราชา ถ.ศรีราชานคร 1",
+   "en": "Truffle Donuts Sriracha, Sriracha Nakhon 1 Rd.",
+   "ja": "Truffle Donuts シーラーチャー店（シーラーチャーナコーン1通り）"
+  },
+  "contact": "080-554-0524",
+  "person": {
+   "th": "คุณต่อย",
+   "en": "Khun Toi",
+   "ja": "トイさん"
+  }
+ },
+ "totals": {
+  "total": 60000,
+  "discount": 0,
+  "afterDisc": 60000,
+  "deposit": 0,
+  "afterDep": 60000,
+  "exempt": 0,
+  "taxable": 60000,
+  "vat": 4200,
+  "net": 64200,
+  "wht": 0
+ },
+ "wordsPrinted": "หกหมื่นสี่พันสองร้อยบาทถ้วน",
+ "words": {
+  "th": "หกหมื่นสี่พันสองร้อยบาทถ้วน",
+  "en": "Sixty-four thousand two hundred baht only",
+  "ja": "六万四千二百バーツちょうど"
+ },
+ "terms": [
+  {
+   "th": "ใบเสร็จรับเงินจะสมบูรณ์ต่อเมื่อบริษัทได้รับชำระเงินสดหรือเงินโอนเข้าบัญชีบริษัทเท่านั้น",
+   "en": "This receipt is complete only after payment is received in cash or into the company bank account.",
+   "ja": "現金または会社口座への入金を確認した時点で領収書として有効になります。"
+  },
+  {
+   "th": "เช็คสั่งจ่าย \"บริษัท แพนฟู้ด จำกัด\" ขีดคร่อมเข้าบัญชีผู้รับเงินเท่านั้น",
+   "en": "Cheques must be crossed \"A/C payee only\" to Pan Food Co., Ltd.",
+   "ja": "小切手は「Pan Food Co., Ltd.」宛、受取人口座払い（線引き）に限ります。"
+  },
+  {
+   "th": "หากสินค้าเสียหายหรือขาดตกบกพร่อง โปรดแจ้งภายใน 3 วัน",
+   "en": "Report damaged or missing goods within 3 days.",
+   "ja": "商品の破損・不足は3日以内にご連絡ください。"
+  },
+  {
+   "th": "กรณีคืนสินค้า สินค้าต้องอยู่ในสภาพเดิมเท่านั้น",
+   "en": "Returned goods must be in their original condition.",
+   "ja": "返品は元の状態の商品に限ります。"
+  }
+ ],
+ "signs": {
+  "receiver": true,
+  "issuer": true,
+  "deliverer": {
+   "th": "ชาญชัย",
+   "en": "Chanchai",
+   "ja": "チャンチャイ"
+  }
+ },
+ "formCode": "FM-AC-12 Rev.:5",
+ "formSince": "01/09/2020",
+ "category": "supplies",
+ "payment": "credit",
+ "paid": false,
+ "paidDate": "",
+ "confidence": "medium",
+ "unclear": [
+  "customer.name",
+  "sales.name"
+ ],
+ "note": {
+  "th": "",
+  "en": "",
+  "ja": ""
+ }
+}

@@ -1,0 +1,9 @@
+d79a252 Add handoff document
+603b8ae Track .env.example
+bc75f95 Add review brief for external code review
+852fdf5 Form settings tool and numeric amount words
+004efe1 Step 4: organized form (InvoiceView / InvoiceEdit) with sample document
+44b51a2 Add ChecksPanel and a temporary rules demo page
+172066f Port prototype rules to lib/ with Vitest tests; add placeholder pages
+8f09e01 Use unique dev server name and port
+7c6468a Scaffold Next.js 15 app with shadcn/ui, theme, next-intl (ko/th/en/ja)

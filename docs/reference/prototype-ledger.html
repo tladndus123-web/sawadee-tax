@@ -1,0 +1,966 @@
+<title>태국 영수증 장부</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+JP:wght@400;600&family=IBM+Plex+Sans+KR:wght@400;600&family=IBM+Plex+Sans+Thai:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#f3f6f5; --surface:#ffffff; --surface-2:#e9efed; --band:#e3efe8; --line:#d3ddd9; --rule:#b9c9c2; --rule-2:#dfe8e4;
+  --ink:#16231f; --ink-2:#4d5f59; --ink-3:#7c8c86;
+  --accent:#0d6e53; --accent-ink:#ffffff; --accent-soft:#d6ece4;
+  --warn:#9a5b00; --warn-soft:#fbecd2; --bad:#b0281c; --bad-soft:#fadcd8; --ok:#1c7a43; --ok-soft:#dcefe2;
+  --stamp:#b0281c; --radius:10px;
+  --sans:"IBM Plex Sans KR","IBM Plex Sans Thai","IBM Plex Sans JP",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){color-scheme:dark;
+    --bg:#0f1513; --surface:#171f1c; --surface-2:#1f2926; --band:#1c2a25; --line:#2d3a36; --rule:#34443e; --rule-2:#26332e;
+    --ink:#e4ece9; --ink-2:#a9b8b3; --ink-3:#7a8a85;
+    --accent:#3cbf93; --accent-ink:#06140f; --accent-soft:#173a2f;
+    --warn:#f0b454; --warn-soft:#3a2a10; --bad:#f07a6e; --bad-soft:#3d1a16; --ok:#5ccf8a; --ok-soft:#173424; --stamp:#f07a6e;}
+}
+:root[data-theme="dark"]{color-scheme:dark;
+  --bg:#0f1513; --surface:#171f1c; --surface-2:#1f2926; --band:#1c2a25; --line:#2d3a36; --rule:#34443e; --rule-2:#26332e;
+  --ink:#e4ece9; --ink-2:#a9b8b3; --ink-3:#7a8a85;
+  --accent:#3cbf93; --accent-ink:#06140f; --accent-soft:#173a2f;
+  --warn:#f0b454; --warn-soft:#3a2a10; --bad:#f07a6e; --bad-soft:#3d1a16; --ok:#5ccf8a; --ok-soft:#173424; --stamp:#f07a6e;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.55;padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1280px;margin:0 auto;display:grid;gap:20px}
+[lang="th"]{font-family:"IBM Plex Sans Thai",var(--sans);line-height:1.7}
+[lang="ja"]{font-family:"IBM Plex Sans JP",var(--sans)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2{margin:0;text-wrap:balance;line-height:1.25}
+h2{font-size:17px;font-weight:600}
+.muted{color:var(--ink-2)} .small{font-size:13px}
+.label{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+
+header{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;padding-block:20px 4px;max-width:1280px;margin:0 auto}
+.brand{display:flex;gap:12px;align-items:center}
+.seal{width:40px;height:40px;border-radius:50%;border:2px solid var(--stamp);color:var(--stamp);display:grid;place-items:center;font-weight:600;font-size:16px;transform:rotate(-8deg);flex:none}
+.brand h1{font-size:20px;font-weight:600}
+.brand p{margin:0;font-size:13px;color:var(--ink-2)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface);gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:4px 11px;border-radius:999px;font-size:13px;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.stat{background:var(--surface);padding:14px 16px;display:grid;gap:2px;align-content:start}
+.stat .v{font-family:var(--mono);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.stat .v.warn{color:var(--warn)} .stat .v.acc{color:var(--accent)} .stat .v.bad{color:var(--bad)}
+@media (max-width:760px){.summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.drop{border:2px dashed var(--line);border-radius:var(--radius);background:var(--surface);padding:22px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop .icon{width:52px;height:52px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.drop .txt{flex:1 1 240px;display:grid;gap:2px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-weight:600;font-size:14px;display:inline-flex;gap:6px;align-items:center}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.danger.solid{background:var(--bad);color:#fff}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.notice{border-radius:8px;padding:10px 14px;font-size:14px;background:var(--warn-soft);color:var(--warn);margin-top:10px}
+.notice.bad{background:var(--bad-soft);color:var(--bad)} .notice.ok{background:var(--accent-soft);color:var(--accent)}
+.busy{display:flex;gap:12px;align-items:center}
+.spin{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .9s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+
+/* review shell */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr)}
+.panel .photo{border-right:1px solid var(--line);padding:16px;background:var(--surface-2);border-radius:var(--radius) 0 0 var(--radius)}
+.panel .photo img{width:100%;border-radius:6px;display:block;position:sticky;top:16px}
+.panel .photo .none{aspect-ratio:3/4;display:grid;place-items:center;color:var(--ink-3);border:1px dashed var(--line);border-radius:6px}
+.panel .main{padding:18px 20px;display:grid;gap:14px;min-width:0}
+@media (max-width:900px){.panel{grid-template-columns:1fr}.panel .photo{border-right:0;border-bottom:1px solid var(--line);border-radius:var(--radius) var(--radius) 0 0}.panel .photo img{max-height:360px;object-fit:contain;position:static}}
+.rhead{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.rtools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:999px;background:var(--band);color:var(--ink-2);white-space:nowrap;vertical-align:1px}
+.chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.bad{background:var(--bad-soft);color:var(--bad)} .chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.full{background:var(--accent-soft);color:var(--accent)}
+
+/* invoice paper */
+.paper{border:1px solid var(--rule);border-radius:4px;padding:18px;display:grid;gap:12px;background:var(--surface)}
+.top{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;align-items:start}
+.seller .name{font-size:17px;font-weight:600}
+.addr{color:var(--ink-2);font-size:12.5px}
+.docbox{border:1px solid var(--rule);display:grid}
+.docbox .serial{font-family:var(--mono);color:var(--accent);font-size:19px;font-weight:600;text-align:right;padding:6px 10px;border-bottom:1px solid var(--rule)}
+.docbox .in{padding:8px 10px;display:grid;gap:6px}
+.title{text-align:center;display:grid;gap:2px}
+.title .orig{font-size:12px;letter-spacing:.08em;color:var(--accent);font-weight:600}
+.title .main{font-size:18px;font-weight:600}
+.title .sub{color:var(--ink-2)}
+.boxes{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:10px}
+.box{border:1px solid var(--rule);padding:10px 12px;display:grid;gap:6px;min-width:0;align-content:start}
+.kv{display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr);gap:4px 12px;align-items:baseline}
+.kv + .kv{border-top:1px dashed var(--rule-2);padding-top:6px}
+.lab{font-size:11.5px;color:var(--ink-3);display:grid;line-height:1.35}
+.val{min-width:0;overflow-wrap:anywhere}
+.val .l{display:block}
+.val .l + .l{color:var(--ink-2);font-size:13px}
+.unsure .l:first-child,.unsure.l{text-decoration:underline dotted var(--warn);text-underline-offset:3px}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;min-width:680px}
+th{background:var(--band);font-weight:600;font-size:12px;text-align:left;padding:7px 10px;border-bottom:1px solid var(--rule);vertical-align:bottom}
+th .lab{color:var(--ink-2)}
+td{padding:8px 10px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.bottom{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:10px;align-items:start}
+.ladder{border:1px solid var(--rule);display:grid}
+.step{display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:10px;padding:6px 12px;border-bottom:1px solid var(--rule-2);align-items:center}
+.step.sub .lab{padding-left:10px}
+.step.net{background:var(--band);border-bottom:0;padding-block:10px}
+.step.net .num,.step.net input{font-size:16px;font-weight:600;color:var(--accent)}
+.step.wht{border-top:1px solid var(--rule);background:transparent}
+.words{background:var(--band);border:1px solid var(--rule);padding:10px 12px;text-align:center;font-weight:600}
+.words .l + .l{font-weight:400;color:var(--ink-2);font-size:13px}
+.terms{font-size:12.5px;color:var(--ink-2)}
+.terms ul{margin:4px 0 0;padding-left:18px;display:grid;gap:3px}
+.signs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.sign{border:1px solid var(--rule);padding:10px 12px;display:grid;gap:6px}
+.pfoot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-3)}
+@media (max-width:760px){.paper{padding:12px}.top,.boxes,.bottom,.signs{grid-template-columns:1fr}.kv{grid-template-columns:1fr}}
+
+/* edit inputs */
+input,select,textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:5px 8px;min-width:0}
+input.num{text-align:right}
+.tri-in{display:grid;gap:4px}
+.tri-in .r{display:grid;grid-template-columns:26px minmax(0,1fr);gap:6px;align-items:center}
+.tri-in .r > span{font-size:10.5px;font-weight:600;color:var(--ink-3);letter-spacing:.04em}
+.inline{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+td .x{border:1px solid var(--line);background:transparent;border-radius:6px;width:30px;height:30px;color:var(--ink-3)}
+td .x:hover{color:var(--bad);border-color:var(--bad)}
+.check{display:inline-flex;gap:6px;align-items:center;font-size:13px}
+.check input{width:auto}
+
+/* checks */
+.checks{border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:grid;gap:10px}
+.checks h3{margin:0;font-size:14.5px;font-weight:600}
+.clist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 20px;margin:0;padding:0;list-style:none}
+.clist li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;font-size:13.5px}
+.mark{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;margin-top:1px}
+.mark.ok{background:var(--ok-soft);color:var(--ok)} .mark.warn{background:var(--warn-soft);color:var(--warn)}
+.clist small{display:block;color:var(--ink-3);font-size:12px;overflow-wrap:anywhere}
+@media (max-width:760px){.clist{grid-template-columns:1fr}}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:14px}
+.actions .grow{flex:1}
+.paidbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.paidbox input[type=date]{width:auto}
+
+/* ledger */
+.ledger{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.lhead{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+.lhead .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.lhead select{width:auto}
+.row{display:grid;grid-template-columns:96px minmax(0,1fr) 170px 150px 130px 18px;gap:12px;align-items:center;padding:11px 16px;border:0;border-bottom:1px solid var(--line);width:100%;text-align:left;background:transparent}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--surface-2)}
+.row.head{font-size:11.5px;color:var(--ink-3);font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:default}
+.row.head:hover{background:transparent}
+.row .vendor{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .vendor small{display:block;color:var(--ink-3);font-size:12px;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono)}
+.row .amt{text-align:right}
+.dot{display:block;width:9px;height:9px;border-radius:50%;background:var(--warn)}
+@media (max-width:760px){
+  .row{grid-template-columns:minmax(0,1fr) auto;gap:4px 10px}
+  .row.head{display:none}
+  .row .date{grid-column:1;order:2;font-size:12.5px;color:var(--ink-3)}
+  .row .vendor{grid-column:1;order:1}
+  .row .amt{grid-column:2;grid-row:1}
+  .row .c3,.row .c4{order:3;grid-column:1 / -1}
+  .row .c3{display:none}
+  .row .flag{grid-column:2;grid-row:2;justify-self:end}
+}
+.empty{padding:28px 16px;text-align:center;color:var(--ink-2)}
+.cats{display:grid;gap:8px;padding:14px 16px;border-top:1px solid var(--line)}
+.bar{display:grid;grid-template-columns:130px minmax(0,1fr) 120px;gap:10px;align-items:center;font-size:13px}
+.bar .track{height:10px;background:var(--surface-2);border-radius:5px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);border-radius:5px}
+.settings{padding:12px 16px;border-top:1px solid var(--line);font-size:13px}
+.settings summary{cursor:pointer;color:var(--ink-2)}
+.settings .srow{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:10px}
+.settings label{display:grid;gap:3px}
+.settings input{width:220px}
+footer{max-width:1280px;margin:0 auto;font-size:12.5px;color:var(--ink-3)}
+</style>
+
+<header>
+  <div class="brand">
+    <div class="seal" aria-hidden="true">฿</div>
+    <div><h1 id="appName"></h1><p id="tagline"></p></div>
+  </div>
+  <div class="seg" id="uiLang" role="group" aria-label="Language"></div>
+</header>
+<div class="wrap">
+  <section class="summary" id="summary" aria-live="polite"></section>
+  <section id="upload"></section>
+  <section id="review"></section>
+  <section class="ledger" id="ledger"></section>
+</div>
+<footer id="foot"></footer>
+
+<script>
+/* ======================= words ======================= */
+const T = {
+ko:{appName:"태국 영수증 장부",tagline:"사진 한 장이면 원본 서류 모양 그대로 태국어 · 영어 · 일본어 장부로 정리돼요",
+ upload:"세금계산서 · 영수증 사진 올리기",uploadHint:"사진을 끌어오거나 버튼을 눌러 고르세요. 휴대폰에서는 바로 찍을 수 있어요.",
+ pick:"사진 고르기",reading:"서류를 읽는 중이에요",readingSub:"보통 20~60초 걸려요",stop:"멈추기",
+ noAi:"이 화면에서는 AI 읽기를 쓸 수 없어요. claude.ai에 로그인한 상태로 열어 주세요.",noImage:"이 화면에서는 사진을 AI에게 보낼 수 없어요.",
+ aiFail:"서류를 읽지 못했어요. 사진이 흐리거나 잘렸을 수 있어요. 밝은 곳에서 서류 전체가 보이게 다시 찍어 주세요.",notDoc:"영수증이나 세금계산서가 아닌 것 같아요. 다른 사진을 올려 주세요.",
+ rateLimited:"요청이 너무 많아요. 1분 뒤에 다시 해 주세요.",badImage:"이 사진 형식은 읽을 수 없어요. JPG나 PNG로 올려 주세요.",
+ newTitle:"정리된 양식 · 확인하고 저장하기",editTitle:"장부의 서류",view:"보기",edit:"고치기",formLang:"양식 언어",all3:"3개 언어",
+ save:"장부에 저장",saving:"저장 중…",close:"닫기",del:"삭제",confirmDel:"정말 지울까요?",yesDel:"네, 지워요",no:"아니요",
+ saved:"저장했어요.",deleted:"지웠어요.",saveFail:"저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.",
+ notGranted:"저장 권한이 없어요. 이 페이지 주인에게 '참여' 이상 권한을 받아 주세요.",photoNotSaved:"사진 저장 권한이 없어서 내용만 저장했어요.",
+ noDb:"저장 공간에 연결되지 않았어요. claude.ai에 로그인한 상태로 열어 주세요.",
+ category:"항목",payment:"결제 방법",paid:"지급 완료",paidOn:"지급일",unpaid:"미지급",overdue:"기한 지남",dueOn:"기한",
+ addItem:"+ 줄 추가",signed:"서명 있음",notSigned:"서명 없음",unsure:"확인 필요",uploadedBy:"올린 사람",ex:"예시",
+ checksTitle:"자동 확인",pass:"통과",
+ c:{sellerTax:"판매자 세금번호 13자리",buyerTax:"구매자 세금번호",company:"구매자 = 우리 회사",items:"품목: 수량 × 단가 = 금액, 합계 일치",chain:"할인 · 계약금 · 면세 계산 흐름",vat:"부가세 7%",net:"최종 합계",words:"태국어 금액 글자 = 숫자",due:"지급 기한 = 날짜 + 외상 기간",date:"날짜 (불교력 → 서기)",unclear:"흐리게 읽힌 칸",dup:"같은 서류 중복",conf:"AI 읽기 확신도"},
+ d:{missing:"없음",invalid:"마지막 숫자 검사 실패",valid:"마지막 숫자 검사 통과",noCompany:"아래 설정에 우리 회사 세금번호를 넣으면 비교해요",differ:"우리 회사 세금번호와 달라요 · 부가세 환급이 안 될 수 있어요",same:"우리 회사와 같아요",
+   written:"적힌 값",calc:"계산",be:"불교력을 서기로 바꿨어요",gregorian:"서기로 적혀 있어요",noneUnclear:"모두 또렷하게 읽혔어요",checkPhoto:"점선 밑줄 칸을 원본 사진과 비교해 주세요",dupFound:"같은 판매자 · 같은 문서번호가 이미 장부에 있어요",noDup:"중복 없음",notApplicable:"해당 없음",low:"낮음 · 사진을 다시 찍는 게 좋아요",ok:"좋음"},
+ sTotal:"매입 합계",sVat:"돌려받을 수 있는 부가세",sVatNote:"정식 세금계산서 · 우리 회사 앞",sUnpaid:"미지급",sOver:"기한 지남",sCheck:"확인 필요",
+ ledger:"장부",allTime:"전체 기간",show:"표시 언어",export:"엑셀(CSV) 내려받기",empty:"아직 서류가 없어요. 위에서 사진을 올려 보세요.",byCat:"항목별",exportFail:"파일을 만들지 못했어요.",
+ colDate:"날짜",colVendor:"판매자 · 문서번호",colType:"서류",colDue:"지급",colTotal:"합계",
+ settings:"우리 회사 설정",companyTax:"우리 회사 세금번호 (13자리)",companySave:"저장",companySaved:"저장했어요.",
+ foot:"세금번호는 태국 국세청 규칙(마지막 숫자 확인)으로 자동 점검해요. 최종 신고 전에는 회계사와 꼭 확인하세요."},
+th:{appName:"สมุดใบเสร็จ",tagline:"ถ่ายรูปใบเดียว ได้แบบฟอร์มเหมือนต้นฉบับ 3 ภาษา ไทย · อังกฤษ · ญี่ปุ่น",
+ upload:"อัปโหลดรูปใบกำกับภาษี · ใบเสร็จ",uploadHint:"ลากรูปมาวาง หรือกดปุ่มเพื่อเลือก บนมือถือถ่ายได้ทันที",
+ pick:"เลือกรูป",reading:"กำลังอ่านเอกสาร",readingSub:"ปกติใช้เวลา 20–60 วินาที",stop:"หยุด",
+ noAi:"หน้านี้ใช้ AI อ่านไม่ได้ กรุณาเปิดขณะล็อกอิน claude.ai",noImage:"หน้านี้ส่งรูปให้ AI ไม่ได้",
+ aiFail:"อ่านเอกสารไม่ได้ รูปอาจเบลอหรือถูกตัด กรุณาถ่ายใหม่ให้เห็นทั้งแผ่นในที่สว่าง",notDoc:"ดูเหมือนไม่ใช่ใบเสร็จหรือใบกำกับภาษี กรุณาอัปโหลดรูปอื่น",
+ rateLimited:"คำขอมากเกินไป กรุณาลองใหม่ใน 1 นาที",badImage:"อ่านรูปแบบไฟล์นี้ไม่ได้ กรุณาใช้ JPG หรือ PNG",
+ newTitle:"แบบฟอร์มที่จัดแล้ว · ตรวจและบันทึก",editTitle:"เอกสารในสมุด",view:"ดู",edit:"แก้ไข",formLang:"ภาษาแบบฟอร์ม",all3:"3 ภาษา",
+ save:"บันทึกลงสมุด",saving:"กำลังบันทึก…",close:"ปิด",del:"ลบ",confirmDel:"ลบจริงหรือไม่?",yesDel:"ใช่ ลบเลย",no:"ไม่",
+ saved:"บันทึกแล้ว",deleted:"ลบแล้ว",saveFail:"บันทึกไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่",
+ notGranted:"ไม่มีสิทธิ์บันทึก กรุณาขอสิทธิ์จากเจ้าของหน้านี้",photoNotSaved:"ไม่มีสิทธิ์เก็บรูป จึงบันทึกเฉพาะข้อมูล",
+ noDb:"เชื่อมต่อที่เก็บข้อมูลไม่ได้ กรุณาเปิดขณะล็อกอิน claude.ai",
+ category:"หมวด",payment:"วิธีชำระ",paid:"ชำระแล้ว",paidOn:"วันที่ชำระ",unpaid:"ค้างชำระ",overdue:"เกินกำหนด",dueOn:"ครบกำหนด",
+ addItem:"+ เพิ่มรายการ",signed:"มีลายเซ็น",notSigned:"ไม่มีลายเซ็น",unsure:"ต้องตรวจ",uploadedBy:"ผู้อัปโหลด",ex:"ตัวอย่าง",
+ checksTitle:"ตรวจอัตโนมัติ",pass:"ผ่าน",
+ c:{sellerTax:"เลขผู้เสียภาษีผู้ขาย 13 หลัก",buyerTax:"เลขผู้เสียภาษีผู้ซื้อ",company:"ผู้ซื้อ = บริษัทเรา",items:"รายการ: จำนวน × ราคา = จำนวนเงิน",chain:"ส่วนลด · มัดจำ · ยกเว้นภาษี",vat:"VAT 7%",net:"ยอดรวมทั้งสิ้น",words:"ตัวอักษรจำนวนเงิน = ตัวเลข",due:"วันครบกำหนด = วันที่ + เครดิต",date:"วันที่ (พ.ศ. → ค.ศ.)",unclear:"ช่องที่อ่านไม่ชัด",dup:"เอกสารซ้ำ",conf:"ความมั่นใจของ AI"},
+ d:{missing:"ไม่มี",invalid:"หลักตรวจสอบไม่ผ่าน",valid:"หลักตรวจสอบผ่าน",noCompany:"ใส่เลขผู้เสียภาษีบริษัทเราในการตั้งค่าด้านล่างเพื่อเปรียบเทียบ",differ:"ไม่ตรงกับบริษัทเรา · อาจขอคืนภาษีไม่ได้",same:"ตรงกับบริษัทเรา",
+   written:"ที่พิมพ์",calc:"คำนวณ",be:"แปลง พ.ศ. เป็น ค.ศ. แล้ว",gregorian:"เป็น ค.ศ. อยู่แล้ว",noneUnclear:"อ่านได้ชัดทุกช่อง",checkPhoto:"กรุณาเทียบช่องที่ขีดเส้นประกับรูปต้นฉบับ",dupFound:"มีเอกสารผู้ขายเดียวกัน เลขที่เดียวกันในสมุดแล้ว",noDup:"ไม่ซ้ำ",notApplicable:"ไม่เกี่ยวข้อง",low:"ต่ำ · ควรถ่ายรูปใหม่",ok:"ดี"},
+ sTotal:"ยอดซื้อรวม",sVat:"ภาษีซื้อที่ขอคืนได้",sVatNote:"ใบกำกับภาษีเต็มรูป ออกในนามบริษัทเรา",sUnpaid:"ค้างชำระ",sOver:"เกินกำหนด",sCheck:"ต้องตรวจ",
+ ledger:"สมุดบัญชี",allTime:"ทุกช่วงเวลา",show:"ภาษาที่แสดง",export:"ดาวน์โหลด Excel (CSV)",empty:"ยังไม่มีเอกสาร ลองอัปโหลดรูปด้านบน",byCat:"ตามหมวด",exportFail:"สร้างไฟล์ไม่สำเร็จ",
+ colDate:"วันที่",colVendor:"ผู้ขาย · เลขที่",colType:"เอกสาร",colDue:"การชำระ",colTotal:"รวม",
+ settings:"ตั้งค่าบริษัทเรา",companyTax:"เลขผู้เสียภาษีบริษัทเรา (13 หลัก)",companySave:"บันทึก",companySaved:"บันทึกแล้ว",
+ foot:"ตรวจเลขผู้เสียภาษีอัตโนมัติตามหลักกรมสรรพากร ก่อนยื่นภาษีกรุณาตรวจกับนักบัญชี"},
+en:{appName:"Thai Receipt Ledger",tagline:"One photo becomes a Thai · English · Japanese copy laid out like the original",
+ upload:"Upload a tax invoice or receipt photo",uploadHint:"Drop a photo here or pick one. On a phone you can take it right away.",
+ pick:"Choose photo",reading:"Reading the document",readingSub:"Usually 20–60 seconds",stop:"Stop",
+ noAi:"AI reading isn't available here. Open this page while signed in to claude.ai.",noImage:"This view can't send photos to the AI.",
+ aiFail:"Couldn't read the document. The photo may be blurry or cut off. Retake it in good light with the whole page visible.",notDoc:"This doesn't look like a receipt or tax invoice. Try another photo.",
+ rateLimited:"Too many requests. Try again in a minute.",badImage:"This image format can't be read. Use JPG or PNG.",
+ newTitle:"Organized form · check and save",editTitle:"Ledger document",view:"View",edit:"Edit",formLang:"Form language",all3:"All 3",
+ save:"Save to ledger",saving:"Saving…",close:"Close",del:"Delete",confirmDel:"Delete this document?",yesDel:"Yes, delete",no:"No",
+ saved:"Saved.",deleted:"Deleted.",saveFail:"Couldn't save. Check your connection and try again.",
+ notGranted:"You don't have permission to save. Ask the page owner for access.",photoNotSaved:"No permission to store photos, so only the details were saved.",
+ noDb:"Storage isn't connected. Open this page while signed in to claude.ai.",
+ category:"Category",payment:"Payment",paid:"Paid",paidOn:"Paid on",unpaid:"Unpaid",overdue:"Overdue",dueOn:"Due",
+ addItem:"+ Add line",signed:"Signed",notSigned:"Not signed",unsure:"Check",uploadedBy:"Uploaded by",ex:"Example",
+ checksTitle:"Automatic checks",pass:"passed",
+ c:{sellerTax:"Seller tax ID (13 digits)",buyerTax:"Buyer tax ID",company:"Buyer is our company",items:"Lines: qty × price = amount, sum matches",chain:"Discount · deposit · exempt flow",vat:"VAT 7%",net:"Net amount",words:"Thai amount in words = number",due:"Due date = date + credit term",date:"Date (Buddhist era → CE)",unclear:"Unclear fields",dup:"Duplicate document",conf:"AI confidence"},
+ d:{missing:"missing",invalid:"check digit failed",valid:"check digit passed",noCompany:"Add our company tax ID in settings below to compare",differ:"Differs from our company · VAT may not be claimable",same:"Matches our company",
+   written:"printed",calc:"calculated",be:"Converted from Buddhist era",gregorian:"Already in CE",noneUnclear:"Every field read clearly",checkPhoto:"Compare the dotted fields with the photo",dupFound:"Same seller and document number already in the ledger",noDup:"No duplicate",notApplicable:"not applicable",low:"low · consider retaking the photo",ok:"good"},
+ sTotal:"Purchases",sVat:"Claimable input VAT",sVatNote:"Full tax invoices to our company",sUnpaid:"Unpaid",sOver:"overdue",sCheck:"Need checking",
+ ledger:"Ledger",allTime:"All time",show:"Show in",export:"Download Excel (CSV)",empty:"No documents yet. Upload a photo above.",byCat:"By category",exportFail:"Couldn't create the file.",
+ colDate:"Date",colVendor:"Seller · doc no.",colType:"Document",colDue:"Payment",colTotal:"Total",
+ settings:"Our company",companyTax:"Our company tax ID (13 digits)",companySave:"Save",companySaved:"Saved.",
+ foot:"Tax IDs are checked with the Revenue Department check-digit rule. Confirm with your accountant before filing."},
+ja:{appName:"タイ領収書台帳",tagline:"写真1枚で原本と同じレイアウトのタイ語・英語・日本語の書類に整理",
+ upload:"税務インボイス・領収書の写真をアップロード",uploadHint:"写真をドロップするか、ボタンで選択。スマホならその場で撮影できます。",
+ pick:"写真を選ぶ",reading:"書類を読み取り中",readingSub:"通常20〜60秒",stop:"中止",
+ noAi:"この画面ではAI読み取りを使えません。claude.aiにログインして開いてください。",noImage:"この画面では写真をAIに送れません。",
+ aiFail:"読み取れませんでした。写真がぼやけているか切れている可能性があります。明るい場所で書類全体を撮り直してください。",notDoc:"領収書・税務インボイスではないようです。別の写真をアップロードしてください。",
+ rateLimited:"リクエストが多すぎます。1分後にもう一度お試しください。",badImage:"この画像形式は読み取れません。JPGかPNGでアップロードしてください。",
+ newTitle:"整理された書類・確認して保存",editTitle:"台帳の書類",view:"表示",edit:"修正",formLang:"書類の言語",all3:"3言語",
+ save:"台帳に保存",saving:"保存中…",close:"閉じる",del:"削除",confirmDel:"本当に削除しますか？",yesDel:"はい、削除",no:"いいえ",
+ saved:"保存しました。",deleted:"削除しました。",saveFail:"保存できませんでした。接続を確認して再度お試しください。",
+ notGranted:"保存する権限がありません。ページの所有者に権限をもらってください。",photoNotSaved:"写真を保存する権限がないため、内容のみ保存しました。",
+ noDb:"保存先に接続できません。claude.aiにログインして開いてください。",
+ category:"勘定科目",payment:"支払方法",paid:"支払済",paidOn:"支払日",unpaid:"未払",overdue:"期限切れ",dueOn:"期日",
+ addItem:"+ 行を追加",signed:"署名あり",notSigned:"署名なし",unsure:"要確認",uploadedBy:"登録者",ex:"例",
+ checksTitle:"自動チェック",pass:"合格",
+ c:{sellerTax:"売り手の納税者番号（13桁）",buyerTax:"買い手の納税者番号",company:"買い手＝当社",items:"明細：数量×単価＝金額、合計一致",chain:"値引き・前受金・非課税の流れ",vat:"付加価値税 7%",net:"総合計",words:"タイ語の金額表記＝数字",due:"支払期日＝日付＋掛け期間",date:"日付（仏暦→西暦）",unclear:"判読が不確かな欄",dup:"重複書類",conf:"AIの確信度"},
+ d:{missing:"なし",invalid:"チェックディジット不合格",valid:"チェックディジット合格",noCompany:"下の設定に当社の納税者番号を入れると比較します",differ:"当社の番号と違います・VAT控除できない可能性",same:"当社と一致",
+   written:"記載",calc:"計算",be:"仏暦を西暦に変換",gregorian:"西暦で記載",noneUnclear:"すべて鮮明に読めました",checkPhoto:"点線の欄を原本の写真と比べてください",dupFound:"同じ売り手・同じ書類番号がすでに台帳にあります",noDup:"重複なし",notApplicable:"該当なし",low:"低い・撮り直しをおすすめ",ok:"良好"},
+ sTotal:"仕入合計",sVat:"控除できる仕入VAT",sVatNote:"当社宛ての正式税務インボイスのみ",sUnpaid:"未払",sOver:"期限切れ",sCheck:"要確認",
+ ledger:"台帳",allTime:"全期間",show:"表示言語",export:"Excel（CSV）ダウンロード",empty:"まだ書類がありません。上から写真をアップロードしてください。",byCat:"科目別",exportFail:"ファイルを作成できませんでした。",
+ colDate:"日付",colVendor:"売り手・書類番号",colType:"書類",colDue:"支払",colTotal:"合計",
+ settings:"当社の設定",companyTax:"当社の納税者番号（13桁）",companySave:"保存",companySaved:"保存しました。",
+ foot:"納税者番号はタイ歳入局のチェックディジット規則で自動確認します。申告前に必ず会計士にご確認ください。"}
+};
+/* form field labels: [th, en, ja, ko] */
+const LB = {
+  taxId:["เลขประจำตัวผู้เสียภาษีอากร","Tax ID","納税者番号","세금번호"],
+  headOffice:["สำนักงานใหญ่","Head office","本社","본사 주소"],
+  tel:["โทร.","Tel.","電話","전화"], fax:["แฟกซ์","Fax","FAX","팩스"],
+  saleOffice:["ฝ่ายขาย","Sales office","営業所","영업소"],
+  branchCode:["รหัสสาขา","Branch code","支店コード","지점 코드"],
+  docTitle:["ชื่อเอกสาร","Document title","書類名","서류 이름"],
+  docType:["ประเภทเอกสาร","Document type","書類の種類","서류 종류"],
+  copy:["ต้นฉบับ/สำเนา","Original/Copy","原本/控え","원본/사본"],
+  serial:["เลขที่แบบฟอร์ม","Form serial","様式番号","양식 일련번호"],
+  docNo:["เลขที่","Invoice No.","請求書番号","문서번호"],
+  date:["วันที่","Date","日付","날짜"],
+  customer:["ชื่อลูกค้า","Customer","顧客","고객(구매자)"],
+  custCode:["รหัสลูกค้า","Customer code","顧客コード","고객 코드"],
+  address:["ที่อยู่","Address","住所","주소"],
+  branch:["สาขา","Branch","支店","본사/지점"],
+  orderNo:["ใบสั่งซื้อเลขที่","Order No.","注文番号","주문번호"],
+  term:["เงื่อนไขการชำระเงิน","Payment term","支払条件","결제 조건"],
+  creditDays:["เครดิต (วัน)","Credit (days)","掛け（日）","외상 기간(일)"],
+  due:["วันครบกำหนด","Due date","支払期日","지급 기한"],
+  sales:["พนักงานขาย","Salesperson","営業担当","영업 담당자"],
+  salesArea:["เขตการขาย","Sales area","担当エリア","담당 지역"],
+  salesRef:["เลขอ้างอิง","Reference","参照番号","참조번호"],
+  no:["ลำดับ","No.","No.","순번"], code:["รหัสสินค้า","Item code","商品コード","상품 코드"],
+  desc:["รายการ","Description","品名","품명"], wh:["คลัง","Warehouse","倉庫","창고"],
+  qty:["จำนวน","Qty","数量","수량"], unit:["หน่วย","Unit","単位","단위"],
+  price:["ราคาต่อหน่วย","Unit price","単価","단가"], amount:["จำนวนเงิน","Amount","金額","금액"],
+  delivery:["สถานที่ส่ง","Delivery","納品先・指示","배송지 · 지시"],
+  contact:["เบอร์ติดต่อ","Contact","連絡先","연락처"], person:["ผู้ติดต่อ","Contact person","担当者","담당자"],
+  total:["จำนวนเงิน","Total amount","合計金額","합계"],
+  discount:["หักส่วนลด","Less discount","値引き","할인"],
+  afterDisc:["จำนวนเงินหลังหักส่วนลด","After discount","値引き後金額","할인 후"],
+  deposit:["หักเงินมัดจำ","Less deposit","前受金控除","계약금 공제"],
+  afterDep:["จำนวนเงินหลังหักเงินมัดจำ","After deposit","前受金控除後","공제 후"],
+  exempt:["มูลค่าสินค้ายกเว้นภาษี","VAT-exempt value","非課税額","면세 금액"],
+  taxable:["มูลค่าสินค้าคิดภาษี","Taxable value","課税対象額","과세 금액"],
+  vat:["ภาษีมูลค่าเพิ่ม 7%","VAT 7%","付加価値税 7%","부가세 7%"],
+  net:["รวมเงินทั้งสิ้น","Net amount","総合計","최종 합계"],
+  wht:["ภาษีหัก ณ ที่จ่าย","Withholding tax","源泉徴収","원천징수"],
+  words:["จำนวนเงินตัวอักษร","Amount in words","金額（文字）","금액 글자"],
+  wordsPrinted:["ตัวอักษรที่พิมพ์","Printed words","記載の文字","인쇄된 글자"],
+  terms:["เงื่อนไข","Terms","注意事項","조건 문구"],
+  receiver:["ผู้รับของ","Received by","受領者","받은 사람"],
+  issuer:["ผู้ออกใบแจ้งหนี้","Issued by","請求書発行者","발행한 사람"],
+  deliverer:["ผู้ส่งสินค้า","Delivered by","配送者","배송한 사람"],
+  note:["หมายเหตุ","Note","メモ","메모"],
+  formCode:["รหัสแบบฟอร์ม","Form code","様式コード","양식 코드"],
+  since:["เริ่มใช้","In use since","使用開始","사용 시작"]
+};
+const DOC = {
+ full:{ko:"정식 세금계산서",th:"ใบกำกับภาษีเต็มรูป",en:"Full tax invoice",ja:"正式税務インボイス"},
+ abbr:{ko:"간이 세금계산서",th:"ใบกำกับภาษีอย่างย่อ",en:"Abbreviated tax invoice",ja:"簡易税務インボイス"},
+ receipt:{ko:"일반 영수증",th:"ใบเสร็จรับเงิน",en:"Receipt",ja:"領収書"},
+ other:{ko:"기타",th:"อื่นๆ",en:"Other",ja:"その他"}};
+const COPY = {original:["ต้นฉบับ","ORIGINAL","原本"],copy:["สำเนา","COPY","控え"],unknown:["","",""]};
+const CAT = {
+ food:{ko:"식비",th:"ค่าอาหาร",en:"Meals",ja:"飲食費"},
+ transport:{ko:"교통비",th:"ค่าเดินทาง",en:"Travel",ja:"旅費交通費"},
+ fuel:{ko:"기름값",th:"ค่าน้ำมัน",en:"Fuel",ja:"燃料費"},
+ office:{ko:"사무용품",th:"เครื่องเขียน/สำนักงาน",en:"Office supplies",ja:"事務用品費"},
+ supplies:{ko:"재료 · 상품",th:"วัตถุดิบ/สินค้า",en:"Materials & goods",ja:"仕入・材料費"},
+ utilities:{ko:"전기 · 수도 · 통신",th:"ค่าน้ำ ไฟ โทรศัพท์",en:"Utilities",ja:"水道光熱通信費"},
+ rent:{ko:"임대료",th:"ค่าเช่า",en:"Rent",ja:"地代家賃"},
+ entertainment:{ko:"접대비",th:"ค่ารับรอง",en:"Entertainment",ja:"交際費"},
+ other:{ko:"기타",th:"อื่นๆ",en:"Other",ja:"その他"}};
+const PAY = {
+ credit:{ko:"외상(크레딧)",th:"เครดิต",en:"Credit",ja:"掛け"},
+ cash:{ko:"현금",th:"เงินสด",en:"Cash",ja:"現金"},
+ transfer:{ko:"계좌이체 · PromptPay",th:"โอน · พร้อมเพย์",en:"Transfer · PromptPay",ja:"振込・PromptPay"},
+ card:{ko:"카드",th:"บัตร",en:"Card",ja:"カード"},
+ other:{ko:"기타",th:"อื่นๆ",en:"Other",ja:"その他"}};
+const LANGS=[["th","ภาษาไทย"],["en","English"],["ja","日本語"]];
+const IDX={th:0,en:1,ja:2,ko:3};
+
+/* ======================= state ======================= */
+function safeGet(k){try{return localStorage.getItem(k)}catch{return null}}
+function safeSet(k,v){try{localStorage.setItem(k,v)}catch{}}
+function detectLang(){const s=safeGet("ui");if(T[s])return s;const n=(navigator.language||"ko").slice(0,2);return T[n]?n:"ko"}
+const state={
+  ui:detectLang(), view:safeGet("view")||null, formMode:safeGet("form")||"all", month:"all",
+  receipts:[], loaded:false, company:{taxId:""},
+  db:null, sample:null, assets:null, downloads:null, user:null, myId:null, names:{},
+  canImage:false, capsReady:false,
+  busy:false, abort:null, t0:0, msg:null, draft:null, preview:null, mode:"view", saving:false, confirmDel:false
+};
+if(!state.view) state.view=({th:"th",ja:"ja"})[state.ui]||"en";
+const t=k=>T[state.ui][k]??T.en[k]??k;
+const L=o=>o?(o[state.ui]??o.en):"";
+
+/* ======================= helpers ======================= */
+function h(tag,attrs,...kids){
+  const el=document.createElement(tag);
+  if(attrs) for(const [k,v] of Object.entries(attrs)){ if(v==null||v===false) continue;
+    if(k==="class") el.className=v; else if(k==="value") el.value=v; else if(k==="checked") el.checked=!!v;
+    else if(k.startsWith("on")&&typeof v==="function") el.addEventListener(k.slice(2),v);
+    else el.setAttribute(k,v===true?"":v); }
+  for(const c of kids.flat()){ if(c==null||c===false) continue; el.append(c instanceof Node?c:String(c)); }
+  return el;
+}
+const fmt=n=>(Number(n)||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const baht=n=>"฿ "+fmt(n);
+const str=v=>typeof v==="string"?v.trim():(v==null?"":String(v));
+const numv=v=>{ if(v==null||v==="") return 0; const n=typeof v==="number"?v:parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isFinite(n)?Math.round(n*100)/100:0; };
+const numOrNull=v=>(v==null||v==="")?null:numv(v);
+const tri=o=>({th:str(o?.th),en:str(o?.en),ja:str(o?.ja)});
+const emptyTri=()=>({th:"",en:"",ja:""});
+const dmy=iso=>{ if(!iso) return "—"; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; };
+const isoOk=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||"");
+const today=()=>new Date().toISOString().slice(0,10);
+const near=(a,b,tol=0.01)=>Math.abs((+a||0)-(+b||0))<=tol;
+
+/* ======================= Thai rules ======================= */
+function taxIdOk(id){ const d=(id||"").replace(/\D/g,""); if(d.length!==13) return false; let s=0; for(let i=0;i<12;i++) s+=+d[i]*(13-i); return (11-s%11)%10===+d[12]; }
+function thaiInt(n){
+  const D=["","หนึ่ง","สอง","สาม","สี่","ห้า","หก","เจ็ด","แปด","เก้า"],P=["","สิบ","ร้อย","พัน","หมื่น","แสน"];
+  let s=String(n).replace(/^0+/,""); if(!s) return "";
+  const g=[]; while(s.length>6){ g.unshift(s.slice(-6)); s=s.slice(0,-6); } g.unshift(s);
+  let out="";
+  g.forEach((grp,gi)=>{ const gs=grp.replace(/^0+/,""); const higher=out!=="";
+    for(let i=0;i<gs.length;i++){ const x=+gs[i],pos=gs.length-1-i; if(!x) continue;
+      if(pos===1) out+=x===1?"สิบ":x===2?"ยี่สิบ":D[x]+"สิบ";
+      else if(pos===0&&x===1&&(gs.length>1||higher)) out+="เอ็ด";
+      else out+=D[x]+P[pos]; }
+    if(gi<g.length-1) out+="ล้าน"; });
+  return out;
+}
+function bahtText(v){ const st=Math.round((+v||0)*100),b=Math.floor(st/100),s=st%100; if(!b&&!s) return "ศูนย์บาทถ้วน"; return (b?thaiInt(b)+"บาท":"")+(s?thaiInt(s)+"สตางค์":"ถ้วน"); }
+function addDays(iso,n){ const d=new Date(iso+"T00:00:00Z"); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+
+/* All checks. Each: {key, ok, na, detail}. na = not applicable (hidden from flags). */
+function runChecks(r){
+  const d=T[state.ui].d, C=[]; const tt=r.totals||{};
+  const add=(key,ok,detail,na)=>C.push({key,ok:!!ok,na:!!na,detail});
+  const needTax=r.docType==="full"||r.docType==="abbr";
+  const sTax=(r.seller?.taxId||"").replace(/\D/g,"");
+  if(!sTax) add("sellerTax",!needTax,d.missing,!needTax);
+  else add("sellerTax",taxIdOk(sTax),`${sTax} · ${taxIdOk(sTax)?d.valid:d.invalid}`);
+  const bTax=(r.customer?.taxId||"").replace(/\D/g,"");
+  if(r.docType==="full"){
+    if(!bTax) add("buyerTax",false,d.missing);
+    else add("buyerTax",taxIdOk(bTax),`${bTax} · ${taxIdOk(bTax)?d.valid:d.invalid}`);
+  } else if(bTax) add("buyerTax",taxIdOk(bTax),`${bTax} · ${taxIdOk(bTax)?d.valid:d.invalid}`);
+  const co=(state.company.taxId||"").replace(/\D/g,"");
+  if(bTax){ if(!co) add("company",true,d.noCompany,true); else add("company",co===bTax,co===bTax?d.same:d.differ); }
+  const items=r.items||[];
+  if(items.length){
+    const lineBad=items.filter(i=>i.price && !near(i.qty*i.price,i.amount,0.5));
+    const sum=items.reduce((a,i)=>a+(+i.amount||0),0);
+    const ok=!lineBad.length && (!tt.total || near(sum,tt.total,1));
+    add("items",ok,`${items.map(i=>i.price?`${fmt(i.qty)} × ${fmt(i.price)} = ${fmt(i.amount)}`:fmt(i.amount)).slice(0,3).join(", ")} · Σ ${fmt(sum)} / ${fmt(tt.total)}`);
+  }
+  if(tt.total){
+    const ok=near(tt.total-tt.discount,tt.afterDisc,1)&&near(tt.afterDisc-tt.deposit,tt.afterDep,1)&&near(tt.exempt+tt.taxable,tt.afterDep,1);
+    add("chain",ok,`${fmt(tt.total)} − ${fmt(tt.discount)} − ${fmt(tt.deposit)} = ${fmt(tt.afterDep)} (${fmt(tt.exempt)} + ${fmt(tt.taxable)})`);
+  }
+  if(tt.vat||tt.taxable){ const calc=Math.round(tt.taxable*7)/100; add("vat",Math.abs(calc-tt.vat)<=Math.max(1,tt.taxable*0.002),`${fmt(tt.taxable)} × 7% = ${fmt(calc)} · ${d.written} ${fmt(tt.vat)}`); }
+  if(tt.net){ const calc=tt.taxable+tt.exempt+tt.vat; add("net",near(calc,tt.net,1),`${fmt(tt.taxable)} + ${fmt(tt.exempt)} + ${fmt(tt.vat)} = ${fmt(calc)} · ${d.written} ${fmt(tt.net)}`); }
+  if(r.wordsPrinted){ const w=bahtText(tt.net); add("words",w===r.wordsPrinted.replace(/[\s()（）]/g,""),`${d.calc}: ${w}`); }
+  if(r.creditDays && isoOk(r.date) && isoOk(r.dueDate)){ const c=addDays(r.date,r.creditDays); add("due",c===r.dueDate,`${dmy(r.date)} + ${r.creditDays} = ${dmy(c)} · ${d.written} ${dmy(r.dueDate)}`); }
+  add("date",isoOk(r.date),isoOk(r.date)?`${dmy(r.date)} · ${r.dateWasBuddhist?d.be:d.gregorian}`:d.missing);
+  const un=r.unclear||[]; add("unclear",!un.length,un.length?`${un.length} · ${d.checkPhoto}`:d.noneUnclear);
+  if(r.docNo && sTax){ const dup=state.receipts.some(x=>x.id!==r.id && x.docNo===r.docNo && (x.seller?.taxId||"")===sTax); add("dup",!dup,dup?d.dupFound:d.noDup); }
+  add("conf",r.confidence!=="low",r.confidence==="low"?d.low:d.ok);
+  return C;
+}
+const flagsFor=r=>runChecks(r).filter(c=>!c.ok&&!c.na).map(c=>c.key);
+const claimable=r=>r.docType==="full" && taxIdOk(r.customer?.taxId) && (!state.company.taxId || state.company.taxId.replace(/\D/g,"")===(r.customer?.taxId||"").replace(/\D/g,""));
+
+/* ======================= data shape ======================= */
+function blank(){
+  return {docType:"other",docTitle:emptyTri(),copyKind:"unknown",formSerial:"",docNo:"",date:"",dateWasBuddhist:false,
+    seller:{name:emptyTri(),taxId:"",branchCode:"",address:emptyTri(),tel:"",fax:"",saleOffice:""},
+    customer:{code:"",name:emptyTri(),taxId:"",branch:emptyTri(),address:emptyTri()},
+    orderNo:"",term:emptyTri(),creditDays:0,dueDate:"",sales:{name:emptyTri(),area:emptyTri(),ref:""},
+    items:[],delivery:{note:emptyTri(),place:emptyTri(),contact:"",person:emptyTri()},
+    totals:{total:0,discount:0,afterDisc:0,deposit:0,afterDep:0,exempt:0,taxable:0,vat:0,net:0,wht:0},
+    wordsPrinted:"",words:emptyTri(),terms:[],signs:{receiver:false,issuer:false,deliverer:null},formCode:"",formSince:"",
+    category:"other",payment:"other",paid:false,paidDate:"",confidence:"medium",unclear:[],note:emptyTri()};
+}
+/* Accepts AI output, stored docs, or first-version docs and returns the full shape. */
+function normalize(a){
+  const b=blank(); if(!a||typeof a!=="object") return b;
+  if(a.vendor && !a.seller){ // first-version document
+    a={...a,seller:{name:a.vendor,taxId:a.taxId,branchCode:a.branch},
+      items:(a.items||[]).map(i=>({desc:i.name,qty:i.qty,amount:i.amount})),
+      totals:{total:a.subtotal,afterDisc:a.subtotal,afterDep:a.subtotal,taxable:a.subtotal,vat:a.vat,net:a.total,wht:a.wht}};
+  }
+  let date=str(a.date), be=!!a.dateWasBuddhist;
+  const fixDate=s=>{ const m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(str(s)); if(!m) return ["",false]; let y=+m[1],w=false; if(y>2400){y-=543;w=true;} return [`${y}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`,w]; };
+  let w; [date,w]=fixDate(date); be=be||w; const [due]=fixDate(a.dueDate);
+  const s=a.seller||{}, c=a.customer||{}, sl=a.sales||{}, dv=a.delivery||{}, tt=a.totals||{}, sg=a.signs||{};
+  const T0={total:numOrNull(tt.total),discount:numv(tt.discount),deposit:numv(tt.deposit),exempt:numv(tt.exempt),vat:numv(tt.vat),wht:numv(tt.wht)};
+  T0.total=T0.total??numv(tt.net);
+  T0.afterDisc=numOrNull(tt.afterDisc)??Math.round((T0.total-T0.discount)*100)/100;
+  T0.afterDep=numOrNull(tt.afterDep)??Math.round((T0.afterDisc-T0.deposit)*100)/100;
+  T0.taxable=numOrNull(tt.taxable)??Math.round((T0.afterDep-T0.exempt)*100)/100;
+  T0.net=numOrNull(tt.net)??Math.round((T0.taxable+T0.exempt+T0.vat)*100)/100;
+  return {...b,
+    docType:DOC[a.docType]?a.docType:"other", docTitle:tri(a.docTitle), copyKind:COPY[a.copyKind]?a.copyKind:"unknown",
+    formSerial:str(a.formSerial), docNo:str(a.docNo), date, dateWasBuddhist:be,
+    seller:{name:tri(s.name),taxId:str(s.taxId).replace(/\D/g,"").slice(0,13),branchCode:str(s.branchCode),address:tri(s.address),tel:str(s.tel),fax:str(s.fax),saleOffice:str(s.saleOffice)},
+    customer:{code:str(c.code),name:tri(c.name),taxId:str(c.taxId).replace(/\D/g,"").slice(0,13),branch:tri(c.branch),address:tri(c.address)},
+    orderNo:str(a.orderNo), term:tri(a.term), creditDays:Math.max(0,Math.round(numv(a.creditDays))), dueDate:due,
+    sales:{name:tri(sl.name),area:tri(sl.area),ref:str(sl.ref)},
+    items:(Array.isArray(a.items)?a.items:[]).slice(0,40).map(i=>({code:str(i?.code),desc:tri(i?.desc),wh:str(i?.wh),qty:numv(i?.qty)||1,unit:tri(i?.unit),price:numv(i?.price),amount:numv(i?.amount)})),
+    delivery:{note:tri(dv.note),place:tri(dv.place),contact:str(dv.contact),person:tri(dv.person)},
+    totals:T0, wordsPrinted:str(a.wordsPrinted), words:tri(a.words),
+    terms:(Array.isArray(a.terms)?a.terms:[]).slice(0,10).map(tri),
+    signs:{receiver:!!sg.receiver,issuer:!!sg.issuer,deliverer:sg.deliverer?tri(sg.deliverer):null},
+    formCode:str(a.formCode), formSince:str(a.formSince),
+    category:CAT[a.category]?a.category:"other", payment:PAY[a.payment]?a.payment:"other",
+    paid:!!a.paid, paidDate:isoOk(a.paidDate)?a.paidDate:"",
+    confidence:["high","medium","low"].includes(a.confidence)?a.confidence:"medium",
+    unclear:Array.isArray(a.unclear)?a.unclear.map(str).filter(Boolean).slice(0,30):[],
+    note:tri(a.note),
+    id:a.id, createdAt:a.createdAt, uploaderId:a.uploaderId, photo:a.photo, isSample:!!a.isSample
+  };
+}
+
+/* ======================= AI reading ======================= */
+const PROMPT = `You are a bookkeeping assistant for a company in Thailand. The attached image is a photo of a purchase document: usually a Thai tax invoice / delivery note / debit note (ใบกำกับภาษี/ใบส่งของ/ใบแจ้งหนี้), an abbreviated tax invoice, or a receipt. Text may be Thai, English, Japanese or mixed. Our company is normally the CUSTOMER (buyer) on the document.
+
+Read every printed and handwritten field and reply with ONLY one JSON object, no prose. Every object written as {"th","en","ja"} must contain the same content in Thai, English and Japanese.
+{
+ "notDocument": false,
+ "docType": "full" | "abbr" | "receipt" | "other",
+ "docTitle": {"th":"","en":"","ja":""},
+ "copyKind": "original" | "copy" | "unknown",
+ "formSerial": "pre-printed serial number of the paper form, e.g. 548139",
+ "docNo": "document / invoice number exactly as printed",
+ "date": "YYYY-MM-DD",
+ "dateWasBuddhist": false,
+ "seller": {"name":{"th":"","en":"","ja":""}, "taxId":"13 digits", "branchCode":"", "address":{"th":"","en":"","ja":""}, "tel":"", "fax":"", "saleOffice":"sales office phone/fax line as printed"},
+ "customer": {"code":"customer code", "name":{"th":"","en":"","ja":""}, "taxId":"13 digits", "branch":{"th":"สำนักงานใหญ่","en":"Head office","ja":"本社"}, "address":{"th":"","en":"","ja":""}},
+ "orderNo": "",
+ "term": {"th":"เครดิต 15 วัน","en":"Credit 15 days","ja":"掛け 15日"},
+ "creditDays": 0,
+ "dueDate": "YYYY-MM-DD or empty",
+ "sales": {"name":{"th":"","en":"","ja":""}, "area":{"th":"","en":"","ja":""}, "ref":"sales order / reference number"},
+ "items": [{"code":"", "desc":{"th":"","en":"","ja":""}, "wh":"warehouse", "qty":0, "unit":{"th":"","en":"","ja":""}, "price":0, "amount":0}],
+ "delivery": {"note":{"th":"","en":"","ja":""}, "place":{"th":"","en":"","ja":""}, "contact":"phone", "person":{"th":"","en":"","ja":""}},
+ "totals": {"total":0, "discount":0, "afterDisc":0, "deposit":0, "afterDep":0, "exempt":0, "taxable":0, "vat":0, "net":0, "wht":0},
+ "wordsPrinted": "the Thai amount-in-words exactly as printed, without brackets",
+ "words": {"th":"","en":"","ja":""},
+ "terms": [{"th":"","en":"","ja":""}],
+ "signs": {"receiver": false, "issuer": false, "deliverer": {"th":"","en":"","ja":""} or null},
+ "formCode": "e.g. FM-AC-12 Rev.:5", "formSince": "as printed",
+ "category": "food" | "transport" | "fuel" | "office" | "supplies" | "utilities" | "rent" | "entertainment" | "other",
+ "payment": "credit" | "cash" | "transfer" | "card" | "other",
+ "confidence": "high" | "medium" | "low",
+ "unclear": ["field paths you are unsure about, e.g. customer.name, sales.name, items.0.desc"],
+ "note": {"th":"","en":"","ja":""}
+}
+Rules:
+- docType: "full" = ใบกำกับภาษี / TAX INVOICE that shows the buyer's name, address and tax ID. "abbr" = ใบกำกับภาษีอย่างย่อ / ABB. "receipt" = plain receipt. Otherwise "other".
+- Dates: output the Gregorian calendar. If a date uses the Buddhist Era (e.g. 2569 or 69), subtract 543 and set dateWasBuddhist true. Thai dates are day/month/year. Keep document numbers exactly as printed, even if they contain a Buddhist year such as "69".
+- Company and person names: transliterate by sound (romaji-style English, katakana for Japanese); if an English name is printed on the document, use it for "en". Japanese addresses go in Japanese order starting with 〒postcode.
+- Numbers: plain numbers, no commas. Read every totals line exactly as printed; do not recalculate. Use null for a totals line that is not printed on the document. wht only if printed.
+- terms: the fine print at the bottom (payment conditions, claims, returns), one entry per sentence, max 6.
+- signs: true when a signature or stamp is present in that box; give the deliverer's name if legible.
+- Faint or handwritten text: give your best reading AND list its field path in "unclear".
+- note: one short sentence about anything important that is missing or odd; empty strings if nothing.
+- If the image is not a receipt or invoice, reply {"notDocument": true}.`;
+
+async function prepImage(file){
+  const bmp=await createImageBitmap(file,{imageOrientation:"from-image"});
+  const max=2000,s=Math.min(1,max/Math.max(bmp.width,bmp.height));
+  const c=document.createElement("canvas"); c.width=Math.round(bmp.width*s); c.height=Math.round(bmp.height*s);
+  c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+  return await new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error("encode")),"image/jpeg",0.9));
+}
+async function readFile(file){
+  if(!file||state.busy) return;
+  state.msg=null; state.confirmDel=false;
+  if(!state.sample){ toast("bad",t("noAi")); return; }
+  if(!state.canImage){ toast("bad",t("noImage")); return; }
+  let img; try{ img=await prepImage(file); }catch{ toast("bad",t("badImage")); return; }
+  if(state.preview?.startsWith("blob:")) URL.revokeObjectURL(state.preview);
+  state.draft=null; renderReview();
+  state.busy=true; state.abort=new AbortController(); state.t0=Date.now(); renderUpload();
+  const tick=setInterval(()=>{ const el=document.getElementById("secs"); if(el) el.textContent=Math.round((Date.now()-state.t0)/1000)+"s"; },1000);
+  try{
+    const a=await state.sample.json(PROMPT,{images:img,signal:state.abort.signal,modelTier:"complex"});
+    if(!a||typeof a!=="object") throw {code:"parse"};
+    if(a.notDocument||a.notReceipt){ toast("warn",t("notDoc")); return; }
+    state.draft={...normalize(a),_file:img}; state.mode="view";
+    state.preview=URL.createObjectURL(img);
+    renderReview(); document.getElementById("review").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){
+    const c=e?.code;
+    if(c==="cancelled") state.msg=null;
+    else if(c==="not_granted"||c==="unavailable") toast("bad",t("noAi"));
+    else if(c==="rate_limited") toast("warn",t("rateLimited"));
+    else if(c==="image_rejected") toast("bad",t("badImage"));
+    else toast("bad",t("aiFail"));
+  }finally{ clearInterval(tick); state.busy=false; state.abort=null; renderUpload(); }
+}
+function toast(kind,text){ state.msg={kind,text}; renderUpload(); }
+
+/* ======================= save / delete ======================= */
+async function saveDraft(){
+  const d=state.draft; if(!d||state.saving) return;
+  if(!state.db){ toast("bad",t("noDb")); return; }
+  state.saving=true; renderReview();
+  const n=normalize(JSON.parse(JSON.stringify({...d,_file:undefined})));
+  const {id,...rest}=n;
+  const body={...rest,createdAt:d.createdAt||Date.now(),updatedAt:Date.now(),uploaderId:d.uploaderId??state.myId??null,photo:d.photo||null,isSample:!!d.isSample};
+  body.items=body.items.filter(i=>i.code||i.desc.th||i.desc.en||i.desc.ja||i.amount);
+  body.flags=flagsFor({...body,id:d.id});
+  let photoWarn=false;
+  if(d._file&&!body.photo){
+    if(state.assets){ try{ const up=await state.assets.upload(d._file,{type:"image/jpeg"}); body.photo=up.id; }catch{ photoWarn=true; } }
+    else photoWarn=true;
+  }
+  try{
+    const col=state.db.collection("receipts");
+    await (d.id?col.doc(d.id):col.doc()).set(JSON.parse(JSON.stringify(body)));
+    state.draft=null; state.saving=false; renderReview();
+    toast(photoWarn?"warn":"ok",photoWarn?t("photoNotSaved"):t("saved"));
+  }catch(e){
+    state.saving=false; renderReview();
+    toast("bad",e?.code==="invalid_argument"?t("notGranted"):e?.code==="quota_exceeded"?e.message:t("saveFail"));
+  }
+}
+async function deleteDraft(){
+  const d=state.draft; if(!d?.id||!state.db) return;
+  try{ await state.db.collection("receipts").doc(d.id).delete(); state.draft=null; state.confirmDel=false; renderReview(); toast("ok",t("deleted")); }
+  catch(e){ toast("bad",e?.code==="invalid_argument"?t("notGranted"):t("saveFail")); }
+}
+function openReceipt(r){
+  state.msg=null; state.confirmDel=false; state.mode="view";
+  if(state.preview?.startsWith("blob:")) URL.revokeObjectURL(state.preview);
+  state.draft=normalize(JSON.parse(JSON.stringify(r)));
+  state.preview=r.photo?"/_blob/"+r.photo:null;
+  renderUpload(); renderReview();
+  document.getElementById("review").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ======================= CSV ======================= */
+async function exportCsv(){
+  const rows=filtered();
+  const cols=["date","doc_no","doc_type","seller_th","seller_en","seller_ja","seller_tax_id","customer_th","customer_en","customer_tax_id","credit_days","due_date","paid","paid_date","category_en","category_th","category_ja",
+    "items_th","items_en","items_ja","total","discount","deposit","exempt","taxable","vat_7","net","withholding","amount_words_th","checks_failed"];
+  const q=v=>{ const s=String(v??""); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
+  const lines=[cols.join(",")];
+  for(const raw of rows){ const r=normalize(raw), tt=r.totals;
+    const it=k=>r.items.map(i=>`${i.code?i.code+" ":""}${i.desc[k]} x${i.qty} ${fmt(i.amount)}`).join(" | ");
+    lines.push([r.date,r.docNo,DOC[r.docType].en,r.seller.name.th,r.seller.name.en,r.seller.name.ja,r.seller.taxId,r.customer.name.th,r.customer.name.en,r.customer.taxId,
+      r.creditDays||"",r.dueDate,r.paid?"yes":"no",r.paidDate,CAT[r.category].en,CAT[r.category].th,CAT[r.category].ja,it("th"),it("en"),it("ja"),
+      ...["total","discount","deposit","exempt","taxable","vat","net","wht"].map(k=>(+tt[k]||0).toFixed(2)),
+      r.wordsPrinted,flagsFor(raw).map(f=>T.en.c[f]).join("; ")].map(q).join(","));
+  }
+  if(!state.downloads){ toast("bad",t("exportFail")); return; }
+  try{ await state.downloads.save({filename:"ledger_"+(state.month==="all"?"all":state.month)+".csv",data:"﻿"+lines.join("\r\n")}); }
+  catch(e){ if(!["cancelled","declined","dismissed"].includes(e?.code)) toast("bad",t("exportFail")); }
+}
+
+/* ======================= render: header / summary / upload ======================= */
+function renderHeader(){
+  document.documentElement.lang=state.ui;
+  document.getElementById("appName").textContent=t("appName");
+  document.getElementById("tagline").textContent=t("tagline");
+  const seg=document.getElementById("uiLang"); seg.replaceChildren();
+  for(const [k,lab] of [["ko","한국어"],["th","ไทย"],["en","EN"],["ja","日本語"]])
+    seg.append(h("button",{type:"button","aria-pressed":String(state.ui===k),lang:k,onclick:()=>{state.ui=k;safeSet("ui",k);renderAll();}},lab));
+  document.getElementById("foot").textContent=t("foot");
+}
+function months(){ return [...new Set(state.receipts.map(r=>(r.date||"").slice(0,7)).filter(Boolean))].sort().reverse(); }
+function filtered(){ return state.month==="all"?state.receipts:state.receipts.filter(r=>(r.date||"").startsWith(state.month)); }
+function renderSummary(){
+  const rs=filtered().map(normalize);
+  const total=rs.reduce((s,r)=>s+r.totals.net,0);
+  const vat=rs.filter(claimable).reduce((s,r)=>s+r.totals.vat,0);
+  const unpaid=state.receipts.map(normalize).filter(r=>r.payment==="credit"&&!r.paid);
+  const unpaidSum=unpaid.reduce((s,r)=>s+r.totals.net,0), over=unpaid.filter(r=>r.dueDate&&r.dueDate<today()).length;
+  const check=filtered().filter(r=>flagsFor(r).length).length;
+  document.getElementById("summary").replaceChildren(
+    h("div",{class:"stat"},h("span",{class:"label"},t("sTotal")),h("span",{class:"v"},baht(total))),
+    h("div",{class:"stat"},h("span",{class:"label"},t("sVat")),h("span",{class:"v acc"},baht(vat)),h("span",{class:"small muted"},t("sVatNote"))),
+    h("div",{class:"stat"},h("span",{class:"label"},t("sUnpaid")),h("span",{class:"v"+(over?" bad":"")},baht(unpaidSum)),over?h("span",{class:"small",style:"color:var(--bad)"},`${over} ${t("sOver")}`):null),
+    h("div",{class:"stat"},h("span",{class:"label"},t("sCheck")),h("span",{class:"v"+(check?" warn":"")},String(check)))
+  );
+}
+function renderUpload(){
+  const el=document.getElementById("upload"); el.replaceChildren();
+  const input=h("input",{type:"file",id:"photo",accept:"image/*",hidden:true,onchange:e=>{const f=e.target.files?.[0]; e.target.value=""; readFile(f);}});
+  const icon=h("div",{class:"icon","aria-hidden":"true"});
+  icon.innerHTML='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>';
+  const body=state.busy
+    ? h("div",{class:"txt"},h("div",{class:"busy"},h("div",{class:"spin"}),h("strong",null,t("reading")),h("span",{class:"mono muted",id:"secs"},"0s")),h("span",{class:"muted small"},t("readingSub")))
+    : h("div",{class:"txt"},h("strong",null,t("upload")),h("span",{class:"muted small"},t("uploadHint")));
+  const btn=state.busy
+    ? h("button",{class:"btn",type:"button",onclick:()=>state.abort?.abort()},t("stop"))
+    : h("button",{class:"btn primary",type:"button",disabled:state.capsReady&&!(state.sample&&state.canImage),onclick:()=>input.click()},t("pick"));
+  const drop=h("div",{class:"drop"},icon,body,btn,input);
+  drop.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over")});
+  drop.addEventListener("dragleave",()=>drop.classList.remove("over"));
+  drop.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");const fs=[...(e.dataTransfer?.files||[])];readFile(fs.find(f=>f.type.startsWith("image/"))||fs[0]);});
+  el.append(drop);
+  const notes=[];
+  if(state.capsReady&&!state.sample) notes.push(["bad",t("noAi")]);
+  else if(state.capsReady&&!state.canImage) notes.push(["bad",t("noImage")]);
+  if(state.capsReady&&!state.db) notes.push(["bad",t("noDb")]);
+  if(state.msg) notes.push([state.msg.kind,state.msg.text]);
+  for(const [k,x] of notes) el.append(h("div",{class:"notice "+k,role:"status"},x));
+}
+
+/* ======================= render: invoice (view mode) ======================= */
+const pick=arr=>state.formMode==="all"?LANGS.map(([lg],i)=>[lg,arr[i]]):[[state.formMode,arr[IDX[state.formMode]]]];
+const triArr=o=>[o?.th||"",o?.en||"",o?.ja||""];
+const labV=key=>h("span",{class:"lab"},...pick(LB[key]).map(([lg,x])=>h("span",{lang:lg},x)));
+const joinPick=arr=>pick(arr).map(x=>x[1]).filter(Boolean).join(" · ");
+function valV(o,unsure){ const arr=triArr(o); const parts=pick(arr).filter(([,x])=>x);
+  if(!parts.length) return h("span",{class:"val"},"—");
+  return h("span",{class:"val"+(unsure?" unsure":"")},...parts.map(([lg,x])=>h("span",{class:"l",lang:lg},x)),unsure?h("span",{class:"chip warn"},t("unsure")):null); }
+const kvV=(key,value)=>h("div",{class:"kv"},labV(key),value instanceof Node?value:h("span",{class:"val mono"},value||"—"));
+
+function invoiceView(r){
+  const un=new Set(r.unclear||[]); const U=p=>un.has(p);
+  const tt=r.totals, s=r.seller, c=r.customer;
+  const P=h("div",{class:"paper"});
+  P.append(h("div",{class:"top"},
+    h("div",{class:"seller"},
+      h("div",{class:"name"},valV(s.name,U("seller.name"))),
+      triArr(s.address).some(Boolean)?h("div",{class:"addr"},labV("headOffice"),valV(s.address,U("seller.address"))):null,
+      (s.tel||s.fax)?h("div",{class:"addr mono"},`${joinPick(LB.tel)}: ${s.tel||"—"}   ${joinPick(LB.fax)}: ${s.fax||"—"}`):null,
+      s.saleOffice?h("div",{class:"addr mono"},`${joinPick(LB.saleOffice)}: ${s.saleOffice}`):null,
+      h("div",{style:"margin-top:6px"},kvV("taxId",h("span",{class:"val mono"},s.taxId||"—",s.branchCode?h("span",{class:"chip",style:"margin-left:6px"},s.branchCode):null)))),
+    h("div",{class:"docbox"},
+      r.formSerial?h("div",{class:"serial"},r.formSerial):null,
+      h("div",{class:"in"},kvV("docNo",r.docNo),kvV("date",dmy(r.date)),
+        h("div",null,h("span",{class:"chip"+(r.docType==="full"?" full":"")},L(DOC[r.docType])))))
+  ));
+  const title=triArr(r.docTitle);
+  P.append(h("div",{class:"title"},
+    r.copyKind!=="unknown"?h("span",{class:"orig"},joinPick(COPY[r.copyKind])):null,
+    ...pick(title).filter(([,x])=>x).map(([lg,x],i)=>h("span",{class:i?"sub":"main",lang:lg},x))));
+  P.append(h("div",{class:"boxes"},
+    h("div",{class:"box"},
+      kvV("customer",valV(c.name,U("customer.name"))),
+      c.code?kvV("custCode",c.code):null,
+      kvV("taxId",h("span",{class:"val"},h("span",{class:"mono"},c.taxId||"—")," ",triArr(c.branch).some(Boolean)?h("span",{class:"chip"},joinPick(triArr(c.branch))):null)),
+      triArr(c.address).some(Boolean)?kvV("address",valV(c.address,U("customer.address"))):null),
+    h("div",{class:"box"},
+      kvV("orderNo",r.orderNo),
+      kvV("term",valV(r.term)),
+      kvV("due",dmy(r.dueDate)),
+      (triArr(r.sales.name).some(Boolean)||r.sales.ref)?kvV("sales",h("span",{class:"val"},valV(r.sales.name,U("sales.name")),valV(r.sales.area),r.sales.ref?h("span",{class:"l mono"},r.sales.ref):null)):null)
+  ));
+  const th=(k,num)=>h("th",{class:num?"num":""},labV(k));
+  const tb=h("tbody");
+  r.items.forEach((it,i)=>tb.append(h("tr",null,h("td",{class:"mono"},String(i+1)),h("td",{class:"mono"},it.code||""),h("td",null,valV(it.desc,U(`items.${i}.desc`))),
+    h("td",{class:"mono"},it.wh||""),h("td",{class:"num"},fmt(it.qty)),h("td",null,valV(it.unit)),h("td",{class:"num"},it.price?fmt(it.price):""),h("td",{class:"num"},fmt(it.amount)))));
+  P.append(h("div",{class:"tablewrap"},h("table",null,h("thead",null,h("tr",null,th("no"),th("code"),th("desc"),th("wh"),th("qty",1),th("unit"),th("price",1),th("amount",1))),tb)));
+  const step=(k,v,cls)=>h("div",{class:"step"+(cls?" "+cls:"")},labV(k),h("span",{class:"num"},fmt(v)));
+  const dv=r.delivery;
+  const left=h("div",{style:"display:grid;gap:10px"});
+  if(triArr(dv.note).some(Boolean)||triArr(dv.place).some(Boolean)||dv.contact)
+    left.append(h("div",{class:"box"},kvV("delivery",h("span",{class:"val"},valV(dv.note),valV(dv.place),(dv.contact||triArr(dv.person).some(Boolean))?h("span",{class:"l"},h("span",{class:"mono"},dv.contact)," ",joinPick(triArr(dv.person))):null))));
+  if(r.terms.length) left.append(h("div",{class:"box terms"},labV("terms"),h("ul",null,...r.terms.map(x=>h("li",null,valV(x))))));
+  if(triArr(r.note).some(Boolean)) left.append(h("div",{class:"box"},kvV("note",valV(r.note))));
+  P.append(h("div",{class:"bottom"},left,h("div",{class:"ladder"},
+    step("total",tt.total),step("discount",tt.discount,"sub"),step("afterDisc",tt.afterDisc),step("deposit",tt.deposit,"sub"),step("afterDep",tt.afterDep),
+    step("exempt",tt.exempt,"sub"),step("taxable",tt.taxable),step("vat",tt.vat),step("net",tt.net,"net"),tt.wht?step("wht",tt.wht,"wht"):null)));
+  if(triArr(r.words).some(Boolean)) P.append(h("div",{class:"words"},valV(r.words)));
+  const sg=(k,ok,name)=>h("div",{class:"sign"},labV(k),h("span",{class:"small"},ok?"✓ "+(name||t("signed")):t("notSigned")));
+  P.append(h("div",{class:"signs"},sg("receiver",r.signs.receiver),sg("issuer",r.signs.issuer),sg("deliverer",!!r.signs.deliverer,r.signs.deliverer?joinPick(triArr(r.signs.deliverer)):"")));
+  if(r.formCode||r.formSince) P.append(h("div",{class:"pfoot"},h("span",null,r.formSince?`${joinPick(LB.since)} ${r.formSince}`:""),h("span",{class:"mono"},r.formCode)));
+  return P;
+}
+
+/* ======================= render: invoice (edit mode) ======================= */
+const labE=key=>h("span",{class:"lab"},h("span",{lang:"th"},LB[key][0]),state.ui!=="th"?h("span",null,LB[key][IDX[state.ui]]):null);
+const kvE=(key,control)=>h("div",{class:"kv"},labE(key),control);
+let _uid=0;
+function tin(obj,key,opts={}){ return h("input",{id:"e"+(++_uid),class:opts.cls||"",value:obj[key]??"",inputmode:opts.inputmode,"aria-label":opts.label||key,oninput:e=>{obj[key]=opts.digits?e.target.value.replace(/\D/g,""):e.target.value; if(opts.live) redrawChecks();}}); }
+function nin(obj,key,label){ return h("input",{id:"e"+(++_uid),class:"num",inputmode:"decimal","aria-label":label||key,value:fmt(obj[key]),onchange:e=>{obj[key]=numv(e.target.value);e.target.value=fmt(obj[key]);redrawChecks();}}); }
+function din(obj,key,label){ return h("input",{id:"e"+(++_uid),type:"date","aria-label":label||key,value:obj[key]||"",onchange:e=>{obj[key]=e.target.value;redrawChecks();}}); }
+function triIn(parent,key,label){ if(!parent[key]) parent[key]=emptyTri(); const o=parent[key];
+  return h("div",{class:"tri-in"},...LANGS.map(([lg,n])=>h("div",{class:"r"},h("span",null,lg.toUpperCase()),h("input",{id:"e"+(++_uid),lang:lg,placeholder:n,"aria-label":`${label||key} ${n}`,value:o[lg]||"",oninput:e=>{o[lg]=e.target.value;}})))); }
+function sel(map,val,on,labelFn){ const s=h("select",{id:"e"+(++_uid),onchange:e=>{on(e.target.value);}}); for(const [k,v] of Object.entries(map)) s.append(h("option",{value:k,selected:k===val},labelFn?labelFn(v,k):L(v))); return s; }
+
+function invoiceEdit(r){
+  const tt=r.totals, s=r.seller, c=r.customer;
+  const P=h("div",{class:"paper"});
+  P.append(h("div",{class:"top"},
+    h("div",{class:"seller",style:"display:grid;gap:6px"},
+      triIn(s,"name","seller"),
+      kvE("headOffice",triIn(s,"address","address")),
+      kvE("tel",h("div",{class:"inline"},tin(s,"tel",{cls:"mono"}),tin(s,"fax",{cls:"mono",label:"fax"}))),
+      kvE("saleOffice",tin(s,"saleOffice",{cls:"mono"})),
+      kvE("taxId",h("div",{class:"inline"},tin(s,"taxId",{cls:"mono",digits:true,live:true,inputmode:"numeric"}),tin(s,"branchCode",{cls:"mono",label:"branch code"})))),
+    h("div",{class:"docbox"},h("div",{class:"in"},
+      kvE("serial",tin(r,"formSerial",{cls:"mono"})),
+      kvE("docNo",tin(r,"docNo",{cls:"mono",live:true})),
+      kvE("date",din(r,"date")),
+      kvE("docType",sel(DOC,r.docType,v=>{r.docType=v;redrawChecks();})),
+      kvE("copy",sel({original:COPY.original,copy:COPY.copy,unknown:COPY.unknown},r.copyKind,v=>{r.copyKind=v;},(v,k)=>k==="unknown"?"—":`${v[0]} · ${v[1]}`))))
+  ));
+  P.append(h("div",{class:"box"},kvE("docTitle",triIn(r,"docTitle","title"))));
+  P.append(h("div",{class:"boxes"},
+    h("div",{class:"box"},
+      kvE("customer",triIn(c,"name","customer")),
+      kvE("custCode",tin(c,"code",{cls:"mono"})),
+      kvE("taxId",tin(c,"taxId",{cls:"mono",digits:true,live:true,inputmode:"numeric"})),
+      kvE("branch",triIn(c,"branch","branch")),
+      kvE("address",triIn(c,"address","address"))),
+    h("div",{class:"box"},
+      kvE("orderNo",tin(r,"orderNo",{cls:"mono"})),
+      kvE("term",triIn(r,"term","term")),
+      kvE("creditDays",h("input",{id:"e"+(++_uid),class:"num",inputmode:"numeric",value:String(r.creditDays||0),onchange:e=>{r.creditDays=Math.max(0,Math.round(numv(e.target.value)));redrawChecks();}})),
+      kvE("due",din(r,"dueDate")),
+      kvE("sales",triIn(r.sales,"name","salesperson")),
+      kvE("salesArea",triIn(r.sales,"area","area")),
+      kvE("salesRef",tin(r.sales,"ref",{cls:"mono"})))
+  ));
+  const th=(k,num)=>h("th",{class:num?"num":""},labE(k));
+  const tb=h("tbody");
+  r.items.forEach((it,i)=>tb.append(h("tr",null,
+    h("td",{class:"mono"},String(i+1)),
+    h("td",null,tin(it,"code",{cls:"mono"})),
+    h("td",{style:"min-width:220px"},triIn(it,"desc","item")),
+    h("td",{style:"width:70px"},tin(it,"wh",{cls:"mono"})),
+    h("td",{style:"width:80px"},nin(it,"qty","qty")),
+    h("td",{style:"min-width:120px"},triIn(it,"unit","unit")),
+    h("td",{style:"width:110px"},nin(it,"price","price")),
+    h("td",{style:"width:120px"},nin(it,"amount","amount")),
+    h("td",null,h("button",{class:"x",type:"button","aria-label":"remove",onclick:()=>{r.items.splice(i,1);renderReview();}},"×")))));
+  P.append(h("div",{class:"tablewrap"},h("table",null,h("thead",null,h("tr",null,th("no"),th("code"),th("desc"),th("wh"),th("qty",1),th("unit"),th("price",1),th("amount",1),h("th"))),tb)),
+    h("div",null,h("button",{class:"btn sm",type:"button",onclick:()=>{r.items.push({code:"",desc:emptyTri(),wh:"",qty:1,unit:emptyTri(),price:0,amount:0});renderReview();}},t("addItem"))));
+  const step=(k,cls)=>h("div",{class:"step"+(cls?" "+cls:"")},labE(k),nin(tt,k,LB[k][1]));
+  const dv=r.delivery;
+  P.append(h("div",{class:"bottom"},
+    h("div",{style:"display:grid;gap:10px"},
+      h("div",{class:"box"},kvE("delivery",h("div",{style:"display:grid;gap:6px"},triIn(dv,"note","delivery"),triIn(dv,"place","place"))),
+        kvE("contact",tin(dv,"contact",{cls:"mono"})),kvE("person",triIn(dv,"person","person"))),
+      h("div",{class:"box"},kvE("wordsPrinted",tin(r,"wordsPrinted",{live:true})),kvE("words",triIn(r,"words","words"))),
+      h("div",{class:"box"},kvE("note",triIn(r,"note","note"))),
+      h("div",{class:"box"},
+        kvE("receiver",h("label",{class:"check"},h("input",{type:"checkbox",id:"e"+(++_uid),checked:r.signs.receiver,onchange:e=>{r.signs.receiver=e.target.checked;}}),t("signed"))),
+        kvE("issuer",h("label",{class:"check"},h("input",{type:"checkbox",id:"e"+(++_uid),checked:r.signs.issuer,onchange:e=>{r.signs.issuer=e.target.checked;}}),t("signed"))),
+        kvE("deliverer",r.signs.deliverer?triIn(r.signs,"deliverer","deliverer"):h("button",{class:"btn sm",type:"button",onclick:()=>{r.signs.deliverer=emptyTri();renderReview();}},"+")))),
+    h("div",{class:"ladder"},step("total"),step("discount","sub"),step("afterDisc"),step("deposit","sub"),step("afterDep"),step("exempt","sub"),step("taxable"),step("vat"),step("net","net"),step("wht","wht"))
+  ));
+  return P;
+}
+
+/* ======================= render: review panel ======================= */
+function checksPanel(r){
+  const C=runChecks(r).filter(c=>!c.na);
+  const passed=C.filter(c=>c.ok).length;
+  return h("div",{class:"checks",id:"checks"},
+    h("h3",null,`${t("checksTitle")} · ${passed}/${C.length} ${t("pass")}`),
+    h("ul",{class:"clist"},...C.map(c=>h("li",null,h("span",{class:"mark "+(c.ok?"ok":"warn"),"aria-label":c.ok?"ok":"check"},c.ok?"✓":"!"),
+      h("span",null,T[state.ui].c[c.key],h("small",null,c.detail))))));
+}
+function redrawChecks(){ const d=state.draft; const el=document.getElementById("checks"); if(d&&el) el.replaceWith(checksPanel(d)); }
+function uploaderLine(r){ const n=r.uploaderId&&state.names[r.uploaderId]; return n?`${t("uploadedBy")}: ${n}`:""; }
+
+function renderReview(){
+  const el=document.getElementById("review"); el.replaceChildren();
+  const d=state.draft; if(!d) return;
+  const photo=h("div",{class:"photo"},state.preview?h("img",{src:state.preview,alt:"original photo",onerror:e=>e.target.replaceWith(h("div",{class:"none"},"—"))}):h("div",{class:"none"},"—"));
+  const modeSeg=h("div",{class:"seg",role:"group","aria-label":"mode"},
+    ...[["view",t("view")],["edit",t("edit")]].map(([k,n])=>h("button",{type:"button","aria-pressed":String(state.mode===k),onclick:()=>{state.mode=k;renderReview();}},n)));
+  const langSeg=state.mode==="view"?h("div",{class:"seg",role:"group","aria-label":t("formLang")},
+    ...[["all",t("all3")],["th","ไทย"],["en","EN"],["ja","日本語"]].map(([k,n])=>h("button",{type:"button","aria-pressed":String(state.formMode===k),onclick:()=>{state.formMode=k;safeSet("form",k);renderReview();}},n))):null;
+  const head=h("div",{class:"rhead"},
+    h("div",null,h("h2",null,d.id?t("editTitle"):t("newTitle")),
+      h("p",{class:"small muted",style:"margin:2px 0 0"},[d.isSample?t("ex"):"",uploaderLine(d)].filter(Boolean).join(" · "))),
+    h("div",{class:"rtools"},langSeg,modeSeg));
+
+  const meta=h("div",{class:"rtools"},
+    h("label",{class:"check"},t("category")," ",sel(CAT,d.category,v=>{d.category=v;})),
+    h("label",{class:"check"},t("payment")," ",sel(PAY,d.payment,v=>{d.payment=v;renderReview();})),
+    h("span",{class:"paidbox"},
+      h("label",{class:"check"},h("input",{type:"checkbox",id:"f-paid",checked:d.paid,onchange:e=>{d.paid=e.target.checked;if(d.paid&&!d.paidDate)d.paidDate=today();renderReview();}}),t("paid")),
+      d.paid?h("input",{type:"date",id:"f-paiddate","aria-label":t("paidOn"),value:d.paidDate||"",onchange:e=>{d.paidDate=e.target.value;}}):null));
+
+  const actions=h("div",{class:"actions"},
+    h("button",{class:"btn primary",type:"button",disabled:state.saving,onclick:saveDraft},state.saving?t("saving"):t("save")),
+    h("button",{class:"btn",type:"button",onclick:()=>{state.draft=null;state.confirmDel=false;renderReview();}},t("close")),
+    h("span",{class:"grow"}));
+  if(d.id){
+    if(state.confirmDel) actions.append(h("span",{class:"small"},t("confirmDel")),
+      h("button",{class:"btn danger solid",type:"button",onclick:deleteDraft},t("yesDel")),
+      h("button",{class:"btn",type:"button",onclick:()=>{state.confirmDel=false;renderReview();}},t("no")));
+    else actions.append(h("button",{class:"btn danger",type:"button",onclick:()=>{state.confirmDel=true;renderReview();}},t("del")));
+  }
+  el.append(h("div",{class:"panel"},photo,h("div",{class:"main"},head,meta,
+    state.mode==="edit"?invoiceEdit(d):invoiceView(d), checksPanel(d), actions)));
+}
+
+/* ======================= render: ledger ======================= */
+function dueChip(r){
+  if(r.paid) return h("span",{class:"chip ok"},t("paid")+(r.paidDate?" · "+dmy(r.paidDate):""));
+  if(r.payment!=="credit"&&!r.dueDate) return h("span",{class:"chip"},L(PAY[r.payment]));
+  if(r.dueDate&&r.dueDate<today()) return h("span",{class:"chip bad"},`${t("overdue")} · ${dmy(r.dueDate)}`);
+  return h("span",{class:"chip warn"},`${t("unpaid")}${r.dueDate?" · "+t("dueOn")+" "+dmy(r.dueDate):""}`);
+}
+function renderLedger(){
+  const el=document.getElementById("ledger"); el.replaceChildren();
+  const ms=months(); if(state.month!=="all"&&!ms.includes(state.month)) state.month="all";
+  const mSel=h("select",{id:"f-month","aria-label":"month",onchange:e=>{state.month=e.target.value;renderSummary();renderLedger();}},
+    h("option",{value:"all",selected:state.month==="all"},t("allTime")),...ms.map(m=>h("option",{value:m,selected:m===state.month},m)));
+  const vSeg=h("div",{class:"seg",role:"group","aria-label":t("show")},...LANGS.map(([lg,n])=>h("button",{type:"button",lang:lg,"aria-pressed":String(state.view===lg),onclick:()=>{state.view=lg;safeSet("view",lg);renderLedger();}},n)));
+  el.append(h("div",{class:"lhead"},h("h2",null,t("ledger")),
+    h("div",{class:"tools"},h("span",{class:"small muted"},t("show")),vSeg,mSel,
+      h("button",{class:"btn",type:"button",disabled:!filtered().length||!state.downloads,onclick:exportCsv},t("export")))));
+  if(!state.loaded&&state.db){ el.append(h("div",{class:"empty"},h("div",{class:"spin",style:"margin:0 auto"}))); }
+  else{
+    const raw=filtered().slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.createdAt||0)-(a.createdAt||0));
+    if(!raw.length) el.append(h("div",{class:"empty"},t("empty")));
+    else{
+      const v=state.view;
+      el.append(h("div",{class:"row head"},h("span",null,t("colDate")),h("span",null,t("colVendor")),h("span",null,t("colType")),h("span",null,t("colDue")),h("span",{class:"amt"},t("colTotal")),h("span")));
+      for(const x of raw){ const r=normalize(x), fl=flagsFor(x);
+        el.append(h("button",{class:"row",type:"button",onclick:()=>openReceipt(x)},
+          h("span",{class:"date mono small"},dmy(r.date)),
+          h("span",{class:"vendor",lang:v},r.seller.name[v]||r.seller.name.en||r.seller.name.th||"—",r.isSample?h("span",{class:"chip",style:"margin-left:6px"},t("ex")):null,h("small",null,r.docNo||"")),
+          h("span",{class:"c3"},h("span",{class:"chip"+(r.docType==="full"?" full":""),lang:v},DOC[r.docType][v])),
+          h("span",{class:"c4"},dueChip(r)),
+          h("span",{class:"amt mono"},baht(r.totals.net)),
+          h("span",{class:"flag",title:fl.map(f=>T[state.ui].c[f]).join(", ")},fl.length?h("span",{class:"dot","aria-label":t("sCheck")}):null)));
+      }
+      const byCat={}; for(const x of raw){ const r=normalize(x); byCat[r.category]=(byCat[r.category]||0)+r.totals.net; }
+      const entries=Object.entries(byCat).sort((a,b)=>b[1]-a[1]); const max=entries[0]?.[1]||1;
+      el.append(h("div",{class:"cats"},h("span",{class:"label"},t("byCat")),
+        ...entries.map(([k,sum])=>h("div",{class:"bar"},h("span",{lang:v},CAT[k]?.[v]||k),h("div",{class:"track"},h("div",{class:"fill",style:`width:${Math.max(1,sum/max*100)}%`})),h("span",{class:"num"},baht(sum))))));
+    }
+  }
+  // company settings
+  const coIn=h("input",{id:"f-company",class:"mono",inputmode:"numeric",maxlength:"13",value:state.company.taxId||""});
+  const msg=h("span",{class:"small muted"});
+  el.append(h("details",{class:"settings"},h("summary",null,t("settings")),
+    h("div",{class:"srow"},h("label",null,h("span",null,t("companyTax")),coIn),
+      h("button",{class:"btn sm",type:"button",disabled:!state.db,onclick:async()=>{
+        const v=coIn.value.replace(/\D/g,"").slice(0,13);
+        try{ await state.db.doc("settings/company").set({taxId:v}); msg.textContent=t("companySaved"); }
+        catch(e){ msg.textContent=e?.code==="invalid_argument"?t("notGranted"):t("saveFail"); } }},t("companySave")),msg)));
+}
+
+function renderAll(){ renderHeader(); renderSummary(); renderUpload(); renderReview(); renderLedger(); }
+renderAll();
+
+/* ======================= capabilities ======================= */
+(async()=>{
+  const use=n=>window.claude?.use?window.claude.use(n).catch(()=>null):Promise.resolve(null);
+  const [db,sample,assets,downloads,user]=await Promise.all(["db","sample","assets","downloads","user"].map(use));
+  Object.assign(state,{db,sample,assets,downloads,user});
+  if(sample){ const lim=await sample.limits().catch(()=>null); state.canImage=!!lim?.images; }
+  if(user){ try{ state.myId=await user.id(); }catch{} }
+  state.capsReady=true;
+  if(db){
+    db.doc("settings/company").onSnapshot(s=>{ state.company={taxId:str(s.data()?.taxId)}; renderSummary(); renderLedger(); if(state.draft) redrawChecks(); },()=>{});
+    db.collection("receipts").orderBy("date","desc").limit(1000).onSnapshot(async snap=>{
+      state.receipts=snap.docs.map(s=>({id:s.id,...s.data()}));
+      state.loaded=true; renderSummary(); renderLedger();
+      if(user){ const ids=[...new Set(state.receipts.map(r=>r.uploaderId).filter(Boolean))];
+        if(ids.length){ try{ const ps=await user.profiles(ids); for(const id of ids) state.names[id]=ps?.[id]?.name||""; }catch{} } }
+    },()=>{ state.loaded=true; renderLedger(); });
+  }
+  renderUpload(); renderLedger();
+})();
+</script>
