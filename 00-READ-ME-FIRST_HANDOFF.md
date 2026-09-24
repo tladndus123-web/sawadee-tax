@@ -26,11 +26,12 @@
 - 사진 올리기: **한 번에 최대 5장 동시 AI 읽기** + `/api/extract` (실제 키로 확인 완료 · 정확도 평가 스크립트 있음 — 5번 ②)
 - 서명: 보기 화면에서 직접 타이핑 또는 "서명 있음" 표시, 인쇄 시 편집 표시 숨김
 - 장부: **월별 보관함("2026년 9월분")**, 색 스티커 7종 + 필터, **임시저장**, 관리자만 삭제 · **삭제 사유 필수 · 휴지통(소프트 삭제) · 복원**, 분쇄기 애니메이션
-- 설정: 내 권한(관리자/직원, 임시), 스티커 이름, 양식 설정
+- **5단계 완료: Supabase DB · 매직링크 로그인(초대제) · 관리자/직원 권한(RLS) · 비공개 사진 저장소 · 변경 기록** (5번 ③)
+- 설정: 내 계정 · 우리 회사 세금번호 · 직원 관리(초대 · 권한) · 스티커 이름 · 양식 설정
 
-**아직인 것:** DB · 로그인 · 실제 권한 보안 · 거래처 · 대시보드 요약 · 내보내기 · 정확도 평가 스크립트 (5번)
+**아직인 것:** 거래처 사전 · 대시보드 요약 · 엑셀/PDF 내보내기 · 판매자 본사/지점 읽기 (5번 ④, `docs/thai-tax-invoice-check.md`)
 
-> ⚠️ 장부 · 권한 · 스티커 이름 · 양식 설정은 모두 **이 브라우저에만 저장되는 임시 구현**이에요. 6번을 먼저 읽어 주세요.
+> 장부 · 사진 · 권한 · 설정은 이제 모두 Supabase에 저장돼요. 로컬 개발은 Docker 위의 로컬 Supabase를 써요 (2번).
 
 ---
 
@@ -38,15 +39,21 @@
 
 ```bash
 npm install
-npm run dev -- -p 3100      # http://localhost:3100/ko
-npm test                    # Vitest 89개 (lib/**/*.test.ts)
-npm run eval:extract        # AI 정확도 평가 (.env.local의 ANTHROPIC_API_KEY 필요, 유료 호출 1회)
+# Docker Desktop을 켠 뒤 (처음엔 이미지 내려받느라 몇 분)
+npm run db:start            # 로컬 Supabase: API 54321 · Studio 54323 · 메일(Mailpit) 54324
+npm run db:bootstrap -- you@company.com "이름" --sample   # 첫 관리자 + 예시 서류 · 사진 (다시 실행해도 안전)
+npm run dev -- -p 3100      # http://localhost:3100/ko → 로그인 화면
+npm test                    # Vitest 92개 (lib/**/*.test.ts)
+npm run db:test             # DB 권한 규칙 테스트 15개 (pgTAP, 전부 롤백)
+npm run eval:extract        # AI 정확도 평가 (ANTHROPIC_API_KEY 필요, 유료 호출 1회)
 npx tsc --noEmit            # .next/types 관련 TS6053은 오래된 빌드 캐시 — 무시하거나 .next 삭제
-npx eslint app components lib
+npx eslint app components lib scripts middleware.ts
 ```
 
 - Node 24에서 개발했어요.
-- **AI 읽기**를 쓰려면 `.env.local`에 `ANTHROPIC_API_KEY`를 넣고 서버를 다시 켜요. 없으면 올리기 화면에 "AI 연결 키가 없어요" 안내가 떠요. 나머지 변수는 `.env.example` 참고.
+- `.env.local`: `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` · `SUPABASE_SERVICE_ROLE_KEY`(로컬 값은 `npx supabase status -o env`), `ANTHROPIC_API_KEY`. 나머지는 `.env.example` 참고.
+- **로그인:** 가입은 꺼져 있어요(초대제). `/ko/login`에 초대된 이메일을 넣으면 매직링크가 가요. 로컬에서는 메일이 실제로 나가지 않고 **Mailpit(http://127.0.0.1:54324)** 에 쌓여요.
+- DB를 처음 상태로: `npm run db:reset` 후 `db:bootstrap`을 다시 실행.
 - 주요 화면
 
 | 경로 | 화면 |
@@ -56,7 +63,8 @@ npx eslint app components lib
 | `/ko/documents/sample` | 예시 서류 (저장하면 장부에 사본이 들어가요) |
 | `/ko/documents/<uuid>` | 장부에 저장된 서류 |
 | `/ko/ledger` | 장부: 월별 보관함 · 임시저장 · 휴지통(관리자) |
-| `/ko/settings` | 내 권한(임시) · 스티커 이름 · 양식 설정 |
+| `/ko/login` | 로그인 (매직링크) · `/ko/auth/callback` 링크 도착 화면 |
+| `/ko/settings` | 내 계정 · 회사 세금번호 · 직원 관리(관리자) · 스티커 이름 · 양식 설정 |
 
 ---
 
@@ -72,7 +80,7 @@ npx eslint app components lib
 | 다국어 | next-intl v4 | `messages/{ko,th,en,ja}.json` |
 | AI | `@anthropic-ai/sdk` — `messages.create`, 프롬프트로 JSON → zod 검사 → `normalize()` | 모델 `claude-opus-5-5`(기본), effort `medium`(기본). 읽기 코드 `lib/extract-server.ts` |
 | 사진 | browser-image-compression · heic2any · react-zoom-pan-pinch | 올리기 전 방향 보정 · 아이폰 HEIC → JPG · 축소 |
-| 임시 저장소 | IndexedDB(장부 · 사진) · localStorage(설정류) | 5단계에서 Supabase로 교체 (6번) |
+| DB · 로그인 · 사진 | Supabase (Postgres · Auth · Storage), 로컬은 Supabase CLI + Docker | `supabase/`, `lib/supabase/` |
 | 테스트 | Vitest | Playwright는 설치돼 있지만 프로젝트 안에 테스트는 아직 없어요 (8번 참고) |
 | 설치만 됨 | @supabase/ssr, exceljs, @tanstack/react-table | 5 · 7단계용 |
 
@@ -122,12 +130,17 @@ lib/                           규칙과 데이터 (UI와 무관, 테스트 있�
   extract-eval.ts    AI 답 ↔ 정답 칸별 비교 (scripts/eval-extract.ts에서 사용)
   archive.ts         월별 묶기(monthKey, groupByMonth), 스티커 · 미지급 필터
   form-labels.ts / form-config.ts      양식 칸 이름 · 양식 설정
-  ── 임시 저장소 (5단계에서 교체) ──
-  ledger-store.ts      장부 · 사진 (IndexedDB), 임시저장 상태, 소프트 삭제 · 복원
+  ── 데이터 (Supabase) ──
+  supabase/{client,server,admin}.ts  브라우저(anon) · 서버(쿠키 세션) · 서비스 키(서버 전용)
+  db-map.ts            LedgerDoc ⇄ documents / document_items 행
+  ledger-store.ts      장부 · 사진(비공개 버킷, usePhotoUrl), 임시저장, 소프트 삭제 · 복원
+  role-store.ts        로그인한 직원(useMe) · 이름 저장 · 로그아웃
+  company-store.ts     회사 설정 한 줄(세금번호 · 양식 설정 · 스티커 이름)
+  sticker-store.ts / form-config-store.ts   위 회사 설정 위의 얇은 훅
   upload-queue.ts      올리기 대기열 (메모리)
-  role-store.ts        내 권한 · 이름 (localStorage)
-  sticker-store.ts     스티커 이름 · 색 (localStorage)
-  form-config-store.ts 양식 설정 (localStorage)
+
+supabase/        config.toml(초대제 · 인증 URL), migrations/(스키마 · RLS · 트리거 · save_document), tests/(pgTAP)
+scripts/         bootstrap.ts(첫 관리자 · 예시 서류), eval-extract.ts(AI 정확도)
 
 messages/        화면 문구 4개 언어. labels.*는 양식 칸 이름(th/en/ja 파일이 양식에 쓰임)
 docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review-findings/(외부 검수 결과)
@@ -168,28 +181,24 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **답 받는 방식:** 프롬프트로 JSON을 받고 zod로 검사해요. `claude-opus-5-5`는 강제 tool_choice를 400으로 거절하고, 이 크기(약 60칸)의 구조화 출력 스키마는 "compiled grammar is too large"로 거절해요 (totals의 null 허용 10개를 빼면 통과하는 한계선). 그래서 시제품처럼 JSON을 받아 `extractSchema.safeParse`로 모양을 확인(평가 스크립트에 불일치 수 표시)하고 `normalize()`로 정리해요.
 - 다음에 해 볼 것: effort `high` 비교, 다른 영수증 사진으로 평가 세트 늘리기, 제목에 원본/사본 표시를 넣지 말라는 규칙을 프롬프트에 추가.
 
-### ③ 5단계: Supabase (DB · 로그인 · 권한)
+### ③ 5단계: Supabase (DB · 로그인 · 권한) — ✅ 완료 (2026-09-25)
 
-지시서 5번 스키마에 더해, 이번 작업으로 **추가로 필요한 것**:
-
-| 대상 | 추가할 것 | 지금 있는 곳 |
-|---|---|---|
-| documents | `status text check (status in ('draft','final'))` | `LedgerEntry.status` |
-| documents | `deleted_at timestamptz`, `deleted_by uuid`, `delete_reason text not null when deleted` | `LedgerEntry.deletedAt/By/deleteReason` |
-| documents (doc jsonb) | `stickers`, `signs.receiverSign / issuerSign / delivererSign` | `LedgerDoc` |
-| company_settings | `form_config jsonb`, `sticker_names jsonb` | localStorage |
-| company_members | `role` (admin / staff) | `role-store.ts` (누구나 바꿀 수 있음) |
-
-- **RLS 필수:** 삭제(= `deleted_at` 설정) · 복원 · 휴지통 조회는 admin만. 목록 조회는 기본으로 `deleted_at is null`.
-- 월별 합계는 `status = 'final'`만.
-- 교체 방법: 각 `*-store.ts`의 함수 이름(`useLedger`, `saveEntry`, `softDelete`, `restoreEntry`, `useMe` …)을 그대로 두고 안쪽만 Supabase로 바꾸면 화면은 거의 안 고쳐도 돼요.
+- **스키마:** `supabase/migrations/` — 지시서 5번 표(`documents` · `document_items` · `vendors` · `company_settings`)에 더해 `members`(역할), `document_events`(변경 기록), `status`(draft/reviewed), `stickers`, `field_boxes`, 소프트 삭제 3칸(`deleted_at` · `deleted_by` · `delete_reason`, 사유 2자 이상 제약), `company_settings.form_config` · `sticker_names`.
+- **저장:** `save_document(p_id, p_row, p_items)` RPC — 서류와 품목을 한 트랜잭션으로 저장, 넘긴 칸만 씀. 앱 ↔ DB 변환은 `lib/db-map.ts`(왕복 테스트 있음).
+- **권한(RLS + 트리거):** 직원 = 읽기 · 추가 · 수정 / 관리자 = + 소프트 삭제 · 복원 · 휴지통 · 회사 설정 · 직원 관리. **DELETE 정책이 없어 누구도 영구 삭제 못 함.** 작성자 · 수정자 · 삭제자는 DB가 기록(브라우저 값 무시). 마지막 관리자는 강등 불가. 직원이 아닌 로그인 사용자는 아무것도 못 봄.
+- **로그인:** 매직링크 + 초대제(`config.toml`의 `enable_signup = false`). 관리자 초대는 `/api/members`(서비스 키, 서버 전용). 초대 메일 링크는 `#access_token`(implicit) 형식이라 `AuthCallback`이 직접 세션을 설정해요 — PKCE 브라우저 클라이언트는 이 형식을 거부하기 때문.
+- **사진:** 비공개 버킷 `documents`, 화면에는 1시간짜리 서명 URL(`usePhotoUrl`).
+- **AI 읽기:** 이제 로그인한 직원만 (`/api/extract` 401/403), 요청 제한도 사람 기준.
+- **미들웨어:** next-intl + 세션 갱신 + 로그인 안 했으면 `/{locale}/login?next=…`로.
+- **검증:** `npm run db:test`(권한 15개), 브라우저 끝까지 흐름(`work/check-supabase-flow.cjs`, 프로젝트 밖): 로그인 · 관리자 삭제/복원 · 직원 초대 · 직원 제한 · 직원 업로드 → 관리자 화면에 보임 · 중복 경고.
+- **배포 때 할 일:** 클라우드 Supabase 프로젝트에 `supabase db push`, 인증 URL(Site URL · Redirect URLs)을 배포 주소로, 메일 발송(SMTP) 설정, `.env`에 클라우드 키.
 
 ### ④ 그다음 (지시서 7~9단계)
 
 | 단계 | 남은 것 | 이미 된 것 |
 |---|---|---|
 | 7 | 거래처 사전, 지급 관리 화면, CSV(BOM) · XLSX · 3개 언어 PDF | 장부 목록(월별), 인쇄 |
-| 8 | 대시보드 요약(4칸 · 곧 낼 청구서 · 6개월 차트), 우리 회사 세금번호 설정, 기록 | 권한 UI(임시) |
+| 8 | 대시보드 요약(4칸 · 곧 낼 청구서 · 6개월 차트), 기록 보기 화면 | 권한 · 직원 관리 · 회사 세금번호 · 변경 기록 저장(`document_events`) |
 | 9 | Playwright 테스트를 프로젝트에 넣기, README 작성(지금은 create-next-app 기본), Vercel 배포 | 휴대폰 · 다크 · 가로 넘침 점검 |
 
 ### 제안만 된 것 (사용자와 합의 전)
@@ -198,19 +207,16 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 
 ---
 
-## 6. 임시 구현 — 꼭 알아 두세요
+## 6. 브라우저에만 있는 것
 
-| 무엇 | 어디에 | 키 / 이름 | 한계 |
-|---|---|---|---|
-| 장부 · 사진 | IndexedDB | DB `trl-ledger`, store `docs` | 이 브라우저에만. 다른 기기 · 브라우저에서 안 보임 |
-| 올리기 대기열 | 메모리 | `upload-queue.ts` | 새로고침하면 사라짐 (저장 · 임시저장한 것만 남음) |
-| 내 권한 · 이름 | localStorage | `trl.me` | **보안 아님.** 누구나 설정에서 관리자로 바꿀 수 있음 |
-| 스티커 이름 | localStorage | `trl.stickerNames` | |
-| 양식 설정 | localStorage | `trl.formConfig` | |
-| 양식 언어 선택 | localStorage | `trl.formMode` | 이건 개인 설정이라 그대로 둬도 됨 |
+| 무엇 | 어디에 | 비고 |
+|---|---|---|
+| 올리기 대기열 | 메모리 (`upload-queue.ts`) | 새로고침하면 사라짐. 저장 · 임시저장한 것만 DB에 남아요 |
+| 양식 언어 선택 | localStorage `trl.formMode` | 개인 설정이라 그대로 둬도 돼요 |
 
-- 탭 여러 개 사이 동기화는 `BroadcastChannel` · `storage` 이벤트로 해요.
-- 예시 서류(`/documents/sample`)는 장부와 별개예요. 저장 · 임시저장하면 **사본**이 장부에 들어가고, 예시 서류를 삭제하면 실제로는 지우지 않아요.
+- 예전 임시 저장소(IndexedDB 장부, localStorage 권한 · 스티커 이름 · 양식 설정)는 모두 Supabase로 옮겼어요. 함수 이름(`useLedger`, `saveEntry`, `softDelete`, `restoreEntry`, `useMe`, `useStickerNames`, `useStoredFormConfig` …)은 그대로라 화면 코드는 거의 안 바뀌었어요.
+- 예시 서류(`/documents/sample`)는 장부와 별개예요. 저장 · 임시저장하면 **사본**이 장부에 들어가요.
+- 목록은 창에 다시 들어올 때(focus) 새로 읽어요. 실시간 동기화(Realtime)는 아직 안 붙였어요.
 
 ---
 

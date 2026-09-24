@@ -3,6 +3,7 @@
 
 import { useSyncExternalStore } from "react";
 import { type ExtractErrorCode, MAX_PHOTOS } from "./extract-schema";
+import { normalize } from "./normalize";
 import type { LedgerDoc } from "./types";
 
 export { MAX_PHOTOS };
@@ -68,7 +69,8 @@ async function read(id: string) {
     body.append("photo", photo, "photo.jpg");
     const res = await fetch("/api/extract", { method: "POST", body, signal: ctrl.signal });
     const json = (await res.json().catch(() => ({}))) as { doc?: LedgerDoc; error?: ExtractErrorCode };
-    if (res.ok && json.doc) patch(id, { status: "done", doc: json.doc, finishedAt: Date.now() });
+    // normalize() again so a reply of any shape still fits the form (the server already normalizes)
+    if (res.ok && json.doc) patch(id, { status: "done", doc: normalize(json.doc), finishedAt: Date.now() });
     else patch(id, { status: "failed", error: json.error ?? "aiFail", finishedAt: Date.now() });
   } catch {
     if (ctrl.signal.aborted) patch(id, { status: "stopped", finishedAt: Date.now() });

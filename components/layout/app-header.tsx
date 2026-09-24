@@ -6,6 +6,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { AppMark } from "./app-mark";
 import { LocaleSwitcher } from "./locale-switcher";
 import { ThemeToggle } from "./theme-toggle";
+import { UserMenu } from "./user-menu";
 
 const NAV = [
   { href: "/", key: "dashboard", icon: LayoutGrid },
@@ -15,7 +16,7 @@ const NAV = [
 ] as const;
 
 /** Glass top bar with a segmented nav on md+, and an iOS-style tab bar below md. */
-export function AppHeader({ userSlot }: { userSlot?: React.ReactNode }) {
+export function AppHeader() {
   const t = useTranslations();
   const pathname = usePathname();
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
@@ -46,7 +47,7 @@ export function AppHeader({ userSlot }: { userSlot?: React.ReactNode }) {
           <div className="col-start-3 flex items-center justify-end gap-1">
             <LocaleSwitcher />
             <ThemeToggle />
-            {userSlot && <div className="hidden md:block">{userSlot}</div>}
+            <UserMenu />
           </div>
         </div>
       </header>

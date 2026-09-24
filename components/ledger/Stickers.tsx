@@ -2,9 +2,12 @@
 
 import { Check, Tag } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { monthDate, NO_DATE } from "@/lib/archive";
+import { useMe } from "@/lib/role-store";
 import { saveStickerNames, STICKER_HEX, useStickerNames } from "@/lib/sticker-store";
 import { STICKERS, type Sticker } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -92,29 +95,46 @@ export function StickerPopover({ value, onChange, label }: { value: Sticker[]; o
   );
 }
 
-/** Settings: rename stickers for the company */
+/** Settings: rename stickers for the company (admins; saved when a field loses focus) */
 export function StickerNameSettings() {
-  const t = useTranslations("archive");
+  const t = useTranslations();
   const names = useStickerNames();
+  const me = useMe();
+  const [draft, setDraft] = useState(names);
+  useEffect(() => setDraft(names), [names]);
+  const isAdmin = me.role === "admin";
+  const commit = async () => {
+    if (JSON.stringify(draft) === JSON.stringify(names)) return;
+    try {
+      await saveStickerNames(draft);
+      toast.success(t("settings.saved"));
+    } catch {
+      toast.error(t("settings.adminOnly"));
+    }
+  };
   return (
     <section aria-labelledby="sticker-title" className="workspace-panel grid gap-4 p-5 sm:p-6">
       <div className="grid gap-1">
         <h2 id="sticker-title" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
           <Tag className="size-5 text-primary" aria-hidden />
-          {t("stickerNames")}
+          {t("archive.stickerNames")}
         </h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">{t("stickerHint")}</p>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {t("archive.stickerHint")} {!isAdmin && t("settings.adminOnly")}
+        </p>
       </div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {STICKERS.map((c) => (
           <label key={c} className="flex items-center gap-2 rounded-xl border px-3 py-1.5">
             <StickerDot color={c} className="size-3.5" />
             <Input
-              value={names[c] ?? ""}
+              value={draft[c] ?? ""}
               maxLength={20}
-              placeholder={t(c)}
-              aria-label={`${t("stickerNames")} · ${t(c)}`}
-              onChange={(e) => saveStickerNames({ ...names, [c]: e.target.value })}
+              disabled={!isAdmin}
+              placeholder={t(`archive.${c}`)}
+              aria-label={`${t("archive.stickerNames")} · ${t(`archive.${c}`)}`}
+              onChange={(e) => setDraft({ ...draft, [c]: e.target.value })}
+              onBlur={() => void commit()}
               className="h-9 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
             />
           </label>

@@ -2,11 +2,12 @@
 
 import { Camera, ChevronLeft, CircleAlert, CircleCheck, ImagePlus, Images, Loader2, RotateCw, Sparkles, Square, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DocumentReview } from "@/components/invoice/DocumentReview";
 import { Button } from "@/components/ui/button";
-import { saveEntry } from "@/lib/ledger-store";
+import { useCompany } from "@/lib/company-store";
+import { saveEntry, useLedger } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
 import { joinTri } from "@/lib/form-labels";
 import {
@@ -29,6 +30,12 @@ const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.hei
 export function BatchUpload() {
   const t = useTranslations();
   const items = useUploadQueue();
+  const company = useCompany();
+  const { entries } = useLedger();
+  const others = useMemo(
+    () => entries.filter((e) => e.deletedAt === null).map((e) => ({ id: e.id, docNo: e.doc.docNo, sellerTaxId: e.doc.seller.taxId })),
+    [entries],
+  );
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const pickRef = useRef<HTMLInputElement>(null);
@@ -80,16 +87,18 @@ export function BatchUpload() {
           key={current.id}
           initial={current.doc}
           photoUrl={current.preview}
+          companyTaxId={company.taxId}
+          others={others}
           isNew
           onSave={async (doc) => {
             updateDoc(current.id, doc);
-            await saveEntry(doc, getPhoto(current.id));
+            await saveEntry(doc, getPhoto(current.id), undefined, "final", company.taxId);
             removePhoto(current.id);
             setReviewing(null);
             toast.success(t("trash.saved"));
           }}
           onDraft={async (doc) => {
-            await saveEntry(doc, getPhoto(current.id), undefined, "draft");
+            await saveEntry(doc, getPhoto(current.id), undefined, "draft", company.taxId);
             removePhoto(current.id);
             setReviewing(null);
             toast.success(t("archive.drafted"));

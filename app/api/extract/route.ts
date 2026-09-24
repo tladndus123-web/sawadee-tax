@@ -4,11 +4,12 @@
 
 import type { ExtractErrorCode } from "@/lib/extract-schema";
 import { extractDocument, IMAGE_TYPES, type ImageType, MAX_IMAGE_BYTES } from "@/lib/extract-server";
+import { supabaseServer } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-// Per-person limit (by IP until login exists in step 5). Leaves room for a full batch of 5.
+// Per-person limit (by member). Leaves room for a full batch of 5.
 const LIMIT = 10;
 const WINDOW_MS = 60_000;
 const hits = new Map<string, number[]>();
@@ -27,8 +28,15 @@ function limited(key: string): boolean {
 const fail = (code: ExtractErrorCode, status: number) => Response.json({ error: code }, { status });
 
 export async function POST(req: Request) {
-  const who = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "local";
-  if (limited(who)) return fail("rate", 429);
+  // Members only: each reading is a paid API call
+  const supabase = await supabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return Response.json({ error: "signin" }, { status: 401 });
+  const { data: member } = await supabase.from("members").select("user_id").eq("user_id", user.id).maybeSingle();
+  if (!member) return Response.json({ error: "signin" }, { status: 403 });
+  if (limited(user.id)) return fail("rate", 429);
 
   const form = await req.formData().catch(() => null);
   const photo = form?.get("photo");

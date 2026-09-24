@@ -252,7 +252,6 @@
     "resetAll": "Reset all",
     "resetDone": "Reset to defaults. Press Save to apply.",
     "unsaved": "You have unsaved changes.",
-    "localNote": "For now this is saved in this browser only. From step 5 (Supabase) it is saved for the whole company.",
     "default": "Default",
     "noMatch": "No matching field.",
     "blocks": {
@@ -334,13 +333,8 @@
     "count": "{count} / {max} photos"
   },
   "role": {
-    "title": "My role (temporary)",
-    "hint": "Until sign-in arrives (step 5), you can switch roles in this browser to try things out.",
     "admin": "Admin",
-    "staff": "Staff",
-    "name": "My name",
-    "namePh": "Name recorded when deleting",
-    "saved": "Role changed."
+    "staff": "Staff"
   },
   "del": {
     "adminOnly": "Only admins can delete",
@@ -370,7 +364,6 @@
     "restore": "Restore",
     "restored": "Restored to the ledger.",
     "open": "Open",
-    "localNote": "For now this is saved only in this browser. From step 5 (Supabase) it is saved for the whole company.",
     "saved": "Saved to the ledger.",
     "notFound": "Document not found. It may have been deleted.",
     "inTrash": "This document is in the trash",
@@ -406,5 +399,36 @@
     "blue": "Blue",
     "purple": "Purple",
     "gray": "Gray"
+  },
+  "auth": {
+    "title": "Sign in",
+    "intro": "Enter the email you were invited with and we will send a sign-in link. No password needed.",
+    "email": "Email",
+    "send": "Send sign-in link",
+    "sent": "Check your inbox. We sent a sign-in link to {email}.",
+    "again": "Use a different email",
+    "notInvited": "This email has not been invited. Ask an admin for an invitation.",
+    "fail": "Could not send the link. Please try again shortly.",
+    "tooSoon": "A link was just sent. Try again in a minute.",
+    "localMail": "Development: sent emails are at {url}",
+    "signingIn": "Signing in…",
+    "linkInvalid": "This link has expired or was already used. Request a new sign-in link.",
+    "account": "My account",
+    "notMember": "You are signed in but not registered as a company member. Please contact an admin."
+  },
+  "members": {
+    "title": "Members",
+    "hint": "Only invited people can sign in. An invitation emails them a sign-in link.",
+    "invite": "Invite",
+    "inviteEmail": "Email to invite",
+    "invited": "Invited {email}.",
+    "inviteFail": "Could not invite. {reason}",
+    "you": "You",
+    "roleChanged": "Role changed.",
+    "lastAdmin": "There must be at least one admin.",
+    "myName": "My name",
+    "namePh": "Name shown in records such as deletions",
+    "nameSaved": "Name saved.",
+    "joined": "Joined {date}"
   }
 }

@@ -1,9 +1,10 @@
 "use client";
 
-// TEMPORARY sticker names (company-wide setting from step 5), kept in localStorage.
+// Sticker names: company-wide, stored in company_settings.sticker_names (step 5).
 // An empty name falls back to the colour name in the screen language.
 
-import { useSyncExternalStore } from "react";
+import { useMemo } from "react";
+import { saveCompany, useCompany } from "./company-store";
 import { STICKERS, type Sticker } from "./types";
 
 export type StickerNames = Partial<Record<Sticker, string>>;
@@ -19,42 +20,17 @@ export const STICKER_HEX: Record<Sticker, string> = {
   gray: "#8e8e93",
 };
 
-const KEY = "trl.stickerNames";
-const listeners = new Set<() => void>();
-let cache: { raw: string | null; value: StickerNames } | null = null;
-const EMPTY: StickerNames = {};
-
-function read(): StickerNames {
-  let raw: string | null = null;
-  try {
-    raw = localStorage.getItem(KEY);
-  } catch {}
-  if (cache && cache.raw === raw) return cache.value;
-  let v: Record<string, unknown> = {};
-  try {
-    v = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
-  } catch {}
+/** Only known colours, trimmed, max 20 characters */
+function clean(v: Record<string, unknown>): StickerNames {
   const names: StickerNames = {};
   for (const c of STICKERS) if (typeof v[c] === "string" && (v[c] as string).trim()) names[c] = (v[c] as string).trim().slice(0, 20);
-  cache = { raw, value: names };
   return names;
 }
 
-export function saveStickerNames(names: StickerNames) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(names));
-  } catch {}
-  listeners.forEach((l) => l());
-}
+/** Admin only (RLS). Throws when the database refuses. */
+export const saveStickerNames = (names: StickerNames) => saveCompany({ sticker_names: clean(names as Record<string, unknown>) });
 
-function subscribe(cb: () => void) {
-  listeners.add(cb);
-  const onStorage = (e: StorageEvent) => e.key === KEY && cb();
-  window.addEventListener("storage", onStorage);
-  return () => {
-    listeners.delete(cb);
-    window.removeEventListener("storage", onStorage);
-  };
+export function useStickerNames(): StickerNames {
+  const { stickerNames } = useCompany();
+  return useMemo(() => clean(stickerNames), [stickerNames]);
 }
-
-export const useStickerNames = (): StickerNames => useSyncExternalStore(subscribe, read, () => EMPTY);

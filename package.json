@@ -10,7 +10,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "eval:extract": "tsx scripts/eval-extract.ts"
+    "eval:extract": "tsx scripts/eval-extract.ts",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:bootstrap": "tsx scripts/bootstrap.ts",
+    "db:test": "supabase test db"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
@@ -50,6 +55,7 @@
     "dotenv": "^18.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.5.26",
+    "supabase": "^2.117.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",

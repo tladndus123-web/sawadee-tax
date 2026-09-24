@@ -23,6 +23,7 @@ import {
   sanitizeFormConfig,
 } from "@/lib/form-config";
 import { saveFormConfig, useStoredFormConfig } from "@/lib/form-config-store";
+import { useMe } from "@/lib/role-store";
 import { defaultLabel, type FormMode, LABEL_KEYS, type LabelKey } from "@/lib/form-labels";
 import { normalize } from "@/lib/normalize";
 import { FORM_LANGS } from "@/lib/types";
@@ -35,6 +36,7 @@ const PLACEHOLDER_LANG = { th: "TH", en: "EN", ja: "JA" } as const;
 export function FormSettings() {
   const t = useTranslations();
   const stored = useStoredFormConfig();
+  const me = useMe();
   const [draft, setDraft] = useState<FormConfig>(stored);
   const [previewMode, setPreviewMode] = useState<FormMode>("all");
   const [query, setQuery] = useState("");
@@ -67,9 +69,13 @@ export function FormSettings() {
       return d;
     });
 
-  const save = () => {
-    saveFormConfig(clean);
-    toast.success(t("settings.saved"));
+  const save = async () => {
+    try {
+      await saveFormConfig(clean);
+      toast.success(t("settings.saved"));
+    } catch {
+      toast.error(t("settings.adminOnly"));
+    }
   };
   const resetAll = () => {
     setDraft(structuredClone(DEFAULT_FORM_CONFIG));
@@ -98,7 +104,7 @@ export function FormSettings() {
             <RotateCcw className="size-4" />
             {t("settings.resetAll")}
           </Button>
-          <Button type="button" onClick={save} disabled={!dirty}>
+          <Button type="button" onClick={() => void save()} disabled={!dirty || me.role !== "admin"}>
             <Save className="size-4" />
             {t("settings.save")}
           </Button>
@@ -108,7 +114,7 @@ export function FormSettings() {
       <p className="flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3 text-xs leading-relaxed text-muted-foreground">
         <Info className="mt-0.5 size-4 flex-none" aria-hidden />
         <span>
-          {t("settings.localNote")} {t("settings.adminOnly")}
+          {t("settings.adminOnly")}
         </span>
       </p>
       {dirty && (

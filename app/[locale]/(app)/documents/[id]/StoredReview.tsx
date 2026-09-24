@@ -4,12 +4,13 @@
 
 import { ArchiveRestore, Loader2, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DocumentReview } from "@/components/invoice/DocumentReview";
 import { Button } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
-import { restoreEntry, saveEntry, softDelete, useLedger } from "@/lib/ledger-store";
+import { useCompany } from "@/lib/company-store";
+import { restoreEntry, saveEntry, softDelete, useLedger, usePhotoUrl } from "@/lib/ledger-store";
 import { useMe } from "@/lib/role-store";
 
 export function StoredReview({ id }: { id: string }) {
@@ -18,14 +19,13 @@ export function StoredReview({ id }: { id: string }) {
   const me = useMe();
   const { entries, loaded } = useLedger();
   const entry = entries.find((e) => e.id === id);
-  const photo = entry?.photo ?? null;
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!photo) return setPhotoUrl(null);
-    const url = URL.createObjectURL(photo);
-    setPhotoUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [photo]);
+  // Same seller + same document number anywhere in the live ledger = possible duplicate
+  const others = useMemo(
+    () => entries.filter((e) => e.deletedAt === null && e.id !== id).map((e) => ({ id: e.id, docNo: e.doc.docNo, sellerTaxId: e.doc.seller.taxId })),
+    [entries, id],
+  );
+  const photoUrl = usePhotoUrl(entry?.photoPath ?? null);
+  const company = useCompany();
   const [restoring, setRestoring] = useState(false);
   // Keeps the delete flow mounted while the shredder plays after the entry turns deleted
   const [deleting, setDeleting] = useState(false);
@@ -72,17 +72,19 @@ export function StoredReview({ id }: { id: string }) {
         key={entry.id}
         initial={entry.doc}
         photoUrl={photoUrl}
+        companyTaxId={company.taxId}
+        others={others}
         isDraft={entry.status === "draft"}
         onSave={async (d) => {
           const wasDraft = entry.status === "draft";
-          await saveEntry(d, null, entry.id, "final");
+          await saveEntry(d, null, entry.id, "final", company.taxId);
           toast.success(t("trash.saved"));
           if (wasDraft) router.push("/ledger");
         }}
         onDraft={
           entry.status === "draft"
             ? async (d) => {
-                await saveEntry(d, null, entry.id, "draft");
+                await saveEntry(d, null, entry.id, "draft", company.taxId);
                 toast.success(t("archive.drafted"));
               }
             : undefined
@@ -92,7 +94,7 @@ export function StoredReview({ id }: { id: string }) {
             ? undefined
             : async (reason) => {
                 setDeleting(true);
-                await softDelete(entry.id, reason, me.name.trim() || t("del.unknownUser"));
+                await softDelete(entry.id, reason);
               }
         }
         onDeleted={() => {

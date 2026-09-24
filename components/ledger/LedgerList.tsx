@@ -1,15 +1,15 @@
 "use client";
 
-import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, FilePen, ImagePlus, Info, Loader2, Trash2, X } from "lucide-react";
+import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, FilePen, ImagePlus, Loader2, Trash2, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link } from "@/i18n/navigation";
 import { type ArchiveFilter, groupByMonth, matches, monthKey } from "@/lib/archive";
 import { joinTri } from "@/lib/form-labels";
-import { type LedgerEntry, type LedgerView, pick, restoreEntry, saveEntry, useLedger } from "@/lib/ledger-store";
+import { type LedgerEntry, type LedgerView, pick, restoreEntry, saveEntry, useLedger, usePhotoUrl } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
 import { dmy, todayBangkok } from "@/lib/thai-tax";
@@ -35,13 +35,7 @@ export function LedgerList() {
     <div className="mx-auto grid max-w-4xl gap-6">
       <header className="grid gap-4">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="grid gap-2">
-            <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("nav.ledger")}</h1>
-            <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
-              <Info className="mt-0.5 size-3.5 flex-none" aria-hidden />
-              {t("trash.localNote")}
-            </p>
-          </div>
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("nav.ledger")}</h1>
           <ToggleGroup type="single" className="segmented-control" value={view} onValueChange={(v) => v && setTab(v as LedgerView)} aria-label={t("nav.ledger")}>
             <ToggleGroupItem value="ledger" className="gap-1.5 px-3.5">
               {t("trash.ledgerTab")} <span className="mono text-xs opacity-60">{counts.ledger}</span>
@@ -185,14 +179,8 @@ function Empty({ view, filtering, onClear }: { view: LedgerView; filtering: bool
   );
 }
 
-function Thumb({ photo }: { photo: Blob | null }) {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!photo) return;
-    const u = URL.createObjectURL(photo);
-    setUrl(u);
-    return () => URL.revokeObjectURL(u);
-  }, [photo]);
+function Thumb({ path }: { path: string | null }) {
+  const url = usePhotoUrl(path);
   return (
     <span className="block size-12 flex-none overflow-hidden rounded-xl bg-muted sm:size-16">
       {/* eslint-disable-next-line @next/next/no-img-element -- blob URL */}
@@ -214,7 +202,7 @@ function DocRow({ e, draft }: { e: LedgerEntry; draft?: boolean }) {
   return (
     <li className="flex min-w-0 items-center gap-1 rounded-2xl bg-card pr-2 shadow-[0_0_0_1px_var(--border)] transition-shadow hover:shadow-[0_0_0_1px_var(--input),var(--shadow-soft)]">
       <Link href={`/documents/${e.id}`} className="flex min-w-0 flex-1 items-center gap-3 p-2.5 sm:gap-4 sm:p-3">
-        <Thumb photo={e.photo} />
+        <Thumb path={e.photoPath} />
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-2">
             <span className="truncate text-[15px] font-semibold">{sellerOf(e)}</span>
@@ -250,7 +238,7 @@ function TrashRow({ e }: { e: LedgerEntry }) {
     <li className="workspace-panel grid gap-3 p-3 sm:p-4">
       <div className="flex min-w-0 items-center gap-3 sm:gap-4">
         <span className="flex-none opacity-60 grayscale">
-          <Thumb photo={e.photo} />
+          <Thumb path={e.photoPath} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-2">

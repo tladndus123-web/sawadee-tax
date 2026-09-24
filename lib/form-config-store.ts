@@ -1,47 +1,16 @@
 "use client";
 
-// TEMPORARY storage for the company form settings until Supabase exists (step 5):
-// kept in localStorage and shared between components through a small subscription.
+// Company form settings, stored in company_settings.form_config (step 5). Read through sanitizeFormConfig().
 
-import { useSyncExternalStore } from "react";
-import { DEFAULT_FORM_CONFIG, type FormConfig, sanitizeFormConfig } from "./form-config";
+import { useMemo } from "react";
+import { saveCompany, useCompany } from "./company-store";
+import { type FormConfig, sanitizeFormConfig } from "./form-config";
 import { LABEL_KEYS } from "./form-labels";
 
-const KEY = "trl.formConfig";
-const listeners = new Set<() => void>();
-let cache: { raw: string | null; value: FormConfig } | null = null;
-
-function read(): FormConfig {
-  let raw: string | null = null;
-  try {
-    raw = localStorage.getItem(KEY);
-  } catch {}
-  if (cache && cache.raw === raw) return cache.value;
-  let parsed: unknown = null;
-  try {
-    parsed = raw ? JSON.parse(raw) : null;
-  } catch {}
-  cache = { raw, value: sanitizeFormConfig(parsed, LABEL_KEYS) };
-  return cache.value;
-}
-
-export function saveFormConfig(cfg: FormConfig) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(sanitizeFormConfig(cfg, LABEL_KEYS)));
-  } catch {}
-  listeners.forEach((l) => l());
-}
-
-function subscribe(cb: () => void) {
-  listeners.add(cb);
-  const onStorage = (e: StorageEvent) => e.key === KEY && cb();
-  window.addEventListener("storage", onStorage);
-  return () => {
-    listeners.delete(cb);
-    window.removeEventListener("storage", onStorage);
-  };
-}
-
 export function useStoredFormConfig(): FormConfig {
-  return useSyncExternalStore(subscribe, read, () => DEFAULT_FORM_CONFIG);
+  const { formConfig } = useCompany();
+  return useMemo(() => sanitizeFormConfig(formConfig, LABEL_KEYS), [formConfig]);
 }
+
+/** Admin only (RLS). Throws when the database refuses. */
+export const saveFormConfig = (cfg: FormConfig) => saveCompany({ form_config: sanitizeFormConfig(cfg, LABEL_KEYS) });
