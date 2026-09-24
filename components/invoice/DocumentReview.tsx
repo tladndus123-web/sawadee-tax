@@ -327,7 +327,7 @@ export function DocumentReview({
 
           {editing ? <InvoiceEdit mode={formMode} /> : <InvoiceView doc={doc} mode={formMode} onUnsure={showField} signable />}
 
-          <ChecksPanel results={results} className="print:hidden" />
+          <ChecksPanel results={results} unclear={doc.unclear} onJump={showField} className="print:hidden" />
 
           {/* Actions */}
           <div className="review-actions flex flex-wrap items-center gap-2 print:hidden">

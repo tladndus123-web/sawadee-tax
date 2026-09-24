@@ -26,7 +26,13 @@ export function TriText({
   primaryClassName?: string;
 }) {
   const parts = pickTri(value, mode);
-  if (!parts.length) return <span className={cn("text-muted-foreground", className)}>—</span>;
+  // Empty but unclear: still show the badge so the field is not silently skipped (review #7)
+  if (!parts.length)
+    return (
+      <Flag on={!!unsure} onJump={onUnsure} className={className}>
+        <span className="text-muted-foreground">—</span>
+      </Flag>
+    );
   return (
     <span className={cn("block min-w-0 [overflow-wrap:anywhere]", className)}>
       {parts.map(([lg, text], i) => (
@@ -42,6 +48,32 @@ export function TriText({
         </span>
       ))}
       {unsure && <UnsureBadge onClick={onUnsure} />}
+    </span>
+  );
+}
+
+/**
+ * Any value (number, date, code, text) the AI read unclearly: dotted underline + "Check" badge.
+ * One wrapper for every field type so no field path is missed (review #7).
+ */
+export function Flag({
+  on,
+  onJump,
+  align = "start",
+  className,
+  children,
+}: {
+  on: boolean;
+  onJump?: () => void;
+  align?: "start" | "end";
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (!on) return <>{children}</>;
+  return (
+    <span className={cn("inline-grid", align === "end" ? "justify-items-end" : "justify-items-start", className)}>
+      <span className="unsure">{children}</span>
+      <UnsureBadge onClick={onJump} />
     </span>
   );
 }

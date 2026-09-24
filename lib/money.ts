@@ -20,6 +20,18 @@ export const parseBahtOrNull = (v: unknown): number | null => (v == null || v ==
 export const near = (a: number, b: number, tolBaht = 0.01): boolean =>
   Math.abs(toSatang(a) - toSatang(b)) <= toSatang(tolBaht);
 
+/** Quantity: keeps up to 4 decimals (1.234 stays 1.234); missing → 0, never a default of 1. */
+export function parseQty(v: unknown): number {
+  if (v == null || v === "") return 0;
+  const n = typeof v === "number" ? v : parseFloat(String(v).replace(/[^0-9.\-]/g, ""));
+  return Number.isFinite(n) ? Math.round(n * 10000) / 10000 : 0;
+}
+
+const fmtQ = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+
+/** 10 → "10.00", 1.234 → "1.234" */
+export const fmtQty = (n: number): string => fmtQ.format(n);
+
 const fmt2 = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** 64200 → "64,200.00" */

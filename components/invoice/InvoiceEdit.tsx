@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { copyKindTri, docTypeTri, type FormMode } from "@/lib/form-labels";
+import { bahtText } from "@/lib/baht-text";
 import { baht } from "@/lib/money";
 import { COPY_KINDS, DOC_TYPES, type LedgerDoc } from "@/lib/types";
 import { Box, Kv } from "./fields";
@@ -18,6 +19,7 @@ export function InvoiceEdit({ mode }: { mode: FormMode }) {
   const t = useTranslations();
   const { control } = useFormContext<LedgerDoc>();
   const net = useWatch({ control, name: "totals.net" });
+  const wordsPrinted = useWatch({ control, name: "wordsPrinted" });
   const L = (k: Parameters<typeof t>[0]) => t(k);
   const E = { mode, edit: true } as const;
 
@@ -133,7 +135,7 @@ export function InvoiceEdit({ mode }: { mode: FormMode }) {
             <TriInput name="term" label={L("labels.term")} />
           </Kv>
           <Kv k="creditDays" {...E}>
-            <NumIn name="creditDays" label={L("labels.creditDays")} decimals={false} className="sm:w-24" />
+            <NumIn name="creditDays" label={L("labels.creditDays")} kind="int" className="sm:w-24" />
           </Kv>
           <Kv k="due" {...E}>
             <DateIn name="dueDate" label={L("labels.due")} />
@@ -175,9 +177,10 @@ export function InvoiceEdit({ mode }: { mode: FormMode }) {
               <TextIn name="wordsPrinted" label={L("labels.wordsPrinted")} lang="th" />
             </Kv>
             <Kv k="words" {...E}>
+              {/* Read-only: the Thai line comes from "printed words" (or is generated from the net amount),
+                  so it can never disagree with what the view shows (review #4). EN / JA are the digits. */}
               <div className="grid gap-1">
-                <TextIn name="words.th" label={L("labels.words")} lang="th" />
-                {/* English / Japanese are generated from the net amount */}
+                <p lang="th" className="text-sm">{wordsPrinted?.trim() || bahtText(net ?? 0)}</p>
                 <p className="num text-left text-xs text-muted-foreground">EN · JA: {baht(net ?? 0)}</p>
               </div>
             </Kv>

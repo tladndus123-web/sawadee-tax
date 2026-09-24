@@ -14,7 +14,14 @@ export function taxIdOk(id: string | null | undefined): boolean {
   return (11 - (sum % 11)) % 10 === Number(d[12]);
 }
 
-export const isIsoDate = (s: string | null | undefined): s is string => /^\d{4}-\d{2}-\d{2}$/.test(s ?? "");
+/** yyyy-mm-dd that exists on the calendar (no month 13, no 30 February) */
+export function isIsoDate(s: string | null | undefined): s is string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s ?? "");
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
+}
 
 /** "2026-09-23" + 15 → "2026-10-08" (UTC, no DST issues) */
 export function addDays(iso: string, n: number): string {
@@ -32,7 +39,7 @@ export function dmy(iso: string | null | undefined): string {
 
 /**
  * Normalise "y-m-d" and convert a Buddhist-era year (> 2400) to CE.
- * Returns [iso, wasBuddhist]; invalid input → ["", false].
+ * Returns [iso, wasBuddhist]; invalid input or a date that does not exist → ["", false].
  */
 export function fixDate(s: unknown): [string, boolean] {
   const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(typeof s === "string" ? s.trim() : "");
@@ -43,7 +50,8 @@ export function fixDate(s: unknown): [string, boolean] {
     y -= 543;
     wasBuddhist = true;
   }
-  return [`${y}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`, wasBuddhist];
+  const iso = `${y}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+  return isIsoDate(iso) ? [iso, wasBuddhist] : ["", false];
 }
 
 /** Today in Bangkok time as yyyy-mm-dd */

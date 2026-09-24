@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { FieldLabel } from "./fields";
 import { useFormLabels } from "./form-config-context";
 import { NumIn } from "./form-inputs";
+import { Flag } from "./TriText";
 
 // Order printed on Thai tax invoices; "sub" lines are deductions, indented
 const STEPS: { k: TotalKey; sub?: boolean }[] = [
@@ -39,7 +40,22 @@ function Row({ k, sub, children, mode, edit }: { k: TotalKey; sub?: boolean; chi
   );
 }
 
-export function TotalsLadderView({ totals, mode }: { totals: Totals; mode: FormMode }) {
+export function TotalsLadderView({
+  totals,
+  mode,
+  unsure = () => false,
+  onUnsure,
+}: {
+  totals: Totals;
+  mode: FormMode;
+  unsure?: (path: string) => boolean;
+  onUnsure?: (path: string) => void;
+}) {
+  const val = (k: TotalKey) => (
+    <Flag on={unsure(`totals.${k}`)} onJump={onUnsure && (() => onUnsure(`totals.${k}`))} align="end">
+      {fmt(totals[k])}
+    </Flag>
+  );
   const { show } = useFormLabels();
   // Company setting: drop a 0 discount / deposit / exempt line (and the "after" line it would repeat)
   const skip = new Set<TotalKey>();
@@ -53,12 +69,12 @@ export function TotalsLadderView({ totals, mode }: { totals: Totals; mode: FormM
     <div className="grid border border-rule">
       {steps.map(({ k, sub }) => (
         <Row key={k} k={k} sub={sub} mode={mode}>
-          {fmt(totals[k])}
+          {val(k)}
         </Row>
       ))}
       {show("wht") && !!totals.wht && (
         <Row k="wht" mode={mode}>
-          {fmt(totals.wht)}
+          {val("wht")}
         </Row>
       )}
     </div>

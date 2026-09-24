@@ -2,7 +2,7 @@
 // and returns the full LedgerDoc shape (ported from the prototype).
 
 import { amountWords } from "./baht-text";
-import { fromSatang, parseBaht, parseBahtOrNull, toSatang } from "./money";
+import { fromSatang, parseBaht, parseBahtOrNull, parseQty, toSatang } from "./money";
 import { digitsOnly, fixDate, isIsoDate } from "./thai-tax";
 import {
   type Box,
@@ -146,7 +146,8 @@ export function normalize(input: unknown): LedgerDoc {
     dateWasBuddhist: !!a.dateWasBuddhist || dateBE,
     seller: {
       name: tri(s.name),
-      taxId: digitsOnly(str(s.taxId)).slice(0, 13),
+      // Never cut to 13: a 14-digit ID must stay wrong so the tax ID check catches it
+      taxId: digitsOnly(str(s.taxId)).slice(0, 20),
       branchCode: str(s.branchCode),
       address: tri(s.address),
       tel: str(s.tel),
@@ -156,7 +157,7 @@ export function normalize(input: unknown): LedgerDoc {
     customer: {
       code: str(c.code),
       name: tri(c.name),
-      taxId: digitsOnly(str(c.taxId)).slice(0, 13),
+      taxId: digitsOnly(str(c.taxId)).slice(0, 20),
       branch: tri(c.branch),
       address: tri(c.address),
     },
@@ -169,7 +170,7 @@ export function normalize(input: unknown): LedgerDoc {
       code: str(i?.code),
       desc: tri(i?.desc),
       wh: str(i?.wh),
-      qty: parseBaht(i?.qty) || 1,
+      qty: parseQty(i?.qty),
       unit: tri(i?.unit),
       price: parseBaht(i?.price),
       amount: parseBaht(i?.amount),
@@ -177,7 +178,8 @@ export function normalize(input: unknown): LedgerDoc {
     delivery: { note: tri(dv.note), place: tri(dv.place), contact: str(dv.contact), person: tri(dv.person) },
     totals,
     wordsPrinted,
-    words: amountWords(totals.net, tri(a.words).th || wordsPrinted),
+    // wordsPrinted is the single source of the Thai line; without it the words are generated
+    words: amountWords(totals.net, wordsPrinted),
     terms: (Array.isArray(a.terms) ? a.terms : []).slice(0, 10).map(tri),
     signs: {
       receiver: !!sg.receiver || !!str(sg.receiverSign),

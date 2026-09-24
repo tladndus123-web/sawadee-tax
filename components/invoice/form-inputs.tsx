@@ -4,7 +4,7 @@ import { Controller, type Path, useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import type { LedgerDoc } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { MoneyInput } from "./fields";
+import { MoneyInput, type NumKind } from "./fields";
 
 type Name = Path<LedgerDoc>;
 
@@ -44,16 +44,16 @@ export function DateIn({ name, label, className }: { name: string; label: string
   return <Input type="date" aria-label={label} className={cn("h-8 w-full sm:w-44", className)} {...register(name as Name)} />;
 }
 
-/** Money / number input (formatted, parsed on blur) */
+/** Money / quantity / whole-number input bound to the form (value updates as you type) */
 export function NumIn({
   name,
   label,
-  decimals = true,
+  kind = "money",
   className,
 }: {
   name: string;
   label: string;
-  decimals?: boolean;
+  kind?: NumKind;
   className?: string;
 }) {
   const { control } = useFormContext<LedgerDoc>();
@@ -65,9 +65,12 @@ export function NumIn({
         <MoneyInput
           aria-label={label}
           className={className}
-          decimals={decimals}
+          kind={kind}
+          name={field.name}
+          ref={field.ref}
           value={Number(field.value) || 0}
           onChange={field.onChange}
+          onBlur={field.onBlur}
         />
       )}
     />

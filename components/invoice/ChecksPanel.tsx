@@ -4,11 +4,34 @@ import { ChevronDown, CircleCheck, Sparkles, TriangleAlert } from "lucide-react"
 import { useTranslations } from "next-intl";
 import { useId } from "react";
 import { type CheckResult, type DetailWord, detailText } from "@/lib/checks";
+import { LABEL_KEYS, type LabelKey } from "@/lib/form-labels";
 import { cn } from "@/lib/utils";
 
 /** Keep warnings visible and make passed calculations available in a native disclosure. */
-export function ChecksPanel({ results, className }: { results: CheckResult[]; className?: string }) {
+export function ChecksPanel({
+  results,
+  unclear = [],
+  onJump,
+  className,
+}: {
+  results: CheckResult[];
+  /** Unclear field paths; each becomes a button that zooms the photo to it (review #7) */
+  unclear?: string[];
+  onJump?: (path: string) => void;
+  className?: string;
+}) {
   const t = useTranslations();
+  const isLabel = (k: string): k is LabelKey => (LABEL_KEYS as string[]).includes(k);
+  const label = (k: string) => (isLabel(k) ? t(`labels.${k}`) : k);
+  const RENAME: Record<string, string> = { dueDate: "due", formSerial: "serial" };
+  // "items.0.desc" → "품명 1", "seller.taxId" → "판매자 · 세금번호", "totals.vat" → "부가세 7%"
+  const pathLabel = (p: string) => {
+    const [a, b, c] = p.split(".");
+    if (a === "items" && c) return `${label(c)} ${Number(b) + 1}`;
+    if (a === "totals" && b) return label(b);
+    if (b && isLabel(a)) return b === "name" ? label(a) : `${label(a)} · ${label(b)}`;
+    return label(RENAME[a] ?? a);
+  };
   const titleId = useId();
   const shown = results.filter((c) => !c.na);
   const passed = shown.filter((c) => c.ok);
@@ -26,6 +49,21 @@ export function ChecksPanel({ results, className }: { results: CheckResult[]; cl
         <small className="mt-1 block text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
           {detailText(c.detail, word)}
         </small>
+        {c.key === "unclear" && !c.ok && unclear.length > 0 && (
+          <span className="mt-2 flex flex-wrap gap-1.5">
+            {unclear.map((p) => (
+              <button
+                key={p}
+                type="button"
+                disabled={!onJump}
+                onClick={() => onJump?.(p)}
+                className="inline-flex min-h-8 items-center rounded-full bg-warn-soft px-2.5 text-xs font-semibold text-warn transition-colors hover:bg-warn/15 disabled:cursor-default"
+              >
+                {pathLabel(p)}
+              </button>
+            ))}
+          </span>
+        )}
       </span>
     </li>
   );

@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import type { FormMode, LabelKey } from "@/lib/form-labels";
-import { fmt, parseBaht } from "@/lib/money";
+import { fmt, fmtQty, parseBaht, parseQty } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { useFormLabels } from "./form-config-context";
 
@@ -98,26 +98,37 @@ export function Chip({ children, tone, className }: { children: React.ReactNode;
   );
 }
 
+/** money: baht, 2 decimals · qty: up to 4 decimals · int: whole days */
+export type NumKind = "money" | "qty" | "int";
+const PARSE: Record<NumKind, (s: string) => number> = {
+  money: parseBaht,
+  qty: parseQty,
+  int: (s) => Math.max(0, Math.round(parseBaht(s))),
+};
+const SHOW: Record<NumKind, (n: number) => string> = { money: fmt, qty: fmtQty, int: String };
+
 /**
- * Money / quantity input: shows "60,000.00", edits as plain text, parses on blur.
+ * Number input: shows "60,000.00", edits as plain text.
+ * The parsed value reaches the form on every keystroke, so pressing Enter saves exactly what is on screen
+ * (review #1); blur only tidies the display.
  */
 export function MoneyInput({
   value,
   onChange,
+  onBlur,
   className,
-  decimals = true,
+  kind = "money",
   ...rest
 }: Omit<React.ComponentProps<typeof Input>, "value" | "onChange"> & {
   value: number;
   onChange: (v: number) => void;
-  decimals?: boolean;
+  kind?: NumKind;
 }) {
-  const show = (n: number) => (decimals ? fmt(n) : String(n));
-  const [text, setText] = useState(show(value));
+  const [text, setText] = useState(SHOW[kind](value));
   const [focused, setFocused] = useState(false);
   useEffect(() => {
-    if (!focused) setText(decimals ? fmt(value) : String(value));
-  }, [value, focused, decimals]);
+    if (!focused) setText(SHOW[kind](value));
+  }, [value, focused, kind]);
   return (
     <Input
       {...rest}
@@ -125,12 +136,14 @@ export function MoneyInput({
       className={cn("num h-8", className)}
       value={text}
       onFocus={() => setFocused(true)}
-      onChange={(e) => setText(e.target.value)}
-      onBlur={() => {
+      onChange={(e) => {
+        setText(e.target.value);
+        onChange(PARSE[kind](e.target.value));
+      }}
+      onBlur={(e) => {
         setFocused(false);
-        const n = decimals ? parseBaht(text) : Math.max(0, Math.round(parseBaht(text)));
-        onChange(n);
-        setText(show(n));
+        setText(SHOW[kind](PARSE[kind](text)));
+        onBlur?.(e);
       }}
     />
   );

@@ -56,7 +56,8 @@ describe("normalize", () => {
     expect(d.confidence).toBe("medium");
     expect(d.seller.taxId).toBe("0745538001265");
     expect(d.creditDays).toBe(15);
-    expect(d.items[0]).toMatchObject({ qty: 1, price: 6000, amount: 60000 });
+    // Review #5: a missing quantity stays 0 (no default of 1) so the line check can flag it
+    expect(d.items[0]).toMatchObject({ qty: 0, price: 6000, amount: 60000 });
   });
 
   it("fills totals lines that were not printed", () => {

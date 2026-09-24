@@ -1,6 +1,7 @@
 // zod schema for a normalized LedgerDoc (used by the edit form and the API).
 
 import { z } from "zod";
+import { isIsoDate } from "./thai-tax";
 import {
   CATEGORIES,
   CONFIDENCES,
@@ -11,8 +12,9 @@ import {
   STICKERS,
 } from "./types";
 
-const isoOrEmpty = z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, "yyyy-mm-dd");
-const taxId = z.string().regex(/^\d{0,13}$/, "13 digits");
+const isoOrEmpty = z.string().refine((s) => s === "" || isIsoDate(s), "yyyy-mm-dd");
+// Digits only; the length (13) is judged by the tax ID check so a wrong ID can still be saved and flagged
+const taxId = z.string().regex(/^\d{0,20}$/, "digits");
 const money = z.number().finite();
 
 export const triSchema = z.object({ th: z.string(), en: z.string(), ja: z.string() });

@@ -10,7 +10,7 @@ import { useFormConfig, useFormLabels } from "./form-config-context";
 import { ItemsTableView } from "./ItemsTable";
 import { SignBoxesView } from "./SignBoxes";
 import { TotalsLadderView } from "./TotalsLadder";
-import { TriText } from "./TriText";
+import { Flag, TriText } from "./TriText";
 
 /**
  * Organized form, read-only. Default layout follows the original paper (prototype invoiceView order):
@@ -36,6 +36,12 @@ export function InvoiceView({
   const un = new Set(r.unclear);
   const U = (p: string) => un.has(p);
   const jump = (p: string) => (onUnsure ? () => onUnsure(p) : undefined);
+  /** Unclear-field wrapper for non-text values */
+  const F = ({ p, align, children }: { p: string; align?: "start" | "end"; children: React.ReactNode }) => (
+    <Flag on={U(p)} onJump={jump(p)} align={align}>
+      {children}
+    </Flag>
+  );
   const s = r.seller;
   const c = r.customer;
   const dv = r.delivery;
@@ -63,7 +69,9 @@ export function InvoiceView({
           )}
           <Kv k="taxId" mode={mode} className="mt-1">
             <span className="flex flex-wrap items-center gap-1.5">
-              <Mono className="whitespace-nowrap">{s.taxId}</Mono>
+              <F p="seller.taxId">
+                <Mono className="whitespace-nowrap">{s.taxId}</Mono>
+              </F>
               {show("branchCode") && s.branchCode && <Chip className="mono">{s.branchCode}</Chip>}
             </span>
           </Kv>
@@ -71,14 +79,20 @@ export function InvoiceView({
 
         <div className="@container grid border border-rule">
           {show("formSerial") && r.formSerial && (
-            <div className="mono border-b border-rule px-3 py-1.5 text-right text-lg font-semibold text-brand">{r.formSerial}</div>
+            <div className="mono border-b border-rule px-3 py-1.5 text-right text-lg font-semibold text-brand">
+              <F p="formSerial" align="end">{r.formSerial}</F>
+            </div>
           )}
           <div className="grid gap-2 px-3 py-2.5">
             <Kv k="docNo" mode={mode}>
-              <Mono className="whitespace-nowrap">{r.docNo}</Mono>
+              <F p="docNo">
+                <Mono className="whitespace-nowrap">{r.docNo}</Mono>
+              </F>
             </Kv>
             <Kv k="date" mode={mode}>
-              <Mono>{dmy(r.date)}</Mono>
+              <F p="date">
+                <Mono>{dmy(r.date)}</Mono>
+              </F>
             </Kv>
             {show("docTypeChip") && (
               <div>
@@ -116,12 +130,16 @@ export function InvoiceView({
           </Kv>
           {show("custCode") && c.code && (
             <Kv k="custCode" mode={mode}>
-              <Mono>{c.code}</Mono>
+              <F p="customer.code">
+                <Mono>{c.code}</Mono>
+              </F>
             </Kv>
           )}
           <Kv k="taxId" mode={mode}>
             <span className="flex flex-wrap items-center gap-1.5">
-              <Mono className="whitespace-nowrap">{c.taxId}</Mono>
+              <F p="customer.taxId">
+                <Mono className="whitespace-nowrap">{c.taxId}</Mono>
+              </F>
               {show("customerBranch") && triHas(c.branch) && <Chip>{joinTri(c.branch, mode)}</Chip>}
             </span>
           </Kv>
@@ -134,17 +152,21 @@ export function InvoiceView({
         <Box>
           {show("orderNo") && (
             <Kv k="orderNo" mode={mode}>
-              <Mono>{r.orderNo}</Mono>
+              <F p="orderNo">
+                <Mono>{r.orderNo}</Mono>
+              </F>
             </Kv>
           )}
           {show("term") && (
             <Kv k="term" mode={mode}>
-              <TriText value={r.term} mode={mode} />
+              <TriText value={r.term} mode={mode} unsure={U("term")} onUnsure={jump("term")} />
             </Kv>
           )}
           {show("due") && (
             <Kv k="due" mode={mode}>
-              <Mono>{dmy(r.dueDate)}</Mono>
+              <F p="dueDate">
+                <Mono>{dmy(r.dueDate)}</Mono>
+              </F>
             </Kv>
           )}
           {(triHas(r.sales.name) || r.sales.ref) && (
@@ -166,7 +188,7 @@ export function InvoiceView({
       const hasDelivery = show("delivery") && (triHas(dv.note) || triHas(dv.place) || !!dv.contact);
       const hasTerms = show("terms") && r.terms.length > 0;
       const hasNote = show("note") && triHas(r.note);
-      const ladder = <TotalsLadderView totals={r.totals} mode={mode} />;
+      const ladder = <TotalsLadderView totals={r.totals} mode={mode} unsure={U} onUnsure={onUnsure} />;
       if (!hasDelivery && !hasTerms && !hasNote) {
         return <div className="grid @2xl:grid-cols-[minmax(0,1fr)_330px]"><div className="@2xl:col-start-2">{ladder}</div></div>;
       }

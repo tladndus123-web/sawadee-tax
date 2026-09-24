@@ -6,7 +6,7 @@ import { useFieldArray, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import type { HideableField } from "@/lib/form-config";
 import type { FormMode, LabelKey } from "@/lib/form-labels";
-import { fmt } from "@/lib/money";
+import { fmt, fmtQty } from "@/lib/money";
 import { emptyTri } from "@/lib/normalize";
 import type { Item, LedgerDoc } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,7 @@ import { FieldLabel } from "./fields";
 import { useFormLabels } from "./form-config-context";
 import { NumIn, TextIn } from "./form-inputs";
 import { TriInput } from "./TriInput";
-import { TriText } from "./TriText";
+import { Flag, TriText } from "./TriText";
 
 type Col = { k: LabelKey; num?: boolean; cls?: string; hide?: HideableField };
 const COLS: Col[] = [
@@ -60,11 +60,19 @@ export function ItemsTableView({
   const { show } = useFormLabels();
   const cols = COLS.filter((c) => !c.hide || show(c.hide));
   const cell = (k: LabelKey, it: Item, i: number) => {
+    const path = `items.${i}.${k}`;
+    const flag = (node: React.ReactNode, align: "start" | "end" = "start") => (
+      <Flag on={unsure(path)} onJump={onUnsure && (() => onUnsure(path))} align={align}>
+        {node}
+      </Flag>
+    );
+    // A line with neither qty nor price prints only an amount
+    const amountOnly = it.qty === 0 && it.price === 0;
     switch (k) {
       case "no":
         return <td key={k} className={cn(TD, "mono")}>{i + 1}</td>;
       case "code":
-        return <td key={k} className={cn(TD, "mono")}>{it.code}</td>;
+        return <td key={k} className={cn(TD, "mono")}>{flag(it.code)}</td>;
       case "desc":
         return (
           <td key={k} className={cn(TD, "min-w-56")}>
@@ -72,19 +80,19 @@ export function ItemsTableView({
           </td>
         );
       case "wh":
-        return <td key={k} className={cn(TD, "mono")}>{it.wh}</td>;
+        return <td key={k} className={cn(TD, "mono")}>{flag(it.wh)}</td>;
       case "qty":
-        return <td key={k} className={cn(TD, "num")}>{fmt(it.qty)}</td>;
+        return <td key={k} className={cn(TD, "num")}>{flag(amountOnly ? "" : fmtQty(it.qty), "end")}</td>;
       case "unit":
         return (
           <td key={k} className={TD}>
-            <TriText value={it.unit} mode={mode} />
+            <TriText value={it.unit} mode={mode} unsure={unsure(path)} onUnsure={onUnsure && (() => onUnsure(path))} />
           </td>
         );
       case "price":
-        return <td key={k} className={cn(TD, "num")}>{it.price ? fmt(it.price) : ""}</td>;
+        return <td key={k} className={cn(TD, "num")}>{flag(amountOnly ? "" : fmt(it.price), "end")}</td>;
       default:
-        return <td key={k} className={cn(TD, "num")}>{fmt(it.amount)}</td>;
+        return <td key={k} className={cn(TD, "num")}>{flag(fmt(it.amount), "end")}</td>;
     }
   };
   return (
@@ -129,7 +137,7 @@ export function ItemsTableEdit({ mode }: { mode: FormMode }) {
                   <TextIn name={`items.${i}.wh`} label={t("labels.wh")} mono />
                 </td>
                 <td className={cn(TD, "min-w-24")}>
-                  <NumIn name={`items.${i}.qty`} label={t("labels.qty")} />
+                  <NumIn name={`items.${i}.qty`} label={t("labels.qty")} kind="qty" />
                 </td>
                 <td className={cn(TD, "min-w-36")}>
                   <TriInput name={`items.${i}.unit`} label={t("labels.unit")} />

@@ -2,7 +2,7 @@
 // Pure functions: the caller passes our company tax ID and the other ledger docs.
 
 import { bahtText, cleanWords } from "./baht-text";
-import { fmt, near, toSatang, fromSatang } from "./money";
+import { fmt, fmtQty, near, toSatang, fromSatang } from "./money";
 import { addDays, digitsOnly, dmy, isIsoDate, taxIdOk } from "./thai-tax";
 import type { LedgerDoc } from "./types";
 
@@ -98,20 +98,25 @@ export function runChecks(r: LedgerDoc, ctx: CheckContext = {}): CheckResult[] {
     else add("company", co === bTax, [W(co === bTax ? "same" : "differ")]);
   }
 
-  // Item lines: qty × price = amount (±0.5), Σ amount = total (±1)
+  // Item lines: qty × price = amount (±0.5), Σ amount = total (±1).
+  // A written 0 is a number (10 × 0 ≠ 60,000); only a line with neither qty nor price is amount-only.
+  // qty × satang price is rounded once, at the end, so fractional quantities stay exact.
   if (r.items.length) {
-    const lineBad = r.items.filter((i) => i.price && !near(i.qty * i.price, i.amount, 0.5));
+    const amountOnly = (i: LedgerDoc["items"][number]) => i.qty === 0 && i.price === 0;
+    const lineBad = r.items.filter(
+      (i) => !amountOnly(i) && Math.abs(Math.round(i.qty * toSatang(i.price)) - toSatang(i.amount)) > 50,
+    );
     const sum = fromSatang(r.items.reduce((a, i) => a + toSatang(i.amount), 0));
-    const ok = !lineBad.length && (!tt.total || near(sum, tt.total, 1));
+    const ok = !lineBad.length && near(sum, tt.total, 1);
     const lines = r.items
-      .map((i) => (i.price ? `${fmt(i.qty)} × ${fmt(i.price)} = ${fmt(i.amount)}` : fmt(i.amount)))
+      .map((i) => (amountOnly(i) ? fmt(i.amount) : `${fmtQty(i.qty)} × ${fmt(i.price)} = ${fmt(i.amount)}`))
       .slice(0, 3)
       .join(", ");
     add("items", ok, [`${lines} · Σ ${fmt(sum)} / ${fmt(tt.total)}`]);
   }
 
-  // Discount → deposit → exempt/taxable flow
-  if (tt.total) {
+  // Discount → deposit → exempt/taxable flow. normalize() fills every totals line, so always check.
+  {
     const ok =
       near(tt.total - tt.discount, tt.afterDisc, 1) &&
       near(tt.afterDisc - tt.deposit, tt.afterDep, 1) &&
@@ -121,12 +126,13 @@ export function runChecks(r: LedgerDoc, ctx: CheckContext = {}): CheckResult[] {
     ]);
   }
 
-  // VAT 7%: difference ≤ max(1 baht, 0.2% of taxable)
-  if (tt.vat || tt.taxable) {
+  // VAT 7%: difference ≤ max(1 baht, 0.2% of taxable), compared exactly in integers
+  // (diff × 500 ≤ taxable is diff ≤ 0.2% without rounding the limit up)
+  {
     const calcSatang = Math.round(toSatang(tt.taxable) * 0.07);
-    const tolSatang = Math.max(100, Math.round(toSatang(tt.taxable) * 0.002));
+    const diff = Math.abs(calcSatang - toSatang(tt.vat));
     const calc = fromSatang(calcSatang);
-    add("vat", Math.abs(calcSatang - toSatang(tt.vat)) <= tolSatang, [
+    add("vat", diff <= 100 || diff * 500 <= toSatang(tt.taxable), [
       `${fmt(tt.taxable)} × 7% = ${fmt(calc)} · `,
       W("written"),
       ` ${fmt(tt.vat)}`,
@@ -134,7 +140,7 @@ export function runChecks(r: LedgerDoc, ctx: CheckContext = {}): CheckResult[] {
   }
 
   // Net = taxable + exempt + VAT
-  if (tt.net) {
+  {
     const calc = fromSatang(toSatang(tt.taxable) + toSatang(tt.exempt) + toSatang(tt.vat));
     add("net", near(calc, tt.net, 1), [
       `${fmt(tt.taxable)} + ${fmt(tt.exempt)} + ${fmt(tt.vat)} = ${fmt(calc)} · `,
@@ -163,7 +169,7 @@ export function runChecks(r: LedgerDoc, ctx: CheckContext = {}): CheckResult[] {
   add(
     "date",
     isIsoDate(r.date),
-    isIsoDate(r.date) ? [`${dmy(r.date)} · `, W(r.dateWasBuddhist ? "be" : "gregorian")] : [W("missing")],
+    isIsoDate(r.date) ? [`${dmy(r.date)} · `, W(r.dateWasBuddhist ? "be" : "gregorian")] : r.date ? [`${r.date} · `, W("invalid")] : [W("missing")],
   );
 
   // Unclear fields
@@ -190,9 +196,12 @@ export const flagsFor = (r: LedgerDoc, ctx: CheckContext = {}): CheckKey[] =>
     .filter((c) => !c.ok && !c.na)
     .map((c) => c.key);
 
-/** Input VAT counts only for full tax invoices addressed to our company. */
+/**
+ * Input VAT counts only for full tax invoices addressed to our company.
+ * Without a valid company tax ID we cannot tell, so nothing is claimable (PROMPT: "buyer is our company").
+ */
 export function claimable(r: LedgerDoc, companyTaxId?: string): boolean {
   const buyer = digitsOnly(r.customer.taxId);
   const co = digitsOnly(companyTaxId);
-  return r.docType === "full" && taxIdOk(buyer) && (!co || co === buyer);
+  return r.docType === "full" && taxIdOk(buyer) && taxIdOk(co) && co === buyer;
 }
