@@ -53,7 +53,7 @@ export function InvoiceView({
           <TriText value={s.name} mode={mode} unsure={U("seller.name")} onUnsure={jump("seller.name")} primaryClassName="text-base font-semibold" />
           {show("sellerAddress") && triHas(s.address) && (
             <div className="grid gap-0.5 text-[12.5px] text-muted-foreground">
-              <FieldLabel k="headOffice" mode={mode} />
+              <FieldLabel k="address" mode={mode} />
               <TriText value={s.address} mode={mode} unsure={U("seller.address")} onUnsure={jump("seller.address")} />
             </div>
           )}
@@ -72,6 +72,11 @@ export function InvoiceView({
               <F p="seller.taxId">
                 <Mono className="whitespace-nowrap">{s.taxId}</Mono>
               </F>
+              {triHas(s.branch) && (
+                <F p="seller.branch">
+                  <Chip>{joinTri(s.branch, mode)}</Chip>
+                </F>
+              )}
               {show("branchCode") && s.branchCode && <Chip className="mono">{s.branchCode}</Chip>}
             </span>
           </Kv>

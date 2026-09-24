@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import sample from "@/docs/reference/sample-document.json";
 import { type DocumentRow, docToRow, type ItemRow, rowToDoc } from "./db-map";
-import { normalize } from "./normalize";
+import { sampleDoc } from "./sample";
 
-const doc = { ...normalize(sample), id: "00000000-0000-0000-0000-000000000001", stickers: ["red" as const], fieldBoxes: { "customer.name": [0.1, 0.2, 0.3, 0.04] as [number, number, number, number] } };
+const doc = { ...sampleDoc(), id: "00000000-0000-0000-0000-000000000001", stickers: ["red" as const], fieldBoxes: { "customer.name": [0.1, 0.2, 0.3, 0.04] as [number, number, number, number] } };
 
 /** What PostgREST sends back: numeric columns may arrive as strings */
 function asStored(row: Record<string, unknown>, items: ItemRow[]): [DocumentRow, ItemRow[]] {

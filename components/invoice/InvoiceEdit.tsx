@@ -47,6 +47,9 @@ export function InvoiceEdit({ mode }: { mode: FormMode }) {
               <TextIn name="seller.branchCode" label={L("labels.branchCode")} mono />
             </div>
           </Kv>
+          <Kv k="branch" {...E}>
+            <TriInput name="seller.branch" label={L("labels.branch")} />
+          </Kv>
         </div>
         <Box className="gap-2">
           <Kv k="serial" {...E}>

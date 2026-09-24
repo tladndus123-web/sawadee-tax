@@ -4,6 +4,8 @@
 import { useSyncExternalStore } from "react";
 import { type ExtractErrorCode, MAX_PHOTOS } from "./extract-schema";
 import { normalize } from "./normalize";
+import { withVendor } from "./vendor-store";
+import type { VendorFix } from "./vendors";
 import type { LedgerDoc } from "./types";
 
 export { MAX_PHOTOS };
@@ -21,6 +23,8 @@ export interface UploadItem {
   finishedAt: number | null;
   error: UploadError | null;
   doc: LedgerDoc | null;
+  /** Seller fields the vendor dictionary tidied (shown to the user) */
+  vendorFixed: VendorFix[];
 }
 
 let items: UploadItem[] = [];
@@ -69,8 +73,11 @@ async function read(id: string) {
     body.append("photo", photo, "photo.jpg");
     const res = await fetch("/api/extract", { method: "POST", body, signal: ctrl.signal });
     const json = (await res.json().catch(() => ({}))) as { doc?: LedgerDoc; error?: ExtractErrorCode };
-    // normalize() again so a reply of any shape still fits the form (the server already normalizes)
-    if (res.ok && json.doc) patch(id, { status: "done", doc: normalize(json.doc), finishedAt: Date.now() });
+    if (res.ok && json.doc) {
+      // normalize() again so a reply of any shape still fits the form, then tidy with the vendor dictionary
+      const { doc, fixed } = await withVendor(normalize(json.doc));
+      patch(id, { status: "done", doc, vendorFixed: fixed, finishedAt: Date.now() });
+    }
     else patch(id, { status: "failed", error: json.error ?? "aiFail", finishedAt: Date.now() });
   } catch {
     if (ctrl.signal.aborted) patch(id, { status: "stopped", finishedAt: Date.now() });
@@ -86,7 +93,7 @@ export function addPhotos(files: File[]): number {
   const accepted = files.slice(0, room);
   for (const file of accepted) {
     const id = crypto.randomUUID();
-    items = [...items, { id, name: file.name, status: "preparing", preview: null, startedAt: Date.now(), finishedAt: null, error: null, doc: null }];
+    items = [...items, { id, name: file.name, status: "preparing", preview: null, startedAt: Date.now(), finishedAt: null, error: null, doc: null, vendorFixed: [] }];
     emit();
     preparePhoto(file)
       .then((jpeg) => {

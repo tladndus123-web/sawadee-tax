@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(18);
 
 -- Fixtures: one admin, one staff, one signed-in stranger (no membership)
 insert into auth.users (id, email) values
@@ -47,6 +47,17 @@ select lives_ok($$ update public.documents set deleted_at = null, deleted_by = n
 select is((select array_agg(action order by id)::text from public.document_events where document_id = '00000000-0000-0000-0000-0000000000d1'),
   '{create,update,delete,restore}', 'every step is in the audit trail');
 select throws_ok($$ update public.members set role = 'staff' where user_id = auth.uid() $$, 'at least one admin is required', 'the last admin cannot step down');
+
+-- Vendor dictionary: the first document creates the vendor, later ones do not overwrite its name
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select public.save_document('00000000-0000-0000-0000-0000000000d2',
+  '{"doc_no":"V-1","seller":{"taxId":"9900000000014","name":{"th":"บริษัท แพนฟู้ด จำกัด","en":"PANFOOD CO., LTD.","ja":""},"address":{"th":"","en":"","ja":""}}}', '[]');
+select is((select name ->> 'en' from public.vendors where tax_id = '9900000000014'), 'PANFOOD CO., LTD.', 'saving a document registers its vendor');
+select public.save_document(null,
+  '{"doc_no":"V-2","seller":{"taxId":"9-9000-00000-01-4","name":{"th":"แพนฟู้ด","en":"Panfood typo","ja":""},"address":{"th":"ถนน 1","en":"","ja":""}}}', '[]');
+select is((select name ->> 'en' || ' | ' || (address ->> 'th') from public.vendors where tax_id = '9900000000014'), 'PANFOOD CO., LTD. | ถนน 1',
+  'later documents keep the dictionary name and only fill empty fields');
+select is((select count(distinct vendor_id)::int from public.documents where doc_no in ('V-1', 'V-2')), 1, 'both documents link to the same vendor');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

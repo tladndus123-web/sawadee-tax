@@ -5,16 +5,17 @@ import { bahtText } from "./baht-text";
 import { claimable, runChecks } from "./checks";
 import { docSchema } from "./doc-schema";
 import { normalize } from "./normalize";
+import { sampleDoc } from "./sample";
 import { fixDate, isIsoDate } from "./thai-tax";
 import type { LedgerDoc } from "./types";
 
 const COMPANY = "0105557035035";
 const doc = (patch: (d: LedgerDoc) => void = () => {}) => {
-  const d = normalize(structuredClone(sample));
+  const d = sampleDoc();
   patch(d);
   return d;
 };
-const check = (d: LedgerDoc, key: string) => runChecks(d, { companyTaxId: COMPANY }).find((c) => c.key === key);
+const check = (d: LedgerDoc, key: string) => runChecks(d, { companyTaxId: COMPANY, today: "2026-09-25" }).find((c) => c.key === key);
 
 describe("#2 a written 0 is a number, not 'missing'", () => {
   it("checks the line when the unit price is 0", () => {
@@ -101,7 +102,7 @@ describe("#8 claimable only when the buyer is our company", () => {
   it("needs our company tax ID", () => {
     expect(claimable(doc(), "")).toBe(false);
     expect(claimable(doc(), "123")).toBe(false);
-    expect(claimable(doc(), COMPANY)).toBe(true);
+    expect(claimable(doc(), COMPANY, "2026-09-25")).toBe(true);
   });
 });
 

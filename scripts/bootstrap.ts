@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { config } from "dotenv";
 import { docToRow } from "../lib/db-map";
-import { normalize } from "../lib/normalize";
+import { sampleDoc } from "../lib/sample";
 import { supabaseAdmin } from "../lib/supabase/admin";
 
 config({ path: ".env.local", quiet: true });
@@ -47,7 +47,7 @@ async function main() {
       .from("documents")
       .upload(photoPath, readFileSync("docs/reference/sample-panfood-invoice.jpg"), { contentType: "image/jpeg" });
     if (upErr) throw upErr;
-    const doc = normalize(JSON.parse(readFileSync("docs/reference/sample-document.json", "utf8")));
+    const doc = sampleDoc();
     const { row, items } = docToRow(doc, "reviewed");
     const { data: inserted, error: docErr } = await db
       .from("documents")

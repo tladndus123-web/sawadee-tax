@@ -43,6 +43,7 @@ export const docSchema = z.object({
     taxId,
     branchCode: z.string(),
     address: triSchema,
+    branch: triSchema,
     tel: z.string(),
     fax: z.string(),
     saleOffice: z.string(),

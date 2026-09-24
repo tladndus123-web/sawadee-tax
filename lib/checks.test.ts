@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
-import sample from "@/docs/reference/sample-document.json";
 import { type CheckContext, claimable, type DetailWord, detailText, flagsFor, runChecks } from "./checks";
-import { normalize } from "./normalize";
+import { sampleDoc } from "./sample";
 import type { LedgerDoc } from "./types";
 
 const COMPANY = "0105557035035";
 
 const doc = (patch: (d: LedgerDoc) => void = () => {}) => {
-  const d = normalize(structuredClone(sample));
+  const d = sampleDoc();
   patch(d);
   return d;
 };
 
-const find = (d: LedgerDoc, key: string, ctx: CheckContext = { companyTaxId: COMPANY }) =>
+const TODAY = "2026-09-25";
+const find = (d: LedgerDoc, key: string, ctx: CheckContext = { companyTaxId: COMPANY, today: TODAY }) =>
   runChecks(d, ctx).find((c) => c.key === key);
 
 const EN: Partial<Record<DetailWord, string>> = { written: "printed", calc: "calculated" };
@@ -20,12 +20,13 @@ const en = (w: DetailWord) => EN[w] ?? w;
 
 describe("sample document", () => {
   it("passes every check except the unclear-fields warning", () => {
-    const results = runChecks(doc(), { companyTaxId: COMPANY, others: [] });
+    const results = runChecks(doc(), { companyTaxId: COMPANY, others: [], today: TODAY });
     expect(results.filter((c) => !c.ok && !c.na).map((c) => c.key)).toEqual(["unclear"]);
     expect(results.map((c) => c.key)).toEqual([
       "sellerTax",
       "buyerTax",
       "company",
+      "required",
       "items",
       "chain",
       "vat",
@@ -33,6 +34,7 @@ describe("sample document", () => {
       "words",
       "due",
       "date",
+      "claimWindow",
       "unclear",
       "dup",
       "conf",
@@ -49,7 +51,7 @@ describe("sample document", () => {
   });
 
   it("is claimable for our company", () => {
-    expect(claimable(doc(), COMPANY)).toBe(true);
+    expect(claimable(doc(), COMPANY, TODAY)).toBe(true);
     expect(claimable(doc(), "")).toBe(false); // review #8: needs our company
     expect(claimable(doc(), "0745538001265")).toBe(false);
     expect(claimable(doc((d) => (d.docType = "abbr")), COMPANY)).toBe(false);

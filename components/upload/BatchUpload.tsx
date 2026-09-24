@@ -1,10 +1,11 @@
 "use client";
 
-import { Camera, ChevronLeft, CircleAlert, CircleCheck, ImagePlus, Images, Loader2, RotateCw, Sparkles, Square, X } from "lucide-react";
+import { Building2, Camera, ChevronLeft, CircleAlert, CircleCheck, ImagePlus, Images, Loader2, RotateCw, Sparkles, Square, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DocumentReview } from "@/components/invoice/DocumentReview";
+import { usePathLabel } from "@/components/invoice/path-label";
 import { Button } from "@/components/ui/button";
 import { useCompany } from "@/lib/company-store";
 import { saveEntry, useLedger } from "@/lib/ledger-store";
@@ -89,6 +90,7 @@ export function BatchUpload() {
           photoUrl={current.preview}
           companyTaxId={company.taxId}
           others={others}
+          notice={current.vendorFixed.length > 0 && <VendorNotice fixed={current.vendorFixed} />}
           isNew
           onSave={async (doc) => {
             updateDoc(current.id, doc);
@@ -185,6 +187,18 @@ export function BatchUpload() {
   );
 }
 
+/** "Matched to the vendor list: name, address" */
+function VendorNotice({ fixed }: { fixed: string[] }) {
+  const t = useTranslations("vendors");
+  const pathLabel = usePathLabel();
+  return (
+    <p className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand">
+      <Building2 className="size-3.5 flex-none" aria-hidden />
+      {t("fixed", { fields: fixed.map(pathLabel).join(", ") })}
+    </p>
+  );
+}
+
 /** "Up to 5 at once" pill, also used on the dashboard */
 export function MaxNotice({ className }: { className?: string }) {
   const t = useTranslations("batch");
@@ -223,6 +237,7 @@ function Row({ it, now, errorText, onReview }: { it: UploadItem; now: number; er
           it.error && <p className="mt-0.5 text-xs leading-relaxed text-bad">{errorText(it.error)}</p>
         )}
         <Status it={it} sec={sec} />
+        {it.vendorFixed.length > 0 && <VendorNotice fixed={it.vendorFixed} />}
       </div>
 
       <div className="flex flex-none items-center gap-1">

@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import sample from "@/docs/reference/sample-document.json";
 import { extractedToRaw, extractSchema, parseReply } from "./extract-schema";
 import { normalize } from "./normalize";
+import { sampleDoc } from "./sample";
 
 // The hand-checked sample is exactly what a perfect AI reading looks like.
 const reading = {
   ...sample,
+  seller: { ...sample.seller, branch: { th: "สำนักงานใหญ่", en: "Head office", ja: "本社" } },
   notDocument: false,
   fieldBoxes: [
     { path: "customer.name", box: [0.075, 0.258, 0.15, 0.022] },
@@ -23,7 +25,7 @@ describe("AI reading schema", () => {
     const doc = normalize(extractedToRaw(extractSchema.parse(reading)));
     // Boxes with the wrong number of values are dropped
     expect(doc.fieldBoxes).toEqual({ "customer.name": [0.075, 0.258, 0.15, 0.022] });
-    expect({ ...doc, fieldBoxes: {} }).toEqual({ ...normalize(sample), fieldBoxes: {} });
+    expect({ ...doc, fieldBoxes: {} }).toEqual({ ...sampleDoc(), fieldBoxes: {} });
   });
 });
 

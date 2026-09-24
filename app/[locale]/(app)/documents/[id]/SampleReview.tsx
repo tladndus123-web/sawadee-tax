@@ -5,16 +5,15 @@
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { DocumentReview } from "@/components/invoice/DocumentReview";
-import sample from "@/docs/reference/sample-document.json";
 import { useRouter } from "@/i18n/navigation";
 import { saveEntry } from "@/lib/ledger-store";
-import { normalize } from "@/lib/normalize";
+import { sampleDoc } from "@/lib/sample";
 
 const PHOTO = "/sample/panfood.jpg";
 
 // Hand-measured boxes for the two unclear fields; the AI supplies these from step 6
 const doc = {
-  ...normalize(sample),
+  ...sampleDoc(),
   id: "sample",
   fieldBoxes: {
     "customer.name": [0.075, 0.258, 0.15, 0.022],

@@ -53,6 +53,8 @@ export interface Seller {
   taxId: string;
   branchCode: string;
   address: Tri;
+  /** Head office / branch as printed ("สำนักงานใหญ่" or "สาขาที่ 00001"), required by DG Notification 199 */
+  branch: Tri;
   tel: string;
   fax: string;
   saleOffice: string;

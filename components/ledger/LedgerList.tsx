@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link } from "@/i18n/navigation";
-import { type ArchiveFilter, groupByMonth, matches, monthKey } from "@/lib/archive";
+import { type ArchiveFilter, groupByMonth, matches, monthKey, NO_DATE } from "@/lib/archive";
 import { joinTri } from "@/lib/form-labels";
 import { type LedgerEntry, type LedgerView, pick, restoreEntry, saveEntry, useLedger, usePhotoUrl } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
@@ -15,6 +15,7 @@ import { useMe } from "@/lib/role-store";
 import { dmy, todayBangkok } from "@/lib/thai-tax";
 import { STICKERS, type Sticker } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { ExportButtons } from "./ExportButtons";
 import { StickerDot, StickerDots, StickerPopover, useMonthLabel, useStickerLabel } from "./Stickers";
 
 /** Ledger as a monthly archive, with colour-sticker filters, drafts and the admin-only trash. */
@@ -75,7 +76,7 @@ export function LedgerList() {
       ) : (
         <div className="grid gap-4">
           {groupByMonth(filtered).map((g, i) => (
-            <MonthSection key={g.key} group={g} defaultOpen={i < 3} />
+            <MonthSection key={g.key} group={g} defaultOpen={i < 3} monthEntries={list.filter((e) => monthKey(e.doc) === g.key)} />
           ))}
         </div>
       )}
@@ -113,7 +114,16 @@ function FilterBar({ filter, onChange, entries }: { filter: ArchiveFilter; onCha
   );
 }
 
-function MonthSection({ group, defaultOpen }: { group: ReturnType<typeof groupByMonth<LedgerEntry>>[number]; defaultOpen: boolean }) {
+function MonthSection({
+  group,
+  defaultOpen,
+  monthEntries,
+}: {
+  group: ReturnType<typeof groupByMonth<LedgerEntry>>[number];
+  defaultOpen: boolean;
+  /** Every saved document of this month (exports ignore the sticker / unpaid filter) */
+  monthEntries: LedgerEntry[];
+}) {
   const t = useTranslations("archive");
   const monthLabel = useMonthLabel();
   const current = group.key === monthKey({ date: todayBangkok() });
@@ -143,11 +153,14 @@ function MonthSection({ group, defaultOpen }: { group: ReturnType<typeof groupBy
         </span>
         <ChevronDown className="size-4 flex-none text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
       </summary>
-      <ul className="grid gap-2 border-t bg-muted/30 p-2 sm:p-3">
-        {group.items.map((e) => (
-          <DocRow key={e.id} e={e} />
-        ))}
-      </ul>
+      <div className="grid gap-2 border-t bg-muted/30 p-2 sm:p-3">
+        {group.key !== NO_DATE && <ExportButtons month={group.key} entries={monthEntries} />}
+        <ul className="grid gap-2">
+          {group.items.map((e) => (
+            <DocRow key={e.id} e={e} />
+          ))}
+        </ul>
+      </div>
     </details>
   );
 }

@@ -14,6 +14,7 @@ import { runChecks } from "../lib/checks";
 import { compareDocs, type EvalReport } from "../lib/extract-eval";
 import { extractDocument, type ImageType } from "../lib/extract-server";
 import { normalize } from "../lib/normalize";
+import { sampleDoc } from "../lib/sample";
 
 config({ path: ".env.local", quiet: true });
 config({ quiet: true });
@@ -23,7 +24,7 @@ const arg = (name: string) => {
   return i > 0 ? process.argv[i + 1] : undefined;
 };
 const photoPath = arg("photo") ?? "docs/reference/sample-panfood-invoice.jpg";
-const answerPath = arg("answer") ?? "docs/reference/sample-document.json";
+const answerPath = arg("answer");
 const runs = Math.max(1, Math.min(5, Number(arg("runs") ?? 1)));
 const effort = arg("effort") as "low" | "medium" | "high" | "xhigh" | "max" | undefined;
 const model = arg("model");
@@ -36,7 +37,8 @@ const pct = (s: { ok: number; total: number }) => `${s.ok}/${s.total} (${s.total
 async function main() {
   const type: ImageType = /\.png$/i.test(photoPath) ? "image/png" : /\.webp$/i.test(photoPath) ? "image/webp" : "image/jpeg";
   const image = readFileSync(photoPath);
-  const truth = normalize(JSON.parse(readFileSync(answerPath, "utf8")));
+  // Default answer: the hand-checked sample (with the seller's head office the reference JSON predates)
+  const truth = answerPath ? normalize(JSON.parse(readFileSync(answerPath, "utf8"))) : sampleDoc();
   const results: { run: number; ms: number; tokens: [number, number]; report: EvalReport; flags: string[]; unclear: string[]; schemaIssues: string[] }[] = [];
 
   for (let run = 1; run <= runs; run++) {

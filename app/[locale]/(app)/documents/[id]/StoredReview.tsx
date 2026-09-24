@@ -6,6 +6,7 @@ import { ArchiveRestore, Loader2, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ActivityList } from "@/components/dashboard/ActivityList";
 import { DocumentReview } from "@/components/invoice/DocumentReview";
 import { Button } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -103,6 +104,9 @@ export function StoredReview({ id }: { id: string }) {
         }}
         onClose={() => router.push("/ledger")}
       />
+      <div className="print:hidden lg:ml-[calc(360px+2rem)]">
+        <ActivityList key={entry.updatedAt} documentId={entry.id} limit={20} title={t("dash.history")} />
+      </div>
     </div>
   );
 }

@@ -3,13 +3,15 @@
 
 import { bahtText, cleanWords } from "./baht-text";
 import { fmt, fmtQty, near, toSatang, fromSatang } from "./money";
-import { addDays, digitsOnly, dmy, isIsoDate, taxIdOk } from "./thai-tax";
+import { triHas } from "./normalize";
+import { addDays, digitsOnly, dmy, isIsoDate, taxIdOk, todayBangkok } from "./thai-tax";
 import type { LedgerDoc } from "./types";
 
 export const CHECK_KEYS = [
   "sellerTax",
   "buyerTax",
   "company",
+  "required",
   "items",
   "chain",
   "vat",
@@ -17,6 +19,7 @@ export const CHECK_KEYS = [
   "words",
   "due",
   "date",
+  "claimWindow",
   "unclear",
   "dup",
   "conf",
@@ -51,6 +54,8 @@ export interface CheckResult {
   /** not applicable: shown nowhere, never a flag */
   na: boolean;
   detail: DetailPart[];
+  /** Field paths the check is about (e.g. missing required items) — shown as jump-to-photo buttons */
+  paths?: string[];
 }
 
 /** Another ledger document, for the duplicate check */
@@ -63,6 +68,34 @@ export interface LedgerRef {
 export interface CheckContext {
   companyTaxId?: string;
   others?: LedgerRef[];
+  /** yyyy-mm-dd for the claim window; defaults to today in Bangkok */
+  today?: string;
+}
+
+/**
+ * Items a full tax invoice must show (Revenue Code §86/4, DG VAT Notification No. 199), as field paths.
+ * Tax IDs, the date, items and VAT have their own checks. Names and addresses may be printed in any
+ * language; the words "ใบกำกับภาษี" must be there in Thai.
+ */
+export function missingRequired(r: LedgerDoc): string[] {
+  if (r.docType !== "full") return [];
+  const miss: string[] = [];
+  if (!r.docTitle.th.replace(/\s/g, "").includes("ใบกำกับภาษี")) miss.push("docTitle");
+  if (!r.docNo.trim()) miss.push("docNo");
+  if (!triHas(r.seller.name)) miss.push("seller.name");
+  if (!triHas(r.seller.address)) miss.push("seller.address");
+  if (!triHas(r.seller.branch)) miss.push("seller.branch");
+  if (!triHas(r.customer.name)) miss.push("customer.name");
+  if (!triHas(r.customer.address)) miss.push("customer.address");
+  if (!triHas(r.customer.branch)) miss.push("customer.branch");
+  return miss;
+}
+
+/** Last day input VAT can be claimed: 3 years from the invoice date (§82/3). 29 Feb → 28 Feb. */
+export function claimDeadline(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const last = new Date(Date.UTC(y + 3, m, 0)).getUTCDate();
+  return `${y + 3}-${String(m).padStart(2, "0")}-${String(Math.min(d, last)).padStart(2, "0")}`;
 }
 
 const W = (w: DetailWord): DetailPart => ({ w });
@@ -73,8 +106,8 @@ export const detailText = (parts: DetailPart[], word: (w: DetailWord) => string)
 
 export function runChecks(r: LedgerDoc, ctx: CheckContext = {}): CheckResult[] {
   const out: CheckResult[] = [];
-  const add = (key: CheckKey, ok: boolean, detail: DetailPart[], na = false) =>
-    out.push({ key, ok: !!ok, na: !!na, detail });
+  const add = (key: CheckKey, ok: boolean, detail: DetailPart[], na = false, paths?: string[]) =>
+    out.push({ key, ok: !!ok, na: !!na, detail, ...(paths?.length ? { paths } : {}) });
   const tt = r.totals;
   const taxDetail = (id: string): DetailPart[] => [`${id} · `, W(taxIdOk(id) ? "valid" : "invalid")];
 
@@ -96,6 +129,12 @@ export function runChecks(r: LedgerDoc, ctx: CheckContext = {}): CheckResult[] {
   if (bTax) {
     if (!co) add("company", true, [W("noCompany")], true);
     else add("company", co === bTax, [W(co === bTax ? "same" : "differ")]);
+  }
+
+  // Required particulars of a full tax invoice (§86/4 + Notification 199)
+  if (r.docType === "full") {
+    const miss = missingRequired(r);
+    add("required", !miss.length, miss.length ? [`${miss.length} · `, W("missing")] : [W("ok")], false, miss);
   }
 
   // Item lines: qty × price = amount (±0.5), Σ amount = total (±1).
@@ -172,6 +211,12 @@ export function runChecks(r: LedgerDoc, ctx: CheckContext = {}): CheckResult[] {
     isIsoDate(r.date) ? [`${dmy(r.date)} · `, W(r.dateWasBuddhist ? "be" : "gregorian")] : r.date ? [`${r.date} · `, W("invalid")] : [W("missing")],
   );
 
+  // Input VAT can be claimed for 3 years from the invoice date (§82/3)
+  if (r.docType === "full" && isIsoDate(r.date)) {
+    const deadline = claimDeadline(r.date);
+    add("claimWindow", (ctx.today ?? todayBangkok()) <= deadline, [`${dmy(r.date)} → ${dmy(deadline)}`]);
+  }
+
   // Unclear fields
   const un = r.unclear;
   add("unclear", !un.length, un.length ? [`${un.length} · `, W("checkPhoto")] : [W("noneUnclear")]);
@@ -197,11 +242,19 @@ export const flagsFor = (r: LedgerDoc, ctx: CheckContext = {}): CheckKey[] =>
     .map((c) => c.key);
 
 /**
- * Input VAT counts only for full tax invoices addressed to our company.
- * Without a valid company tax ID we cannot tell, so nothing is claimable (PROMPT: "buyer is our company").
+ * Input VAT counts only for full tax invoices addressed to our company, showing every required item,
+ * within 3 years of the invoice date. Without a valid company tax ID we cannot tell, so nothing is claimable.
  */
-export function claimable(r: LedgerDoc, companyTaxId?: string): boolean {
+export function claimable(r: LedgerDoc, companyTaxId?: string, today: string = todayBangkok()): boolean {
   const buyer = digitsOnly(r.customer.taxId);
   const co = digitsOnly(companyTaxId);
-  return r.docType === "full" && taxIdOk(buyer) && taxIdOk(co) && co === buyer;
+  return (
+    r.docType === "full" &&
+    taxIdOk(buyer) &&
+    taxIdOk(co) &&
+    co === buyer &&
+    missingRequired(r).length === 0 &&
+    isIsoDate(r.date) &&
+    today <= claimDeadline(r.date)
+  );
 }

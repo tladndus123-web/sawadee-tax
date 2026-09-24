@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import sample from "@/docs/reference/sample-document.json";
 import {
   BLOCKS,
   type BlockKey,
@@ -25,11 +24,11 @@ import {
 import { saveFormConfig, useStoredFormConfig } from "@/lib/form-config-store";
 import { useMe } from "@/lib/role-store";
 import { defaultLabel, type FormMode, LABEL_KEYS, type LabelKey } from "@/lib/form-labels";
-import { normalize } from "@/lib/normalize";
+import { sampleDoc } from "@/lib/sample";
 import { FORM_LANGS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const SAMPLE = normalize(sample);
+const SAMPLE = sampleDoc();
 const PLACEHOLDER_LANG = { th: "TH", en: "EN", ja: "JA" } as const;
 
 /** Company form settings: block order / visibility, visible fields, label names, with live preview. */

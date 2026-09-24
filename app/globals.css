@@ -574,6 +574,9 @@
     max-width: none !important;
     padding: 0 !important;
   }
+  .report-paper {
+    font-size: 10pt;
+  }
   .invoice-paper {
     border: 0 !important;
     border-radius: 0 !important;
@@ -701,4 +704,31 @@
 @keyframes shred-led {
   from { opacity: 0.55; }
   to { opacity: 1; }
+}
+
+/* Login: Apple Intelligence edge glow — a blurred spectrum turning slowly behind the card */
+.login-card {
+  isolation: isolate;
+}
+
+.login-glow {
+  position: absolute;
+  z-index: -1;
+  inset: -3px;
+  border-radius: 31px;
+  overflow: hidden;
+  filter: blur(18px);
+  opacity: 0.45;
+}
+
+.login-glow::before {
+  content: "";
+  position: absolute;
+  inset: -60%;
+  background: var(--ai-conic);
+  animation: ai-spin 12s linear infinite;
+}
+
+.dark .login-glow {
+  opacity: 0.6;
 }

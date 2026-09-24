@@ -6,7 +6,7 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
   const { locale } = await params;
   setRequestLocale(locale as Locale);
   return (
-    <main className="grid min-h-dvh place-items-center px-4 py-10">
+    <main className="grid min-h-dvh place-items-center px-4 py-12">
       <LoginForm />
     </main>
   );

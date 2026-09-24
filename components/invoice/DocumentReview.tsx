@@ -52,6 +52,8 @@ export interface DocumentReviewProps {
   onDelete?: (reason: string) => Promise<void>;
   /** After the shredder finishes (default: onClose) */
   onDeleted?: () => void;
+  /** Short note shown under the title (e.g. what the vendor dictionary changed) */
+  notice?: React.ReactNode;
   /** Save without validation to finish later */
   onDraft?: (doc: LedgerDoc) => Promise<void>;
   onClose: () => void;
@@ -72,6 +74,7 @@ export function DocumentReview({
   onDeleted,
   onDraft,
   onClose,
+  notice,
 }: DocumentReviewProps) {
   const t = useTranslations();
   const form = useForm<LedgerDoc>({ defaultValues: initial, resolver: zodResolver(docSchema), mode: "onBlur" });
@@ -175,6 +178,7 @@ export function DocumentReview({
               {doc.docNo || t("ui.documentForm")}
             </h2>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">{t("ui.reviewHint")}</p>
+            {notice && <div className="mt-3">{notice}</div>}
             {uploaderName && <p className="mt-2 text-xs text-muted-foreground">{t("app.uploadedBy")}: {uploaderName}</p>}
           </div>
           <div className="ai-ring min-w-0 rounded-2xl px-5 py-3.5 max-sm:w-full sm:text-right">

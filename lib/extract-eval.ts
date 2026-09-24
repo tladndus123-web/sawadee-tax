@@ -72,6 +72,7 @@ export function compareDocs(expected: LedgerDoc, got: LedgerDoc): EvalReport {
   tri("docTitle", expected.docTitle, got.docTitle);
   tri("seller.name", expected.seller.name, got.seller.name);
   tri("seller.address", expected.seller.address, got.seller.address);
+  tri("seller.branch", expected.seller.branch, got.seller.branch);
   tri("customer.name", expected.customer.name, got.customer.name);
   tri("customer.branch", expected.customer.branch, got.customer.branch);
   tri("customer.address", expected.customer.address, got.customer.address);
