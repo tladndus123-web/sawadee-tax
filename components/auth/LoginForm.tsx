@@ -219,7 +219,7 @@ function LanguagePicker() {
   const params = useSearchParams();
   const [pending, start] = useTransition();
   return (
-    <nav aria-label={t("language")} className={cn("flex flex-wrap items-center justify-center gap-1 transition-opacity", pending && "opacity-60")}>
+    <nav aria-label={t("language")} className={cn("flex flex-wrap items-center justify-center gap-1 rounded-full bg-background/80 p-1 transition-opacity", pending && "opacity-60")}>
       {LANGS.map(([code, label]) => {
         const on = code === locale;
         return (
