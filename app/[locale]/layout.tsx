@@ -23,8 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // Light is the default theme; ThemeColor switches this when someone picks dark
-  themeColor: "#f5f5f7",
+  // theme-color comes from <ThemeColor /> (follows the picked theme)
 };
 
 export default async function LocaleLayout({
