@@ -1,0 +1,6 @@
+# Never upload local keys (Vercel gets its keys from the project's Environment Variables)
+.env*
+!.env.example
+# Local-only
+supabase/.temp
+supabase/.branches

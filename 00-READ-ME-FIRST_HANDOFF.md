@@ -288,6 +288,17 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **지급 기한 LINE 알림:** `app/api/cron/due-reminders` — Vercel Cron(`vercel.json`, 매일 02:00 UTC = 방콕 09:00)이 `CRON_SECRET`으로 호출. 기한 지남 · 7일 이내 외상 매입이 있을 때만, LINE을 연결한 **관리자**에게 push(태국어 · 일본어). 없는 날은 안 보내요.
 - **화면 폭 통일:** 대시보드 · 장부 · 거래처 · 설정 = max-w-5xl, 업로드 = 4xl, 서류 = 넓게.
 
+## 7-5. 배포 (운영)
+
+- **주소:** https://thai-receipt-ledger.vercel.app — Vercel 팀 `tladndus123-webs-projects`, 프로젝트 `thai-receipt-ledger`, 함수 지역 **sin1(싱가포르)** (`vercel.json`).
+- **DB:** Supabase 프로젝트 **INC** (ap-southeast-1 싱가포르). 마이그레이션 4개 적용, pgTAP 27개 클라우드에서 통과. 가입 막음(초대제), Site URL · Redirect = 운영 주소.
+- **다시 배포:** `npx vercel deploy --prod` (이 PC는 `vercel login` 되어 있음). DB 변경은 `npx supabase db push` (연결됨: `supabase link`). 배포 전 `npx next build`가 통과해야 해요.
+- **키:** Vercel 프로젝트 Environment Variables(운영)에 9개 — Supabase URL · anon · service_role, ANTHROPIC_API_KEY, LINE 3개, CRON_SECRET, NEXT_PUBLIC_APP_URL. 로컬 배포용 키는 `.env.deploy`(git 제외). `.vercelignore`가 `.env*` 업로드를 막아요.
+- **LINE:** 웹훅 = `https://thai-receipt-ledger.vercel.app/api/line/webhook`. 운영 DB는 새 DB라 **LINE 연결을 운영 사이트 설정에서 다시** 해야 해요.
+- **알림:** Vercel Cron `0 2 * * *` → `/api/cron/due-reminders`.
+- **메일:** Supabase Auth → Gmail SMTP(suhojayu4@gmail.com, 앱 비밀번호), 시간당 60통, 로그인 · 초대 메일 4개 언어 템플릿 — `scripts/email-templates.ts`, 적용은 `npx tsx scripts/setup-email.ts`(`.env.deploy`의 GMAIL_APP_PASSWORD 사용).
+- **아직:** 도메인(예: ledger.회사.com)은 선택. Gmail 앱 비밀번호를 지우면 메일이 멈춰요.
+
 ## 8. 알아 두면 좋은 것
 
 **디자인**
