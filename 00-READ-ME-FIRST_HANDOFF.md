@@ -8,7 +8,7 @@
 > - 기준 시제품: [`docs/reference/prototype-ledger.html`](docs/reference/prototype-ledger.html)
 > - 4단계까지의 상세 기록: [`docs/REVIEW.md`](docs/REVIEW.md) (설계 결정, 시제품과 다르게 한 것)
 > - 외부 검수 결과 (9건 모두 수정됨): [`docs/review-findings/REVIEW-FINDINGS.md`](docs/review-findings/REVIEW-FINDINGS.md)
-> - 작성 2026-09-24 · 같은 날 UI · 올리기 · 장부 작업 후 갱신
+> - 작성 2026-09-24 · 마지막 갱신 2026-09-26 (운영 배포 · 멤버 관리 · 12시간 로그인 · 일본어 기본까지)
 
 ---
 
@@ -33,7 +33,9 @@
 - **LINE 봇(1:1)**: 설정에서 받은 코드로 계정 연결 → 사진을 보내면 AI가 읽어 장부에 바로 저장, 태국어 · 일본어 결과 카드로 답장 (7-3)
 - 설정: 내 계정 · 우리 회사 세금번호 · 직원 관리(초대 · 권한) · 스티커 이름 · 양식 설정
 
-**아직인 것:** 실제 LINE 채널 연결(키 · 웹훅 주소 — 7-3), 9단계(Playwright · README · 배포) (5번 ④)
+- **운영 중:** https://thai-receipt-ledger.vercel.app (Vercel + Supabase 싱가포르, 7-5) · 멤버 관리(접근 해제 · 메일 보내기) · 장부 검색 · 지급 기한 LINE 알림 · 매입세액 보고서
+
+**아직인 것:** 로그인 메일에 6자리 코드 넣기(7-6), Playwright 테스트를 저장소 안으로(지금은 `work/*.cjs`), README, 백업(월 1회 내려받기 등), AI 사용량 · 비용 표시, 오류 알림, 월 마감 잠금(제안만)
 
 > 장부 · 사진 · 권한 · 설정은 이제 모두 Supabase에 저장돼요. 로컬 개발은 Docker 위의 로컬 Supabase를 써요 (2번).
 
@@ -56,7 +58,7 @@ npx eslint app components lib scripts middleware.ts
 
 - Node 24에서 개발했어요.
 - `.env.local`: `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` · `SUPABASE_SERVICE_ROLE_KEY`(로컬 값은 `npx supabase status -o env`), `ANTHROPIC_API_KEY`. 나머지는 `.env.example` 참고.
-- **로그인:** 가입은 꺼져 있어요(초대제). `/ko/login`에 초대된 이메일을 넣으면 매직링크가 가요. 로컬에서는 메일이 실제로 나가지 않고 **Mailpit(http://127.0.0.1:54324)** 에 쌓여요.
+- **로그인:** 가입은 꺼져 있어요(초대제). `/ja/login`(기본 일본어)에 초대된 이메일을 넣으면 매직링크가 가요 — 어느 브라우저에서 열어도 돼요. 로컬에서는 메일이 실제로 나가지 않고 **Mailpit(http://127.0.0.1:54324)** 에 쌓여요.
 - DB를 처음 상태로: `npm run db:reset` 후 `db:bootstrap`을 다시 실행.
 - 주요 화면
 
@@ -194,7 +196,7 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **스키마:** `supabase/migrations/` — 지시서 5번 표(`documents` · `document_items` · `vendors` · `company_settings`)에 더해 `members`(역할), `document_events`(변경 기록), `status`(draft/reviewed), `stickers`, `field_boxes`, 소프트 삭제 3칸(`deleted_at` · `deleted_by` · `delete_reason`, 사유 2자 이상 제약), `company_settings.form_config` · `sticker_names`.
 - **저장:** `save_document(p_id, p_row, p_items)` RPC — 서류와 품목을 한 트랜잭션으로 저장, 넘긴 칸만 씀. 앱 ↔ DB 변환은 `lib/db-map.ts`(왕복 테스트 있음).
 - **권한(RLS + 트리거):** 직원 = 읽기 · 추가 · 수정 / 관리자 = + 소프트 삭제 · 복원 · 휴지통 · 회사 설정 · 직원 관리. **DELETE 정책이 없어 누구도 영구 삭제 못 함.** 작성자 · 수정자 · 삭제자는 DB가 기록(브라우저 값 무시). 마지막 관리자는 강등 불가. 직원이 아닌 로그인 사용자는 아무것도 못 봄.
-- **로그인:** 매직링크 + 초대제(`config.toml`의 `enable_signup = false`). 관리자 초대는 `/api/members`(서비스 키, 서버 전용). 초대 메일 링크는 `#access_token`(implicit) 형식이라 `AuthCallback`이 직접 세션을 설정해요 — PKCE 브라우저 클라이언트는 이 형식을 거부하기 때문.
+- **로그인:** 매직링크 + 초대제(`config.toml`의 `enable_signup = false`). 관리자 초대는 `/api/members`(서비스 키, 서버 전용). 초대 메일 링크는 `#access_token`(implicit) 형식이라 `AuthCallback`이 직접 세션을 설정해요 — PKCE 브라우저 클라이언트는 이 형식을 거부하기 때문. 2026-09-26부터 로그인 화면에서 보내는 링크도 implicit이에요(7-6).
 - **사진:** 비공개 버킷 `documents`, 화면에는 1시간짜리 서명 URL(`usePhotoUrl`).
 - **AI 읽기:** 이제 로그인한 직원만 (`/api/extract` 401/403), 요청 제한도 사람 기준.
 - **미들웨어:** next-intl + 세션 갱신 + 로그인 안 했으면 `/{locale}/login?next=…`로.
@@ -207,7 +209,7 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 |---|---|---|
 | 7 | CSV (사용자가 XLSX · PDF를 골라 보류) | ✅ 거래처 사전, 월별 XLSX, 월별 PDF 보고서, 장부 목록, 인쇄, 지급 처리(대시보드에서) |
 | 8 | — | ✅ 대시보드(4칸 · 곧 지급할 청구서 · 6개월 차트 · 최근 기록), 서류별 기록 |
-| 9 | Playwright 테스트를 프로젝트에 넣기, README 작성(지금은 create-next-app 기본), Vercel 배포 | 휴대폰 · 다크 · 가로 넘침 점검 |
+| 9 | Playwright 테스트를 프로젝트에 넣기, README 작성(지금은 create-next-app 기본) | ✅ Vercel 배포(7-5), 휴대폰 · 다크 · 가로 넘침 점검 |
 
 ### 제안만 된 것 (사용자와 합의 전)
 
@@ -234,7 +236,7 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 2. **API 키는 서버에서만** 써요 (`ANTHROPIC_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`). `.env*`는 git에 올리지 않아요 (`.gitignore`에 있음).
 3. **서류는 영구 삭제하지 않아요.** 삭제 = 소프트 삭제 + 사유 필수 + 관리자만. 휴지통 비우기(영구 삭제)는 일부러 만들지 않았어요.
 4. **임시저장 서류는 월별 합계 · 신고 숫자에 넣지 않아요.**
-5. **사용자가 정한 것:** 로그인은 매직링크 + 초대제, 우리 회사 정보는 설정 화면에서 입력(시드에 넣지 않음), 금액 글자의 EN/JA는 `฿ 64,200.00` 숫자, 양식 설정은 회사 전체 1개 · 관리자만, AI 모델 기본값 `claude-opus-5-5`, 한 번에 최대 5장, 양식 언어는 3개(한국어 양식 없음)
+5. **사용자가 정한 것:** 로그인은 매직링크 + 초대제, 우리 회사 정보는 설정 화면에서 입력(시드에 넣지 않음), 금액 글자의 EN/JA는 `฿ 64,200.00` 숫자, 양식 설정은 회사 전체 1개 · 관리자만, AI 모델 기본값 `claude-opus-5-5`, 한 번에 최대 5장, 양식 언어는 3개(한국어 양식 없음), 로그인은 기기마다 12시간 유지 후 보안 안내와 함께 재로그인, 화면 기본 언어는 일본어(한국어는 맨 끝), 화면은 밝은 모드 기본 (7-6)
 6. **4개 언어 문구:** 새 문구는 `messages/`의 ko · th · en · ja **4개 파일 모두**에 넣어요 (`global.d.ts`가 ko 파일 기준으로 타입 검사).
 
 ---
@@ -305,6 +307,20 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
   - 같은 마이그레이션에서 **서류 삭제 사유가 비어(null) 있어도 통과하던 구멍**도 막았어요.
   - 검증: `work/check-members.cjs`, pgTAP 35개.
 
+## 7-6. 로그인 유지 · 언어 · 화면 모드 (2026-09-26)
+
+- **로그인은 기기마다 12시간.** 로그인하면 그 기기(브라우저)에서 12시간 동안 유지돼요 — 브라우저를 껐다 켜도 그대로예요. 12시간이 지나면 그 기기만 로그아웃되고 로그인 화면에 "보안을 위해 … 다시 로그인해 주세요"(4개 언어)가 떠요. 다른 기기의 로그인은 그대로예요.
+  - 시간의 기준 = 로그인한 순간. Supabase 토큰의 `amr`(로그인 방법 + 시각)은 토큰을 갱신해도 바뀌지 않아서, 사용 중에 시간이 늘어나지 않아요 (로컬에서 확인).
+  - 코드: `lib/auth/session-limit.ts`(계산, 테스트 8개) · `lib/auth/session-guard.ts`(만료면 그 세션만 `signOut({ scope: "local" })`) — `middleware.ts`(화면 열 때), `/api/extract` · `/api/members`(서버), `components/auth/SessionWatch.tsx`(화면을 켜 둔 채 시간이 지날 때, 탭으로 돌아올 때 다시 확인). 로그인 화면 `?expired=1`에서 안내.
+  - 시간을 바꾸려면 환경변수 `NEXT_PUBLIC_SESSION_HOURS`(기본 12, Vercel에 넣고 다시 배포).
+  - 한계: 서버에서 강제로 끊는 기능(Supabase "Time-box user sessions")은 유료 요금제라 안 켰어요. 그래서 12시간이 지난 로그인은 다음에 화면을 열거나 서버 기능을 쓰는 순간 끊겨요.
+- **화면 언어 기본 = 일본어.** 순서 日本語 · ไทย · English · 한국어(`i18n/routing.ts`). 처음 들어오면 브라우저 언어와 상관없이 일본어(미들웨어가 Accept-Language를 빼고 next-intl에 넘김), 고른 언어는 쿠키로 1년 기억.
+- **화면 모드 기본 = 밝은 화면.** 예전엔 "기기 설정 따라가기"라 다크 모드 휴대폰에서는 다크만 보였어요. 이제 밝은 화면이 기본이고, 머리글 해/달 아이콘에서 다크 · 기기 설정을 고를 수 있어요(기기에 기억). 휴대폰 상단 바 색도 고른 모드를 따라가요(`components/layout/theme-color.tsx`).
+- **로그인 링크는 어느 브라우저에서나.** 예전 로그인 화면 링크는 PKCE라 **요청한 브라우저에서만** 열렸어요 — 휴대폰 메일 앱이 자기 브라우저로 열면 "링크가 만료됐거나 이미 사용됐어요". 이제 초대 메일처럼 implicit(`supabaseLinkSender`, `lib/supabase/client.ts`)이라 어느 브라우저 · 기기에서 열어도 로그인돼요 (로컬 재현 · 수정 확인, 운영에서 요청 방식 확인).
+- **아직: 메일에 6자리 코드.** 링크가 다른 브라우저에서 열리면 그 브라우저에 로그인돼요. 쓰던 브라우저에 로그인하려면 메일의 코드를 입력하면 되게 만들어 뒀지만(로그인 화면 코드 칸), **운영 메일에 아직 코드가 없어서 칸을 숨겨 뒀어요**(`components/auth/LoginForm.tsx`의 `CODE_IN_EMAIL = false`). 켜는 순서: `npx tsx scripts/setup-email.ts`(메일 템플릿에 코드 추가, 클라우드 코드 길이 8 → 6) → `CODE_IN_EMAIL = true` → 빌드 · 배포.
+- **검증:** vitest 132개, 로컬 브라우저 확인(12시간 · 언어 15개, 로그인 링크 · 코드 · 밝은 화면 7개), 운영 확인 8개(메일 발송 없이). 확인 스크립트는 저장소 밖(작업 세션 임시 폴더)에 있어요.
+- **배포:** 2026-09-26 04:20(+07) `npx vercel deploy --prod`. DB 변경 없음, 새 키 없음.
+
 ## 8. 알아 두면 좋은 것
 
 **디자인**
@@ -323,7 +339,7 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 **AI 읽기 (`app/api/extract/route.ts`)**
 - 지시문 = `docs/reference/extract-prompt.txt` 그대로 + `FIELD_BOX_RULE`(칸 위치). 배포 시 파일이 빠지지 않게 `next.config.ts`의 `outputFileTracingIncludes`에 넣어 뒀어요.
 - 오류 코드(`rate` · `notDoc` · `badImage` · `aiFail` · `busy` · `noKey`)를 화면이 4개 언어 문장으로 바꿔요. 키가 없으면 SDK가 일반 `Error`를 던져서 메시지로 구분해요.
-- 요청 제한은 IP 기준 메모리 카운터(1분 10회)라 서버가 여러 대면 공유되지 않아요 — 로그인 후 사용자 기준으로 바꾸세요.
+- 요청 제한은 **사람 기준** 메모리 카운터(1분 10회)라 서버(Vercel 함수)가 여러 개 뜨면 공유되지 않아요 — 엄격히 하려면 DB나 Redis로 옮기세요.
 
 **장부**
 - 몇월분 = **서류 날짜** 기준(`monthKey`). 표시는 `Intl`이라 태국어는 불기 연도(예: กันยายน 2569)로 나와요.
@@ -331,7 +347,7 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - 삭제 애니메이션이 도는 동안 화면이 바뀌면 애니메이션이 끊겨요 — `StoredReview`의 `deleting` 상태가 그걸 막고 있어요.
 
 **작업 환경**
-- 이 폴더에는 **git이 없어요.** 원래 저장소 이력은 `review/git-log.txt`에만 남아 있어요 (마지막: `d79a252 Add handoff document`). 원본 저장소가 있으면 거기에 이어서 커밋하는 게 좋아요.
+- 이 폴더는 **git 저장소**예요 (2026-09-24 새로 시작, 원격 저장소 없음). 예전 원본 저장소 이력은 `review/git-log.txt`에만 있어요. 사용자가 요청할 때만 커밋해요.
 - UI 작업 전 코드 백업: 이 폴더 바깥 `work/backup-before-ui-v2/` (app · components · lib · messages · 옛 favicon).
-- 이번 작업의 브라우저 확인 스크립트는 프로젝트 **바깥** `work/*.cjs`에 있어요 (`check-batch-upload.cjs`, `check-sign-fonts.cjs`, `check-soft-delete.cjs`, `check-archive.cjs` — 개발 서버 3130 포트 기준, 설치된 Edge 사용). 9단계에서 Playwright 테스트로 옮기면 좋아요.
+- 브라우저 확인 스크립트는 프로젝트 **바깥** `work/*.cjs`에 있어요 (`check-supabase-flow`, `check-step7`, `check-step8`, `check-line`, `check-print`, `check-report`, `check-responsive`, `check-members` 등 — 로컬 개발 서버 3130 + 로컬 Supabase + 설치된 Edge 기준, 결과 이미지는 `outputs/apple-ui-v2/`). 저장소 안 Playwright 테스트로 옮기면 좋아요.
 - 커밋 메시지 끝에는 `Co-Authored-By` 줄을 붙여 왔어요 (선택).

@@ -2,6 +2,7 @@
 // The upload screen sends up to 5 photos at once, one request per photo. The reading itself is in
 // lib/extract-server.ts (shared with scripts/eval-extract.ts).
 
+import { endIfExpired } from "@/lib/auth/session-guard";
 import type { ExtractErrorCode } from "@/lib/extract-schema";
 import { extractDocument, IMAGE_TYPES, type ImageType, MAX_IMAGE_BYTES } from "@/lib/extract-server";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -34,6 +35,8 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "signin" }, { status: 401 });
+  // Signed in more than 12 hours ago on this device: this session is over
+  if (await endIfExpired(supabase)) return Response.json({ error: "signin" }, { status: 401 });
   const { data: member } = await supabase.from("members").select("user_id").eq("user_id", user.id).maybeSingle();
   if (!member) return Response.json({ error: "signin" }, { status: 403 });
   if (limited(user.id)) return fail("rate", 429);

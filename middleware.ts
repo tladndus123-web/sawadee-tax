@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
-import { type NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
+import { endIfExpired } from "./lib/auth/session-guard";
 import { routing } from "./i18n/routing";
 
 const intl = createMiddleware(routing);
@@ -9,7 +10,12 @@ const intl = createMiddleware(routing);
 const PUBLIC = new Set(["login", "auth"]);
 
 export default async function middleware(req: NextRequest) {
-  const res = intl(req);
+  // Language: the one the person picked before (cookie), otherwise Japanese — not the browser's language.
+  // next-intl only offers both or neither, so the Accept-Language header is dropped before it looks.
+  const headers = new Headers(req.headers);
+  headers.delete("accept-language");
+  const res = intl(new NextRequest(req, { headers }));
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return res;
@@ -30,15 +36,21 @@ export default async function middleware(req: NextRequest) {
 
   const [, locale, section] = req.nextUrl.pathname.split("/");
   const localized = (routing.locales as readonly string[]).includes(locale);
-  if (!user && localized && !PUBLIC.has(section ?? "")) {
+  if (!localized || PUBLIC.has(section ?? "")) return res;
+
+  const toLogin = (reason?: "removed" | "expired") => {
     const to = new URL(`/${locale}/login`, req.url);
     to.searchParams.set("next", req.nextUrl.pathname + req.nextUrl.search);
-    // An admin removed this person (their login is banned): the login page says so
-    if (authError?.code === "user_banned") to.searchParams.set("removed", "1");
+    if (reason) to.searchParams.set(reason, "1");
     const redirect = NextResponse.redirect(to);
     for (const c of res.cookies.getAll()) redirect.cookies.set(c);
     return redirect;
-  }
+  };
+
+  // An admin removed this person (their login is banned): the login page says so
+  if (!user) return toLogin(authError?.code === "user_banned" ? "removed" : undefined);
+  // Signed in on this device longer ago than the limit (12 hours): sign out, the login page says why
+  if (await endIfExpired(supabase)) return toLogin("expired");
   return res;
 }
 

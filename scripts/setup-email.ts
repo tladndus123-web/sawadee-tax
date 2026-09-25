@@ -26,6 +26,8 @@ async function main() {
       smtp_sender_name: "Thai Receipt Ledger",
       // Gmail allows ~500 a day; this is plenty for a small team and still stops abuse
       rate_limit_email_sent: 60,
+      // The sign-in email carries a one-time code as well as the link (see email-templates.ts)
+      mailer_otp_length: 6,
       mailer_subjects_magic_link: magicLink.subject,
       mailer_templates_magic_link_content: magicLink.content,
       mailer_subjects_invite: invite.subject,
@@ -34,7 +36,7 @@ async function main() {
   });
   if (!res.ok) throw new Error(`Supabase: ${res.status} ${(await res.text()).slice(0, 200)}`);
   const c = (await res.json()) as Record<string, unknown>;
-  console.log(`SMTP ${c.smtp_host}:${c.smtp_port} as ${c.smtp_admin_email} · emails/hour ${c.rate_limit_email_sent} · templates set`);
+  console.log(`SMTP ${c.smtp_host}:${c.smtp_port} as ${c.smtp_admin_email} · emails/hour ${c.rate_limit_email_sent} · code length ${c.mailer_otp_length} · templates set`);
 }
 
 main().catch((e) => {

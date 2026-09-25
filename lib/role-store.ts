@@ -4,6 +4,7 @@
 // the database enforces the same rules with RLS (supabase/migrations).
 
 import { useEffect, useSyncExternalStore } from "react";
+import { routing } from "@/i18n/routing";
 import { supabaseBrowser } from "./supabase/client";
 
 export type Role = "admin" | "staff";
@@ -34,7 +35,7 @@ async function load() {
   // Signed in but not an (active) member any more — e.g. an admin removed their access: sign out and say why
   if (!data && !/\/(login|auth)(\/|$)/.test(window.location.pathname)) {
     await supabase.auth.signOut();
-    const locale = window.location.pathname.split("/")[1] || "ko";
+    const locale = window.location.pathname.split("/")[1] || routing.defaultLocale;
     window.location.assign(`/${locale}/login?removed=1`);
     return;
   }

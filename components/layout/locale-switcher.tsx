@@ -17,10 +17,10 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 
 const LABELS: [Locale, string, string][] = [
-  ["ko", "한국어", "KO"],
+  ["ja", "日本語", "JA"],
   ["th", "ไทย", "TH"],
   ["en", "English", "EN"],
-  ["ja", "日本語", "JA"],
+  ["ko", "한국어", "KO"],
 ];
 
 /** Compact globe menu: one button in the bar instead of four chips. */

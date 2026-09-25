@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Loader2, Lock, Mail, MailCheck } from "lucide-react";
+import { ArrowRight, KeyRound, Loader2, Lock, Mail, MailCheck, ShieldCheck } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -8,19 +8,26 @@ import { AppMark } from "@/components/layout/app-mark";
 import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { SESSION_HOURS } from "@/lib/auth/session-limit";
+import { supabaseBrowser, supabaseLinkSender } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 /** Local Supabase keeps sent mail in Mailpit instead of delivering it */
 const LOCAL_MAIL = "http://127.0.0.1:54324";
 const isLocal = () => /127\.0\.0\.1|localhost/.test(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
 
+/**
+ * Show the "enter the code from the email" box. Turn on only after the cloud sign-in email carries the code
+ * ({{ .Token }}): run `npx tsx scripts/setup-email.ts` (scripts/email-templates.ts), then set true and deploy.
+ */
+const CODE_IN_EMAIL = false;
+
 /** Each language written in its own script */
 const LANGS: [Locale, string][] = [
-  ["ko", "한국어"],
   ["ja", "日本語"],
   ["th", "ไทย"],
   ["en", "English"],
+  ["ko", "한국어"],
 ];
 
 /** Passwordless sign-in: invited members get a magic link by email (sign-up is disabled). */
@@ -31,25 +38,49 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [codeState, setCodeState] = useState<"idle" | "checking">("idle");
+  const [codeError, setCodeError] = useState<string | null>(null);
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
     setState("sending");
     setError(null);
     const next = params.get("next") || `/${locale}`;
-    const { error } = await supabaseBrowser().auth.signInWithOtp({
+    const { error } = await supabaseLinkSender().auth.signInWithOtp({
       email: email.trim(),
       options: {
         shouldCreateUser: false,
         emailRedirectTo: `${window.location.origin}/${locale}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
-    if (!error) return setState("sent");
+    if (!error) {
+      setCode("");
+      setCodeError(null);
+      return setState("sent");
+    }
     setState("idle");
     if (error.status === 429) setError(t("tooSoon"));
     // Unknown email with sign-up disabled
     else if (error.status === 422 || error.status === 400 || /signup|not allowed/i.test(error.message)) setError(t("notInvited"));
     else setError(t("fail"));
+  };
+
+  // The code from the same email signs in right here, in this browser (handy when the phone's mail app
+  // opens the link in a different browser). Membership is checked by the callback page, as for links.
+  const verify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = code.replace(/\D/g, "");
+    if (token.length < 6) return;
+    setCodeState("checking");
+    setCodeError(null);
+    const { error } = await supabaseBrowser().auth.verifyOtp({ email: email.trim(), token, type: "email" });
+    if (error) {
+      setCodeState("idle");
+      return setCodeError(error.status === 429 ? t("tooSoon") : t("codeWrong"));
+    }
+    const next = params.get("next") || `/${locale}`;
+    window.location.replace(`/${locale}/auth/callback?next=${encodeURIComponent(next)}`);
   };
 
   return (
@@ -76,6 +107,36 @@ export function LoginForm() {
               <p className="text-[15px] leading-relaxed text-muted-foreground" role="status">
                 {t("sent", { email: email.trim() })}
               </p>
+              {CODE_IN_EMAIL && (
+                <form onSubmit={verify} className="grid w-full gap-3 text-left">
+                  <label className="grid gap-1.5">
+                    <span className="text-center text-sm text-muted-foreground">{t("codeHint")}</span>
+                    <span className="group relative block">
+                      <KeyRound className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden />
+                      <input
+                        value={code}
+                        onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        pattern="[0-9]*"
+                        aria-label={t("codeLabel")}
+                        placeholder={t("codeLabel")}
+                        aria-invalid={!!codeError}
+                        className="h-[52px] w-full rounded-2xl border border-input bg-background/60 pr-4 pl-11 font-mono text-[18px] tracking-[0.3em] transition-[border-color,box-shadow] outline-none placeholder:font-sans placeholder:text-[15px] placeholder:tracking-normal placeholder:text-muted-foreground/70 focus:border-primary focus:bg-card focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--primary)_14%,transparent)] aria-invalid:border-bad"
+                      />
+                    </span>
+                  </label>
+                  {codeError && (
+                    <p role="alert" className="-mt-1 text-center text-sm text-bad">
+                      {codeError}
+                    </p>
+                  )}
+                  <Button type="submit" variant="secondary" className="h-11 rounded-2xl text-[15px] font-semibold" disabled={codeState === "checking" || code.length < 6}>
+                    {codeState === "checking" && <Loader2 className="size-4 animate-spin" />}
+                    {t("codeSubmit")}
+                  </Button>
+                </form>
+              )}
               {isLocal() && (
                 <Button asChild className="h-11 w-full rounded-full text-[15px]">
                   <a href={LOCAL_MAIL} target="_blank" rel="noreferrer">
@@ -92,6 +153,12 @@ export function LoginForm() {
             <form onSubmit={send} className="grid gap-4">
               <p className="text-center text-[15px] leading-relaxed text-pretty text-muted-foreground">{t("intro")}</p>
               {params.get("removed") && <p role="status" className="rounded-2xl bg-bad-soft px-4 py-3 text-center text-sm text-bad">{t("removed")}</p>}
+              {params.get("expired") && !params.get("removed") && (
+                <p role="status" className="flex items-start gap-2 rounded-2xl bg-muted px-4 py-3 text-left text-sm text-foreground">
+                  <ShieldCheck className="mt-0.5 size-4 flex-none text-primary" aria-hidden />
+                  {t("expired", { hours: SESSION_HOURS })}
+                </p>
+              )}
               <label className="group relative block">
                 <span className="sr-only">{t("email")}</span>
                 <Mail className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden />
@@ -122,6 +189,7 @@ export function LoginForm() {
                 <Lock className="size-3.5" aria-hidden />
                 {t("inviteOnly")}
               </p>
+              <p className="-mt-2 text-center text-xs text-muted-foreground">{t("keepSigned", { hours: SESSION_HOURS })}</p>
             </form>
           )}
         </div>

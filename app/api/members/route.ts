@@ -10,13 +10,15 @@
 // never the last admin) decide; the service role only handles the login side.
 
 import { createClient } from "@supabase/supabase-js";
+import { routing } from "@/i18n/routing";
+import { endIfExpired } from "@/lib/auth/session-guard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
 const fail = (error: string, status: number) => Response.json({ error }, { status });
-const localeOf = (v: unknown) => (/^(ko|th|en|ja)$/.test(String(v)) ? String(v) : "ko");
+const localeOf = (v: unknown) => (/^(ko|th|en|ja)$/.test(String(v)) ? String(v) : routing.defaultLocale);
 
 /** The caller's session client if they are an active admin (RLS hides removed members) */
 async function adminSession() {
@@ -24,7 +26,7 @@ async function adminSession() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: fail("signin", 401) };
+  if (!user || (await endIfExpired(supabase))) return { error: fail("signin", 401) };
   const { data: me } = await supabase.from("members").select("role, disabled_at").eq("user_id", user.id).maybeSingle();
   if (me?.role !== "admin" || me.disabled_at) return { error: fail("forbidden", 403) };
   return { supabase, user };

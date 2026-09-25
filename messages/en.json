@@ -423,7 +423,13 @@
     "openMail": "Open dev mailbox",
     "inviteOnly": "Invited people only",
     "language": "Language",
-    "removed": "Your access was removed and you were signed out. Contact an admin if you need it back."
+    "removed": "Your access was removed and you were signed out. Contact an admin if you need it back.",
+    "expired": "For security, you were signed out {hours} hours after signing in. Please sign in again.",
+    "keepSigned": "Once signed in, you stay signed in on this device for {hours} hours.",
+    "codeHint": "If the link opens in a different browser on your phone, enter the 6-digit code from the email here.",
+    "codeLabel": "6-digit code",
+    "codeSubmit": "Sign in with code",
+    "codeWrong": "That code is wrong or expired. Check the newest email, or get a new link."
   },
   "members": {
     "title": "Members",
