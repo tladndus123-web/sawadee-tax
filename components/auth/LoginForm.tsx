@@ -34,6 +34,7 @@ const LANGS: [Locale, string][] = [
 /** Passwordless sign-in: invited members get a magic link by email (sign-up is disabled). */
 export function LoginForm() {
   const t = useTranslations("auth");
+  const tApp = useTranslations("app");
   const locale = useLocale();
   const params = useSearchParams();
   const [email, setEmail] = useState("");
@@ -93,10 +94,12 @@ export function LoginForm() {
           <header className="grid justify-items-center gap-4 text-center">
             <AppMark className="size-16 [filter:drop-shadow(0_4px_10px_rgb(4_60_190/0.3))_drop-shadow(0_0_26px_rgb(20_110_255/0.55))] dark:[filter:drop-shadow(0_0_30px_rgb(70_150_255/0.7))]" />
             <div className="grid gap-2">
-              <p className="ai-text text-[13px] font-semibold tracking-tight">{t("title")}</p>
+              <p className="ai-text text-[13px] font-semibold tracking-tight">{tApp("appName")}</p>
               <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] text-balance">
                 {state === "sent" ? t("sentTitle") : t("welcome")}
               </h1>
+              {/* What this site is, in one line (only before the link is sent) */}
+              {state !== "sent" && <p className="text-[14px] leading-relaxed text-pretty text-muted-foreground">{t("about")}</p>}
             </div>
           </header>
 

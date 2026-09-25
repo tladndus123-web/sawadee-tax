@@ -428,7 +428,8 @@
     "codeHint": "If the link opens in a different browser on your phone, enter the 6-digit code from the email here.",
     "codeLabel": "6-digit code",
     "codeSubmit": "Sign in with code",
-    "codeWrong": "That code is wrong or expired. Check the newest email, or get a new link."
+    "codeWrong": "That code is wrong or expired. Check the newest email, or get a new link.",
+    "about": "A ledger where AI reads Thai tax invoices and receipts."
   },
   "members": {
     "title": "Members",
