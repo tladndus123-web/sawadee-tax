@@ -1,16 +1,14 @@
 "use client";
 
-import { Building2, Loader2, LogOut, ShieldCheck, UserPlus, UserRound } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { Building2, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { saveCompany, useCompany } from "@/lib/company-store";
-import { type Role, saveMyName, signOut, useMe } from "@/lib/role-store";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { saveMyName, signOut, useMe } from "@/lib/role-store";
 import { digitsOnly, taxIdOk } from "@/lib/thai-tax";
-import { cn } from "@/lib/utils";
 
 const card = "workspace-panel grid gap-4 p-5 sm:p-6";
 const title = "flex items-center gap-2 text-lg font-semibold tracking-tight";
@@ -100,104 +98,6 @@ export function CompanyCard() {
       </div>
       {!!taxId && !valid && <p className="text-xs text-bad">{t("detail.invalid")}</p>}
       {me.role !== "admin" && <p className="text-xs text-muted-foreground">{t("settings.adminOnly")}</p>}
-    </section>
-  );
-}
-
-interface Member {
-  user_id: string;
-  email: string;
-  name: string;
-  role: Role;
-  created_at: string;
-}
-
-/** Admin: members list, roles and invitations */
-export function MembersCard() {
-  const t = useTranslations();
-  const locale = useLocale();
-  const me = useMe();
-  const [members, setMembers] = useState<Member[]>([]);
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<Role>("staff");
-  const [busy, setBusy] = useState(false);
-
-  const load = async () => {
-    const { data } = await supabaseBrowser().from("members").select("user_id, email, name, role, created_at").order("created_at");
-    setMembers((data as Member[]) ?? []);
-  };
-  useEffect(() => {
-    if (me.role === "admin") void load();
-  }, [me.role]);
-  if (me.role !== "admin") return null;
-
-  const invite = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    const res = await fetch("/api/members", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, role, locale }) });
-    setBusy(false);
-    if (res.ok) {
-      toast.success(t("members.invited", { email }));
-      setEmail("");
-      void load();
-    } else {
-      const { error } = (await res.json().catch(() => ({}))) as { error?: string };
-      toast.error(t("members.inviteFail", { reason: error ?? res.status }));
-    }
-  };
-
-  const changeRole = async (m: Member, next: Role) => {
-    const { error } = await supabaseBrowser().from("members").update({ role: next }).eq("user_id", m.user_id);
-    if (error) toast.error(/admin is required/.test(error.message) ? t("members.lastAdmin") : error.message);
-    else toast.success(t("members.roleChanged"));
-    void load();
-  };
-
-  return (
-    <section aria-labelledby="members-title" className={card}>
-      <div className="grid gap-1">
-        <h2 id="members-title" className={title}>
-          <UserPlus className="size-5 text-primary" aria-hidden />
-          {t("members.title")}
-        </h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">{t("members.hint")}</p>
-      </div>
-      <ul className="grid divide-y rounded-xl border">
-        {members.map((m) => (
-          <li key={m.user_id} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium">
-                {m.name || m.email}
-                {m.user_id === me.userId && <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-semibold text-brand">{t("members.you")}</span>}
-              </span>
-              {m.name && <span className="block truncate text-xs text-muted-foreground">{m.email}</span>}
-            </span>
-            <select
-              value={m.role}
-              onChange={(e) => void changeRole(m, e.target.value as Role)}
-              aria-label={`${m.email} · ${t("members.title")}`}
-              className={cn("h-9 rounded-full border bg-card px-3 text-sm", m.role === "admin" && "font-semibold text-primary")}
-            >
-              <option value="admin">{t("role.admin")}</option>
-              <option value="staff">{t("role.staff")}</option>
-            </select>
-          </li>
-        ))}
-      </ul>
-      <form onSubmit={invite} className="flex flex-wrap items-end gap-2">
-        <label className="grid min-w-56 flex-1 gap-1.5">
-          <span className="text-xs text-muted-foreground">{t("members.inviteEmail")}</span>
-          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-10" />
-        </label>
-        <select value={role} onChange={(e) => setRole(e.target.value as Role)} aria-label={t("role.staff")} className="h-10 rounded-full border bg-card px-3 text-sm">
-          <option value="staff">{t("role.staff")}</option>
-          <option value="admin">{t("role.admin")}</option>
-        </select>
-        <Button type="submit" className="h-10 rounded-full" disabled={busy}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
-          {t("members.invite")}
-        </Button>
-      </form>
     </section>
   );
 }

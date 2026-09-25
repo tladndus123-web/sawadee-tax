@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FormSettings } from "@/components/settings/FormSettings";
-import { AccountCard, CompanyCard, MembersCard } from "@/components/settings/AccountSettings";
+import { AccountCard, CompanyCard } from "@/components/settings/AccountSettings";
+import { MembersCard } from "@/components/settings/MembersCard";
 import { StickerNameSettings } from "@/components/ledger/Stickers";
 import { LineCard } from "@/components/settings/LineCard";
 import type { Locale } from "@/i18n/routing";

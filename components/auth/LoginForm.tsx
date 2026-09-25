@@ -91,6 +91,7 @@ export function LoginForm() {
           ) : (
             <form onSubmit={send} className="grid gap-4">
               <p className="text-center text-[15px] leading-relaxed text-pretty text-muted-foreground">{t("intro")}</p>
+              {params.get("removed") && <p role="status" className="rounded-2xl bg-bad-soft px-4 py-3 text-center text-sm text-bad">{t("removed")}</p>}
               <label className="group relative block">
                 <span className="sr-only">{t("email")}</span>
                 <Mail className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden />

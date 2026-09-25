@@ -48,7 +48,7 @@ npm run db:start            # 로컬 Supabase: API 54321 · Studio 54323 · 메�
 npm run db:bootstrap -- you@company.com "이름" --sample   # 첫 관리자 + 예시 서류 · 사진 (다시 실행해도 안전)
 npm run dev -- -p 3100      # http://localhost:3100/ko → 로그인 화면
 npm test                    # Vitest 124개 (lib/**/*.test.ts)
-npm run db:test             # DB 규칙 테스트 27개 (pgTAP, 전부 롤백)
+npm run db:test             # DB 규칙 테스트 35개 (pgTAP, 전부 롤백)
 npm run eval:extract        # AI 정확도 평가 (ANTHROPIC_API_KEY 필요, 유료 호출 1회)
 npx tsc --noEmit            # .next/types 관련 TS6053은 오래된 빌드 캐시 — 무시하거나 .next 삭제
 npx eslint app components lib scripts middleware.ts
@@ -298,6 +298,12 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **알림:** Vercel Cron `0 2 * * *` → `/api/cron/due-reminders`.
 - **메일:** Supabase Auth → Gmail SMTP(suhojayu4@gmail.com, 앱 비밀번호), 시간당 60통, 로그인 · 초대 메일 4개 언어 템플릿 — `scripts/email-templates.ts`, 적용은 `npx tsx scripts/setup-email.ts`(`.env.deploy`의 GMAIL_APP_PASSWORD 사용).
 - **아직:** 도메인(예: ledger.회사.com)은 선택. Gmail 앱 비밀번호를 지우면 메일이 멈춰요.
+
+- **멤버 관리 (설정 → 직원 관리, 관리자만):** 사람마다 초대 수락 전 / 마지막 로그인 / LINE 연결 표시. ⋯ 메뉴: **메일 보내기**(로그인 링크 = 초대 다시 보내기), **접근 해제**(사유 필수 · 프리셋 퇴사/부서 이동/잘못 초대). 해제된 사람은 아래 "접근 해제된 사람"에 날짜 · 해제한 사람 · 사유와 함께 남고 **다시 허용** 가능.
+  - DB: `members.disabled_at / disabled_by / disable_reason`(마이그레이션 `…20260927000000_member_access.sql`). `is_member()` · `is_admin()`가 해제된 사람을 빼서 모든 표 · 사진이 즉시 닫힘. 관리자만, 자기 자신 불가, 마지막 관리자 불가, LINE 연결도 자동 해제.
+  - 서버(`app/api/members` PATCH): 로그인 차단(ban) → 이미 로그인한 사람은 다음 화면에서 "접근이 해제되어 로그아웃됐어요"와 함께 로그아웃, 메일 링크로도 못 들어옴. 다시 초대하거나 "다시 허용"하면 복구.
+  - 같은 마이그레이션에서 **서류 삭제 사유가 비어(null) 있어도 통과하던 구멍**도 막았어요.
+  - 검증: `work/check-members.cjs`, pgTAP 35개.
 
 ## 8. 알아 두면 좋은 것
 

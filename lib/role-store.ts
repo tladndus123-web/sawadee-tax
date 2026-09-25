@@ -31,6 +31,13 @@ async function load() {
     return emit();
   }
   const { data } = await supabase.from("members").select("name, role, email").eq("user_id", user.id).maybeSingle();
+  // Signed in but not an (active) member any more — e.g. an admin removed their access: sign out and say why
+  if (!data && !/\/(login|auth)(\/|$)/.test(window.location.pathname)) {
+    await supabase.auth.signOut();
+    const locale = window.location.pathname.split("/")[1] || "ko";
+    window.location.assign(`/${locale}/login?removed=1`);
+    return;
+  }
   me = {
     loaded: true,
     userId: user.id,

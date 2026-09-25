@@ -14,7 +14,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 export function AuthCallback() {
   const t = useTranslations("auth");
   const locale = useLocale();
-  const [problem, setProblem] = useState<"invalid" | "notMember" | null>(null);
+  const [problem, setProblem] = useState<"invalid" | "notMember" | "removed" | null>(null);
 
   useEffect(() => {
     // Invite links (sent by the admin API) carry #access_token — the implicit flow, which the PKCE
@@ -22,6 +22,9 @@ export function AuthCallback() {
     const hash = new URLSearchParams(window.location.hash.slice(1));
     const supabase = supabaseBrowser();
     (async () => {
+      // The link of someone whose access was removed comes back with error_code=user_banned
+      const code = hash.get("error_code") ?? new URLSearchParams(window.location.search).get("error_code");
+      if (code === "user_banned") return setProblem("removed");
       const access_token = hash.get("access_token");
       const refresh_token = hash.get("refresh_token");
       if (access_token && refresh_token) {
@@ -54,7 +57,7 @@ export function AuthCallback() {
   return (
     <div className="workspace-panel grid max-w-sm gap-4 p-6 text-center">
       <p className="text-[15px]" role="alert">
-        {problem === "invalid" ? t("linkInvalid") : t("notMember")}
+        {problem === "invalid" ? t("linkInvalid") : problem === "removed" ? t("removed") : t("notMember")}
       </p>
       <Button asChild className="rounded-full">
         <Link href="/login">{t("title")}</Link>

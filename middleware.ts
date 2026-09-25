@@ -25,6 +25,7 @@ export default async function middleware(req: NextRequest) {
   });
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
   const [, locale, section] = req.nextUrl.pathname.split("/");
@@ -32,6 +33,8 @@ export default async function middleware(req: NextRequest) {
   if (!user && localized && !PUBLIC.has(section ?? "")) {
     const to = new URL(`/${locale}/login`, req.url);
     to.searchParams.set("next", req.nextUrl.pathname + req.nextUrl.search);
+    // An admin removed this person (their login is banned): the login page says so
+    if (authError?.code === "user_banned") to.searchParams.set("removed", "1");
     const redirect = NextResponse.redirect(to);
     for (const c of res.cookies.getAll()) redirect.cookies.set(c);
     return redirect;

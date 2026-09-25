@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(35);
 
 -- Fixtures: one admin, one staff, one signed-in stranger (no membership)
 insert into auth.users (id, email) values
@@ -80,6 +80,25 @@ select is((select d.created_by::text || ' ' || e.user_id::text || ' ' || m.docum
 set local role authenticated;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select lives_ok($$ update public.members set line_user_id = null where user_id = auth.uid() $$, 'members can unlink themselves');
+
+-- Access removal (people who leave): admin only, with a reason, never yourself; a removed member sees nothing
+with u as (update public.members set disabled_at = now(), disable_reason = 'left' where user_id = '00000000-0000-0000-0000-00000000000a' returning 1)
+select is((select count(*)::int from u), 0, 'staff cannot remove anyone');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select throws_ok($$ update public.members set disabled_at = now(), disable_reason = 'me' where user_id = auth.uid() $$,
+  'you cannot remove your own access', 'admins cannot remove themselves');
+select throws_ok($$ update public.members set disabled_at = now() where user_id = '00000000-0000-0000-0000-00000000000b' $$,
+  '23514', NULL, 'a reason is required');
+select lives_ok($$ update public.members set disabled_at = now(), disable_reason = 'Left the company' where user_id = '00000000-0000-0000-0000-00000000000b' $$,
+  'an admin removes access with a reason');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select is((select count(*)::int from public.documents), 0, 'a removed member sees no documents');
+with u as (update public.members set disabled_at = null, disable_reason = null where user_id = auth.uid() returning 1)
+select is((select count(*)::int from u), 0, 'a removed member cannot restore themselves');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select lives_ok($$ update public.members set disabled_at = null where user_id = '00000000-0000-0000-0000-00000000000b' $$, 'an admin restores access');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select ok((select count(*) from public.documents) > 0, 'restored member sees the ledger again');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');
