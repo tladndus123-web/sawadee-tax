@@ -34,7 +34,8 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; sign-in lasts 12 h per
   device, then a security message and a new sign-in. Sign-in links work in any browser (implicit flow).
-  Pending: code in the sign-in email — see HANDOFF §7-6 (`CODE_IN_EMAIL`).
+  The sign-in email carries a 6-digit code too (entered on the login page) — HANDOFF §7-6.
+- On this PC PowerShell blocks `npx` (execution policy): use `npx.cmd …` instead; don't change the policy.
 
 ## Rules that protect the books (see HANDOFF §7)
 - Money in satang integers; don't change `lib/` results without updating tests first.

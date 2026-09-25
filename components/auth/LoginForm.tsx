@@ -17,10 +17,11 @@ const LOCAL_MAIL = "http://127.0.0.1:54324";
 const isLocal = () => /127\.0\.0\.1|localhost/.test(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
 
 /**
- * Show the "enter the code from the email" box. Turn on only after the cloud sign-in email carries the code
- * ({{ .Token }}): run `npx tsx scripts/setup-email.ts` (scripts/email-templates.ts), then set true and deploy.
+ * Show the "enter the code from the email" box. On since 2026-09-26, when the cloud sign-in email started
+ * carrying the 6-digit code ({{ .Token }}, set by `npx tsx scripts/setup-email.ts`). Turn off if the email
+ * template ever loses the code. (Local Supabase uses its default email without the code.)
  */
-const CODE_IN_EMAIL = false;
+const CODE_IN_EMAIL = true;
 
 /** Each language written in its own script */
 const LANGS: [Locale, string][] = [
