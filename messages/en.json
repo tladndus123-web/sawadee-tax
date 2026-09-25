@@ -212,8 +212,7 @@
     "loading": "Loading…",
     "retry": "Try again",
     "cancel": "Cancel",
-    "notFound": "Not found.",
-    "comingSoon": "This page is still being built."
+    "notFound": "Not found."
   },
   "photo": {
     "alt": "Original photo",
