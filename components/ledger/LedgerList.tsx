@@ -1,15 +1,17 @@
 "use client";
 
-import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, FilePen, ImagePlus, Loader2, Trash2, X } from "lucide-react";
+import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, FilePen, ImagePlus, Loader2, Search, Trash2, TriangleAlert, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link } from "@/i18n/navigation";
-import { type ArchiveFilter, groupByMonth, matches, monthKey, NO_DATE } from "@/lib/archive";
+import { type ArchiveFilter, groupByMonth, matches, monthKey, NO_DATE, search } from "@/lib/archive";
 import { joinTri } from "@/lib/form-labels";
 import { type LedgerEntry, type LedgerView, pick, restoreEntry, saveEntry, useLedger, usePhotoUrl } from "@/lib/ledger-store";
+import { useCompany } from "@/lib/company-store";
+import { needsCheck } from "@/lib/dashboard";
 import { baht } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
 import { dmy, todayBangkok } from "@/lib/thai-tax";
@@ -29,11 +31,18 @@ export function LedgerList() {
   const view: LedgerView = tab === "trash" && !isAdmin ? "ledger" : tab;
   const counts = { ledger: pick(entries, "ledger").length, drafts: pick(entries, "drafts").length, trash: pick(entries, "trash").length };
   const list = pick(entries, view);
-  const filtered = view === "ledger" ? list.filter((e) => matches(e.doc, filter)) : list;
-  const filtering = filter.stickers.length > 0 || filter.unpaidOnly;
+  const [query, setQuery] = useState("");
+  const filtered = (view === "ledger" ? list.filter((e) => matches(e.doc, filter)) : list).filter((e) => search(e.doc, query));
+  const filtering = filter.stickers.length > 0 || filter.unpaidOnly || query.trim() !== "";
+  const company = useCompany();
+  // Same rule as the dashboard tile "needs a look", duplicates included
+  const check = useMemo(
+    () => needsCheck(pick(entries, "ledger").map((e) => ({ id: e.id, doc: e.doc })), company.taxId, todayBangkok()),
+    [entries, company.taxId],
+  );
 
   return (
-    <div className="mx-auto grid max-w-4xl gap-6">
+    <div className="mx-auto grid w-full max-w-5xl gap-6">
       <header className="grid gap-4">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("nav.ledger")}</h1>
@@ -53,6 +62,19 @@ export function LedgerList() {
             )}
           </ToggleGroup>
         </div>
+        {list.length > 0 && (
+          <label className="relative block">
+            <span className="sr-only">{t("archive.search")}</span>
+            <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("archive.search")}
+              className="h-11 w-full rounded-full border bg-card pr-4 pl-10 text-[15px] outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20"
+            />
+          </label>
+        )}
         {view === "ledger" && counts.ledger > 0 && <FilterBar filter={filter} onChange={setFilter} entries={list} />}
         {view === "drafts" && <p className="rounded-2xl bg-warn-soft/60 px-4 py-3 text-xs leading-relaxed text-warn">{t("archive.draftNote")}</p>}
       </header>
@@ -60,7 +82,14 @@ export function LedgerList() {
       {!loaded ? (
         <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" aria-label="Loading" />
       ) : filtered.length === 0 ? (
-        <Empty view={view} filtering={filtering} onClear={() => setFilter({ stickers: [], unpaidOnly: false })} />
+        <Empty
+          view={view}
+          filtering={filtering}
+          onClear={() => {
+            setFilter({ stickers: [], unpaidOnly: false });
+            setQuery("");
+          }}
+        />
       ) : view === "trash" ? (
         <ul className="grid gap-3">
           {filtered.map((e) => (
@@ -76,7 +105,7 @@ export function LedgerList() {
       ) : (
         <div className="grid gap-4">
           {groupByMonth(filtered).map((g, i) => (
-            <MonthSection key={g.key} group={g} defaultOpen={i < 3} monthEntries={list.filter((e) => monthKey(e.doc) === g.key)} />
+            <MonthSection key={g.key} group={g} defaultOpen={i < 3 || query.trim() !== ""} monthEntries={list.filter((e) => monthKey(e.doc) === g.key)} check={check} />
           ))}
         </div>
       )}
@@ -118,11 +147,13 @@ function MonthSection({
   group,
   defaultOpen,
   monthEntries,
+  check,
 }: {
   group: ReturnType<typeof groupByMonth<LedgerEntry>>[number];
   defaultOpen: boolean;
   /** Every saved document of this month (exports ignore the sticker / unpaid filter) */
   monthEntries: LedgerEntry[];
+  check: Set<string>;
 }) {
   const t = useTranslations("archive");
   const monthLabel = useMonthLabel();
@@ -157,7 +188,7 @@ function MonthSection({
         {group.key !== NO_DATE && <ExportButtons month={group.key} entries={monthEntries} />}
         <ul className="grid gap-2">
           {group.items.map((e) => (
-            <DocRow key={e.id} e={e} />
+            <DocRow key={e.id} e={e} flagged={check.has(e.id)} />
           ))}
         </ul>
       </div>
@@ -205,7 +236,7 @@ function Thumb({ path }: { path: string | null }) {
 const sellerOf = (e: LedgerEntry) => joinTri(e.doc.seller.name, "en") || joinTri(e.doc.seller.name, "th") || e.doc.docNo || "—";
 
 /** One document; stickers can be changed right from the list. */
-function DocRow({ e, draft }: { e: LedgerEntry; draft?: boolean }) {
+function DocRow({ e, draft, flagged }: { e: LedgerEntry; draft?: boolean; flagged?: boolean }) {
   const t = useTranslations();
   const locale = useLocale();
   const monthLabel = useMonthLabel();
@@ -227,6 +258,12 @@ function DocRow({ e, draft }: { e: LedgerEntry; draft?: boolean }) {
             {e.doc.date && <span>{dmy(e.doc.date)}</span>}
             {draft && <span className="font-medium">{monthLabel(monthKey(e.doc))}</span>}
             {!e.doc.paid && !draft && <span className="text-warn">{t("app.unpaid")}</span>}
+            {flagged && (
+              <span className="inline-flex items-center gap-1 font-medium text-bad">
+                <TriangleAlert className="size-3" aria-hidden />
+                {t("app.sCheck")}
+              </span>
+            )}
           </span>
           {draft && (
             <span className="mt-0.5 block text-[11px] text-muted-foreground">

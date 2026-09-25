@@ -2,7 +2,6 @@ import type { Locale } from "@/i18n/routing";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ChevronRight, ImagePlus } from "lucide-react";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { MaxNotice } from "@/components/upload/MaxNotice";
 import { Link } from "@/i18n/navigation";
 
 /** Home = dashboard (PROMPT step 8) with the upload button up front */
@@ -11,7 +10,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   setRequestLocale(locale as Locale);
   const t = await getTranslations();
   return (
-    <div className="mx-auto grid max-w-6xl gap-6 md:gap-8">
+    <div className="mx-auto grid w-full max-w-5xl gap-6 md:gap-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
           <p className="ai-text text-[13px] font-semibold tracking-tight">{t("app.appName")}</p>
@@ -31,7 +30,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
           </Link>
         </div>
       </header>
-      <MaxNotice className="-mt-3" />
       <Dashboard />
     </div>
   );

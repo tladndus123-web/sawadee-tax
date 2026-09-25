@@ -25,6 +25,19 @@ export interface Summary {
   count: number;
 }
 
+/**
+ * Documents that need a look: any failed automatic check except "unclear" (that one only asks to glance at
+ * the photo). Duplicates count too, so every document is checked against the rest of the ledger.
+ */
+export function needsCheck(docs: Doc[], companyTaxId: string, today: string): Set<string> {
+  const others = docs.map(({ id, doc }) => ({ id, docNo: doc.docNo, sellerTaxId: doc.seller.taxId }));
+  const out = new Set<string>();
+  for (const { id, doc } of docs) {
+    if (flagsFor({ ...doc, id }, { companyTaxId, today, others }).some((f) => f !== "unclear")) out.add(id);
+  }
+  return out;
+}
+
 export function summarize(docs: Doc[], month: string, companyTaxId: string, today: string): Summary {
   let total = 0;
   let vat = 0;
@@ -33,12 +46,13 @@ export function summarize(docs: Doc[], month: string, companyTaxId: string, toda
   let overdueCount = 0;
   let toCheck = 0;
   let count = 0;
-  for (const { doc } of docs) {
+  const check = needsCheck(docs, companyTaxId, today);
+  for (const { id, doc } of docs) {
     if (monthKey(doc) === month) {
       count += 1;
       total += toSatang(doc.totals.net);
       if (claimable(doc, companyTaxId, today)) vat += toSatang(doc.totals.vat);
-      if (flagsFor(doc, { companyTaxId, today }).some((f) => f !== "unclear")) toCheck += 1;
+      if (check.has(id)) toCheck += 1;
     }
     if (isUnpaid(doc)) {
       unpaid += toSatang(doc.totals.net);

@@ -49,3 +49,30 @@ export interface ArchiveFilter {
 /** A document passes when it has any of the chosen stickers (or none are chosen). */
 export const matches = (doc: LedgerDoc, f: ArchiveFilter): boolean =>
   (!f.stickers.length || f.stickers.some((s) => doc.stickers.includes(s))) && (!f.unpaidOnly || !doc.paid);
+
+const fold = (s: string) => s.normalize("NFKC").toLowerCase();
+const tri = (t: { th: string; en: string; ja: string }) => `${t.th} ${t.en} ${t.ja}`;
+const amounts = (n: number) => `${n.toFixed(2)} ${Math.round(n)}`;
+
+/**
+ * Ledger search: every word must appear somewhere in the seller (any language), document number,
+ * tax ID, item names or amounts. "64,200" and "64200" both find ฿ 64,200.00.
+ */
+export function search(doc: LedgerDoc, query: string): boolean {
+  const words = fold(query).replace(/(\d),(?=\d)/g, "$1").split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
+  const hay = fold(
+    [
+      tri(doc.seller.name),
+      doc.docNo,
+      doc.seller.taxId,
+      doc.seller.taxId.replace(/\D/g, ""),
+      tri(doc.customer.name),
+      ...doc.items.map((i) => `${tri(i.desc)} ${i.code}`),
+      amounts(doc.totals.net),
+      amounts(doc.totals.vat),
+      amounts(doc.totals.taxable),
+    ].join(" "),
+  );
+  return words.every((w) => hay.includes(w));
+}

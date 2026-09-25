@@ -400,7 +400,8 @@
     "green": "Green",
     "blue": "Blue",
     "purple": "Purple",
-    "gray": "Gray"
+    "gray": "Gray",
+    "search": "Search by seller, document no. or amount"
   },
   "auth": {
     "title": "Sign in",

@@ -44,7 +44,7 @@ export function VendorList() {
     .sort((a, b) => (stats.get(b.taxId)?.last ?? "").localeCompare(stats.get(a.taxId)?.last ?? ""));
 
   return (
-    <div className="mx-auto grid max-w-4xl gap-6">
+    <div className="mx-auto grid w-full max-w-5xl gap-6">
       <header className="grid gap-2">
         <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("title")}</h1>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("hint")}</p>

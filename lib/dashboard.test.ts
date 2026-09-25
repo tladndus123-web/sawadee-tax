@@ -30,8 +30,13 @@ describe("dashboard summary", () => {
   });
 
   it("counts documents with a failing check, ignoring the unclear-fields notice", () => {
-    const s = summarize([d(), d((x) => (x.totals.vat = 1))], "2026-09", COMPANY, TODAY);
+    const s = summarize([d(), d((x) => ((x.docNo = "IV-2"), (x.totals.vat = 1)))], "2026-09", COMPANY, TODAY);
     expect(s.toCheck).toBe(1);
+  });
+
+  it("counts the same invoice saved twice (e.g. from the app and from LINE) as needing a look", () => {
+    const s = summarize([d(), d()], "2026-09", COMPANY, TODAY);
+    expect(s.toCheck).toBe(2);
   });
 });
 

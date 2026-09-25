@@ -46,7 +46,7 @@ npm install
 npm run db:start            # 로컬 Supabase: API 54321 · Studio 54323 · 메일(Mailpit) 54324
 npm run db:bootstrap -- you@company.com "이름" --sample   # 첫 관리자 + 예시 서류 · 사진 (다시 실행해도 안전)
 npm run dev -- -p 3100      # http://localhost:3100/ko → 로그인 화면
-npm test                    # Vitest 118개 (lib/**/*.test.ts)
+npm test                    # Vitest 124개 (lib/**/*.test.ts)
 npm run db:test             # DB 규칙 테스트 27개 (pgTAP, 전부 롤백)
 npm run eval:extract        # AI 정확도 평가 (ANTHROPIC_API_KEY 필요, 유료 호출 1회)
 npx tsc --noEmit            # .next/types 관련 TS6053은 오래된 빌드 캐시 — 무시하거나 .next 삭제
@@ -281,6 +281,11 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **속도:** 첫 화면 484KB → 254KB (최대 5장 안내를 업로드 화면 파일에서 분리, 차트는 화면이 뜬 뒤 로드), 서류 화면 369KB → 355KB (사진 확대 뷰어 지연 로드).
 - **배포 빌드:** `useSearchParams`를 쓰는 로그인 · 보고서에 Suspense를 둘러야 `next build`가 통과해요(전에는 실패했음). LINE 웹훅도 AI 지시문 파일을 배포에 포함(`next.config.ts`).
 - **모바일:** 360~1920px × 한국어 · 태국어 × 8개 화면에서 가로 넘침 · 잘림 0, 휴대폰 터치 영역 40px 이상 — `work/check-responsive.cjs`.
+
+- **장부 검색:** 거래처(3개 언어) · 문서번호 · 세금번호 · 품목 · 금액("64,200" / "64200")으로 찾기, 단어마다 모두 맞아야 함 — `search()` in `lib/archive.ts`.
+- **"확인 필요" 표시:** 장부 목록에도 빨간 표시. 대시보드와 같은 규칙(`needsCheck()`), **중복(같은 서류 2번 저장)도 포함**.
+- **지급 기한 LINE 알림:** `app/api/cron/due-reminders` — Vercel Cron(`vercel.json`, 매일 02:00 UTC = 방콕 09:00)이 `CRON_SECRET`으로 호출. 기한 지남 · 7일 이내 외상 매입이 있을 때만, LINE을 연결한 **관리자**에게 push(태국어 · 일본어). 없는 날은 안 보내요.
+- **화면 폭 통일:** 대시보드 · 장부 · 거래처 · 설정 = max-w-5xl, 업로드 = 4xl, 서류 = 넓게.
 
 ## 8. 알아 두면 좋은 것
 

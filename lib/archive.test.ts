@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import sample from "@/docs/reference/sample-document.json";
-import { groupByMonth, matches, monthKey, NO_DATE } from "./archive";
+import { groupByMonth, matches, monthKey, NO_DATE, search } from "./archive";
 import { normalize } from "./normalize";
+import { sampleDoc } from "./sample";
 import type { LedgerDoc } from "./types";
 
 const base = normalize(sample);
@@ -33,5 +34,21 @@ describe("monthly archive", () => {
 
   it("normalize keeps only known stickers, in a fixed order, once", () => {
     expect(normalize({ ...sample, stickers: ["blue", "pink", "red", "blue"] }).stickers).toEqual(["red", "blue"]);
+  });
+});
+
+describe("ledger search", () => {
+  const doc = sampleDoc();
+  it("finds by seller in any language, document number, tax ID and amount", () => {
+    for (const q of ["panfood", "แพนฟู้ด", "IV690923", "0745538001265", "64,200", "64200", "64200.00", "panfood 64200"]) {
+      expect(search(doc, q), q).toBe(true);
+    }
+  });
+  it("needs every word to match", () => {
+    expect(search(doc, "panfood 99999")).toBe(false);
+    expect(search(doc, "sunny")).toBe(false);
+  });
+  it("an empty search keeps everything", () => {
+    expect(search(doc, "  ")).toBe(true);
   });
 });
