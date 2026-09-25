@@ -1,6 +1,6 @@
 {
   "app": {
-    "appName": "Thai Receipt Ledger",
+    "appName": "HELLO TAX",
     "tagline": "One photo becomes a Thai · English · Japanese copy laid out like the original",
     "upload": "Upload a tax invoice or receipt photo",
     "uploadHint": "Drop a photo here or pick one. On a phone you can take it right away.",
@@ -580,7 +580,13 @@
     "waiting": "Waiting for LINE…",
     "done": "Linked to LINE.",
     "unlink": "Unlink",
-    "unlinked": "LINE unlinked."
+    "unlinked": "LINE unlinked.",
+    "steps": "How to connect",
+    "step1": "Scan the QR code with the LINE app to add the bot as a friend. On a phone, tap the button below instead.",
+    "step2": "Tap [{button}].",
+    "step3": "Send the code to the bot in the LINE chat and you're connected. The code works for 10 minutes.",
+    "qrAlt": "QR code to add the LINE bot as a friend",
+    "qrCaption": "Scan with LINE"
   },
   "report": {
     "title": "Input Tax Report",

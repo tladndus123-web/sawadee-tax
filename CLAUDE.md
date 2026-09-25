@@ -1,5 +1,7 @@
 # Thai Receipt Ledger — notes for Claude Code
 
+Shown to users as **HELLO TAX** (renamed 2026-09-26; the repo / Vercel project keep the old name).
+
 Photo of a Thai tax invoice / receipt → AI reading → the same layout in Thai / English / Japanese → automatic
 checks → company ledger. Used by one company's staff (admin + staff). **Full handoff (Korean):
 [`docs/HANDOFF.md`](docs/HANDOFF.md)** — read sections 1, 7 and 7-1…7-5 before changing anything.

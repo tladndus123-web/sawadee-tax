@@ -6,7 +6,7 @@ const wrap = (title: string, lines: string[], button: string, code = "") => `<!d
 <body style="margin:0;padding:24px 12px;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai','Noto Sans JP','Apple SD Gothic Neo',sans-serif;color:#1d1d1f">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#ffffff;border-radius:18px;padding:32px 28px">
-      <tr><td style="font-size:13px;font-weight:600;color:#6e6e73;padding-bottom:6px">태국 영수증 장부 · สมุดใบเสร็จ · タイ領収書台帳</td></tr>
+      <tr><td style="font-size:13px;font-weight:600;color:#6e6e73;padding-bottom:6px">HELLO TAX</td></tr>
       <tr><td style="font-size:22px;font-weight:700;padding-bottom:18px">${title}</td></tr>
       ${lines.map((l) => `<tr><td style="font-size:14px;line-height:1.6;color:#424245;padding-bottom:6px">${l}</td></tr>`).join("\n      ")}
       <tr><td style="padding:22px 0 20px">
@@ -48,10 +48,10 @@ export const invite = {
   content: wrap(
     "초대 · คำเชิญ · ご招待",
     [
-      "회사 영수증 장부에 초대되었어요. 버튼을 누르면 가입과 로그인이 한 번에 돼요.",
-      "คุณได้รับเชิญให้ใช้สมุดใบเสร็จของบริษัท กดปุ่มเพื่อเข้าร่วมและเข้าสู่ระบบ",
-      "会社の領収書台帳に招待されました。ボタンを押すと参加とログインが完了します。",
-      "You've been invited to your company's receipt ledger. Tap the button to join and sign in.",
+      "회사 HELLO TAX에 초대되었어요. 버튼을 누르면 가입과 로그인이 한 번에 돼요.",
+      "คุณได้รับเชิญให้ใช้ HELLO TAX ของบริษัท กดปุ่มเพื่อเข้าร่วมและเข้าสู่ระบบ",
+      "会社のHELLO TAXに招待されました。ボタンを押すと参加とログインが完了します。",
+      "You've been invited to your company's HELLO TAX. Tap the button to join and sign in.",
     ],
     "참여하기 · เข้าร่วม · 参加する · Join",
   ),

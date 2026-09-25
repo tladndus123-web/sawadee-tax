@@ -23,7 +23,7 @@ async function main() {
       smtp_user: sender,
       smtp_pass: pass,
       smtp_admin_email: sender,
-      smtp_sender_name: "Thai Receipt Ledger",
+      smtp_sender_name: "HELLO TAX",
       // Gmail allows ~500 a day; this is plenty for a small team and still stops abuse
       rate_limit_email_sent: 60,
       // The sign-in email carries a one-time code as well as the link (see email-templates.ts)
