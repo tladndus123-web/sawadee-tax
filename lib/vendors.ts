@@ -4,7 +4,7 @@
 //   - address, head office/branch, tel and fax are filled only when the reading left them empty
 //     (branches share one tax ID but print different addresses, so a read address is never replaced)
 
-import { triHas } from "./normalize";
+import { normalize, triHas } from "./normalize";
 import { digitsOnly, taxIdOk } from "./thai-tax";
 import type { LedgerDoc, Tri } from "./types";
 
@@ -16,6 +16,22 @@ export interface Vendor {
   branch: Tri;
   tel: string;
   fax: string;
+}
+
+export interface VendorRow {
+  id: string;
+  tax_id: string;
+  name: unknown;
+  address: unknown;
+  branch: unknown;
+  tel: string;
+  fax: string;
+}
+
+/** Rows through normalize() so any stored shape becomes clean {th, en, ja} */
+export function toVendor(r: VendorRow): Vendor {
+  const s = normalize({ seller: { name: r.name, address: r.address, branch: r.branch } }).seller;
+  return { id: r.id, taxId: r.tax_id, name: s.name, address: s.address, branch: s.branch, tel: r.tel ?? "", fax: r.fax ?? "" };
 }
 
 /** Which seller fields the dictionary changed, as field paths */

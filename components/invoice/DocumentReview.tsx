@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarDays, ChevronDown, FileImage, FilePen, FileText, Loader2, Printer, Save, X } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -27,7 +28,12 @@ import { DeleteFlow } from "./DeleteFlow";
 import { Chip } from "./fields";
 import { InvoiceEdit } from "./InvoiceEdit";
 import { InvoiceView } from "./InvoiceView";
-import { PhotoViewer } from "./PhotoViewer";
+
+// The zoomable photo (react-zoom-pan-pinch) loads after the form is on screen
+const PhotoViewer = dynamic(() => import("./PhotoViewer").then((m) => m.PhotoViewer), {
+  ssr: false,
+  loading: () => <div className="aspect-[3/4] max-h-[65dvh] animate-pulse rounded-2xl bg-muted/40" aria-hidden />,
+});
 
 const FORM_KEY = "trl.formMode";
 const FORM_MODES: [FormMode, string][] = [

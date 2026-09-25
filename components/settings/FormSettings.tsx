@@ -142,21 +142,21 @@ export function FormSettings() {
                   <li key={b} className={cn("flex items-center gap-2 px-2 py-3 transition-colors hover:bg-muted/50 [&+&]:border-t", !on && "text-muted-foreground")}>
                     <span className="mono grid size-6 shrink-0 place-items-center rounded-md bg-background text-xs text-muted-foreground">{i + 1}</span>
                     <span className="min-w-0 flex-1 text-sm font-medium">{t(`settings.blocks.${b}`)}</span>
-                    <Button type="button" variant="ghost" size="icon" className="size-8" aria-label={`${t(`settings.blocks.${b}`)} ${t("settings.up")}`} disabled={i === 0} onClick={() => move(i, -1)}>
+                    <Button type="button" variant="ghost" size="icon" className="size-10 sm:size-8" aria-label={`${t(`settings.blocks.${b}`)} ${t("settings.up")}`} disabled={i === 0} onClick={() => move(i, -1)}>
                       <ArrowUp className="size-4" />
                     </Button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="size-8"
+                      className="size-10 sm:size-8"
                       aria-label={`${t(`settings.blocks.${b}`)} ${t("settings.down")}`}
                       disabled={i === BLOCKS.length - 1}
                       onClick={() => move(i, 1)}
                     >
                       <ArrowDown className="size-4" />
                     </Button>
-                    <Switch checked={on} disabled={!canHide} onCheckedChange={(v) => toggleBlock(b, v)} aria-label={t(`settings.blocks.${b}`)} />
+                    <Switch checked={on} disabled={!canHide} onCheckedChange={(v) => toggleBlock(b, v)} aria-label={t(`settings.blocks.${b}`)} className="relative after:absolute after:-inset-3 after:content-[]" />
                   </li>
                 );
               })}

@@ -2,6 +2,7 @@
 
 import { AlertTriangle, CircleCheck, Clock, Loader2, Receipt, Undo2, Wallet } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,12 @@ import { dmy, todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { ActivityList } from "./ActivityList";
-import { TrendChart } from "./TrendChart";
+
+// The chart library (recharts) is the heaviest part of this page: load it after the numbers are on screen
+const TrendChart = dynamic(() => import("./TrendChart").then((m) => m.TrendChart), {
+  ssr: false,
+  loading: () => <div className="workspace-panel h-[330px] animate-pulse" aria-hidden />,
+});
 
 /** Step 8 dashboard: the 4 summary tiles, bills due soon (mark paid here), 6-month trend, recent activity. */
 export function Dashboard() {
@@ -119,7 +125,8 @@ function Tile({
       </span>
       <span
         className={cn(
-          "text-[22px] leading-tight font-semibold tracking-tight tabular-nums [overflow-wrap:anywhere] sm:text-2xl",
+          // Shrinks with the screen so "฿ 162,105.00" stays on one line in a two-column phone grid
+          "text-[clamp(1.05rem,4.6vw,1.5rem)] leading-tight font-semibold tracking-tight whitespace-nowrap tabular-nums",
           tone === "brand" && "text-brand",
           tone === "bad" && "text-bad",
           tone === "warn" && "text-warn",

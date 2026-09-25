@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import sample from "@/docs/reference/sample-document.json";
-import { extractedToRaw, extractSchema, parseReply } from "./extract-schema";
+import { extractedToRaw, extractSchema, MAX_PHOTOS, parseReply } from "./extract-schema";
 import { normalize } from "./normalize";
 import { sampleDoc } from "./sample";
 
@@ -35,5 +35,12 @@ describe("reading the reply", () => {
     expect(parseReply('Here it is: {"notDocument": true}')).toEqual({ notDocument: true });
     expect(parseReply("no json")).toBeNull();
     expect(parseReply("{broken")).toBeNull();
+  });
+});
+
+describe("MaxNotice", () => {
+  it("shows the same limit as the upload queue", async () => {
+    const src = (await import("node:fs")).readFileSync("components/upload/MaxNotice.tsx", "utf8");
+    expect(src).toContain(`const MAX_PHOTOS = ${MAX_PHOTOS};`);
   });
 });

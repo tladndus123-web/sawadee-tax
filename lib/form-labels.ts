@@ -47,4 +47,9 @@ export const joinTri = (value: Tri | null | undefined, mode: FormMode, sep = " Â
     .join(sep);
 
 export const docTypeTri = (t: DocType): Tri => ({ th: th.docType[t], en: en.docType[t], ja: ja.docType[t] });
+/** "Signed" / "Not signed" on the form itself, in the form language (not the screen language) */
+export const signedTri = (signed: boolean): Tri => {
+  const k = signed ? "signed" : "notSigned";
+  return { th: th.app[k], en: en.app[k], ja: ja.app[k] };
+};
 export const copyKindTri = (k: CopyKind): Tri => ({ th: th.copyKind[k], en: en.copyKind[k], ja: ja.copyKind[k] });

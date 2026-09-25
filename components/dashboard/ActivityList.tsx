@@ -37,7 +37,7 @@ export function ActivityList({ documentId, limit = 12, title }: { documentId?: s
           const Icon = ICON[a.action];
           const label = [a.seller, a.docNo].filter(Boolean).join(" · ");
           return (
-            <li key={a.id} className="flex items-start gap-3 border-b border-border/60 py-2.5 last:border-0">
+            <li key={a.id} className="flex flex-wrap items-start gap-x-3 gap-y-0.5 border-b border-border/60 py-2.5 last:border-0">
               <span className={cn("mt-0.5 grid size-7 flex-none place-items-center rounded-full bg-muted", a.action === "delete" && "bg-bad-soft text-bad", a.action === "restore" && "bg-ok-soft text-ok")}>
                 <Icon className="size-3.5" aria-hidden />
               </span>
@@ -53,7 +53,8 @@ export function ActivityList({ documentId, limit = 12, title }: { documentId?: s
                 )}
                 {a.reason && <span className="block text-xs text-muted-foreground">“{a.reason}”</span>}
               </span>
-              <time dateTime={a.at} className="flex-none text-xs text-muted-foreground tabular-nums">
+              {/* Phones: the time goes under the text so the text keeps the full width */}
+              <time dateTime={a.at} className="flex-none text-xs text-muted-foreground tabular-nums max-sm:order-last max-sm:w-full max-sm:pl-10">
                 {when.format(new Date(a.at))}
               </time>
             </li>

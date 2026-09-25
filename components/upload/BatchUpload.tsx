@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Camera, ChevronLeft, CircleAlert, CircleCheck, ImagePlus, Images, Loader2, RotateCw, Sparkles, Square, X } from "lucide-react";
+import { Building2, Camera, ChevronLeft, CircleAlert, CircleCheck, ImagePlus, Loader2, RotateCw, Sparkles, Square, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import {
   useUploadQueue,
 } from "@/lib/upload-queue";
 import { cn } from "@/lib/utils";
+import { MaxNotice } from "./MaxNotice";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif";
 
@@ -200,16 +201,6 @@ function VendorNotice({ fixed }: { fixed: string[] }) {
 }
 
 /** "Up to 5 at once" pill, also used on the dashboard */
-export function MaxNotice({ className }: { className?: string }) {
-  const t = useTranslations("batch");
-  return (
-    <span className={cn("inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1.5 text-[13px] font-semibold text-brand", className)}>
-      <Images className="size-4" aria-hidden />
-      {t("maxNotice", { max: MAX_PHOTOS })}
-    </span>
-  );
-}
-
 function Row({ it, now, errorText, onReview }: { it: UploadItem; now: number; errorText: (e: UploadError | null) => string; onReview: () => void }) {
   const t = useTranslations();
   const sec = Math.max(0, Math.round(((it.finishedAt ?? now) - it.startedAt) / 1000));

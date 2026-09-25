@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FormSettings } from "@/components/settings/FormSettings";
 import { AccountCard, CompanyCard, MembersCard } from "@/components/settings/AccountSettings";
 import { StickerNameSettings } from "@/components/ledger/Stickers";
+import { LineCard } from "@/components/settings/LineCard";
 import type { Locale } from "@/i18n/routing";
 
 export default async function SettingsPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -15,6 +16,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
         <AccountCard />
         <CompanyCard />
       </div>
+      <LineCard />
       <MembersCard />
       <StickerNameSettings />
       <FormSettings />

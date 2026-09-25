@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(27);
 
 -- Fixtures: one admin, one staff, one signed-in stranger (no membership)
 insert into auth.users (id, email) values
@@ -16,7 +16,8 @@ insert into public.members (user_id, email, name, role) values
 update public.members set role = 'staff' where user_id <> '00000000-0000-0000-0000-00000000000a';
 
 create function pg_temp.act_as(uid uuid) returns void language sql as $$
-  select set_config('request.jwt.claims', json_build_object('sub', uid, 'role', 'authenticated')::text, true);
+  select set_config('request.jwt.claim.sub', uid::text, true),
+         set_config('request.jwt.claims', json_build_object('sub', uid, 'role', 'authenticated')::text, true);
 $$;
 
 set local role authenticated;
@@ -59,8 +60,30 @@ select is((select name ->> 'en' || ' | ' || (address ->> 'th') from public.vendo
   'later documents keep the dictionary name and only fill empty fields');
 select is((select count(distinct vendor_id)::int from public.documents where doc_no in ('V-1', 'V-2')), 1, 'both documents link to the same vendor');
 
+-- LINE: accounts are linked only with a one-time code through the bot; the bot saves as the member
+select throws_ok($$ update public.members set line_user_id = 'U-hijack' where user_id = auth.uid() $$,
+  'LINE accounts are linked through the bot', 'members cannot set a LINE account themselves');
+select ok((select public.line_link_code() ~ '^\d{6}$'), 'members get a 6-digit link code');
+select is((select count(*)::int from public.line_link_codes), 0, 'link codes are not readable in the app');
+select throws_ok($$ select public.line_link('000000', 'U-staff') $$, '42501', NULL, 'only the bot can use a code');
+reset role;
+select is(public.line_link((select code from public.line_link_codes where user_id = '00000000-0000-0000-0000-00000000000b'), 'U-staff')::text,
+  '00000000-0000-0000-0000-00000000000b', 'the bot links the member with their code');
+select is(public.line_link((select code from public.line_link_codes limit 1), 'U-staff'), NULL, 'a code works only once');
+insert into public.line_messages (message_id, user_id) values ('m-1', '00000000-0000-0000-0000-00000000000b');
+select public.line_save_document('00000000-0000-0000-0000-00000000000b', 'm-1', '00000000-0000-0000-0000-0000000000d3', '{"doc_no":"L-1","status":"reviewed"}', '[]');
+select is((select d.created_by::text || ' ' || e.user_id::text || ' ' || m.document_id::text
+             from public.documents d join public.document_events e on e.document_id = d.id join public.line_messages m on m.document_id = d.id
+            where d.id = '00000000-0000-0000-0000-0000000000d3'),
+  '00000000-0000-0000-0000-00000000000b 00000000-0000-0000-0000-00000000000b 00000000-0000-0000-0000-0000000000d3',
+  'a LINE photo is saved and logged as the member who sent it');
+set local role authenticated;
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select lives_ok($$ update public.members set line_user_id = null where user_id = auth.uid() $$, 'members can unlink themselves');
+
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');
+select throws_ok($$ select public.line_link_code() $$, 'members only', 'non-members get no link code');
 select is((select count(*)::int from public.documents), 0, 'non-members see no documents');
 
 select * from finish();

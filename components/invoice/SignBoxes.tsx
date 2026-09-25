@@ -3,7 +3,7 @@
 import { Check, Minus, PenLine, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useFormContext, useWatch } from "react-hook-form";
-import { type FormMode, joinTri } from "@/lib/form-labels";
+import { type FormMode, joinTri, signedTri } from "@/lib/form-labels";
 import { emptyTri } from "@/lib/normalize";
 import type { LedgerDoc, Signs } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -15,8 +15,7 @@ const WHO: Who[] = ["receiver", "issuer", "deliverer"];
 const signedOf = (s: Signs, w: Who) => (w === "deliverer" ? !!s.deliverer : s[w]);
 
 /** What ends up on paper: the typed signature, or a plain "signed" mark, on a solid signature line. */
-function Printed({ signs, who }: { signs: Signs; who: Who }) {
-  const t = useTranslations("app");
+function Printed({ signs, who, mode }: { signs: Signs; who: Who; mode: FormMode }) {
   const text = signs[`${who}Sign`];
   return (
     <div className="grid min-h-12 content-end">
@@ -25,7 +24,7 @@ function Printed({ signs, who }: { signs: Signs; who: Who }) {
       ) : signedOf(signs, who) ? (
         <span className="flex items-center gap-1.5 text-sm">
           <Check className="size-4" aria-hidden />
-          {t("signed")}
+          {joinTri(signedTri(true), mode, " / ")}
         </span>
       ) : null}
       <span className="mt-1 border-b border-rule" aria-hidden />
@@ -94,7 +93,7 @@ function SignSlot({ who, mode, edit }: { who: Who; mode: FormMode; edit?: boolea
       </div>
 
       <div className="hidden print:block">
-        <Printed signs={signs} who={who} />
+        <Printed signs={signs} who={who} mode={mode} />
       </div>
     </Box>
   );
@@ -102,7 +101,6 @@ function SignSlot({ who, mode, edit }: { who: Who; mode: FormMode; edit?: boolea
 
 /** Read-only boxes (settings preview): no form to write into. */
 function StaticSlot({ signs, who, mode }: { signs: Signs; who: Who; mode: FormMode }) {
-  const t = useTranslations("app");
   const text = signs[`${who}Sign`];
   const signed = signedOf(signs, who);
   const deliveredBy = who === "deliverer" && signs.deliverer ? joinTri(signs.deliverer, mode, " / ") : "";
@@ -113,11 +111,11 @@ function StaticSlot({ signs, who, mode }: { signs: Signs; who: Who; mode: FormMo
         {deliveredBy && <span className="text-[13px] text-muted-foreground">{deliveredBy}</span>}
       </div>
       {text ? (
-        <Printed signs={signs} who={who} />
+        <Printed signs={signs} who={who} mode={mode} />
       ) : (
         <span className="flex items-center gap-1.5 text-sm">
           {signed ? <Check className="size-4 text-ok" aria-hidden /> : <Minus className="size-4 text-muted-foreground" aria-hidden />}
-          <span className={signed ? "" : "text-muted-foreground"}>{signed ? t("signed") : t("notSigned")}</span>
+          <span className={signed ? "" : "text-muted-foreground"}>{joinTri(signedTri(signed), mode, " / ")}</span>
         </span>
       )}
     </Box>

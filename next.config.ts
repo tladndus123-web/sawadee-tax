@@ -6,8 +6,11 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 // The floating dev badge sat on top of the mobile tab bar and action bar.
 const nextConfig: NextConfig = {
   devIndicators: false,
-  // /api/extract reads the prototype prompt from disk at runtime
-  outputFileTracingIncludes: { "/api/extract": ["./docs/reference/extract-prompt.txt"] },
+  // The AI reading (app upload and LINE bot) reads the prototype prompt from disk at runtime
+  outputFileTracingIncludes: {
+    "/api/extract": ["./docs/reference/extract-prompt.txt"],
+    "/api/line/webhook": ["./docs/reference/extract-prompt.txt"],
+  },
 };
 
 export default withNextIntl(nextConfig);

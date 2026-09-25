@@ -2,7 +2,7 @@ import type { Locale } from "@/i18n/routing";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ChevronRight, ImagePlus } from "lucide-react";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { MaxNotice } from "@/components/upload/BatchUpload";
+import { MaxNotice } from "@/components/upload/MaxNotice";
 import { Link } from "@/i18n/navigation";
 
 /** Home = dashboard (PROMPT step 8) with the upload button up front */

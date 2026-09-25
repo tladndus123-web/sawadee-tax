@@ -29,9 +29,10 @@
 - **5단계 완료: Supabase DB · 매직링크 로그인(초대제) · 관리자/직원 권한(RLS) · 비공개 사진 저장소 · 변경 기록** (5번 ③)
 - **7단계: 거래처 사전**(저장 시 자동 등록 · 새 AI 읽기의 이름을 사전으로 통일 · 빈 칸만 채움) · **월별 엑셀(XLSX) · PDF 보고서**(인쇄로 PDF 저장)
 - **8단계: 대시보드(첫 화면)** — 이 달 4칸 요약 · 곧 지급할 청구서(바로 "지급 완료" + 되돌리기) · 최근 6개월 매입 차트(표 보기) · 최근 기록, 서류 화면에 그 서류의 기록
+- **LINE 봇(1:1)**: 설정에서 받은 코드로 계정 연결 → 사진을 보내면 AI가 읽어 장부에 바로 저장, 태국어 · 일본어 결과 카드로 답장 (7-3)
 - 설정: 내 계정 · 우리 회사 세금번호 · 직원 관리(초대 · 권한) · 스티커 이름 · 양식 설정
 
-**아직인 것:** LINE 봇(사용자가 맨 마지막에 하기로 함 — 다른 사람 작업 파일이 있으니 건드리지 말 것), 9단계(Playwright · README · 배포) (5번 ④)
+**아직인 것:** 실제 LINE 채널 연결(키 · 웹훅 주소 — 7-3), 9단계(Playwright · README · 배포) (5번 ④)
 
 > 장부 · 사진 · 권한 · 설정은 이제 모두 Supabase에 저장돼요. 로컬 개발은 Docker 위의 로컬 Supabase를 써요 (2번).
 
@@ -45,8 +46,8 @@ npm install
 npm run db:start            # 로컬 Supabase: API 54321 · Studio 54323 · 메일(Mailpit) 54324
 npm run db:bootstrap -- you@company.com "이름" --sample   # 첫 관리자 + 예시 서류 · 사진 (다시 실행해도 안전)
 npm run dev -- -p 3100      # http://localhost:3100/ko → 로그인 화면
-npm test                    # Vitest 114개 (lib/**/*.test.ts)
-npm run db:test             # DB 규칙 테스트 18개 (pgTAP, 전부 롤백)
+npm test                    # Vitest 118개 (lib/**/*.test.ts)
+npm run db:test             # DB 규칙 테스트 27개 (pgTAP, 전부 롤백)
 npm run eval:extract        # AI 정확도 평가 (ANTHROPIC_API_KEY 필요, 유료 호출 1회)
 npx tsc --noEmit            # .next/types 관련 TS6053은 오래된 빌드 캐시 — 무시하거나 .next 삭제
 npx eslint app components lib scripts middleware.ts
@@ -254,6 +255,32 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **차트:** Recharts, 한 계열이라 범례 없음(제목이 이름), 고른 달만 진하게, 막대마다 툴팁, "표로 보기" 전환. 색은 `--primary`(대비 검사 통과).
 - **기록:** `lib/activity.ts`가 `document_events` + 서류 + 직원 이름을 합쳐요. 트리거가 쓴 기록 중 사람이 없는 것(스크립트 · 시드)은 "시스템"으로 보여요.
 - 검증: `work/check-step8.cjs`(프로젝트 밖) — 4칸 값, 지급 완료 → 되돌리기, 차트 6개 · 표, 달 바꾸기, 기록, 4개 언어, 휴대폰 가로 넘침 0, 다크.
+
+## 7-3. LINE 봇 메모
+
+- **사용자가 정한 것:** 1:1 채팅만, 설정 화면의 연결 코드로 **앱 계정과 연결한 사람만** 사용, 받은 영수증은 **바로 장부에**(임시저장 아님), 봇 답장은 **태국어 + 일본어 함께**.
+- **흐름:** 사진 → 웹훅 `app/api/line/webhook/route.ts`(LINE 서명 확인 후 바로 200, 처리는 `after()`로 뒤에서) → `lib/line-bot.ts`: 연결된 직원인지 확인 → 같은 메시지 중복 전달이면 건너뜀(`line_messages`) → 1분 10장 제한 → "입력 중" 표시 → AI 읽기 → 거래처 사전 → 자동 확인(중복 포함) → 사진 저장 → `line_save_document`로 **그 직원 이름으로** 저장(기록 · 거래처 트리거 그대로) → 결과 카드.
+- **답장:** 사진을 받자마자 "전송 중 · 완료되면 알림" 안내를 reply로 보내고(15초 안에 여러 장이면 한 번만), 결과 카드는 push로 보내요 — **사진 1장(묶음)마다 push 1건**이 LINE 월 무료 메시지 수(현재 500)에 들어가요. 묶음의 2번째 장부터는 자기 reply 토큰으로 무료 답장, reply가 실패하면 push로 대신 보내요.
+- **LINE 기본 자동 응답**("메시지 감사합니다… 개별 회신 불가")은 앱이 아니라 공식 계정 설정이에요 — Official Account Manager → 설정 → 응답 설정에서 **응답 메시지 끄기**.
+- **연결:** 설정 → LINE 연결 → 6자리 코드(10분, 한 번만) → 봇에 보내기. 틀린 코드는 LINE 계정당 10분에 5번까지. 코드 표는 앱에서 읽을 수 없고, `line_user_id`는 봇만 넣을 수 있어요(직원은 해제만 가능) — `members_guard`.
+- **DB:** 마이그레이션 `…20260926000000_line.sql` — `members.line_user_id`, `line_link_codes`, `line_messages`, 함수 `line_link_code()`(직원) · `line_link()` · `line_save_document()`(서버 전용).
+- **문구 · 카드:** `lib/line.ts`(`say`, `receiptCard`). 카드의 "앱에서 열기" 링크에는 언어가 없어서, 여는 사람 브라우저 언어로 열려요.
+- **검증:** `work/check-line.cjs`(프로젝트 밖) — 가짜 LINE 서버(3199)로 서명 · 연결 · 틀린 코드 · 코드 재사용 · 실제 AI 읽기 · push 대체 · 중복 전달 무시 · 링크 열기 · 연결 해제. 개발 서버를 `LINE_CHANNEL_SECRET=test-secret LINE_CHANNEL_ACCESS_TOKEN=test-token LINE_API_BASE_URL=http://127.0.0.1:3199 LINE_DATA_API_BASE_URL=http://127.0.0.1:3199`로 띄워야 해요.
+- **실제로 켜기:**
+  1. LINE Developers → Provider → **Messaging API 채널** 만들기
+  2. Channel secret, Channel access token(long-lived)을 `.env.local`의 `LINE_CHANNEL_SECRET` · `LINE_CHANNEL_ACCESS_TOKEN`에 (채팅에 붙이지 말 것). 봇 ID(@…)는 `NEXT_PUBLIC_LINE_BOT_ID`, 앱 주소는 `NEXT_PUBLIC_APP_URL`
+  3. Webhook URL = `https://<배포 주소>/api/line/webhook`, **Use webhook 켜기**, Verify. 로컬에서 해 보려면 cloudflared / ngrok 같은 HTTPS 터널이 필요해요
+  4. LINE Official Account Manager → 응답 설정: **자동 응답 메시지 끄기**, 인사 메시지 끄기(봇이 대신 안내)
+- **한계:** 요청 제한 · 틀린 코드 횟수는 서버 메모리라 서버가 여러 대면 공유되지 않아요. PDF 파일(전자 세금계산서)은 아직 받지 않아요(사진만).
+
+## 7-4. 인쇄 · 보고서 · 속도 메모
+
+- **서류 인쇄 = A4 한 장:** 인쇄 폭(약 700px)에서는 양식이 휴대폰 배치로 바뀌어 2~3장이 되고 서명이 잘렸어요. 이제 인쇄 때 PC 배치(860px)로 그린 뒤 페이지에 맞게 축소해요 — `components/invoice/print-fit.ts`(beforeprint에서 높이를 재서 zoom 계산, `html.print-fit`으로 print:hidden을 미리 숨겨 인쇄 높이로 측정). 넘치더라도 칸(서명 · 합계)은 통째로 넘어가요(`break-inside: avoid`). 검증: `work/check-print.cjs`.
+- **서명 표시:** 인쇄 · 보기의 "서명 있음"은 양식 언어(มีลายเซ็น / Signed / 署名あり) — `signedTri()`. 화면의 토글 버튼만 화면 언어.
+- **월별 PDF = 매입세액 보고서(รายงานภาษีซื้อ 양식):** 사업자(우리 회사 앞 서류의 고객 칸에서 이름 · 주소 · 지점), 과세 기간, 공제 대상 / 기타 매입(공제 불가) 구분, 소계 · 집계 · 미지급, 작성 · 검토 · 승인 서명란, 쪽 번호(@page 여백 상자). 흑백 문서 스타일, 머리글은 화면 언어 + 태국어 원문. 검증: `work/check-report.cjs`.
+- **속도:** 첫 화면 484KB → 254KB (최대 5장 안내를 업로드 화면 파일에서 분리, 차트는 화면이 뜬 뒤 로드), 서류 화면 369KB → 355KB (사진 확대 뷰어 지연 로드).
+- **배포 빌드:** `useSearchParams`를 쓰는 로그인 · 보고서에 Suspense를 둘러야 `next build`가 통과해요(전에는 실패했음). LINE 웹훅도 AI 지시문 파일을 배포에 포함(`next.config.ts`).
+- **모바일:** 360~1920px × 한국어 · 태국어 × 8개 화면에서 가로 넘침 · 잘림 0, 휴대폰 터치 영역 40px 이상 — `work/check-responsive.cjs`.
 
 ## 8. 알아 두면 좋은 것
 

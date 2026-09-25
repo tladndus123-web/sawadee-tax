@@ -419,7 +419,9 @@
 }
 
 .segmented-control [data-slot="toggle-group-item"] {
-  min-height: 2.25rem;
+  /* 40px: comfortable to tap on a phone */
+  min-height: 2.5rem;
+  min-width: 2.5rem;
   border: 0;
   border-radius: 0.5625rem;
   box-shadow: none;
@@ -557,6 +559,15 @@
   50% { opacity: 0; }
 }
 
+/* While printing is being prepared (beforeprint, still screen styles): look like print so the form can be measured */
+html.print-fit .print\:hidden {
+  display: none !important;
+}
+html.print-fit .invoice-paper {
+  border: 0 !important;
+  padding: 0 !important;
+}
+
 /* Print: only the organized form, like the paper original. Editing hints are hidden per element with print:hidden. */
 @media print {
   @page {
@@ -582,6 +593,14 @@
     border-radius: 0 !important;
     box-shadow: none !important;
     padding: 0 !important;
+    /* One page: laid out at the desktop width and scaled to the page (components/invoice/print-fit.ts
+       sets the exact zoom for the height; this is the width-only fallback) */
+    width: 860px;
+    zoom: 0.8175;
+  }
+  /* If a form ever runs longer than a page, move whole blocks (signatures, totals) instead of cutting them */
+  .invoice-paper > * {
+    break-inside: avoid;
   }
   .unsure {
     text-decoration: none;

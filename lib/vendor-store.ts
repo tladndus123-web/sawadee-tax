@@ -4,27 +4,10 @@
 // documents are saved; members can correct names here. See lib/vendors.ts for how readings are tidied.
 
 import { useEffect, useSyncExternalStore } from "react";
-import { normalize } from "./normalize";
 import { supabaseBrowser } from "./supabase/client";
 import type { Tri } from "./types";
-import { applyVendor, type Vendor, type VendorFix, vendorKey } from "./vendors";
+import { applyVendor, toVendor, type Vendor, type VendorFix, type VendorRow, vendorKey } from "./vendors";
 import type { LedgerDoc } from "./types";
-
-interface VendorRow {
-  id: string;
-  tax_id: string;
-  name: unknown;
-  address: unknown;
-  branch: unknown;
-  tel: string;
-  fax: string;
-}
-
-/** Rows through normalize() so any stored shape becomes clean {th, en, ja} */
-function toVendor(r: VendorRow): Vendor {
-  const s = normalize({ seller: { name: r.name, address: r.address, branch: r.branch } }).seller;
-  return { id: r.id, taxId: r.tax_id, name: s.name, address: s.address, branch: s.branch, tel: r.tel ?? "", fax: r.fax ?? "" };
-}
 
 let vendors: Vendor[] = [];
 let loaded = false;

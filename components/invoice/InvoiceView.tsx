@@ -5,9 +5,11 @@ import { type FormMode, copyKindTri, docTypeTri, joinTri, pickTri } from "@/lib/
 import { triHas } from "@/lib/normalize";
 import { dmy } from "@/lib/thai-tax";
 import type { LedgerDoc } from "@/lib/types";
+import { useRef } from "react";
 import { Box, Chip, FieldLabel, Kv, Mono } from "./fields";
 import { useFormConfig, useFormLabels } from "./form-config-context";
 import { ItemsTableView } from "./ItemsTable";
+import { usePrintFit } from "./print-fit";
 import { SignBoxesView } from "./SignBoxes";
 import { TotalsLadderView } from "./TotalsLadder";
 import { Flag, TriText } from "./TriText";
@@ -33,6 +35,8 @@ export function InvoiceView({
 }) {
   const cfg = useFormConfig();
   const { join, show } = useFormLabels();
+  const paper = useRef<HTMLElement>(null);
+  usePrintFit(paper);
   const un = new Set(r.unclear);
   const U = (p: string) => un.has(p);
   const jump = (p: string) => (onUnsure ? () => onUnsure(p) : undefined);
@@ -271,7 +275,7 @@ export function InvoiceView({
 
   const hiddenBlocks = new Set(cfg.hiddenBlocks);
   return (
-    <article className="invoice-paper @container grid gap-5 rounded-xl border border-rule bg-card p-4 text-sm sm:p-6" aria-label={joinTri(r.docTitle, "en") || "Document"}>
+    <article ref={paper} className="invoice-paper @container grid gap-5 rounded-xl border border-rule bg-card p-4 text-sm sm:p-6" aria-label={joinTri(r.docTitle, "en") || "Document"}>
       {cfg.order
         .filter((b) => !hiddenBlocks.has(b))
         .map((b) => {

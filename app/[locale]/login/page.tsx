@@ -1,4 +1,5 @@
 import { setRequestLocale } from "next-intl/server";
+import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 import type { Locale } from "@/i18n/routing";
 
@@ -7,7 +8,10 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
   setRequestLocale(locale as Locale);
   return (
     <main className="grid min-h-dvh place-items-center px-4 py-12">
-      <LoginForm />
+      {/* LoginForm reads ?next= (useSearchParams), which needs a Suspense boundary for the static build */}
+      <Suspense>
+        <LoginForm />
+      </Suspense>
     </main>
   );
 }

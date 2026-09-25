@@ -23,7 +23,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="size-9 rounded-full" aria-label={t("auth.account")}>
+        <Button variant="ghost" size="icon" className="size-10 rounded-full" aria-label={t("auth.account")}>
           <span className="grid size-7 place-items-center rounded-full bg-foreground text-[13px] font-semibold text-background uppercase">{label.slice(0, 1)}</span>
         </Button>
       </DropdownMenuTrigger>

@@ -29,7 +29,7 @@ export function AppHeader() {
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-card focus:p-3 focus:text-sm">
           {t("ui.skipToContent")}
         </a>
-        <div className="mx-auto grid h-14 max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 sm:px-6 md:h-16 lg:px-8">
+        <div className="mx-auto grid h-14 max-w-[1440px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 md:grid-cols-[1fr_auto_1fr] px-4 sm:px-6 md:h-16 lg:px-8">
           <Link href="/" className="flex min-w-0 items-center gap-2.5 text-[15px] font-semibold tracking-tight">
             <AppMark className="size-8 flex-none drop-shadow-[0_3px_8px_rgb(201_89_221/30%)]" />
             <span className="truncate">{t("app.appName")}</span>
@@ -44,7 +44,7 @@ export function AppHeader() {
             ))}
           </nav>
 
-          <div className="col-start-3 flex items-center justify-end gap-1">
+          <div className="flex shrink-0 items-center justify-end gap-1 md:col-start-3">
             <LocaleSwitcher />
             <ThemeToggle />
             <UserMenu />
