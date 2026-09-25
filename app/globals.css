@@ -737,7 +737,7 @@ html.print-fit .invoice-paper {
   border-radius: 31px;
   overflow: hidden;
   filter: blur(18px);
-  opacity: 0.45;
+  opacity: 0.3;
 }
 
 .login-glow::before {
@@ -745,194 +745,200 @@ html.print-fit .invoice-paper {
   position: absolute;
   inset: -60%;
   background: var(--ai-conic);
-  animation: ai-spin 12s linear infinite;
+  animation: ai-spin 24s linear infinite;
 }
 
 .dark .login-glow {
-  opacity: 0.6;
+  opacity: 0.42;
 }
 
-/* Login backdrop: receipts drift up a faint ledger sheet, get scanned and checked (components/auth/LoginBackdrop.tsx) */
-.login-backdrop {
+/* Login symbols (components/auth/LoginBackdrop.tsx): a calm light from the top and accounting symbols in
+   soft tiles; one at a time plays a small SF Symbols-style effect. Apple-style easing; transforms,
+   opacity and a few short stroke draws only. */
+.login-light {
+  --sym-ease: cubic-bezier(0.16, 1, 0.3, 1);
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
+  background: radial-gradient(70% 55% at 50% -8%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 70%);
 }
 
-/* The sheet is its own still layer: masking the whole backdrop would redraw it every frame */
-.login-backdrop::before {
-  content: "";
+.dark .login-light {
+  background: radial-gradient(70% 55% at 50% -8%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 70%);
+}
+
+.login-symbols {
   position: absolute;
   inset: 0;
-  /* ledger sheet: faint ruled rows and two column lines, fading out towards the edges */
-  background:
-    linear-gradient(90deg, transparent calc(50% - 232px), color-mix(in srgb, var(--primary) 10%, transparent) calc(50% - 232px) calc(50% - 231px), transparent 0),
-    linear-gradient(90deg, transparent calc(50% + 231px), color-mix(in srgb, var(--primary) 10%, transparent) calc(50% + 231px) calc(50% + 232px), transparent 0),
-    repeating-linear-gradient(to bottom, transparent 0 35px, color-mix(in srgb, var(--foreground) 5%, transparent) 35px 36px);
-  mask-image: radial-gradient(120% 90% at 50% 45%, #000 40%, transparent 100%);
 }
 
-.lb-receipt {
-  position: absolute;
-  top: 100%;
-  left: calc(var(--x) - var(--w) / 2);
-  width: var(--w);
-  opacity: 0;
-  will-change: transform, opacity;
-  animation: lb-rise var(--dur) linear var(--delay) infinite;
-}
-
-.lb-paper {
-  position: relative;
-  display: grid;
-  gap: 7px;
-  padding: 14px 13px 14px;
-  border-radius: 10px 10px 0 0;
-  background: var(--card);
-  box-shadow: 0 14px 26px -10px rgb(0 0 0 / 16%);
-}
-
-/* Torn-paper zigzag under the receipt (painted teeth; a CSS mask would cost a redraw every frame) */
-.lb-teeth {
-  display: block;
-  height: 5px;
-  /* one downward tooth per 10px */
-  background: conic-gradient(from 135deg at top, var(--card) 90deg, transparent 0) 0 0 / 10px 100%;
-}
-
-.dark .lb-paper {
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 6%), 0 12px 30px -8px rgb(0 0 0 / 60%);
-}
-
-.lb-bar {
-  display: block;
-  height: 5px;
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--foreground) 12%, transparent);
-}
-
-.lb-bar-head {
-  width: 58%;
-  height: 7px;
-  background: color-mix(in srgb, var(--primary) 55%, transparent);
-}
-
-.lb-bar-sub {
-  width: 38%;
-  margin-top: -2px;
-}
-
-.lb-bar-amt {
-  width: 22%;
-}
-
-.lb-bar-label {
-  width: 30%;
-  height: 6px;
-  background: color-mix(in srgb, var(--foreground) 22%, transparent);
-}
-
-.lb-rule {
-  display: block;
-  border-top: 1px dashed color-mix(in srgb, var(--foreground) 16%, transparent);
-}
-
-.lb-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.lb-total .num {
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--foreground);
-}
-
-/* The AI reading the receipt: a blue line sweeping down once per trip. The line rides on the top edge of
-   a paper-sized box that slides down one paper height, so nothing needs clipping (a clipped moving
-   layer inside rounded corners would push the animation onto the main thread). */
-.lb-scan {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  animation: lb-scan var(--dur) linear var(--delay) infinite;
-}
-
-.lb-scan::before {
-  content: "";
-  position: absolute;
-  inset: -22px 0 auto;
-  height: 24px;
-  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--primary) 16%, transparent) calc(100% - 2px), var(--primary) calc(100% - 2px));
-}
-
-.lb-check {
-  position: absolute;
-  top: -9px;
-  right: -9px;
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  color: #fff;
-  background: var(--primary);
-  box-shadow: 0 0 0 3px var(--background), 0 4px 12px color-mix(in srgb, var(--primary) 45%, transparent);
-  transform: scale(0);
-  animation: lb-check var(--dur) linear var(--delay) infinite;
-}
-
-.lb-check svg {
-  width: 16px;
-  height: 16px;
-}
-
-@keyframes lb-rise {
-  0% { opacity: 0; transform: translateY(0) rotate(var(--tilt)); }
-  6%, 90% { opacity: calc(var(--fade) * var(--dim, 1)); }
-  100% { opacity: 0; transform: translateY(calc(-100vh - 100% - 40px)) rotate(calc(var(--tilt) * -0.5)); }
-}
-
-@keyframes lb-scan {
-  0%, 24% { opacity: 0; transform: translateY(22px); }
-  26% { opacity: 1; }
-  36% { opacity: 1; transform: translateY(100%); }
-  39%, 100% { opacity: 0; transform: translateY(100%); }
-}
-
-@keyframes lb-check {
-  0%, 37% { transform: scale(0); }
-  40% { transform: scale(1.18); }
-  42%, 97% { transform: scale(1); }
-  100% { transform: scale(0.9); }
-}
-
-/* Phones: the card covers most of the screen, so smaller and fainter receipts peek around it */
-@media (max-width: 640px) {
-  .lb-receipt {
-    --dim: 0.6;
-    zoom: 0.8;
-  }
-}
-
-/* Reduced motion: a still picture (receipts resting, already checked) */
-@media (prefers-reduced-motion: reduce) {
-  .lb-receipt {
-    top: var(--rest);
-    opacity: calc(var(--fade) * var(--dim, 1));
-    transform: rotate(var(--tilt));
-    animation: none !important;
-  }
-  .lb-scan {
+/* Phones and small tablets: the card fills the width, so only the light stays */
+@media (max-width: 767px) {
+  .login-symbols {
     display: none;
   }
-  .lb-check {
-    transform: none;
-    animation: none !important;
-  }
+}
+
+.sym {
+  position: absolute;
+  left: calc(50% + var(--x) - 26px);
+  top: calc(var(--y) - 26px);
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  color: color-mix(in srgb, var(--foreground) 34%, transparent);
+  background: color-mix(in srgb, var(--card) 75%, transparent);
+  box-shadow: 0 0 0 1px var(--border), 0 8px 20px -10px rgb(0 0 0 / 12%);
+  transition: color 0.35s var(--sym-ease);
+  animation: sym-in 1s var(--sym-ease) calc(0.3s + var(--i) * 70ms) both;
+}
+
+/* Blue ring and glow while a symbol plays: its own layer, faded with opacity (no box-shadow redraws) */
+.sym::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent), 0 10px 24px -10px color-mix(in srgb, var(--primary) 55%, transparent);
+  opacity: 0;
+  transition: opacity 0.6s var(--sym-ease);
+}
+
+.sym.is-on::after {
+  opacity: 1;
+}
+
+.sym svg {
+  width: 24px;
+  height: 24px;
+  overflow: visible;
+}
+
+.sym svg * {
+  transform-box: fill-box;
+}
+
+.sym.is-on {
+  color: var(--primary);
+}
+
+@keyframes sym-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.9); }
+}
+
+/* Draw-on: a stroke writes itself (--len is a little longer than the stroke) */
+@keyframes sym-draw {
+  from { stroke-dashoffset: var(--len); }
+  to { stroke-dashoffset: 0; }
+}
+
+/* write: the receipt's lines are written top to bottom */
+.sym.is-on[data-fx="write"] path:nth-child(-n + 3) {
+  --len: 10;
+  stroke-dasharray: var(--len);
+  animation: sym-draw 0.45s var(--sym-ease) both;
+}
+.sym.is-on[data-fx="write"] path:nth-child(3) { animation-delay: 0.14s; }
+.sym.is-on[data-fx="write"] path:nth-child(1) { animation-delay: 0.28s; }
+
+/* grow: chart bars rise one after another */
+.sym.is-on[data-fx="grow"] path:is(:nth-child(1), :nth-child(2), :nth-child(4)) {
+  transform-origin: 50% 100%;
+  animation: sym-grow 0.7s var(--sym-ease) both;
+}
+.sym.is-on[data-fx="grow"] path:nth-child(1) { animation-delay: 0.1s; }
+.sym.is-on[data-fx="grow"] path:nth-child(2) { animation-delay: 0.2s; }
+@keyframes sym-grow {
+  from { transform: scaleY(0); }
+}
+
+/* press: a key tap */
+.sym.is-on[data-fx="press"] svg {
+  animation: sym-press 0.6s var(--sym-ease);
+}
+@keyframes sym-press {
+  25% { transform: scale(0.84); }
+  60% { transform: scale(1.06); }
+}
+
+/* bounce: the coins hop */
+.sym.is-on[data-fx="bounce"] svg {
+  animation: sym-bounce 0.8s var(--sym-ease);
+}
+@keyframes sym-bounce {
+  30% { transform: translateY(-5px) scale(1.05); }
+  62% { transform: translateY(1px) scale(0.98); }
+}
+
+/* seal: a small wiggle while the check draws; check: the calendar's check draws */
+.sym.is-on[data-fx="seal"] svg {
+  animation: sym-wiggle 0.8s var(--sym-ease);
+}
+.sym.is-on[data-fx="seal"] path:nth-child(2),
+.sym.is-on[data-fx="check"] path:nth-child(5) {
+  --len: 12;
+  stroke-dasharray: var(--len);
+  animation: sym-draw 0.55s var(--sym-ease) 0.12s both;
+}
+@keyframes sym-wiggle {
+  25% { transform: rotate(-10deg); }
+  55% { transform: rotate(6deg); }
+  80% { transform: rotate(-2deg); }
+}
+
+/* scan: the line sweeps up and down once */
+.sym.is-on[data-fx="scan"] path:nth-child(5) {
+  animation: sym-scan 1.1s var(--sym-ease);
+}
+@keyframes sym-scan {
+  30% { transform: translateY(-6px); }
+  70% { transform: translateY(6px); }
+}
+
+/* cells: spreadsheet cells pop in */
+.sym.is-on[data-fx="cells"] path:nth-child(n + 3) {
+  transform-origin: center;
+  animation: sym-pop 0.45s var(--sym-ease) both;
+}
+.sym.is-on[data-fx="cells"] path:nth-child(4) { animation-delay: 0.08s; }
+.sym.is-on[data-fx="cells"] path:nth-child(5) { animation-delay: 0.16s; }
+.sym.is-on[data-fx="cells"] path:nth-child(6) { animation-delay: 0.24s; }
+@keyframes sym-pop {
+  from { opacity: 0; transform: scale(0.2); }
+}
+
+/* Login card: rises in on load; its content cross-fades when the form turns into "check your email" */
+.login-enter {
+  animation: login-enter 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes login-enter {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+}
+
+.login-logo-in {
+  animation: login-pop 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) 0.15s both;
+}
+@keyframes login-pop {
+  from { opacity: 0; transform: scale(0.7); }
+}
+
+.login-swap {
+  animation: login-swap 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes login-swap {
+  from { opacity: 0; transform: translateY(6px); filter: blur(4px); }
+}
+
+/* "Email sent": the mail badge pops, then its check draws */
+.sent-mark {
+  animation: login-pop 0.7s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+.sent-mark svg path:nth-child(3) {
+  --len: 9;
+  stroke-dasharray: var(--len);
+  animation: sym-draw 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
 }

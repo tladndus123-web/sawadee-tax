@@ -3,7 +3,7 @@
 import { ArrowRight, KeyRound, Loader2, Lock, Mail, MailCheck, ShieldCheck } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { AppMark } from "@/components/layout/app-mark";
 import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "@/i18n/navigation";
@@ -43,6 +43,16 @@ export function LoginForm() {
   const [code, setCode] = useState("");
   const [codeState, setCodeState] = useState<"idle" | "checking">("idle");
   const [codeError, setCodeError] = useState<string | null>(null);
+  const emailBox = useRef<HTMLLabelElement>(null);
+
+  // A wrong or unknown address gives the field a short shake, like a wrong password on a Mac
+  useEffect(() => {
+    if (!error || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    emailBox.current?.animate(
+      [{ transform: "translateX(0)" }, { transform: "translateX(-7px)" }, { transform: "translateX(6px)" }, { transform: "translateX(-4px)" }, { transform: "translateX(2px)" }, { transform: "translateX(0)" }],
+      { duration: 420, easing: "ease-out" },
+    );
+  }, [error]);
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,15 +97,15 @@ export function LoginForm() {
 
   return (
     <div className="grid w-full max-w-[420px] justify-items-center gap-6">
-      <div className="login-card relative w-full">
+      <div className="login-card login-enter relative w-full">
         {/* Apple Intelligence edge glow: a slow, soft spectrum circling behind the card */}
         <span className="login-glow" aria-hidden />
         <div className="relative grid gap-7 rounded-[28px] bg-card px-7 pt-9 pb-7 shadow-[var(--shadow-lift)] sm:px-9">
           <header className="grid justify-items-center gap-4 text-center">
-            <AppMark className="size-16 [filter:drop-shadow(0_4px_10px_rgb(4_60_190/0.3))_drop-shadow(0_0_26px_rgb(20_110_255/0.55))] dark:[filter:drop-shadow(0_0_30px_rgb(70_150_255/0.7))]" />
+            <AppMark className="login-logo-in size-16 [filter:drop-shadow(0_4px_10px_rgb(4_60_190/0.3))_drop-shadow(0_0_26px_rgb(20_110_255/0.55))] dark:[filter:drop-shadow(0_0_30px_rgb(70_150_255/0.7))]" />
             <div className="grid gap-2">
               <p className="ai-text text-[13px] font-semibold tracking-tight">{tApp("appName")}</p>
-              <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] text-balance">
+              <h1 key={state === "sent" ? "sent" : "form"} className="login-swap text-[28px] leading-tight font-semibold tracking-[-0.03em] text-balance">
                 {state === "sent" ? t("sentTitle") : t("welcome")}
               </h1>
               {/* What this site is, in one line (only before the link is sent) */}
@@ -104,8 +114,8 @@ export function LoginForm() {
           </header>
 
           {state === "sent" ? (
-            <div className="grid justify-items-center gap-5 text-center">
-              <span className="intelligence-mark size-14">
+            <div className="login-swap grid justify-items-center gap-5 text-center">
+              <span className="intelligence-mark sent-mark size-14">
                 <MailCheck className="size-6" aria-hidden />
               </span>
               <p className="text-[15px] leading-relaxed text-muted-foreground" role="status">
@@ -154,7 +164,7 @@ export function LoginForm() {
               </Button>
             </div>
           ) : (
-            <form onSubmit={send} className="grid gap-4">
+            <form onSubmit={send} className="login-swap grid gap-4">
               <p className="text-center text-[15px] leading-relaxed text-pretty text-muted-foreground">{t("intro")}</p>
               {params.get("removed") && <p role="status" className="rounded-2xl bg-bad-soft px-4 py-3 text-center text-sm text-bad">{t("removed")}</p>}
               {params.get("expired") && !params.get("removed") && (
@@ -163,7 +173,7 @@ export function LoginForm() {
                   {t("expired", { hours: SESSION_HOURS })}
                 </p>
               )}
-              <label className="group relative block">
+              <label ref={emailBox} className="group relative block">
                 <span className="sr-only">{t("email")}</span>
                 <Mail className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden />
                 <input
@@ -219,7 +229,7 @@ function LanguagePicker() {
   const params = useSearchParams();
   const [pending, start] = useTransition();
   return (
-    <nav aria-label={t("language")} className={cn("flex flex-wrap items-center justify-center gap-1 rounded-full bg-background/80 p-1 transition-opacity", pending && "opacity-60")}>
+    <nav aria-label={t("language")} className={cn("flex flex-wrap items-center justify-center gap-1 transition-opacity", pending && "opacity-60")}>
       {LANGS.map(([code, label]) => {
         const on = code === locale;
         return (
