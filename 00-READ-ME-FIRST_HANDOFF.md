@@ -22,7 +22,7 @@
 
 **지금 된 것**
 - 계산 규칙과 테스트(외부 검수 결함 9건 수정 포함), 정리된 양식(보기 / 고치기 / 인쇄), 양식 설정
-- 애플 인텔리전스풍 UI (라이트 · 다크), 로고 · 파비콘 · **앱 이름 HELLO TAX**(2026-09-26, 4개 언어 모두 같은 이름 — `app.appName`, 메일 템플릿, LINE 인사말. 로고 · 빛나는 효과는 그대로)
+- 애플 인텔리전스풍 UI (라이트 · 다크), 로고 · 파비콘 · **앱 이름 Sawadee TAX**(2026-09-26, 4개 언어 모두 같은 이름 — `app.appName`, 메일 템플릿, LINE 인사말. 로고 · 빛나는 효과는 그대로)
 - 사진 올리기: **한 번에 최대 5장 동시 AI 읽기** + `/api/extract` (실제 키로 확인 완료 · 정확도 평가 스크립트 있음 — 5번 ②)
 - 태국 세금계산서 요건: 필수 기재 사항 검사(국세법 86/4 · 고시 199호), 판매자 본사/지점, 매입세액 공제 기한 3년 — `docs/thai-tax-invoice-check.md`
 - 서명: 보기 화면에서 직접 타이핑 또는 "서명 있음" 표시, 인쇄 시 편집 표시 숨김
@@ -329,7 +329,7 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - `globals.css`의 공용 클래스를 쓰면 모양이 맞아요: `.workspace-panel`(카드), `.ai-ring`(그라데이션 테두리), `.segmented-control`(iOS 토글), `.review-actions`(떠 있는 하단 버튼 바).
 - 스타일 규칙을 레이어 밖(unlayered)에 쓰면 Tailwind 유틸리티(`hidden` 등)를 이겨 버려요. 실제로 `.nav-pill`의 `display:flex` 때문에 휴대폰에서 가로 넘침이 났어요 — display는 유틸리티로 주세요.
 - 한국어는 `word-break: keep-all`(음절 중간에서 줄바꿈 안 함).
-- 로고를 바꾸면 `app/icon.svg`, `app/apple-icon.png`도 다시 만들어야 해요 (지금은 `app-mark.tsx`를 렌더링해서 만들었어요).
+- 로고(2026-09-26, Sawadee TAX): 파란 타일 위 흰 세금계산서 + 노란 체크 — 사용자가 준 그림을 벡터로 다시 그린 `public/app-mark.svg`. `app/icon.svg`(브라우저 탭)는 같은 파일, `app/apple-icon.png`(180px, 모서리 없는 정사각형)는 이 그림에서 만든 것 — 로고를 바꾸면 셋을 함께 바꿔요. 주변의 파란 빛은 `APP_MARK_GLOW`(`components/layout/app-mark.tsx`, 다크 모드는 더 밝게). drop-shadow 두 개를 따로 쓰면 서로 덮어써서 `[filter:…]` 한 줄로 써요.
 
 **양식 · 인쇄**
 - 양식 칸 이름은 `useFormLabels()` / `FieldLabel`로 읽어요 (기본값 = `messages/{th,en,ja}.json`의 `labels.*`, 회사가 바꾼 값 = 양식 설정).

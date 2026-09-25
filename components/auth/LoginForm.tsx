@@ -90,7 +90,7 @@ export function LoginForm() {
         <span className="login-glow" aria-hidden />
         <div className="relative grid gap-7 rounded-[28px] bg-card px-7 pt-9 pb-7 shadow-[var(--shadow-lift)] sm:px-9">
           <header className="grid justify-items-center gap-4 text-center">
-            <AppMark className="size-16 drop-shadow-[0_6px_16px_rgb(201_89_221/35%)]" />
+            <AppMark className="size-16 [filter:drop-shadow(0_4px_10px_rgb(4_60_190/0.3))_drop-shadow(0_0_26px_rgb(20_110_255/0.55))] dark:[filter:drop-shadow(0_0_30px_rgb(70_150_255/0.7))]" />
             <div className="grid gap-2">
               <p className="ai-text text-[13px] font-semibold tracking-tight">{t("title")}</p>
               <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] text-balance">

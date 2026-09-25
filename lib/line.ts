@@ -30,8 +30,8 @@ const both = (thai: string, japanese: string) => `${thai}\n\n${japanese}`;
 
 export const say = {
   welcome: both(
-    "สวัสดี นี่คือบอท HELLO TAX\nเปิดแอป → ตั้งค่า → เชื่อม LINE แล้วส่งรหัส 6 หลักมาที่แชทนี้",
-    "こんにちは。HELLO TAXのボットです。\nアプリの「設定 → LINE連携」で6桁のコードを取得し、このトークに送ってください。",
+    "สวัสดี นี่คือบอท Sawadee TAX\nเปิดแอป → ตั้งค่า → เชื่อม LINE แล้วส่งรหัส 6 หลักมาที่แชทนี้",
+    "こんにちは。Sawadee TAXのボットです。\nアプリの「設定 → LINE連携」で6桁のコードを取得し、このトークに送ってください。",
   ),
   linked: (name: string) =>
     both(

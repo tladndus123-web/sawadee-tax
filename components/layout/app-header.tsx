@@ -3,7 +3,7 @@
 import { BookOpen, Building2, LayoutGrid, Settings } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
-import { AppMark } from "./app-mark";
+import { APP_MARK_GLOW, AppMark } from "./app-mark";
 import { LocaleSwitcher } from "./locale-switcher";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
@@ -31,7 +31,7 @@ export function AppHeader() {
         </a>
         <div className="mx-auto grid h-14 max-w-[1440px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 md:grid-cols-[1fr_auto_1fr] px-4 sm:px-6 md:h-16 lg:px-8">
           <Link href="/" className="flex min-w-0 items-center gap-2.5 text-[15px] font-semibold tracking-tight">
-            <AppMark className="size-8 flex-none drop-shadow-[0_3px_8px_rgb(201_89_221/30%)]" />
+            <AppMark className={`size-8 flex-none rounded-[9px] ${APP_MARK_GLOW}`} />
             <span className="truncate">{t("app.appName")}</span>
           </Link>
 
