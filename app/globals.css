@@ -229,20 +229,32 @@
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--muted-foreground);
-  transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+  /* above the gliding pill (.nav-glider) */
+  position: relative;
+  z-index: 1;
+  transition: color 200ms ease, background-color 200ms ease, box-shadow 200ms ease, scale 0.5s var(--motion-spring);
 }
 
 .nav-pill a:hover {
   color: var(--foreground);
 }
 
-.nav-pill a[aria-current="page"] {
+.nav-pill a:active {
+  scale: 0.95;
+  transition-duration: 200ms, 200ms, 200ms, 0.1s;
+}
+
+.nav-pill a[data-active="true"] {
   color: var(--foreground);
+}
+
+/* Until the gliding pill is placed (first paint), the active tab draws its own */
+.nav-pill:not([data-glide="on"]) a[data-active="true"] {
   background: var(--card);
   box-shadow: 0 1px 3px rgb(0 0 0 / 10%), 0 0 0 0.5px rgb(0 0 0 / 4%);
 }
 
-.dark .nav-pill a[aria-current="page"] {
+.dark .nav-pill:not([data-glide="on"]) a[data-active="true"] {
   background: #3a3a3c;
 }
 
@@ -267,10 +279,21 @@
   font-size: 0.6875rem;
   font-weight: 500;
   color: var(--muted-foreground);
+  transition: color 0.2s ease;
 }
 
-.tab-bar a[aria-current="page"] {
+.tab-bar a[data-active="true"] {
   color: var(--primary);
+}
+
+/* Press: the icon dips while the finger is down */
+.tab-bar a svg {
+  transition: scale 0.45s var(--motion-spring);
+}
+
+.tab-bar a:active svg {
+  scale: 0.86;
+  transition-duration: 0.1s;
 }
 
 /* Apple Intelligence: spectrum mark, text, ring and glow */
@@ -941,4 +964,98 @@ html.print-fit .invoice-paper {
   --len: 9;
   stroke-dasharray: var(--len);
   animation: sym-draw 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
+}
+
+/* Motion for the app screens: Apple-style touch feedback. A press squeezes quickly; letting go springs
+   back gently. Tabs glide, tapped tab icons bounce, pages fade up, changed numbers roll in.
+   Transforms and opacity only, so it stays smooth on phones; reduced motion turns it all off (see above). */
+:root {
+  --motion-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-glide: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@layer components {
+  /* Buttons and button-like links (Button has it built in) */
+  .press {
+    transition:
+      color 0.2s ease,
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      opacity 0.2s ease,
+      scale 0.5s var(--motion-spring),
+      transform 0.5s var(--motion-spring);
+  }
+  .press:active {
+    transition-duration: 0.2s, 0.2s, 0.2s, 0.2s, 0.2s, 0.1s, 0.1s;
+    transition-timing-function: ease, ease, ease, ease, ease, ease-out, ease-out;
+  }
+}
+
+/* Card rows that open a document: the whole card presses in */
+.tap-row {
+  transition: box-shadow 0.2s ease, scale 0.5s var(--motion-spring);
+}
+.tap-row:has(> a:active) {
+  scale: 0.985;
+  transition-duration: 0.2s, 0.1s;
+  transition-timing-function: ease, ease-out;
+}
+
+/* Top nav: the white pill glides to the tapped tab (placed by components/layout/app-header.tsx) */
+.nav-glider {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  left: 0;
+  width: 0;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 10%), 0 0 0 0.5px rgb(0 0 0 / 4%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.45s var(--motion-glide), width 0.45s var(--motion-glide), opacity 0.2s ease;
+}
+.dark .nav-glider {
+  background: #3a3a3c;
+}
+
+/* Tapped tab icon: a small SF Symbols-style bounce */
+.sym-tap {
+  animation: sym-tap 0.55s var(--motion-out);
+}
+@keyframes sym-tap {
+  28% { scale: 0.78; }
+  62% { scale: 1.12; }
+}
+
+/* Theme button: the sun and moon swap by turning and scaling */
+.theme-sun,
+.theme-moon {
+  position: absolute;
+  inset: 0;
+  transition: rotate 0.5s var(--motion-out), scale 0.5s var(--motion-spring), opacity 0.25s ease;
+}
+.dark .theme-sun,
+:root:not(.dark) .theme-moon {
+  rotate: -90deg;
+  scale: 0.3;
+  opacity: 0;
+}
+
+/* Every screen fades up a little when it opens (app/[locale]/(app)/template.tsx) */
+.page-enter {
+  animation: page-enter 0.45s var(--motion-out) both;
+}
+@keyframes page-enter {
+  from { opacity: 0; translate: 0 8px; }
+}
+
+/* A number that changed (e.g. another month picked) rolls in */
+.num-in {
+  animation: num-in 0.45s var(--motion-out) both;
+}
+@keyframes num-in {
+  from { opacity: 0; translate: 0 0.35em; filter: blur(3px); }
 }

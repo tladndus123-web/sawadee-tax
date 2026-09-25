@@ -124,9 +124,11 @@ function Tile({
         {label}
       </span>
       <span
+        // A new value (another month) remounts the number, so it rolls in
+        key={value}
         className={cn(
           // Shrinks with the screen so "฿ 162,105.00" stays on one line in a two-column phone grid
-          "text-[clamp(1.05rem,4.6vw,1.5rem)] leading-tight font-semibold tracking-tight whitespace-nowrap tabular-nums",
+          "num-in text-[clamp(1.05rem,4.6vw,1.5rem)] leading-tight font-semibold tracking-tight whitespace-nowrap tabular-nums",
           tone === "brand" && "text-brand",
           tone === "bad" && "text-bad",
           tone === "warn" && "text-warn",

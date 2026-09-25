@@ -244,7 +244,7 @@ function DocRow({ e, draft, flagged }: { e: LedgerEntry; draft?: boolean; flagge
     await saveEntry({ ...e.doc, stickers }, null, e.id, e.status);
   };
   return (
-    <li className="flex min-w-0 items-center gap-1 rounded-2xl bg-card pr-2 shadow-[0_0_0_1px_var(--border)] transition-shadow hover:shadow-[0_0_0_1px_var(--input),var(--shadow-soft)]">
+    <li className="tap-row flex min-w-0 items-center gap-1 rounded-2xl bg-card pr-2 shadow-[0_0_0_1px_var(--border)] hover:shadow-[0_0_0_1px_var(--input),var(--shadow-soft)]">
       <Link href={`/documents/${e.id}`} className="flex min-w-0 flex-1 items-center gap-3 p-2.5 sm:gap-4 sm:p-3">
         <Thumb path={e.photoPath} />
         <span className="min-w-0 flex-1">

@@ -20,8 +20,11 @@ export function ThemeToggle() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="size-10 rounded-full text-muted-foreground" aria-label={t("theme")}>
-          <Sun className="size-4 dark:hidden" />
-          <Moon className="hidden size-4 dark:block" />
+          {/* Both drawn; the theme turns one in and the other out (.theme-sun / .theme-moon) */}
+          <span className="relative size-4">
+            <Sun className="theme-sun size-4" />
+            <Moon className="theme-moon size-4" />
+          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="rounded-xl">

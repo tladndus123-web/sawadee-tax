@@ -8,8 +8,8 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 
 ## Working with the owner
 - Reply in **Korean**, plainly (not a developer). Explain what changed and what they need to do, step by step.
-- Ask when a product decision is theirs ("모르는건 나한테 물어봐"). Commit **only when asked**; end commit
-  messages with the `Co-Authored-By` line.
+- Ask when a product decision is theirs ("모르는건 나한테 물어봐"). When a change is done and checked, **commit and deploy
+  right away** (owner's request, 2026-09-26); end commit messages with the `Co-Authored-By` line.
 - **Never ask for keys in chat.** Keys live in `.env.local` (local dev) and `.env.deploy` (deploy: Supabase
   cloud + Vercel + Gmail app password), both git-ignored. Open the file for them (Notepad) and validate
   without printing values.
