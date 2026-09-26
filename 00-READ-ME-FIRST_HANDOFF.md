@@ -48,7 +48,7 @@ npm install
 # Docker Desktop을 켠 뒤 (처음엔 이미지 내려받느라 몇 분)
 npm run db:start            # 로컬 Supabase: API 54321 · Studio 54323 · 메일(Mailpit) 54324
 npm run db:bootstrap -- you@company.com "이름" --sample   # 첫 관리자 + 예시 서류 · 사진 (다시 실행해도 안전)
-npm run dev -- -p 3100      # http://localhost:3100/ko → 로그인 화면
+npx next dev --turbopack -p 3130   # http://localhost:3130/ja → 로그인 화면 (기본 언어 일본어)
 npm test                    # Vitest 124개 (lib/**/*.test.ts)
 npm run db:test             # DB 규칙 테스트 35개 (pgTAP, 전부 롤백)
 npm run eval:extract        # AI 정확도 평가 (ANTHROPIC_API_KEY 필요, 유료 호출 1회)
@@ -205,6 +205,8 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **부드러운 스크롤:** PC(마우스·트랙패드)만 Lenis(`components/layout/smooth-scroll.tsx`), 휴대폰은 기본 스크롤.
 - **완전 삭제 (2026-09-26, 주인 결정):** 휴지통에서만, 관리자만, '삭제' 입력 후. 마감된 달의 저장 서류는 불가. `purge_document`(DB 함수)가 서류 · 줄 · 기록을 지우고 `document_purges`에 무엇을 · 왜 · 누가 지웠는지 남겨요(관리자만 읽기). 사진은 앱이 이어서 지워요(다른 서류가 같은 파일을 쓰면 남김).
 - **메뉴 스크롤 버그 수정:** 머리글 메뉴(테마 · 언어 · 계정)는 `modal={false}`, 닫힐 때 버튼으로 돌아가는 포커스는 `preventScroll`(components/ui/dropdown-menu.tsx). 언어를 바꿔도 페이지 위치 유지(`scroll: false`). Lenis는 `stop()`을 쓰지 않아요.
+- **백업 (2026-09-26):** `scripts/backup.ts`가 운영 DB의 모든 표(JSON)와 사진을 `문서\SawadeeTAX-backup`에 받아요(사진은 새 것만). Windows 작업 스케줄러 "Sawadee TAX backup"이 매주 월요일 10시(꺼져 있었으면 다음 켤 때) `scripts/backup.cmd`로 실행, 결과는 `backup.log`. 직접 실행: `npx.cmd tsx scripts/backup.ts`. 코드는 아직 GitHub에 없음(원격 저장소 없음) — 주인이 비공개 저장소를 만들면 `git remote add origin …` 후 push.
+- **정리 (2026-09-26):** 안 쓰는 react-day-picker · date-fns 제거. 보안 경고 0개: package.json `overrides`로 postcss ≥8.5.23(Next 내부), uuid ≥11.1.1(exceljs). 기록 색인 `document_events (document_id, id desc)`, `documents (vendor_id)`.
 - **AI 읽기:** 이제 로그인한 직원만 (`/api/extract` 401/403), 요청 제한도 사람 기준.
 - **미들웨어:** next-intl + 세션 갱신 + 로그인 안 했으면 `/{locale}/login?next=…`로.
 - **검증:** `npm run db:test`(권한 15개), 브라우저 끝까지 흐름(`work/check-supabase-flow.cjs`, 프로젝트 밖): 로그인 · 관리자 삭제/복원 · 직원 초대 · 직원 제한 · 직원 업로드 → 관리자 화면에 보임 · 중복 경고.
