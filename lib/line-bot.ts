@@ -14,7 +14,7 @@ import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
 import { imageType, lineBlobClient, lineClient, receiptCard, say } from "./line";
 import { supabaseAdmin } from "./supabase/admin";
 import { digitsOnly } from "./thai-tax";
-import { applyVendor, toVendor, type VendorRow, vendorKey } from "./vendors";
+import { applyHistory, applyVendor, toVendor, type VendorHistory, type VendorRow, vendorKey } from "./vendors";
 
 // In-memory limits (one server). Photos: 10 a minute per member, like the upload screen.
 const hits = new Map<string, number[]>();
@@ -145,6 +145,18 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
     doc.docNo ? admin.from("documents").select("id, doc_no, seller").eq("doc_no", doc.docNo).is("deleted_at", null) : null,
   ]);
   doc = applyVendor(doc, vendor?.data ? toVendor(vendor.data as VendorRow) : null).doc;
+  // Like an app upload: the person's last saved category/payment for this vendor beats the AI's guess
+  if (vendor?.data) {
+    const last = await admin
+      .from("documents")
+      .select("category, payment")
+      .eq("vendor_id", (vendor.data as VendorRow).id)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    doc = applyHistory(doc, (last.data as VendorHistory | null) ?? null).doc;
+  }
   const companyTaxId = (company.data?.tax_id as string | undefined) ?? "";
   const others: LedgerRef[] = (same?.data ?? []).map((d) => ({
     id: d.id as string,
