@@ -696,7 +696,7 @@
     "noHint": "Entertainment, and passenger cars (≤10 seats: purchase, hire, fuel, repairs) can't be claimed even on a full tax invoice (§82/5). If so, choose 'Don't claim'.",
     "blockedHint": "This document's VAT is not claimed ({category}). It goes under 'Other purchases' in the report.",
     "originalFix": "Count as an original full tax invoice",
-    "originalFixHint": "The AI read this paper as a copy or another kind of document, so its VAT is not counted as claimable. Tick if the real paper is an original full tax invoice (ใบกำกับภาษี); the VAT is then included.",
+    "originalFixHint": "The AI read this paper as a copy or another kind of document, so its VAT is not counted as claimable. Tick to include it as a full tax invoice (ใบกำกับภาษี); the VAT is then included.",
     "wht": "Withholding tax",
     "whtNone": "None",
     "whtRate": "Rate %",
