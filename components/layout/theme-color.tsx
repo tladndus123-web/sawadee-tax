@@ -4,7 +4,7 @@ import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 
 /** Page background per theme (globals.css): the phone's status bar / browser bar matches the app, not the OS */
-const COLORS = { light: "#f5f5f7", dark: "#000000" } as const;
+const COLORS = { light: "#eaecf0", dark: "#000000" } as const;
 
 const noop = () => () => {};
 

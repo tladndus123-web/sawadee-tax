@@ -61,8 +61,9 @@
 }
 
 :root {
-  /* Apple-style neutrals with a single system-blue accent */
-  --background: #f5f5f7;
+  /* Apple-style neutrals with a single system-blue accent. The page is a soft grey-blue, a step darker
+     than Apple's #f5f5f7, so large screens don't glare; cards stay white on it. */
+  --background: #eaecf0;
   --foreground: #1d1d1f;
   --card: #ffffff;
   --card-foreground: #1d1d1f;
@@ -86,7 +87,7 @@
   --chart-4: #48484a;
   --chart-5: #3a3a3c;
   --radius: 1rem;
-  --glass: rgb(250 250 252 / 72%);
+  --glass: rgb(238 240 244 / 78%);
   --brand: #0071e3;
   --brand-soft: #e8f1fd;
   --ok: #1f7a34;
@@ -601,8 +602,17 @@ html.print-fit .invoice-paper {
     background: #fff !important;
     color: #000;
   }
+  /* "At least one screen tall" would be exactly one page tall on paper, and rounding adds an empty page */
+  .min-h-dvh {
+    min-height: 0 !important;
+  }
   .glass-header, .tab-bar, footer {
     display: none !important;
+  }
+  /* The app frame is at least one screen tall (min-h-dvh); on paper that alone fills a page, and any
+     extra pixel spills onto a second, empty one */
+  .min-h-dvh {
+    min-height: 0 !important;
   }
   main {
     max-width: none !important;
@@ -617,12 +627,13 @@ html.print-fit .invoice-paper {
     box-shadow: none !important;
     padding: 0 !important;
     /* One page: laid out at the desktop width and scaled to the page (components/invoice/print-fit.ts
-       sets the exact zoom for the height; this is the width-only fallback) */
+       sets the exact width and zoom; this is the width-only fallback) */
     width: 860px;
     zoom: 0.8175;
   }
   /* If a form ever runs longer than a page, move whole blocks (signatures, totals) instead of cutting them */
-  .invoice-paper > * {
+  .invoice-paper > *,
+  .invoice-paper tr {
     break-inside: avoid;
   }
   .unsure {
@@ -990,6 +1001,17 @@ html.print-fit .invoice-paper {
   .press:active {
     transition-duration: 0.2s, 0.2s, 0.2s, 0.2s, 0.2s, 0.1s, 0.1s;
     transition-timing-function: ease, ease, ease, ease, ease, ease-out, ease-out;
+  }
+}
+
+/* Dashboard cards: under the mouse they rise a touch (bigger panels by less, via --lift) */
+@media (hover: hover) and (pointer: fine) {
+  .hover-lift {
+    transition: scale 0.6s var(--motion-out), box-shadow 0.6s var(--motion-out);
+  }
+  .hover-lift:hover {
+    scale: var(--lift, 1.02);
+    box-shadow: var(--shadow-lift);
   }
 }
 

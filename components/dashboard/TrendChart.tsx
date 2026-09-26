@@ -22,7 +22,7 @@ export function TrendChart({ data, active }: { data: TrendPoint[]; active: strin
   const rows = data.map((p) => ({ ...p, label: short.format(monthDate(p.month)) }));
 
   return (
-    <section aria-labelledby="trend-title" className="workspace-panel grid gap-4 p-5 sm:p-6">
+    <section aria-labelledby="trend-title" className="workspace-panel hover-lift [--lift:1.006] grid gap-4 p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 id="trend-title" className="text-lg font-semibold tracking-tight">

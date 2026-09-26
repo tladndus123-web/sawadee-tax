@@ -118,7 +118,7 @@ function Tile({
   tone?: "brand" | "bad" | "warn";
 }) {
   return (
-    <div className="workspace-panel grid content-start gap-1.5 p-4 sm:p-5">
+    <div className="workspace-panel hover-lift grid content-start gap-1.5 p-4 sm:p-5">
       <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <Icon className="size-3.5" aria-hidden />
         {label}
@@ -171,7 +171,7 @@ function DueList({ items, companyTaxId }: { items: DueItem[]; companyTaxId: stri
           : { text: t("dash.noDue"), cls: "bg-muted text-muted-foreground" };
 
   return (
-    <section aria-labelledby="due-title" className="workspace-panel grid gap-3 p-5 sm:p-6">
+    <section aria-labelledby="due-title" className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-5 sm:p-6">
       <div>
         <h2 id="due-title" className="text-lg font-semibold tracking-tight">
           {t("dash.upcoming")}

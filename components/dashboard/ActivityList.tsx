@@ -26,7 +26,7 @@ export function ActivityList({ documentId, limit = 12, title }: { documentId?: s
   const when = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
 
   return (
-    <section aria-labelledby={`activity-${documentId ?? "all"}`} className="workspace-panel grid gap-3 p-5 sm:p-6">
+    <section aria-labelledby={`activity-${documentId ?? "all"}`} className={cn("workspace-panel grid gap-3 p-5 sm:p-6", !documentId && "hover-lift [--lift:1.004]")}>
       <h2 id={`activity-${documentId ?? "all"}`} className="flex items-center gap-2 text-lg font-semibold tracking-tight">
         <History className="size-5 text-muted-foreground" aria-hidden />
         {title ?? t("activity")}

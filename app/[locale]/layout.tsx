@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ThemeColor } from "@/components/layout/theme-color";
+import { PrintLight } from "@/components/layout/print-light";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -42,6 +43,7 @@ export default async function LocaleLayout({
       <body className="min-h-dvh antialiased">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <ThemeColor />
+          <PrintLight />
           <NextIntlClientProvider>
             <TooltipProvider>
               {children}
