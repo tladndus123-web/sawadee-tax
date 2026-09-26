@@ -2,14 +2,14 @@
 
 import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, FilePen, ImagePlus, Loader2, Search, Trash2, TriangleAlert, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { memo, useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link } from "@/i18n/navigation";
 import { type ArchiveFilter, groupByMonth, matches, monthKey, NO_DATE, search } from "@/lib/archive";
 import { joinTri } from "@/lib/form-labels";
-import { type LedgerEntry, type LedgerView, pick, restoreEntry, saveEntry, useLedger, usePhotoUrl } from "@/lib/ledger-store";
+import { healThumb, type LedgerEntry, type LedgerView, pick, restoreEntry, saveEntry, useLedger, usePhotoUrl } from "@/lib/ledger-store";
 import { useCompany } from "@/lib/company-store";
 import { needsCheck } from "@/lib/dashboard";
 import { baht } from "@/lib/money";
@@ -29,11 +29,24 @@ export function LedgerList() {
   const [filter, setFilter] = useState<ArchiveFilter>({ stickers: [], unpaidOnly: false });
   const isAdmin = me.role === "admin";
   const view: LedgerView = tab === "trash" && !isAdmin ? "ledger" : tab;
-  const counts = { ledger: pick(entries, "ledger").length, drafts: pick(entries, "drafts").length, trash: pick(entries, "trash").length };
-  const list = pick(entries, view);
+  const counts = useMemo(
+    () => ({ ledger: pick(entries, "ledger").length, drafts: pick(entries, "drafts").length, trash: pick(entries, "trash").length }),
+    [entries],
+  );
+  const list = useMemo(() => pick(entries, view), [entries, view]);
   const [query, setQuery] = useState("");
-  const filtered = (view === "ledger" ? list.filter((e) => matches(e.doc, filter)) : list).filter((e) => search(e.doc, query));
-  const filtering = filter.stickers.length > 0 || filter.unpaidOnly || query.trim() !== "";
+  // The box shows every key at once; the list follows a moment later, so typing never waits for it
+  // (the list parts below are memoized, so a keystroke itself only redraws the search box)
+  const q = useDeferredValue(query);
+  const filtered = useMemo(
+    () => (view === "ledger" ? list.filter((e) => matches(e.doc, filter)) : list).filter((e) => search(e.doc, q)),
+    [list, view, filter, q],
+  );
+  const months = useMemo(
+    () => groupByMonth(filtered).map((g) => ({ group: g, monthEntries: list.filter((e) => monthKey(e.doc) === g.key) })),
+    [filtered, list],
+  );
+  const filtering = filter.stickers.length > 0 || filter.unpaidOnly || q.trim() !== "";
   const company = useCompany();
   // Same rule as the dashboard tile "needs a look", duplicates included
   const check = useMemo(
@@ -104,8 +117,9 @@ export function LedgerList() {
         </ul>
       ) : (
         <div className="grid gap-4">
-          {groupByMonth(filtered).map((g, i) => (
-            <MonthSection key={g.key} group={g} defaultOpen={i < 3 || query.trim() !== ""} monthEntries={list.filter((e) => monthKey(e.doc) === g.key)} check={check} />
+          {months.map(({ group, monthEntries }, i) => (
+            // Starting or clearing a search re-opens the months (every match is shown while searching)
+            <MonthSection key={`${group.key}:${q.trim() !== ""}`} group={group} defaultOpen={i < 3 || q.trim() !== ""} monthEntries={monthEntries} check={check} />
           ))}
         </div>
       )}
@@ -143,7 +157,7 @@ function FilterBar({ filter, onChange, entries }: { filter: ArchiveFilter; onCha
   );
 }
 
-function MonthSection({
+const MonthSection = memo(function MonthSection({
   group,
   defaultOpen,
   monthEntries,
@@ -158,8 +172,10 @@ function MonthSection({
   const t = useTranslations("archive");
   const monthLabel = useMonthLabel();
   const current = group.key === monthKey({ date: todayBangkok() });
+  // Rows (and their photos) exist only while the month is open: a year of documents stays light
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <details open={defaultOpen} className="group workspace-panel overflow-hidden">
+    <details open={open} onToggle={(e) => setOpen(e.currentTarget.open)} className="group workspace-panel overflow-hidden">
       <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-5 [&::-webkit-details-marker]:hidden">
         <span className="flex w-full min-w-0 items-center gap-2.5 sm:w-auto sm:flex-1">
           <span className="intelligence-mark is-soft size-9 flex-none">
@@ -184,17 +200,19 @@ function MonthSection({
         </span>
         <ChevronDown className="size-4 flex-none text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
       </summary>
-      <div className="grid gap-2 border-t bg-muted/30 p-2 sm:p-3">
-        {group.key !== NO_DATE && <ExportButtons month={group.key} entries={monthEntries} />}
-        <ul className="grid gap-2">
-          {group.items.map((e) => (
-            <DocRow key={e.id} e={e} flagged={check.has(e.id)} />
-          ))}
-        </ul>
-      </div>
+      {open && (
+        <div className="grid gap-2 border-t bg-muted/30 p-2 sm:p-3">
+          {group.key !== NO_DATE && <ExportButtons month={group.key} entries={monthEntries} />}
+          <ul className="grid gap-2">
+            {group.items.map((e) => (
+              <DocRow key={e.id} e={e} flagged={check.has(e.id)} />
+            ))}
+          </ul>
+        </div>
+      )}
     </details>
   );
-}
+});
 
 function Empty({ view, filtering, onClear }: { view: LedgerView; filtering: boolean; onClear: () => void }) {
   const t = useTranslations();
@@ -224,11 +242,23 @@ function Empty({ view, filtering, onClear }: { view: LedgerView; filtering: bool
 }
 
 function Thumb({ path }: { path: string | null }) {
-  const url = usePhotoUrl(path);
+  const url = usePhotoUrl(path, "thumb");
+  // No small copy yet (older photo): the full photo is shown, and becomes the source of the copy
+  const isCopy = url?.includes(".thumb.jpg");
   return (
     <span className="block size-12 flex-none overflow-hidden rounded-xl bg-muted sm:size-16">
-      {/* eslint-disable-next-line @next/next/no-img-element -- blob URL */}
-      {url && <img src={url} alt="" className="size-full object-cover" />}
+      {url && (
+        // eslint-disable-next-line @next/next/no-img-element -- signed URL of a private photo
+        <img
+          src={url}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          crossOrigin="anonymous"
+          onLoad={(ev) => !isCopy && path && void healThumb(ev.currentTarget, path)}
+          className="size-full object-cover"
+        />
+      )}
     </span>
   );
 }
@@ -236,7 +266,7 @@ function Thumb({ path }: { path: string | null }) {
 const sellerOf = (e: LedgerEntry) => joinTri(e.doc.seller.name, "en") || joinTri(e.doc.seller.name, "th") || e.doc.docNo || "—";
 
 /** One document; stickers can be changed right from the list. */
-function DocRow({ e, draft, flagged }: { e: LedgerEntry; draft?: boolean; flagged?: boolean }) {
+const DocRow = memo(function DocRow({ e, draft, flagged }: { e: LedgerEntry; draft?: boolean; flagged?: boolean }) {
   const t = useTranslations();
   const locale = useLocale();
   const monthLabel = useMonthLabel();
@@ -277,7 +307,7 @@ function DocRow({ e, draft, flagged }: { e: LedgerEntry; draft?: boolean; flagge
       <ChevronRight className="hidden size-4 flex-none text-muted-foreground sm:block" aria-hidden />
     </li>
   );
-}
+});
 
 function TrashRow({ e }: { e: LedgerEntry }) {
   const t = useTranslations();

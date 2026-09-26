@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidReason, type LedgerEntry, pick } from "./ledger-store";
+import { isValidReason, type LedgerEntry, pick, thumbPath } from "./ledger-store";
 
 const e = (id: string, createdAt: number, deletedAt: number | null = null, status: "draft" | "final" = "final") =>
   ({ id, status, createdAt, updatedAt: createdAt, deletedAt, deletedBy: deletedAt ? "Admin" : null, deleteReason: deletedAt ? "dup" : null }) as LedgerEntry;
@@ -16,5 +16,13 @@ describe("soft delete helpers", () => {
     expect(pick(all, "ledger").map((x) => x.id)).toEqual(["b", "a"]);
     expect(pick(all, "drafts").map((x) => x.id)).toEqual(["x"]);
     expect(pick(all, "trash").map((x) => x.id)).toEqual(["y", "d", "c"]);
+  });
+});
+
+describe("list thumbnails", () => {
+  it("sit next to the photo with a .thumb.jpg ending", () => {
+    expect(thumbPath("7f3c/1790350472098.jpg")).toBe("7f3c/1790350472098.thumb.jpg");
+    expect(thumbPath("sample/panfood-1790282809483.JPG")).toBe("sample/panfood-1790282809483.thumb.jpg");
+    expect(thumbPath("line/abc")).toBe("line/abc.thumb.jpg");
   });
 });

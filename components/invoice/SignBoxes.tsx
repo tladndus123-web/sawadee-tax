@@ -8,6 +8,7 @@ import { emptyTri } from "@/lib/normalize";
 import type { LedgerDoc, Signs } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Box, FieldLabel } from "./fields";
+import { signFontVariables } from "./sign-fonts";
 import { TriInput } from "./TriInput";
 
 type Who = "receiver" | "issuer" | "deliverer";
@@ -20,7 +21,7 @@ function Printed({ signs, who, mode }: { signs: Signs; who: Who; mode: FormMode 
   return (
     <div className="grid min-h-12 content-end">
       {text ? (
-        <span className="font-sign text-[26px] leading-tight [overflow-wrap:anywhere]">{text}</span>
+        <span className={cn(signFontVariables, "font-sign text-[26px] leading-tight [overflow-wrap:anywhere]")}>{text}</span>
       ) : signedOf(signs, who) ? (
         <span className="flex items-center gap-1.5 text-sm">
           <Check className="size-4" aria-hidden />
@@ -75,7 +76,7 @@ function SignSlot({ who, mode, edit }: { who: Who; mode: FormMode; edit?: boolea
             spellCheck={false}
             placeholder={t("app.typeSign")}
             aria-label={`${t(`labels.${who}`)} · ${t("app.typeSign")}`}
-            className="font-sign h-10 min-w-0 flex-1 bg-transparent text-[26px] leading-none outline-none placeholder:font-sans placeholder:text-[13px] placeholder:text-muted-foreground/80"
+            className={cn(signFontVariables, "font-sign h-10 min-w-0 flex-1 bg-transparent text-[26px] leading-none outline-none placeholder:font-sans placeholder:text-[13px] placeholder:text-muted-foreground/80")}
           />
         </label>
         <button
