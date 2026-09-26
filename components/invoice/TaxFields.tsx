@@ -3,8 +3,10 @@
 // Tax details of one document, next to category / payment: the month the input VAT is claimed in, whether it
 // may be claimed at all (§82/5), and the withholding tax made when paying (rate + kind, amount worked out).
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMonthLabel } from "@/components/ledger/Stickers";
@@ -24,10 +26,25 @@ export function TaxFields() {
   const tc = useTranslations("category");
   const monthLabel = useMonthLabel();
   const { control, setValue, getValues } = useFormContext<LedgerDoc>();
-  const [date, taxMonth, category, noClaim, whtType, whtRate, taxable, exempt] = useWatch({
+  const [date, taxMonth, category, noClaim, whtType, whtRate, taxable, exempt, docType, copyKind] = useWatch({
     control,
-    name: ["date", "taxMonth", "category", "noClaim", "whtType", "whtRate", "totals.taxable", "totals.exempt"],
+    name: ["date", "taxMonth", "category", "noClaim", "whtType", "whtRate", "totals.taxable", "totals.exempt", "docType", "copyKind"],
   });
+
+  // Read as a copy or as another kind of paper → its VAT is never claimable. When the real paper is an
+  // original full tax invoice, one tick fixes both fields; unticking puts the reading back. The offer is
+  // decided once, from the values the screen opened with, so it does not vanish when ticked.
+  const [asRead] = useState<{ docType: LedgerDoc["docType"]; copyKind: LedgerDoc["copyKind"] } | null>(() => {
+    const dt = getValues("docType");
+    const ck = getValues("copyKind");
+    return dt !== "full" || ck === "copy" ? { docType: dt, copyKind: ck } : null;
+  });
+  const asOriginal = docType === "full" && copyKind !== "copy";
+  const setOriginal = (on: boolean) => {
+    if (!asRead) return;
+    setValue("docType", on ? "full" : asRead.docType, { shouldDirty: true });
+    setValue("copyKind", on ? "original" : asRead.copyKind, { shouldDirty: true });
+  };
 
   // The invoice month and the six after it (a late invoice is claimed a little later); keep a set value listed
   const own = invoiceMonth({ date: date ?? "" });
@@ -129,6 +146,16 @@ export function TaxFields() {
           {whtType ? t("whtAmount", { amount: baht(amount) }) : t("whtHint")}
         </span>
       </div>
+
+      {asRead && (
+        <label className="flex items-start gap-3 rounded-2xl bg-brand-soft p-3.5 sm:col-span-3">
+          <Checkbox className="mt-0.5 bg-background" checked={asOriginal} onCheckedChange={(v) => setOriginal(v === true)} />
+          <span className="grid gap-1">
+            <span className="text-sm font-medium">{t("originalFix")}</span>
+            <span className="text-[11px] leading-snug text-muted-foreground">{t("originalFixHint")}</span>
+          </span>
+        </label>
+      )}
     </div>
   );
 }
