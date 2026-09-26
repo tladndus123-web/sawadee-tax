@@ -5,6 +5,7 @@
 
 import { claimable } from "./checks";
 import { fromSatang, toSatang } from "./money";
+import { branchNo } from "./thai-tax";
 import type { FormLang, LedgerDoc, Tri } from "./types";
 
 /** Screen language → the document language used in exports */
@@ -20,6 +21,8 @@ export interface ExportRow {
   vendor: string;
   taxId: string;
   branch: string;
+  /** "00000" head office, 5-digit branch, "" unknown (purchase tax report form) */
+  branchNo: string;
   docType: LedgerDoc["docType"];
   category: LedgerDoc["category"];
   items: string;
@@ -88,6 +91,7 @@ export function buildMonthExport(
       vendor,
       taxId: doc.seller.taxId,
       branch: pick(doc.seller.branch, lang),
+      branchNo: branchNo(doc.seller.branch),
       docType: doc.docType,
       category: doc.category,
       items: doc.items.map((i) => pick(i.desc, lang)).filter(Boolean).join(" / "),

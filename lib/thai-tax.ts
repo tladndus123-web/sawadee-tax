@@ -1,5 +1,7 @@
 // Thai tax ID and date rules (ported from the prototype)
 
+import type { FormLang, Tri } from "./types";
+
 export const digitsOnly = (s: string | null | undefined): string => (s ?? "").replace(/\D/g, "");
 
 /**
@@ -57,4 +59,28 @@ export function fixDate(s: unknown): [string, boolean] {
 /** Today in Bangkok time as yyyy-mm-dd */
 export function todayBangkok(now: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(now);
+}
+
+const HEAD_OFFICE = /สำนักงานใหญ่|head\s*office|本社|本店/i;
+
+/**
+ * The branch as the purchase tax report wants it: "00000" for the head office, the 5-digit branch number
+ * otherwise, "" when the document doesn't say. Read from the printed head office / branch text.
+ */
+export function branchNo(branch: Tri | null | undefined): string {
+  const texts = branch ? [branch.th, branch.en, branch.ja].filter(Boolean) : [];
+  let head = false;
+  for (const text of texts) {
+    const digits = text.match(/\d+/)?.[0] ?? "";
+    if (digits.length > 0 && digits.length <= 5 && Number(digits) > 0) return digits.padStart(5, "0");
+    if (HEAD_OFFICE.test(text) || (digits.length > 0 && Number(digits) === 0)) head = true;
+  }
+  return head ? "00000" : "";
+}
+
+/** "สำนักงานใหญ่" / "สาขาที่ 00012" (and the same in English or Japanese) */
+export function branchLabel(no: string, lang: FormLang): string {
+  if (!no) return "";
+  if (no === "00000") return { th: "สำนักงานใหญ่", en: "Head office", ja: "本社" }[lang];
+  return { th: `สาขาที่ ${no}`, en: `Branch ${no}`, ja: `支店 ${no}` }[lang];
 }

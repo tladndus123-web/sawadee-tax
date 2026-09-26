@@ -331,7 +331,16 @@
     "network": "The connection dropped. Check your internet and tap Read again.",
     "busy": "The AI is busy right now. Wait a moment and tap Read again.",
     "maxNotice": "Up to {max} photos at once",
-    "count": "{count} / {max} photos"
+    "count": "{count} / {max} photos",
+    "check": "Check the photo",
+    "checkHint": "The AI may misread it. Retake it, or read it as it is.",
+    "readAnyway": "Read anyway",
+    "retake": "Retake",
+    "issue": {
+      "dark": "The photo is dark",
+      "blurry": "The text is blurry",
+      "small": "The photo is too small"
+    }
   },
   "role": {
     "admin": "Admin",

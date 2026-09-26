@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, dmy, fixDate, taxIdOk, todayBangkok } from "./thai-tax";
+import { addDays, branchLabel, branchNo, dmy, fixDate, taxIdOk, todayBangkok } from "./thai-tax";
 
 describe("taxIdOk", () => {
   it.each(["0745538001265", "0105557035035"])("%s passes", (id) => {
@@ -41,5 +41,30 @@ describe("dates", () => {
   it("uses Bangkok time for today", () => {
     // 2026-09-23 20:00 UTC is already the 24th in Bangkok (UTC+7)
     expect(todayBangkok(new Date("2026-09-23T20:00:00Z"))).toBe("2026-09-24");
+  });
+});
+
+describe("branch for the purchase tax report", () => {
+  const tri = (th: string, en = "", ja = "") => ({ th, en, ja });
+  it("reads the head office in any language", () => {
+    expect(branchNo(tri("สำนักงานใหญ่", "Head office", "本社"))).toBe("00000");
+    expect(branchNo(tri("", "HEAD OFFICE"))).toBe("00000");
+    expect(branchNo(tri("", "", "本店"))).toBe("00000");
+    expect(branchNo(tri("00000"))).toBe("00000");
+  });
+  it("reads a branch number as 5 digits", () => {
+    expect(branchNo(tri("สาขาที่ 00012", "Branch 00012"))).toBe("00012");
+    expect(branchNo(tri("", "Branch 3"))).toBe("00003");
+  });
+  it("leaves it empty when the document doesn't say", () => {
+    expect(branchNo(tri(""))).toBe("");
+    expect(branchNo(null)).toBe("");
+    expect(branchNo(tri("", "Tel 021234567"))).toBe("");
+  });
+  it("writes it the way the form does", () => {
+    expect(branchLabel("00000", "th")).toBe("สำนักงานใหญ่");
+    expect(branchLabel("00012", "th")).toBe("สาขาที่ 00012");
+    expect(branchLabel("00012", "en")).toBe("Branch 00012");
+    expect(branchLabel("", "th")).toBe("");
   });
 });

@@ -331,7 +331,16 @@
     "network": "인터넷 연결이 끊겼어요. 연결을 확인하고 다시 읽기를 눌러 주세요.",
     "busy": "AI가 잠시 바빠요. 조금 뒤에 다시 읽기를 눌러 주세요.",
     "maxNotice": "한 번에 최대 {max}장",
-    "count": "{count} / {max}장"
+    "count": "{count} / {max}장",
+    "check": "사진 확인 필요",
+    "checkHint": "AI가 잘못 읽을 수 있어요. 다시 찍거나 그대로 읽을 수 있어요.",
+    "readAnyway": "그대로 읽기",
+    "retake": "다시 찍기",
+    "issue": {
+      "dark": "사진이 어두워요",
+      "blurry": "글씨가 흐려요",
+      "small": "사진이 너무 작아요"
+    }
   },
   "role": {
     "admin": "관리자",

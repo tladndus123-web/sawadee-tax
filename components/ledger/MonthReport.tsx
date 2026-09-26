@@ -17,7 +17,7 @@ import { useCompany } from "@/lib/company-store";
 import { buildMonthExport, type ExportRow, exportLang } from "@/lib/export";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { fmt, fromSatang, toSatang } from "@/lib/money";
-import { digitsOnly, dmy, todayBangkok } from "@/lib/thai-tax";
+import { branchLabel, branchNo, digitsOnly, dmy, todayBangkok } from "@/lib/thai-tax";
 import type { LedgerDoc } from "@/lib/types";
 import th from "@/messages/th.json";
 import { useMonthLabel } from "./Stickers";
@@ -64,7 +64,7 @@ export function MonthReport({ month }: { month: string }) {
     const d = [...docs].reverse().find((x: LedgerDoc) => digitsOnly(x.customer.taxId) === id);
     const c = d?.customer;
     const in_ = (v?: { th: string; en: string; ja: string }) => (v ? v[lang] || v.en || v.th : "");
-    return { taxId: id, name: in_(c?.name), nameTh: c?.name.th ?? "", branch: in_(c?.branch), address: in_(c?.address) };
+    return { taxId: id, name: in_(c?.name), nameTh: c?.name.th ?? "", branchNo: branchNo(c?.branch), branch: in_(c?.branch), address: in_(c?.address) };
   }, [docs, company.taxId, lang]);
 
   const title = t("report.title");
@@ -95,10 +95,13 @@ export function MonthReport({ month }: { month: string }) {
     </span>
   );
 
+  // Every page repeats who and which tax month (the table header repeats by itself)
+  const running = [us?.nameTh || us?.name, company.taxId && `${th.report.taxId} ${company.taxId}`, `${th.report.period} ${period}`].filter(Boolean).join("  ·  ");
   const pageCss = `@media print {
     @page {
       size: A4 landscape;
-      margin: 12mm 12mm 14mm;
+      margin: 14mm 12mm 14mm;
+      @top-left { content: ${JSON.stringify(running)}; font-size: 8pt; color: #555; }
       @bottom-left { content: ${JSON.stringify(`${title} · ${period}`)}; font-size: 8pt; color: #555; }
       @bottom-right { content: counter(page) " / " counter(pages); font-size: 8pt; color: #555; }
     }
@@ -172,7 +175,14 @@ export function MonthReport({ month }: { month: string }) {
                     )}
                   </td>
                   <td className={`${cell} mono whitespace-nowrap`}>{r.taxId || "—"}</td>
-                  <td className={cell}>{r.branch || "—"}</td>
+                  <td className={`${cell} whitespace-nowrap`}>
+                    {branchLabel(r.branchNo, lang) || r.branch || "—"}
+                    {showThai && r.branchNo && (
+                      <span lang="th" className="block text-[9.5px] text-neutral-500">
+                        {branchLabel(r.branchNo, "th")}
+                      </span>
+                    )}
+                  </td>
                   <td className={cell}>{t(`docType.${r.docType}`)}</td>
                   <td className={num}>{fmt(r.taxable + r.exempt)}</td>
                   <td className={num}>{fmt(r.vat)}</td>
@@ -247,7 +257,14 @@ export function MonthReport({ month }: { month: string }) {
               <dt className="font-semibold">
                 <L k="branch" />
               </dt>
-              <dd>{us?.branch || t("report.headOffice")}</dd>
+              <dd>
+                {us?.branchNo ? branchLabel(us.branchNo, lang) : us?.branch || t("report.headOffice")}
+                {showThai && us?.branchNo && (
+                  <span lang="th" className="block text-neutral-500">
+                    {branchLabel(us.branchNo, "th")}
+                  </span>
+                )}
+              </dd>
               {us?.address && (
                 <>
                   <dt className="font-semibold">

@@ -4,13 +4,15 @@
 import { useSyncExternalStore } from "react";
 import { type ExtractErrorCode, MAX_PHOTOS } from "./extract-schema";
 import { normalize } from "./normalize";
+import { checkPhoto, type PhotoIssue } from "./photo-quality";
 import { withVendor } from "./vendor-store";
 import type { VendorFix } from "./vendors";
 import type { LedgerDoc } from "./types";
 
 export { MAX_PHOTOS };
 
-export type UploadStatus = "preparing" | "reading" | "done" | "failed" | "stopped";
+/** "check" = the photo looks dark, blurry or small: waiting for the person to retake it or read it anyway */
+export type UploadStatus = "preparing" | "check" | "reading" | "done" | "failed" | "stopped";
 export type UploadError = ExtractErrorCode | "network";
 
 export interface UploadItem {
@@ -25,6 +27,8 @@ export interface UploadItem {
   doc: LedgerDoc | null;
   /** Seller fields the vendor dictionary tidied (shown to the user) */
   vendorFixed: VendorFix[];
+  /** What looked wrong with the photo (status "check") */
+  issues: PhotoIssue[];
 }
 
 let items: UploadItem[] = [];
@@ -93,12 +97,15 @@ export function addPhotos(files: File[]): number {
   const accepted = files.slice(0, room);
   for (const file of accepted) {
     const id = crypto.randomUUID();
-    items = [...items, { id, name: file.name, status: "preparing", preview: null, startedAt: Date.now(), finishedAt: null, error: null, doc: null, vendorFixed: [] }];
+    items = [...items, { id, name: file.name, status: "preparing", preview: null, startedAt: Date.now(), finishedAt: null, error: null, doc: null, vendorFixed: [], issues: [] }];
     emit();
     preparePhoto(file)
-      .then((jpeg) => {
+      .then(async (jpeg) => {
         photos.set(id, jpeg);
         patch(id, { preview: URL.createObjectURL(jpeg) });
+        // A photo the AI would likely misread waits for the person first (retake, or read anyway)
+        const issues = await checkPhoto(jpeg);
+        if (issues.length) return patch(id, { status: "check", issues, finishedAt: Date.now() });
         return read(id);
       })
       .catch(() => patch(id, { status: "failed", error: "badImage", finishedAt: Date.now() }));
@@ -110,6 +117,8 @@ export function addPhotos(files: File[]): number {
 export const getPhoto = (id: string): File | null => photos.get(id) ?? null;
 
 export const retryPhoto = (id: string) => void read(id);
+/** Read a photo the check flagged, as it is */
+export const readAnyway = (id: string) => void read(id);
 export const stopPhoto = (id: string) => aborts.get(id)?.abort();
 
 export function removePhoto(id: string) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Camera, ChevronLeft, CircleAlert, CircleCheck, ImagePlus, Loader2, RotateCw, Sparkles, Square, X } from "lucide-react";
+import { Building2, Camera, ChevronLeft, CircleAlert, CircleCheck, ImagePlus, Loader2, RotateCw, Sparkles, Square, TriangleAlert, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import { joinTri } from "@/lib/form-labels";
 import {
   addPhotos,
   getPhoto,
+  readAnyway,
   MAX_PHOTOS,
   removePhoto,
   retryPhoto,
@@ -179,7 +180,18 @@ export function BatchUpload() {
           </div>
           <ul className="grid gap-3">
             {items.map((it) => (
-              <Row key={it.id} it={it} now={now} errorText={errorText} onReview={() => setReviewing(it.id)} />
+              <Row
+                key={it.id}
+                it={it}
+                now={now}
+                errorText={errorText}
+                onReview={() => setReviewing(it.id)}
+                onRetake={() => {
+                  removePhoto(it.id);
+                  // Phones open the camera again, computers the file picker
+                  (matchMedia("(pointer: coarse)").matches ? cameraRef : pickRef).current?.click();
+                }}
+              />
             ))}
           </ul>
         </section>
@@ -201,7 +213,19 @@ function VendorNotice({ fixed }: { fixed: string[] }) {
 }
 
 /** "Up to 5 at once" pill, also used on the dashboard */
-function Row({ it, now, errorText, onReview }: { it: UploadItem; now: number; errorText: (e: UploadError | null) => string; onReview: () => void }) {
+function Row({
+  it,
+  now,
+  errorText,
+  onReview,
+  onRetake,
+}: {
+  it: UploadItem;
+  now: number;
+  errorText: (e: UploadError | null) => string;
+  onReview: () => void;
+  onRetake: () => void;
+}) {
   const t = useTranslations();
   const sec = Math.max(0, Math.round(((it.finishedAt ?? now) - it.startedAt) / 1000));
   const busy = it.status === "reading" || it.status === "preparing";
@@ -224,6 +248,10 @@ function Row({ it, now, errorText, onReview }: { it: UploadItem; now: number; er
             <span className="font-semibold text-foreground tabular-nums">{baht(it.doc.totals.net)}</span>
             {it.doc.docNo && <span className="mono text-xs">{it.doc.docNo}</span>}
           </p>
+        ) : it.status === "check" ? (
+          <p className="mt-0.5 text-xs leading-relaxed text-warn">
+            {it.issues.map((i) => t(`batch.issue.${i}`)).join(" · ")}. {t("batch.checkHint")}
+          </p>
         ) : (
           it.error && <p className="mt-0.5 text-xs leading-relaxed text-bad">{errorText(it.error)}</p>
         )}
@@ -232,6 +260,17 @@ function Row({ it, now, errorText, onReview }: { it: UploadItem; now: number; er
       </div>
 
       <div className="flex flex-none items-center gap-1">
+        {it.status === "check" && (
+          <>
+            <Button type="button" className="h-10 rounded-full px-4" onClick={onRetake}>
+              <Camera className="size-4" />
+              <span className="max-sm:sr-only">{t("batch.retake")}</span>
+            </Button>
+            <Button type="button" variant="secondary" className="h-10 rounded-full px-4" onClick={() => readAnyway(it.id)}>
+              {t("batch.readAnyway")}
+            </Button>
+          </>
+        )}
         {it.status === "done" && (
           <Button type="button" className="h-10 rounded-full px-4" onClick={onReview}>
             {t("batch.review")}
@@ -262,6 +301,7 @@ function Status({ it, sec }: { it: UploadItem; sec: number }) {
   const t = useTranslations("batch");
   const map = {
     preparing: { icon: Loader2, cls: "text-muted-foreground", text: t("preparing"), spin: true },
+    check: { icon: TriangleAlert, cls: "text-warn", text: t("check"), spin: false },
     reading: { icon: Sparkles, cls: "ai-text", text: t("reading", { sec }), spin: false },
     done: { icon: CircleCheck, cls: "text-ok", text: `${t("done")} · ${t("readIn", { sec })}`, spin: false },
     failed: { icon: CircleAlert, cls: "text-bad", text: t("failed"), spin: false },
