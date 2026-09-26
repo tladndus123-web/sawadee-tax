@@ -7,7 +7,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { type DocumentRow, docToRow, type ItemRow, rowToDoc } from "./db-map";
 import { supabaseBrowser } from "./supabase/client";
-import type { LedgerDoc } from "./types";
+import type { LedgerDoc, Sticker } from "./types";
 
 /** "draft" = saved to finish later (not in monthly totals); "final" = in the ledger (db status "reviewed") */
 export type EntryStatus = "draft" | "final";
@@ -133,6 +133,20 @@ export async function saveEntry(
   if (error) throw error;
   await reload();
   return id;
+}
+
+/**
+ * Payment and colour stickers, changed on their own without rewriting the document. They stay changeable in a
+ * closed tax month (they aren't in the purchase tax report), unlike a full save.
+ */
+export async function setQuick(id: string, change: { paid?: boolean; paidDate?: string; stickers?: Sticker[] }) {
+  const row: Record<string, unknown> = {};
+  if (change.paid !== undefined) row.paid = change.paid;
+  if (change.paidDate !== undefined) row.paid_date = change.paidDate || null;
+  if (change.stickers) row.stickers = change.stickers;
+  const { error } = await supabaseBrowser().from("documents").update(row).eq("id", id);
+  if (error) throw error;
+  await reload();
 }
 
 /** Admin only. The database stamps who and when and refuses anyone else. */

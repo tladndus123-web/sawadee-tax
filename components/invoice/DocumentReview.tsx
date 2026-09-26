@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { isMonthLocked } from "@/lib/month-lock-store";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -142,6 +143,8 @@ export function DocumentReview({
     setBusy("draft");
     try {
       await onDraft(dropEmptyItems(normalize({ ...getValues(), id: initial.id })));
+    } catch (e) {
+      toast.error(isMonthLocked(e) ? t("lock.blocked") : t("app.saveFail"));
     } finally {
       setBusy(null);
     }
@@ -152,6 +155,8 @@ export function DocumentReview({
       setBusy("save");
       try {
         await onSave(dropEmptyItems(normalize({ ...d, id: initial.id })));
+      } catch (e) {
+        toast.error(isMonthLocked(e) ? t("lock.blocked") : t("app.saveFail"));
       } finally {
         setBusy(null);
       }

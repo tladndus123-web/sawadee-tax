@@ -11,7 +11,7 @@ import { monthKey } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
 import { type DueItem, summarize, trend, upcoming } from "@/lib/dashboard";
 import { exportLang } from "@/lib/export";
-import { pick, saveEntry, useLedger } from "@/lib/ledger-store";
+import { pick, setQuick, useLedger } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
 import { dmy, todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
@@ -95,7 +95,7 @@ export function Dashboard() {
       </div>
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <DueList items={due} companyTaxId={company.taxId} />
+        <DueList items={due} />
         <TrendChart data={points} active={month} />
       </div>
 
@@ -142,7 +142,7 @@ function Tile({
 }
 
 /** Unpaid credit purchases, most urgent first; paying one is a single tap (with undo) */
-function DueList({ items, companyTaxId }: { items: DueItem[]; companyTaxId: string }) {
+function DueList({ items }: { items: DueItem[] }) {
   const t = useTranslations();
   const locale = useLocale();
   const lang = exportLang(locale);
@@ -151,11 +151,13 @@ function DueList({ items, companyTaxId }: { items: DueItem[]; companyTaxId: stri
   const setPaid = async (it: DueItem, paid: boolean) => {
     setBusy(it.id);
     try {
-      await saveEntry({ ...it.doc, paid, paidDate: paid ? todayBangkok() : "" }, null, it.id, "final", companyTaxId);
+      await setQuick(it.id, { paid, paidDate: paid ? todayBangkok() : "" });
       if (paid)
         toast.success(t("dash.markedPaid"), {
           action: { label: <Undo2 className="size-4" aria-label="Undo" />, onClick: () => void setPaid(it, false) },
         });
+    } catch {
+      toast.error(t("app.saveFail"));
     } finally {
       setBusy(null);
     }

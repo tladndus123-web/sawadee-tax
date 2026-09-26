@@ -1,6 +1,6 @@
 "use client";
 
-import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, FilePen, ImagePlus, Loader2, Search, Trash2, TriangleAlert, X } from "lucide-react";
+import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, FilePen, ImagePlus, Loader2, Lock, Search, Trash2, TriangleAlert, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { memo, useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -9,7 +9,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link } from "@/i18n/navigation";
 import { type ArchiveFilter, groupByMonth, matches, monthKey, NO_DATE, search } from "@/lib/archive";
 import { joinTri } from "@/lib/form-labels";
-import { healThumb, type LedgerEntry, type LedgerView, pick, restoreEntry, saveEntry, useLedger, usePhotoUrl } from "@/lib/ledger-store";
+import { healThumb, type LedgerEntry, type LedgerView, pick, restoreEntry, setQuick, useLedger, usePhotoUrl } from "@/lib/ledger-store";
+import { useMonthLocks } from "@/lib/month-lock-store";
 import { useCompany } from "@/lib/company-store";
 import { needsCheck } from "@/lib/dashboard";
 import { baht } from "@/lib/money";
@@ -18,6 +19,7 @@ import { dmy, todayBangkok } from "@/lib/thai-tax";
 import { STICKERS, type Sticker } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ExportButtons } from "./ExportButtons";
+import { MonthLockButton } from "./MonthLockButton";
 import { StickerDot, StickerDots, StickerPopover, useMonthLabel, useStickerLabel } from "./Stickers";
 
 /** Ledger as a monthly archive, with colour-sticker filters, drafts and the admin-only trash. */
@@ -28,6 +30,7 @@ export function LedgerList() {
   const [tab, setTab] = useState<LedgerView>("ledger");
   const [filter, setFilter] = useState<ArchiveFilter>({ stickers: [], unpaidOnly: false });
   const isAdmin = me.role === "admin";
+  const locks = useMonthLocks();
   const view: LedgerView = tab === "trash" && !isAdmin ? "ledger" : tab;
   const counts = useMemo(
     () => ({ ledger: pick(entries, "ledger").length, drafts: pick(entries, "drafts").length, trash: pick(entries, "trash").length }),
@@ -119,7 +122,15 @@ export function LedgerList() {
         <div className="grid gap-4">
           {months.map(({ group, monthEntries }, i) => (
             // Starting or clearing a search re-opens the months (every match is shown while searching)
-            <MonthSection key={`${group.key}:${q.trim() !== ""}`} group={group} defaultOpen={i < 3 || q.trim() !== ""} monthEntries={monthEntries} check={check} />
+            <MonthSection
+              key={`${group.key}:${q.trim() !== ""}`}
+              group={group}
+              defaultOpen={i < 3 || q.trim() !== ""}
+              monthEntries={monthEntries}
+              check={check}
+              locked={locks.has(group.key)}
+              isAdmin={isAdmin}
+            />
           ))}
         </div>
       )}
@@ -162,14 +173,20 @@ const MonthSection = memo(function MonthSection({
   defaultOpen,
   monthEntries,
   check,
+  locked,
+  isAdmin,
 }: {
   group: ReturnType<typeof groupByMonth<LedgerEntry>>[number];
   defaultOpen: boolean;
   /** Every saved document of this month (exports ignore the sticker / unpaid filter) */
   monthEntries: LedgerEntry[];
   check: Set<string>;
+  /** Tax month closed (month_locks): its saved documents can't change */
+  locked: boolean;
+  isAdmin: boolean;
 }) {
   const t = useTranslations("archive");
+  const tl = useTranslations("lock");
   const monthLabel = useMonthLabel();
   const current = group.key === monthKey({ date: todayBangkok() });
   // Rows (and their photos) exist only while the month is open: a year of documents stays light
@@ -185,6 +202,12 @@ const MonthSection = memo(function MonthSection({
             <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[17px] font-semibold tracking-tight">
               <span className="whitespace-nowrap">{monthLabel(group.key)}</span>
               {current && <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-brand">{t("thisMonth")}</span>}
+              {locked && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-muted-foreground">
+                  <Lock className="size-3" aria-hidden />
+                  {tl("badge")}
+                </span>
+              )}
             </span>
             <span className="text-xs text-muted-foreground">
               {t("docs", { count: group.items.length })}
@@ -202,7 +225,12 @@ const MonthSection = memo(function MonthSection({
       </summary>
       {open && (
         <div className="grid gap-2 border-t bg-muted/30 p-2 sm:p-3">
-          {group.key !== NO_DATE && <ExportButtons month={group.key} entries={monthEntries} />}
+          {group.key !== NO_DATE && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {isAdmin ? <MonthLockButton month={group.key} label={monthLabel(group.key)} locked={locked} /> : <span />}
+              <ExportButtons month={group.key} entries={monthEntries} />
+            </div>
+          )}
           <ul className="grid gap-2">
             {group.items.map((e) => (
               <DocRow key={e.id} e={e} flagged={check.has(e.id)} />
@@ -271,7 +299,7 @@ const DocRow = memo(function DocRow({ e, draft, flagged }: { e: LedgerEntry; dra
   const locale = useLocale();
   const monthLabel = useMonthLabel();
   const setStickers = async (stickers: Sticker[]) => {
-    await saveEntry({ ...e.doc, stickers }, null, e.id, e.status);
+    await setQuick(e.id, { stickers });
   };
   return (
     <li className="tap-row flex min-w-0 items-center gap-1 rounded-2xl bg-card pr-2 shadow-[0_0_0_1px_var(--border)] hover:shadow-[0_0_0_1px_var(--input),var(--shadow-soft)]">

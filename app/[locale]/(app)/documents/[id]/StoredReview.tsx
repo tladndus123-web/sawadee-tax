@@ -2,7 +2,7 @@
 
 // A document from the temporary ledger (IndexedDB). Step 5 loads it from Supabase instead.
 
-import { ArchiveRestore, Loader2, Trash2 } from "lucide-react";
+import { ArchiveRestore, Loader2, Lock, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -10,8 +10,10 @@ import { ActivityList } from "@/components/dashboard/ActivityList";
 import { DocumentReview } from "@/components/invoice/DocumentReview";
 import { Button } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
+import { monthKey } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
 import { restoreEntry, saveEntry, softDelete, useLedger, usePhotoUrl } from "@/lib/ledger-store";
+import { useMonthLocks } from "@/lib/month-lock-store";
 import { useMe } from "@/lib/role-store";
 
 export function StoredReview({ id }: { id: string }) {
@@ -27,6 +29,7 @@ export function StoredReview({ id }: { id: string }) {
   );
   const photoUrl = usePhotoUrl(entry?.photoPath ?? null);
   const company = useCompany();
+  const locks = useMonthLocks();
   const [restoring, setRestoring] = useState(false);
   // Keeps the delete flow mounted while the shredder plays after the entry turns deleted
   const [deleting, setDeleting] = useState(false);
@@ -48,6 +51,12 @@ export function StoredReview({ id }: { id: string }) {
   return (
     <div className="grid gap-4">
       <h1 className="sr-only">{entry.doc.docNo || t("ui.documentForm")}</h1>
+      {entry.status === "final" && !entry.deletedAt && locks.has(monthKey(entry.doc)) && (
+        <p className="flex items-start gap-2 rounded-2xl bg-muted px-4 py-3 text-sm text-foreground print:hidden">
+          <Lock className="mt-0.5 size-4 flex-none text-muted-foreground" aria-hidden />
+          {t("lock.docBanner")}
+        </p>
+      )}
       {entry.deletedAt && !deleting && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-bad-soft px-4 py-3 text-sm text-bad print:hidden">
           <span className="font-semibold">

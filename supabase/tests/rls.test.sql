@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(35);
+select plan(47);
 
 -- Fixtures: one admin, one staff, one signed-in stranger (no membership)
 insert into auth.users (id, email) values
@@ -99,6 +99,26 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select lives_ok($$ update public.members set disabled_at = null where user_id = '00000000-0000-0000-0000-00000000000b' $$, 'an admin restores access');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select ok((select count(*) from public.documents) > 0, 'restored member sees the ledger again');
+
+-- Month close: an admin closes a filed month; its saved documents are frozen except payment and stickers
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select public.save_document('00000000-0000-0000-0000-0000000000e1', '{"doc_no":"M-1","status":"reviewed","doc_date":"2026-08-10","net":100}', '[{"line_no":1,"amount":100}]');
+select public.save_document('00000000-0000-0000-0000-0000000000e2', '{"doc_no":"M-2","status":"draft","doc_date":"2026-08-11"}', '[]');
+select throws_ok($$ insert into public.month_locks (month) values ('2026-08') $$, '42501', NULL, 'staff cannot close a month');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select lives_ok($$ insert into public.month_locks (month) values ('2026-08') $$, 'an admin closes a month');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select throws_like($$ select public.save_document('00000000-0000-0000-0000-0000000000e1', '{"net":200}', '[]') $$, 'month_locked%', 'a closed month''s document cannot be changed');
+select throws_like($$ select public.save_document(null, '{"doc_no":"M-3","status":"reviewed","doc_date":"2026-08-20"}', '[]') $$, 'month_locked%', 'nothing can be added to a closed month');
+select throws_like($$ update public.documents set doc_date = '2026-09-01' where id = '00000000-0000-0000-0000-0000000000e1' $$, 'month_locked%', 'a document cannot be moved out of a closed month');
+select throws_like($$ delete from public.document_items where document_id = '00000000-0000-0000-0000-0000000000e1' $$, 'month_locked%', 'its item lines are frozen too');
+select lives_ok($$ update public.documents set paid = true, paid_date = '2026-09-05', stickers = '{red}' where id = '00000000-0000-0000-0000-0000000000e1' $$, 'paying and stickers still work in a closed month');
+select lives_ok($$ select public.save_document('00000000-0000-0000-0000-0000000000e2', '{"note":"x"}', '[]') $$, 'drafts in a closed month stay editable');
+select throws_like($$ select public.save_document('00000000-0000-0000-0000-0000000000e2', '{"status":"reviewed"}', '[]') $$, 'month_locked%', 'a draft cannot be saved into a closed month');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select throws_like($$ update public.documents set deleted_at = now(), delete_reason = 'dup' where id = '00000000-0000-0000-0000-0000000000e1' $$, 'month_locked%', 'even admins cannot delete in a closed month');
+select lives_ok($$ delete from public.month_locks where month = '2026-08' $$, 'an admin reopens the month');
+select lives_ok($$ select public.save_document('00000000-0000-0000-0000-0000000000e1', '{"net":200}', '[]') $$, 'a reopened month can be edited again');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

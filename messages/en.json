@@ -630,5 +630,18 @@
     "signDate": "Date",
     "note": "Prepared from the documents recorded in the ledger. Check against the original documents before filing.",
     "companyMissing": "Enter our company tax ID in Settings to show the taxpayer details and claimable input tax."
+  },
+  "lock": {
+    "badge": "Closed",
+    "close": "Close this month",
+    "reopen": "Reopen",
+    "cancel": "Cancel",
+    "confirmTitle": "Close {month}?",
+    "confirmDesc": "Locks a month whose tax return is filed. Once closed, its saved documents can't be edited, deleted or added to. Payment and stickers can still change, and an admin can reopen it any time.",
+    "closed": "{month} is closed.",
+    "reopened": "{month} is open again.",
+    "fail": "Couldn't change it. Only admins can close or reopen a month.",
+    "blocked": "This month is closed. To edit, an admin has to reopen it in the ledger.",
+    "docBanner": "This document's month is closed. Its contents can't change; only payment and stickers can. To edit, an admin has to reopen the month in the ledger."
   }
 }
