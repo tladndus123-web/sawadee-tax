@@ -4,7 +4,7 @@
 
 import { endIfExpired } from "@/lib/auth/session-guard";
 import type { ExtractErrorCode } from "@/lib/extract-schema";
-import { extractDocument, IMAGE_TYPES, type ImageType, loadSharp, MAX_IMAGE_BYTES } from "@/lib/extract-server";
+import { extractDocument, IMAGE_TYPES, type ImageType, loadSharp, MAX_IMAGE_BYTES, readingSetup } from "@/lib/extract-server";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -28,9 +28,9 @@ function limited(key: string): boolean {
 
 const fail = (code: ExtractErrorCode, status: number) => Response.json({ error: code }, { status });
 
-/** Health check: can long slips be cut into pieces on this server? (no data, no AI call) */
+/** Health check: reading model/effort and whether long slips can be cut into pieces (no data, no AI call) */
 export async function GET() {
-  return Response.json({ slipPieces: !!(await loadSharp()) });
+  return Response.json({ ...readingSetup(), slipPieces: !!(await loadSharp()) });
 }
 
 export async function POST(req: Request) {

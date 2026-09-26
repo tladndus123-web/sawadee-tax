@@ -36,6 +36,13 @@ const getPrompt = () =>
 
 let client: Anthropic | null = null;
 
+/** Model and effort the app reads with (Vercel env; defaults below). Low was chosen 2026-09-26: same tax fields as medium, ~40% cheaper, ~2× faster. */
+export const readingSetup = () => ({
+  model: process.env.ANTHROPIC_MODEL || "claude-opus-5-5",
+  // Opus 5.5 defaults to "medium"; set explicitly so a model change does not silently change depth.
+  effort: ((process.env.ANTHROPIC_EFFORT || "").trim() || "medium") as Effort,
+});
+
 type ImageBlock = Anthropic.ImageBlockParam;
 const imageBlock = (data: Buffer, type: ImageType): ImageBlock => ({
   type: "image",
@@ -94,9 +101,8 @@ export async function extractDocument(
   type: ImageType,
   opts: { signal?: AbortSignal; model?: string; effort?: Effort } = {},
 ): Promise<ExtractOutcome> {
-  const model = opts.model || process.env.ANTHROPIC_MODEL || "claude-opus-5-5";
-  // Opus 5.5 defaults to "medium"; set explicitly so a model change does not silently change depth.
-  const effort = opts.effort || (process.env.ANTHROPIC_EFFORT as Effort | undefined) || "medium";
+  const model = opts.model || readingSetup().model;
+  const effort = opts.effort || readingSetup().effort;
   try {
     client ??= new Anthropic({ maxRetries: 2 });
   } catch {
