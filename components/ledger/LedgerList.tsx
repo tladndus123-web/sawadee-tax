@@ -10,7 +10,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link } from "@/i18n/navigation";
 import { type ArchiveFilter, groupByMonth, matches, monthKey, NO_DATE, search } from "@/lib/archive";
 import { joinTri } from "@/lib/form-labels";
-import { healThumb, type LedgerEntry, type LedgerView, pick, restoreEntry, setQuick, useLedger, usePhotoUrl } from "@/lib/ledger-store";
+import { healThumb, type LedgerEntry, type LedgerView, pick, restoreEntry, restoreMany, setQuick, useLedger, usePhotoUrl } from "@/lib/ledger-store";
 import { useMonthLocks } from "@/lib/month-lock-store";
 import { useCompany } from "@/lib/company-store";
 import { needsCheck } from "@/lib/dashboard";
@@ -80,7 +80,11 @@ export function LedgerList() {
       <header className="grid gap-4">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("nav.ledger")}</h1>
-          <ToggleGroup type="single" className="segmented-control" value={view} onValueChange={(v) => v && setTab(v as LedgerView)} aria-label={t("nav.ledger")}>
+          <ToggleGroup type="single" className="segmented-control" value={view} onValueChange={(v) => {
+              if (!v) return;
+              setTab(v as LedgerView);
+              stopSelecting();
+            }} aria-label={t("nav.ledger")}>
             <ToggleGroupItem value="ledger" className="gap-1.5 px-3.5">
               {t("trash.ledgerTab")} <span className="mono text-xs opacity-60">{counts.ledger}</span>
             </ToggleGroupItem>
@@ -128,6 +132,14 @@ export function LedgerList() {
           </div>
         )}
         {selecting && view === "ledger" && <p className="text-xs text-muted-foreground">{t("bulk.hint")}</p>}
+        {view === "trash" && counts.trash > 0 && (
+          <div className="flex justify-end">
+            <Button type="button" variant={selecting ? "secondary" : "ghost"} className="h-9 rounded-full px-3.5 text-[13px]" onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
+              {selecting ? <X className="size-4" /> : <CircleCheck className="size-4" />}
+              {selecting ? t("bulk.stop") : t("trashBulk.start")}
+            </Button>
+          </div>
+        )}
         {view === "drafts" && <p className="rounded-2xl bg-warn-soft/60 px-4 py-3 text-xs leading-relaxed text-warn">{t("archive.draftNote")}</p>}
       </header>
 
@@ -143,11 +155,21 @@ export function LedgerList() {
           }}
         />
       ) : view === "trash" ? (
-        <ul className="grid gap-3">
-          {filtered.map((e) => (
-            <TrashRow key={e.id} e={e} />
-          ))}
-        </ul>
+        <div className="grid gap-3">
+          <ul className="grid gap-3">
+            {filtered.map((e) => (
+              <TrashRow key={e.id} e={e} selectable={selecting} checked={selected.has(e.id)} onToggle={toggle} />
+            ))}
+          </ul>
+          {selecting && (
+            <TrashBar
+              ids={filtered.filter((e) => selected.has(e.id)).map((e) => e.id)}
+              all={filtered.map((e) => e.id)}
+              onSelectAll={(ids) => setSelected(new Set(ids))}
+              onDone={stopSelecting}
+            />
+          )}
+        </div>
       ) : view === "drafts" ? (
         <ul className="grid gap-3">
           {filtered.map((e) => (
@@ -406,14 +428,64 @@ const DocRow = memo(function DocRow({
   );
 });
 
-function TrashRow({ e }: { e: LedgerEntry }) {
+/** Trash, several at once: bring back or delete for good the ticked documents */
+function TrashBar({ ids, all, onSelectAll, onDone }: { ids: string[]; all: string[]; onSelectAll: (ids: string[]) => void; onDone: () => void }) {
+  const t = useTranslations();
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 flex flex-wrap items-center justify-between gap-2 rounded-full border bg-[var(--glass)] py-2 pr-2 pl-5 shadow-[var(--shadow-lift)] backdrop-blur-xl md:bottom-4">
+      <p className="flex items-center gap-3 text-sm">
+        <span className="font-semibold">{t("bulk.selected", { count: ids.length })}</span>
+        <button type="button" className="text-primary hover:underline" onClick={() => onSelectAll(ids.length === all.length ? [] : all)}>
+          {ids.length === all.length ? t("trashBulk.none") : t("trashBulk.all")}
+        </button>
+      </p>
+      <span className="flex items-center gap-1">
+        <Button
+          type="button"
+          className="h-10 rounded-full px-4"
+          disabled={busy || !ids.length}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              const n = await restoreMany(ids);
+              toast.success(t("trashBulk.restored", { count: n }));
+              onDone();
+            } catch {
+              toast.error(t("app.saveFail"));
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <ArchiveRestore className="size-4" />}
+          {t("trash.restore")}
+        </Button>
+        <PurgeButton ids={ids} onDone={onDone} />
+      </span>
+    </div>
+  );
+}
+
+function TrashRow({
+  e,
+  selectable,
+  checked,
+  onToggle,
+}: {
+  e: LedgerEntry;
+  selectable?: boolean;
+  checked?: boolean;
+  onToggle?: (id: string) => void;
+}) {
   const t = useTranslations();
   const locale = useLocale();
   const [busy, setBusy] = useState(false);
   const when = e.deletedAt ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(e.deletedAt) : "";
   return (
-    <li className="workspace-panel grid gap-3 p-3 sm:p-4">
+    <li className={cn("workspace-panel grid gap-3 p-3 sm:p-4", checked && "ring-2 ring-primary")}>
       <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+        {selectable && <Checkbox checked={!!checked} onCheckedChange={() => onToggle?.(e.id)} aria-label={sellerOf(e)} className="size-5 flex-none rounded-md" />}
         <span className="flex-none opacity-60 grayscale">
           <Thumb path={e.photoPath} />
         </span>
@@ -424,20 +496,22 @@ function TrashRow({ e }: { e: LedgerEntry }) {
           </span>
           <span className="mt-0.5 block text-xs text-muted-foreground tabular-nums">{baht(e.doc.totals.net)}</span>
         </span>
-        <Button
-          type="button"
-          className="h-10 rounded-full px-4"
-          disabled={busy}
-          onClick={async () => {
-            setBusy(true);
-            await restoreEntry(e.id);
-            toast.success(t("trash.restored"));
-          }}
-        >
-          {busy ? <Loader2 className="size-4 animate-spin" /> : <ArchiveRestore className="size-4" />}
-          {t("trash.restore")}
-        </Button>
-        <PurgeButton id={e.id} name={sellerOf(e)} />
+        {!selectable && (
+          <Button
+            type="button"
+            className="h-10 rounded-full px-4"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              await restoreEntry(e.id);
+              toast.success(t("trash.restored"));
+            }}
+          >
+            {busy ? <Loader2 className="size-4 animate-spin" /> : <ArchiveRestore className="size-4" />}
+            {t("trash.restore")}
+          </Button>
+        )}
+        {!selectable && <PurgeButton ids={[e.id]} name={sellerOf(e)} />}
       </div>
       <dl className="grid gap-x-4 gap-y-1 rounded-xl bg-muted/60 px-3 py-2.5 text-xs sm:grid-cols-[auto_1fr]">
         <dt className="text-muted-foreground">{t("trash.reason")}</dt>

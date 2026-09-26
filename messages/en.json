@@ -729,13 +729,20 @@
   "purge": {
     "button": "Delete for good",
     "title": "Delete for good?",
-    "word": "delete",
     "desc": "The {name} document and its photo will be deleted permanently and can't be brought back. Only a record of what was deleted, and by whom, stays. Saved documents of a closed month can't be deleted.",
-    "typeToConfirm": "Type '{word}' to confirm.",
+    "typeToConfirm": "Type “{word}” to confirm.",
     "confirm": "Delete for good",
     "cancel": "Cancel",
-    "done": "Deleted for good.",
-    "locked": "This document is in a closed month and can't be deleted. Reopen the month first.",
-    "fail": "Couldn't delete it. Only admins can delete documents from the trash."
+    "fail": "Couldn't delete it. Only admins can delete documents from the trash.",
+    "titleMany": "Delete {count} for good?",
+    "descMany": "The {count} chosen documents and their photos will be deleted permanently and can't be brought back. Only a record stays. Saved documents of a closed month are skipped.",
+    "doneMany": "Deleted {count} for good.",
+    "lockedSome": "{count} documents of a closed month were not deleted."
+  },
+  "trashBulk": {
+    "start": "Select several",
+    "all": "Select all",
+    "none": "Clear",
+    "restored": "Restored {count} to the ledger."
   }
 }

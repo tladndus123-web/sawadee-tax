@@ -185,6 +185,19 @@ export async function softDelete(id: string, reason: string) {
   await reload();
 }
 
+/** Admin only: bring several documents back from the trash at once */
+export async function restoreMany(ids: string[]): Promise<number> {
+  if (!ids.length) return 0;
+  const { data, error } = await supabaseBrowser()
+    .from("documents")
+    .update({ deleted_at: null, deleted_by: null, delete_reason: null })
+    .in("id", ids)
+    .select("id");
+  if (error) throw error;
+  await reload();
+  return data?.length ?? 0;
+}
+
 /** Admin only. */
 export async function restoreEntry(id: string) {
   const { data, error } = await supabaseBrowser()
@@ -201,15 +214,26 @@ export async function restoreEntry(id: string) {
  * Admin only, trashed documents only, never a saved document of a closed month (the database refuses anything
  * else and keeps a short record). Its photo goes too, unless another document still uses the same file.
  */
-export async function purgeEntry(id: string) {
+export async function purgeMany(ids: string[]): Promise<{ done: number; locked: number; failed: number }> {
   const supabase = supabaseBrowser();
-  const { data: photo, error } = await supabase.rpc("purge_document", { p_id: id });
-  if (error) throw error;
-  if (typeof photo === "string" && photo) {
+  const photos = new Set<string>();
+  const out = { done: 0, locked: 0, failed: 0 };
+  for (const id of ids) {
+    const { data: photo, error } = await supabase.rpc("purge_document", { p_id: id });
+    if (error) {
+      if (/month_locked/.test(error.message)) out.locked += 1;
+      else out.failed += 1;
+      continue;
+    }
+    out.done += 1;
+    if (typeof photo === "string" && photo) photos.add(photo);
+  }
+  for (const photo of photos) {
     const { count } = await supabase.from("documents").select("id", { count: "exact", head: true }).eq("photo_path", photo);
     if (!count) await supabase.storage.from(BUCKET).remove([photo, thumbPath(photo)]);
   }
   await reload();
+  return out;
 }
 
 /** Where the small list copy of a photo lives (photos saved before 2026-09-26 have none) */
