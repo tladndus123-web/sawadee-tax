@@ -22,7 +22,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
 | Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (158) · `npm run db:test` (pgTAP 61) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
-| Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel) |
+| Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
 | Email templates / SMTP | `npx tsx scripts/setup-email.ts` |
 
