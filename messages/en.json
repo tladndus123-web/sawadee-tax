@@ -541,7 +541,13 @@
     "save": "Save",
     "saved": "Vendor saved.",
     "fixed": "Matched to the vendor list: {fields}",
-    "noMatch": "No results."
+    "noMatch": "No results.",
+    "delete": "Remove vendor",
+    "deleteTitle": "Remove {name} from the vendor list?",
+    "deleteDesc": "It only leaves the list. This vendor's {count} documents stay in the ledger as they are. If a document from this vendor is saved later, it is added to the list again.",
+    "deleted": "Removed from the vendor list.",
+    "deleteFail": "Couldn't remove it. Only admins can remove vendors.",
+    "cancel": "Cancel"
   },
   "dash": {
     "title": "Dashboard",

@@ -1,9 +1,18 @@
 "use client";
 
-import { Building2, Loader2, Pencil, Search } from "lucide-react";
+import { Building2, Loader2, Pencil, Search, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { exportLang } from "@/lib/export";
@@ -11,7 +20,8 @@ import { useLedger } from "@/lib/ledger-store";
 import { baht, fromSatang, toSatang } from "@/lib/money";
 import { digitsOnly, dmy } from "@/lib/thai-tax";
 import { FORM_LANGS, type Tri } from "@/lib/types";
-import { saveVendorName, useVendors } from "@/lib/vendor-store";
+import { useMe } from "@/lib/role-store";
+import { deleteVendor, saveVendorName, useVendors } from "@/lib/vendor-store";
 import type { Vendor } from "@/lib/vendors";
 
 /** Vendor dictionary: every seller seen in saved documents, with their ledger totals. */
@@ -82,6 +92,20 @@ function VendorRow({ v, lang, stat }: { v: Vendor; lang: "th" | "en" | "ja"; sta
   const [busy, setBusy] = useState(false);
   const shown = v.name[lang] || v.name.en || v.name.th;
   const branch = v.branch[lang] || v.branch.en || v.branch.th;
+  const isAdmin = useMe().role === "admin";
+  const [asking, setAsking] = useState(false);
+  const remove = async () => {
+    setBusy(true);
+    try {
+      await deleteVendor(v.id);
+      toast.success(t("deleted"));
+      setAsking(false);
+    } catch {
+      toast.error(t("deleteFail"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <li className="workspace-panel grid gap-3 p-4 sm:p-5">
@@ -113,7 +137,27 @@ function VendorRow({ v, lang, stat }: { v: Vendor; lang: "th" | "en" | "ja"; sta
             <Pencil className="size-4" />
           </Button>
         )}
+        {!editing && isAdmin && (
+          <Button type="button" variant="ghost" size="icon" className="size-9 flex-none text-muted-foreground hover:text-bad" aria-label={t("delete")} onClick={() => setAsking(true)}>
+            <Trash2 className="size-4" />
+          </Button>
+        )}
       </div>
+      <AlertDialog open={asking} onOpenChange={(o) => !busy && setAsking(o)}>
+        <AlertDialogContent className="rounded-3xl sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("deleteTitle", { name: shown || v.taxId })}</AlertDialogTitle>
+            <AlertDialogDescription>{t("deleteDesc", { count: stat?.count ?? 0 })}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full">{t("cancel")}</AlertDialogCancel>
+            <Button type="button" variant="destructive" className="rounded-full" disabled={busy} onClick={() => void remove()}>
+              {busy ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+              {t("delete")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {editing && (
         <form
           className="grid gap-2 rounded-2xl bg-muted/50 p-3"

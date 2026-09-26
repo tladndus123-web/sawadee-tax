@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(57);
+select plan(61);
 
 -- Fixtures: one admin, one staff, one signed-in stranger (no membership)
 insert into auth.users (id, email) values
@@ -139,6 +139,15 @@ select is((select count(*)::int from public.documents where id = '00000000-0000-
 select is((select delete_reason from public.document_purges where document_id = '00000000-0000-0000-0000-0000000000e5'), 'test purge', 'a record of what was deleted and why stays');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select is((select count(*)::int from public.document_purges), 0, 'staff cannot read the deletion records');
+
+-- Vendors: only admins remove a directory entry; documents keep their seller, only the link is cleared
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+delete from public.vendors where tax_id = '9900000000014';
+select is((select count(*)::int from public.vendors where tax_id = '9900000000014'), 1, 'staff cannot remove a vendor');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select lives_ok($$ delete from public.vendors where tax_id = '9900000000014' $$, 'an admin removes a vendor');
+select is((select count(*)::int from public.vendors where tax_id = '9900000000014'), 0, 'the vendor is gone');
+select is((select count(*)::int from public.documents where doc_no in ('V-1', 'V-2') and vendor_id is null), 2, 'its documents stay, unlinked');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

@@ -42,6 +42,17 @@ export async function saveVendorName(id: string, name: Tri) {
   await reload();
 }
 
+/**
+ * Admin only: remove a vendor from the directory. Its documents keep the seller as read (only the link is
+ * cleared); a later document from the same tax ID registers it again.
+ */
+export async function deleteVendor(id: string) {
+  const { data, error } = await supabaseBrowser().from("vendors").delete().eq("id", id).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("not allowed");
+  await reload();
+}
+
 /** Tidy a fresh AI reading with the dictionary (never throws: without a match the reading is unchanged) */
 export async function withVendor(doc: LedgerDoc): Promise<{ doc: LedgerDoc; fixed: VendorFix[] }> {
   const key = vendorKey(doc);
