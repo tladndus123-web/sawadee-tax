@@ -1,6 +1,7 @@
 // LINE bot: what happens for each webhook event (server only — uses the service-role client).
 //   follow            → how to link
-//   text "123456"     → link this LINE account to the member who got that code in Settings
+//   text "123456"     → "checking the code" + the result: link this LINE account to the member who got that code
+//   any other text / sticker … → no reply (people chat here; the bot only speaks when it has something to say)
 //   image             → linked members only: AI reading → vendor dictionary → saved to the ledger
 //                       (status "reviewed", as that member) → receipt card with the automatic checks
 // Only 1:1 chats are served; groups and rooms are ignored.
@@ -73,30 +74,25 @@ export async function handleLineEvent(event: webhook.Event): Promise<void> {
   if (event.type !== "message") return;
   const message = event.message;
 
-  if (message.type === "text") {
-    // A 6-digit code, also as "123 456" or "123-456"
-    if (/^\s*\d{3}[\s-]?\d{3}\s*$/.test(message.text ?? "")) return linkAccount(event, lineUser, digitsOnly(message.text));
-    const m = await memberFor(lineUser);
-    await send(event, lineUser, [text(m ? say.help : say.welcome)]);
-    return;
-  }
+  // A 6-digit code, also as "123 456" or "123-456"
+  if (message.type === "text" && /^\s*\d{3}[\s-]?\d{3}\s*$/.test(message.text ?? "")) return linkAccount(event, lineUser, digitsOnly(message.text));
   if (message.type === "image") return saveReceipt(event, lineUser, message.id);
-
-  const m = await memberFor(lineUser);
-  await send(event, lineUser, [text(m ? say.help : say.welcome)]);
+  // Anything else (ordinary chat, stickers …): no automatic reply
 }
 
+// Answers with two messages in one reply (free, no push quota): "checking the code…", then the result
 async function linkAccount(event: webhook.MessageEvent, lineUser: string, code: string) {
-  if (wrongCodeTries(lineUser) >= 5) return send(event, lineUser, [text(say.tooManyTries)]);
+  const checking = text(say.checking);
+  if (wrongCodeTries(lineUser) >= 5) return send(event, lineUser, [checking, text(say.tooManyTries)]);
   const admin = supabaseAdmin();
   const { data: userId, error } = await admin.rpc("line_link", { p_code: code, p_line_user: lineUser });
   if (error) throw error;
   if (!userId) {
     wrongCodeTries(lineUser, true);
-    return send(event, lineUser, [text(say.badCode)]);
+    return send(event, lineUser, [checking, text(say.badCode)]);
   }
   const m = await memberFor(lineUser);
-  await send(event, lineUser, [text(say.linked(m?.name || m?.email || ""))]);
+  await send(event, lineUser, [checking, text(say.linked(m?.name || m?.email || ""))]);
 }
 
 async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messageId: string) {

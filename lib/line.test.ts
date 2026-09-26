@@ -12,7 +12,7 @@ describe("LINE bot", () => {
   });
 
   it("answers in Thai and Japanese", () => {
-    for (const s of [say.welcome, say.help, say.badCode, say.linked("Som")]) {
+    for (const s of [say.welcome, say.checking, say.badCode, say.linked("Som")]) {
       expect(s).toMatch(/[฀-๿]/);
       expect(s).toMatch(/[぀-ヿ]/);
     }
