@@ -17,7 +17,7 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="size-10 rounded-full text-muted-foreground" aria-label={t("theme")}>
           {/* Both drawn; the theme turns one in and the other out (.theme-sun / .theme-moon) */}

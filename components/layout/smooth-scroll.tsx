@@ -6,8 +6,11 @@ import { useEffect } from "react";
 
 /**
  * Mouse-wheel / trackpad scrolling eased like macOS (Lenis). Only with a mouse or trackpad: phones already
- * scroll natively with momentum. Off when the device asks for reduced motion. Menus, dialogs and scrollable
- * lists keep their own scrolling, and the page stands still while a dialog is open.
+ * scroll natively with momentum. Off when the device asks for reduced motion.
+ *
+ * While a menu or dialog is open (Radix marks the body with data-scroll-locked) Lenis simply leaves the wheel
+ * alone. It is never stopped: lenis.stop() puts overflow:hidden on <html>, which moved open menus out of view
+ * on a scrolled page and made the theme / language menus unusable.
  */
 export function SmoothScroll() {
   useEffect(() => {
@@ -15,16 +18,11 @@ export function SmoothScroll() {
     const lenis = new Lenis({
       autoRaf: true,
       lerp: 0.12,
-      prevent: (node) => !!node.closest("[data-lenis-prevent], [role='dialog'], [role='alertdialog'], [role='listbox'], [role='menu'], [data-radix-popper-content-wrapper]"),
+      prevent: (node) =>
+        document.body.hasAttribute("data-scroll-locked") ||
+        !!node.closest("[data-lenis-prevent], [role='dialog'], [role='alertdialog'], [role='listbox'], [role='menu'], [data-radix-popper-content-wrapper]"),
     });
-    // Radix marks the body while a dialog or menu locks the page
-    const sync = () => (document.body.hasAttribute("data-scroll-locked") ? lenis.stop() : lenis.start());
-    const watch = new MutationObserver(sync);
-    watch.observe(document.body, { attributes: true, attributeFilter: ["data-scroll-locked"] });
-    return () => {
-      watch.disconnect();
-      lenis.destroy();
-    };
+    return () => lenis.destroy();
   }, []);
   return null;
 }

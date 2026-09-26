@@ -197,6 +197,21 @@ export async function restoreEntry(id: string) {
   await reload();
 }
 
+/**
+ * Admin only, trashed documents only, never a saved document of a closed month (the database refuses anything
+ * else and keeps a short record). Its photo goes too, unless another document still uses the same file.
+ */
+export async function purgeEntry(id: string) {
+  const supabase = supabaseBrowser();
+  const { data: photo, error } = await supabase.rpc("purge_document", { p_id: id });
+  if (error) throw error;
+  if (typeof photo === "string" && photo) {
+    const { count } = await supabase.from("documents").select("id", { count: "exact", head: true }).eq("photo_path", photo);
+    if (!count) await supabase.storage.from(BUCKET).remove([photo, thumbPath(photo)]);
+  }
+  await reload();
+}
+
 /** Where the small list copy of a photo lives (photos saved before 2026-09-26 have none) */
 export const thumbPath = (photoPath: string) => photoPath.replace(/(\.[a-z0-9]+)?$/i, ".thumb.jpg");
 

@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { BulkPayBar } from "./BulkPayBar";
 import { ExportButtons } from "./ExportButtons";
 import { MonthLockButton } from "./MonthLockButton";
+import { PurgeButton } from "./PurgeButton";
 import { StickerDot, StickerDots, StickerPopover, useMonthLabel, useStickerLabel } from "./Stickers";
 
 /** Ledger as a monthly archive, with colour-sticker filters, drafts and the admin-only trash. */
@@ -436,6 +437,7 @@ function TrashRow({ e }: { e: LedgerEntry }) {
           {busy ? <Loader2 className="size-4 animate-spin" /> : <ArchiveRestore className="size-4" />}
           {t("trash.restore")}
         </Button>
+        <PurgeButton id={e.id} name={sellerOf(e)} />
       </div>
       <dl className="grid gap-x-4 gap-y-1 rounded-xl bg-muted/60 px-3 py-2.5 text-xs sm:grid-cols-[auto_1fr]">
         <dt className="text-muted-foreground">{t("trash.reason")}</dt>

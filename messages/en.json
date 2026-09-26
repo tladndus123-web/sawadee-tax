@@ -725,5 +725,17 @@
     "print": "Print · save PDF",
     "none": "This document has no withholding.",
     "unpaid": "Not paid yet, so the payment date is blank."
+  },
+  "purge": {
+    "button": "Delete for good",
+    "title": "Delete for good?",
+    "word": "delete",
+    "desc": "The {name} document and its photo will be deleted permanently and can't be brought back. Only a record of what was deleted, and by whom, stays. Saved documents of a closed month can't be deleted.",
+    "typeToConfirm": "Type '{word}' to confirm.",
+    "confirm": "Delete for good",
+    "cancel": "Cancel",
+    "done": "Deleted for good.",
+    "locked": "This document is in a closed month and can't be deleted. Reopen the month first.",
+    "fail": "Couldn't delete it. Only admins can delete documents from the trash."
   }
 }

@@ -20,7 +20,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (154) · `npm run db:test` (pgTAP 50) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (154) · `npm run db:test` (pgTAP 57) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel) |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -39,7 +39,8 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 
 ## Rules that protect the books (see HANDOFF §7)
 - Money in satang integers; don't change `lib/` results without updating tests first.
-- Documents are never hard-deleted (soft delete, reason required, admins only). Drafts never count in totals.
+- Deleting is a soft delete (reason required, admins only). Delete for good only from the trash, admins only, never a saved
+  document of a closed month, and a record stays (`purge_document`, owner's decision 2026-09-26). Drafts never count in totals.
 - Every new UI string goes into all four `messages/{ko,th,en,ja}.json`.
 - Database rules live in `supabase/migrations` + `supabase/tests/rls.test.sql`; add a test with every rule.
 - New migration → apply locally (`npx supabase migration up`), `npm run db:test`, then push to cloud.

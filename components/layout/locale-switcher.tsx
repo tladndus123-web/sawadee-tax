@@ -34,7 +34,7 @@ export function LocaleSwitcher() {
   const short = LABELS.find(([code]) => code === locale)?.[2] ?? locale.toUpperCase();
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-10 gap-1.5 rounded-full px-3 text-[13px] text-muted-foreground" aria-label={t("language")} disabled={pending}>
           <Globe className="size-4" aria-hidden />
@@ -48,8 +48,9 @@ export function LocaleSwitcher() {
           onValueChange={(next) => {
             if (!next || next === locale) return;
             startTransition(() => {
+              // Same screen in another language: stay where the reader was on the page
               // @ts-expect-error -- params always match the current pathname
-              router.replace({ pathname, params }, { locale: next as Locale });
+              router.replace({ pathname, params }, { locale: next as Locale, scroll: false });
             });
           }}
         >

@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(50);
+select plan(57);
 
 -- Fixtures: one admin, one staff, one signed-in stranger (no membership)
 insert into auth.users (id, email) values
@@ -123,6 +123,22 @@ select is((select public.claim_month(tax_month, doc_date) from public.documents 
 select throws_like($$ update public.documents set tax_month = '2026-08' where id = '00000000-0000-0000-0000-0000000000e3' $$, 'month_locked%', 'it cannot be moved into the closed month');
 select lives_ok($$ delete from public.month_locks where month = '2026-08' $$, 'an admin reopens the month');
 select lives_ok($$ select public.save_document('00000000-0000-0000-0000-0000000000e1', '{"net":200}', '[]') $$, 'a reopened month can be edited again');
+
+-- Delete for good: admins only, only from the trash, never a saved document of a closed month; a record stays
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select public.save_document('00000000-0000-0000-0000-0000000000e5', '{"doc_no":"P-1","status":"reviewed","doc_date":"2026-07-10","net":50}', '[{"line_no":1,"amount":50}]');
+select throws_ok($$ select public.purge_document('00000000-0000-0000-0000-0000000000e5') $$, '42501', NULL, 'staff cannot delete for good');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select throws_like($$ select public.purge_document('00000000-0000-0000-0000-0000000000e5') $$, '%trash first%', 'only documents already in the trash');
+update public.documents set deleted_at = now(), delete_reason = 'test purge' where id = '00000000-0000-0000-0000-0000000000e5';
+insert into public.month_locks (month) values ('2026-07');
+select throws_like($$ select public.purge_document('00000000-0000-0000-0000-0000000000e5') $$, 'month_locked%', 'not a saved document of a closed month');
+delete from public.month_locks where month = '2026-07';
+select lives_ok($$ select public.purge_document('00000000-0000-0000-0000-0000000000e5') $$, 'an admin deletes a trashed document for good');
+select is((select count(*)::int from public.documents where id = '00000000-0000-0000-0000-0000000000e5') + (select count(*)::int from public.document_items where document_id = '00000000-0000-0000-0000-0000000000e5'), 0, 'the document and its lines are gone');
+select is((select delete_reason from public.document_purges where document_id = '00000000-0000-0000-0000-0000000000e5'), 'test purge', 'a record of what was deleted and why stays');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select is((select count(*)::int from public.document_purges), 0, 'staff cannot read the deletion records');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');
