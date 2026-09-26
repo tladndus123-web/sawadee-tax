@@ -43,7 +43,8 @@ export type DetailWord =
   | "dupFound"
   | "noDup"
   | "low"
-  | "ok";
+  | "ok"
+  | "notApplicable";
 
 /** Detail = language-neutral text pieces mixed with translatable words. */
 export type DetailPart = string | { w: DetailWord };
@@ -176,8 +177,12 @@ export function runChecks(r: LedgerDoc, ctx: CheckContext = {}): CheckResult[] {
   }
 
   // VAT 7%: difference ≤ max(1 baht, 0.2% of taxable), compared exactly in integers
-  // (diff × 500 ≤ taxable is diff ≤ 0.2% without rounding the limit up)
-  {
+  // (diff × 500 ≤ taxable is diff ≤ 0.2% without rounding the limit up).
+  // A document that prints no VAT and is not a tax invoice (plain receipt, billing note) has nothing
+  // to verify — na, not a flag.
+  if (toSatang(tt.vat) === 0 && r.docType !== "full" && r.docType !== "abbr") {
+    add("vat", true, [W("notApplicable")], true);
+  } else {
     const calcSatang = Math.round(toSatang(tt.taxable) * 0.07);
     const diff = Math.abs(calcSatang - toSatang(tt.vat));
     const calc = fromSatang(calcSatang);
@@ -198,10 +203,13 @@ export function runChecks(r: LedgerDoc, ctx: CheckContext = {}): CheckResult[] {
     ]);
   }
 
-  // Printed Thai words = bahtText(net)
+  // Printed Thai words = bahtText(net). Some forms print the words in English instead (e.g. "four
+  // thousand ... and 60/100"); those spellings vary too much to compare, so they are left to the eye.
   if (r.wordsPrinted) {
-    const w = bahtText(tt.net);
-    add("words", w === cleanWords(r.wordsPrinted), [W("calc"), `: ${w}`]);
+    if (/[฀-๿]/.test(r.wordsPrinted)) {
+      const w = bahtText(tt.net);
+      add("words", w === cleanWords(r.wordsPrinted), [W("calc"), `: ${w}`]);
+    } else add("words", true, [W("notApplicable")], true);
   }
 
   // Due date = date + credit days

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { normalize } from "./normalize";
 import { sampleDoc } from "./sample";
-import { applyVendor, type Vendor } from "./vendors";
+import { applyHistory, applyVendor, type Vendor } from "./vendors";
 
 const vendor: Vendor = {
   id: "v1",
@@ -49,5 +50,22 @@ describe("vendor dictionary", () => {
     read.seller.taxId = "0-7455-38001-26-5";
     read.seller.name = { th: "", en: "PANFOOD", ja: "" };
     expect(applyVendor(read, vendor).fixed).toContain("seller.name");
+  });
+});
+
+describe("the vendor's last saved category and payment carry over", () => {
+  const base = () => normalize({ category: "other", payment: "other" });
+  it("overrides a fresh reading and names both fixes", () => {
+    const { doc, fixed } = applyHistory(base(), { category: "food", payment: "credit" });
+    expect(doc.category).toBe("food");
+    expect(doc.payment).toBe("credit");
+    expect(fixed).toEqual(["category", "payment"]);
+  });
+  it("does nothing without history, on equal values, or on junk values", () => {
+    expect(applyHistory(base(), null).fixed).toEqual([]);
+    expect(applyHistory(base(), { category: "other", payment: "other" }).fixed).toEqual([]);
+    const junk = applyHistory(base(), { category: "nonsense", payment: "" });
+    expect(junk.fixed).toEqual([]);
+    expect(junk.doc.category).toBe("other");
   });
 });

@@ -12,6 +12,8 @@ export function usePathLabel() {
   const isLabel = (k: string): k is LabelKey => (LABEL_KEYS as string[]).includes(k);
   const label = (k: string) => (isLabel(k) ? t(`labels.${k}`) : k);
   return (p: string) => {
+    if (p === "category") return t("app.category");
+    if (p === "payment") return t("app.payment");
     const [a, b, c] = p.split(".");
     if (a === "items" && c) return `${label(c)} ${Number(b) + 1}`;
     if (a === "totals" && b) return label(b);

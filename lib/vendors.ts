@@ -6,6 +6,7 @@
 
 import { normalize, triHas } from "./normalize";
 import { digitsOnly, taxIdOk } from "./thai-tax";
+import { CATEGORIES, PAYMENTS } from "./types";
 import type { LedgerDoc, Tri } from "./types";
 
 export interface Vendor {
@@ -35,7 +36,7 @@ export function toVendor(r: VendorRow): Vendor {
 }
 
 /** Which seller fields the dictionary changed, as field paths */
-export type VendorFix = "seller.name" | "seller.address" | "seller.branch" | "seller.tel" | "seller.fax";
+export type VendorFix = "seller.name" | "seller.address" | "seller.branch" | "seller.tel" | "seller.fax" | "category" | "payment";
 
 const sameTri = (a: Tri, b: Tri) => a.th === b.th && a.en === b.en && a.ja === b.ja;
 
@@ -43,6 +44,28 @@ export const vendorKey = (doc: Pick<LedgerDoc, "seller">): string | null => {
   const id = digitsOnly(doc.seller.taxId);
   return taxIdOk(id) ? id : null;
 };
+
+/** category/payment of the vendor's newest saved document */
+export type VendorHistory = { category: string; payment: string };
+
+/**
+ * A vendor's line of business rarely changes, so the person's last saved choice for the same vendor
+ * beats the AI's guess for a fresh reading. The selects stay editable; the change is shown as a fix.
+ */
+export function applyHistory(doc: LedgerDoc, h: VendorHistory | null | undefined): { doc: LedgerDoc; fixed: VendorFix[] } {
+  if (!h) return { doc, fixed: [] };
+  const fixed: VendorFix[] = [];
+  const out = { ...doc };
+  if ((CATEGORIES as readonly string[]).includes(h.category) && h.category !== doc.category) {
+    out.category = h.category as LedgerDoc["category"];
+    fixed.push("category");
+  }
+  if ((PAYMENTS as readonly string[]).includes(h.payment) && h.payment !== doc.payment) {
+    out.payment = h.payment as LedgerDoc["payment"];
+    fixed.push("payment");
+  }
+  return fixed.length ? { doc: out, fixed } : { doc, fixed };
+}
 
 export function applyVendor(doc: LedgerDoc, v: Vendor | null | undefined): { doc: LedgerDoc; fixed: VendorFix[] } {
   if (!v || vendorKey(doc) !== v.taxId) return { doc, fixed: [] };

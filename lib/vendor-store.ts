@@ -6,7 +6,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { supabaseBrowser } from "./supabase/client";
 import type { Tri } from "./types";
-import { applyVendor, toVendor, type Vendor, type VendorFix, type VendorRow, vendorKey } from "./vendors";
+import { applyHistory, applyVendor, toVendor, type Vendor, type VendorFix, type VendorHistory, type VendorRow, vendorKey } from "./vendors";
 import type { LedgerDoc } from "./types";
 
 let vendors: Vendor[] = [];
@@ -58,8 +58,21 @@ export async function withVendor(doc: LedgerDoc): Promise<{ doc: LedgerDoc; fixe
   const key = vendorKey(doc);
   if (!key) return { doc, fixed: [] };
   try {
-    const { data } = await supabaseBrowser().from("vendors").select("id, tax_id, name, address, branch, tel, fax").eq("tax_id", key).maybeSingle();
-    return applyVendor(doc, data ? toVendor(data as VendorRow) : null);
+    const sb = supabaseBrowser();
+    const { data } = await sb.from("vendors").select("id, tax_id, name, address, branch, tel, fax").eq("tax_id", key).maybeSingle();
+    const named = applyVendor(doc, data ? toVendor(data as VendorRow) : null);
+    if (!data) return named;
+    // The person's last saved category/payment for this vendor carries over to the fresh reading
+    const { data: last } = await sb
+      .from("documents")
+      .select("category, payment")
+      .eq("vendor_id", (data as VendorRow).id)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const hist = applyHistory(named.doc, (last as VendorHistory | null) ?? null);
+    return { doc: hist.doc, fixed: [...named.fixed, ...hist.fixed] };
   } catch {
     return { doc, fixed: [] };
   }

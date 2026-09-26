@@ -123,6 +123,19 @@ describe("amounts", () => {
     expect(find(doc((d) => (d.wordsPrinted = "(หกหมื่นสี่พัน สองร้อยบาทถ้วน)")), "words")?.ok).toBe(true);
     expect(find(doc((d) => (d.wordsPrinted = "หกหมื่นสี่พันบาทถ้วน")), "words")?.ok).toBe(false);
   });
+  it("does not flag a no-VAT receipt or billing note on the 7% rule", () => {
+    const c = find(doc((d) => { d.docType = "receipt"; d.totals.vat = 0; d.totals.taxable = 64200; d.totals.net = 64200; d.totals.exempt = 0; }), "vat");
+    expect(c?.ok).toBe(true);
+    expect(c?.na).toBe(true);
+    // a full tax invoice with VAT printed as 0 is still wrong
+    const bad = find(doc((d) => { d.totals.vat = 0; d.totals.net = 60000; }), "vat");
+    expect(bad?.ok).toBe(false);
+  });
+  it("leaves non-Thai amount words to the eye (na, not a flag)", () => {
+    const c = find(doc((d) => (d.wordsPrinted = "four thousand forty-four and 60/100")), "words");
+    expect(c?.ok).toBe(true);
+    expect(c?.na).toBe(true);
+  });
 });
 
 describe("dates, unclear, duplicates, confidence", () => {
