@@ -4,8 +4,10 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
+import sharp from "sharp";
 import { type ExtractErrorCode, extractedToRaw, extractSchema, FIELD_BOX_RULE, parseReply } from "./extract-schema";
 import { normalize } from "./normalize";
+import { isSlip, tileRects } from "./slip-tiles";
 import type { LedgerDoc } from "./types";
 
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -35,6 +37,47 @@ const getPrompt = () =>
 
 let client: Anthropic | null = null;
 
+type ImageBlock = Anthropic.ImageBlockParam;
+const imageBlock = (data: Buffer, type: ImageType): ImageBlock => ({
+  type: "image",
+  source: { type: "base64", media_type: type, data: data.toString("base64") },
+});
+
+/**
+ * The photo as the AI sees it: one image for a normal document; for a long, narrow slip, overlapping
+ * pieces top to bottom (see lib/slip-tiles.ts) with a note saying they are one receipt.
+ * A photo that can't be measured is sent whole, as before.
+ */
+async function photoBlocks(image: Buffer, type: ImageType): Promise<Anthropic.ContentBlockParam[]> {
+  try {
+    const meta = await sharp(image).metadata();
+    const turned = (meta.orientation ?? 1) >= 5;
+    const width = (turned ? meta.height : meta.width) ?? 0;
+    const height = (turned ? meta.width : meta.height) ?? 0;
+    if (!width || !height || !isSlip(width, height)) return [imageBlock(image, type)];
+    const upright = await sharp(image).rotate().toBuffer();
+    const tiles = tileRects(width, height);
+    const pieces = await Promise.all(
+      tiles.map((t) =>
+        sharp(upright)
+          .extract(t)
+          .resize({ width: 1568, height: 1568, fit: "inside", withoutEnlargement: true })
+          .jpeg({ quality: 88 })
+          .toBuffer(),
+      ),
+    );
+    return [
+      {
+        type: "text",
+        text: `The photo is ONE long, narrow receipt, cut into ${pieces.length} overlapping pieces in reading order (first = top). Neighbouring pieces repeat a few lines where they overlap: count each printed line once.`,
+      },
+      ...pieces.map((p) => imageBlock(p, "image/jpeg")),
+    ];
+  } catch {
+    return [imageBlock(image, type)];
+  }
+}
+
 export async function extractDocument(
   image: Buffer,
   type: ImageType,
@@ -61,10 +104,7 @@ export async function extractDocument(
         messages: [
           {
             role: "user",
-            content: [
-              { type: "image", source: { type: "base64", media_type: type, data: image.toString("base64") } },
-              { type: "text", text: getPrompt() },
-            ],
+            content: [...(await photoBlocks(image, type)), { type: "text", text: getPrompt() }],
           },
         ],
       },

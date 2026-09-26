@@ -3,6 +3,8 @@
 // The measuring is done on a grey copy about 1000 px wide: sharpness = how strongly the brightness jumps
 // between neighbouring pixels at the text edges (Laplacian), brightness = the average grey level.
 
+import { isSlip } from "./slip-tiles";
+
 export type PhotoIssue = "dark" | "blurry" | "small";
 
 /** Width the photo is measured at (text strokes are a few pixels wide here) */
@@ -13,6 +15,8 @@ export const DARK_BELOW = 70;
 export const BLURRY_BELOW = 20;
 /** Shortest side (px) below which small print can't be read */
 export const SMALL_BELOW = 700;
+/** Same, for a long narrow slip: its width only has to hold one short column of print */
+export const SLIP_SMALL_BELOW = 450;
 
 /** Mean grey level 0–255 */
 export function brightness(gray: Uint8ClampedArray | number[]): number {
@@ -51,7 +55,8 @@ export function photoIssues(m: { brightness: number; sharpness: number; width: n
   const issues: PhotoIssue[] = [];
   if (m.brightness < DARK_BELOW) issues.push("dark");
   if (m.sharpness < BLURRY_BELOW) issues.push("blurry");
-  if (Math.min(m.width, m.height) < SMALL_BELOW) issues.push("small");
+  const limit = isSlip(m.width, m.height) ? SLIP_SMALL_BELOW : SMALL_BELOW;
+  if (Math.min(m.width, m.height) < limit) issues.push("small");
   return issues;
 }
 

@@ -5,6 +5,7 @@ import { useSyncExternalStore } from "react";
 import { type ExtractErrorCode, MAX_PHOTOS } from "./extract-schema";
 import { normalize } from "./normalize";
 import { checkPhoto, type PhotoIssue } from "./photo-quality";
+import { isSlip } from "./slip-tiles";
 import { withVendor } from "./vendor-store";
 import type { VendorFix } from "./vendors";
 import type { LedgerDoc } from "./types";
@@ -63,7 +64,22 @@ async function preparePhoto(file: File): Promise<File> {
   }
   const imageCompression = (await import("browser-image-compression")).default;
   const input = source instanceof File ? source : new File([source], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" });
-  return imageCompression(input, { maxWidthOrHeight: 2400, maxSizeMB: 2, fileType: "image/jpeg", initialQuality: 0.88, useWebWorker: true });
+  // A long, narrow slip keeps its width (up to 1200 px) instead of being shrunk by its long side: the
+  // server cuts it into pieces for the AI (lib/slip-tiles.ts), and a 2400 px-long slip would be too thin to read.
+  let longSide = 2400;
+  let maxSizeMB = 2;
+  try {
+    const bmp = await createImageBitmap(input);
+    const [w, h] = [bmp.width, bmp.height];
+    bmp.close();
+    if (isSlip(w, h)) {
+      longSide = Math.max(2400, Math.min(Math.max(w, h), Math.round(Math.min(w, h, 1200) * (Math.max(w, h) / Math.min(w, h))), 9000));
+      maxSizeMB = 3.5;
+    }
+  } catch {
+    // can't measure it here: the normal size is fine
+  }
+  return imageCompression(input, { maxWidthOrHeight: longSide, maxSizeMB, fileType: "image/jpeg", initialQuality: 0.88, useWebWorker: true });
 }
 
 async function read(id: string) {

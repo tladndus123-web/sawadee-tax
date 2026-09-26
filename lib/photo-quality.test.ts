@@ -19,5 +19,8 @@ describe("photo check", () => {
     expect(photoIssues({ brightness: 59, sharpness: 48, width: 1330, height: 1773 })).toEqual(["dark"]);
     expect(photoIssues({ brightness: 147, sharpness: 16, width: 1330, height: 1773 })).toEqual(["blurry"]);
     expect(photoIssues({ brightness: 150, sharpness: 110, width: 480, height: 640 })).toEqual(["small"]);
+    // a long narrow slip only needs a narrower width
+    expect(photoIssues({ brightness: 150, sharpness: 110, width: 600, height: 3000 })).toEqual([]);
+    expect(photoIssues({ brightness: 150, sharpness: 110, width: 400, height: 2400 })).toEqual(["small"]);
   });
 });
