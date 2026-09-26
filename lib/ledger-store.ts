@@ -103,11 +103,6 @@ export function useLedger(): { entries: LedgerEntry[]; loaded: boolean } {
   return { entries: snap, loaded };
 }
 
-export async function getEntry(id: string): Promise<LedgerEntry | undefined> {
-  if (!loaded) await refresh();
-  return entries.find((e) => e.id === id);
-}
-
 /** Insert or update a document (and its items) in one transaction; a new photo goes to storage first. */
 export async function saveEntry(
   doc: LedgerDoc,

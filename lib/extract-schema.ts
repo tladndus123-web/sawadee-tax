@@ -64,7 +64,6 @@ export const extractSchema = z.object({
   note: tri,
   fieldBoxes: z.array(z.object({ path: z.string(), box: z.array(z.number()) })),
 });
-export type Extracted = z.infer<typeof extractSchema>;
 
 /** Photos read in one batch; each is its own request */
 export const MAX_PHOTOS = 5;

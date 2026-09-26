@@ -83,11 +83,10 @@ npx eslint app components lib scripts middleware.ts
 | 아이콘 | lucide-react (ISC) | 로고도 lucide 모양으로 그림 (`components/layout/app-mark.tsx`) |
 | 폼 | react-hook-form + zod v4 | `lib/doc-schema.ts` |
 | 다국어 | next-intl v4 | `messages/{ko,th,en,ja}.json` |
-| AI | `@anthropic-ai/sdk` — `messages.create`, 프롬프트로 JSON → zod 검사 → `normalize()` | 모델 `claude-opus-5-5`(기본), effort `medium`(기본). 읽기 코드 `lib/extract-server.ts` |
+| AI | `@anthropic-ai/sdk` — `messages.create`, 프롬프트로 JSON → zod 검사 → `normalize()` | 모델 `claude-opus-5-5`(기본), effort 실서비스 `low`(Vercel `ANTHROPIC_EFFORT`, 코드 기본값 `medium`). 읽기 코드 `lib/extract-server.ts` |
 | 사진 | browser-image-compression · heic2any · react-zoom-pan-pinch | 올리기 전 방향 보정 · 아이폰 HEIC → JPG · 축소 |
 | DB · 로그인 · 사진 | Supabase (Postgres · Auth · Storage), 로컬은 Supabase CLI + Docker | `supabase/`, `lib/supabase/` |
 | 테스트 | Vitest | Playwright는 설치돼 있지만 프로젝트 안에 테스트는 아직 없어요 (8번 참고) |
-| 설치만 됨 | @supabase/ssr, exceljs, @tanstack/react-table | 5 · 7단계용 |
 
 ---
 
