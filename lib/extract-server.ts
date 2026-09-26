@@ -4,7 +4,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
-import sharp from "sharp";
 import { type ExtractErrorCode, extractedToRaw, extractSchema, FIELD_BOX_RULE, parseReply } from "./extract-schema";
 import { normalize } from "./normalize";
 import { isSlip, tileRects } from "./slip-tiles";
@@ -48,7 +47,19 @@ const imageBlock = (data: Buffer, type: ImageType): ImageBlock => ({
  * pieces top to bottom (see lib/slip-tiles.ts) with a note saying they are one receipt.
  * A photo that can't be measured is sent whole, as before.
  */
+/** sharp is a native module; loaded on first use so a missing binary never stops the reading itself */
+let sharpLoad: Promise<typeof import("sharp").default | null> | null = null;
+export const loadSharp = () =>
+  (sharpLoad ??= import("sharp")
+    .then((m) => m.default)
+    .catch((error: unknown) => {
+      console.error("extract: sharp unavailable, long slips are sent whole", error);
+      return null;
+    }));
+
 async function photoBlocks(image: Buffer, type: ImageType): Promise<Anthropic.ContentBlockParam[]> {
+  const sharp = await loadSharp();
+  if (!sharp) return [imageBlock(image, type)];
   try {
     const meta = await sharp(image).metadata();
     const turned = (meta.orientation ?? 1) >= 5;
