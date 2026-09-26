@@ -91,11 +91,21 @@ export function missingRequired(r: LedgerDoc): string[] {
   return miss;
 }
 
-/** Last day input VAT can be claimed: 3 years from the invoice date (§82/3). 29 Feb → 28 Feb. */
+/**
+ * Last tax month the input VAT may be claimed in. §82/3 sets a 3-year ceiling, but the rule in force (DG VAT
+ * Notification No. 4, amended by No. 76) allows a late claim only up to 6 months counted from the month after
+ * the invoice month — and the claim month must be written on the invoice ("ถือเป็นภาษีซื้อในเดือนภาษี…").
+ */
+export function claimLastMonth(iso: string): string {
+  const [y, m] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1 + 6, 1)).toISOString().slice(0, 7);
+}
+
+/** Last day of that month (shown in the check) */
 export function claimDeadline(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  const last = new Date(Date.UTC(y + 3, m, 0)).getUTCDate();
-  return `${y + 3}-${String(m).padStart(2, "0")}-${String(Math.min(d, last)).padStart(2, "0")}`;
+  const last = claimLastMonth(iso);
+  const [y, m] = last.split("-").map(Number);
+  return `${last}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, "0")}`;
 }
 
 const W = (w: DetailWord): DetailPart => ({ w });
@@ -211,10 +221,12 @@ export function runChecks(r: LedgerDoc, ctx: CheckContext = {}): CheckResult[] {
     isIsoDate(r.date) ? [`${dmy(r.date)} · `, W(r.dateWasBuddhist ? "be" : "gregorian")] : r.date ? [`${r.date} · `, W("invalid")] : [W("missing")],
   );
 
-  // Input VAT can be claimed for 3 years from the invoice date (§82/3)
+  // Late claims: within 6 months after the invoice month (§82/3 + DG Notification No. 4). With a claim month
+  // set, that month must be inside the window; without one, today must still be.
   if (r.docType === "full" && isIsoDate(r.date)) {
     const deadline = claimDeadline(r.date);
-    add("claimWindow", (ctx.today ?? todayBangkok()) <= deadline, [`${dmy(r.date)} → ${dmy(deadline)}`]);
+    const ok = r.taxMonth ? r.taxMonth >= r.date.slice(0, 7) && r.taxMonth <= claimLastMonth(r.date) : (ctx.today ?? todayBangkok()) <= deadline;
+    add("claimWindow", ok, [`${dmy(r.date)} → ${dmy(deadline)}`]);
   }
 
   // Unclear fields
@@ -242,10 +254,26 @@ export const flagsFor = (r: LedgerDoc, ctx: CheckContext = {}): CheckKey[] =>
     .map((c) => c.key);
 
 /**
- * Input VAT counts only for full tax invoices addressed to our company, showing every required item,
- * within 3 years of the invoice date. Without a valid company tax ID we cannot tell, so nothing is claimable.
+ * Input VAT the law forbids claiming even on a valid invoice (§82/5): set per document, or by default for
+ * entertainment (ค่ารับรอง). Passenger cars (≤10 seats) and their fuel/repairs are set by hand — a pickup's
+ * fuel is claimable, a sedan's is not, and the category alone can't tell.
  */
-export function claimable(r: LedgerDoc, companyTaxId?: string, today: string = todayBangkok()): boolean {
+export const vatBlocked = (r: Pick<LedgerDoc, "noClaim" | "category">): boolean => r.noClaim ?? r.category === "entertainment";
+
+/** Claimed in the invoice month or up to 6 months later (an invoice with no claim month set counts in its own month) */
+function inClaimWindow(r: LedgerDoc): boolean {
+  const own = r.date.slice(0, 7);
+  const claimIn = r.taxMonth || own;
+  return claimIn >= own && claimIn <= claimLastMonth(r.date);
+}
+
+/**
+ * Input VAT counts only for original full tax invoices (a copy is forbidden, Notification No. 42) addressed to
+ * our company, showing every required item, claimed in the invoice month or up to 6 months later, and not
+ * forbidden by §82/5. Without a valid company tax ID we cannot tell, so nothing is claimable. The answer
+ * depends on the claim month, not on today, so a month's report never changes after it was filed.
+ */
+export function claimable(r: LedgerDoc, companyTaxId?: string): boolean {
   const buyer = digitsOnly(r.customer.taxId);
   const co = digitsOnly(companyTaxId);
   return (
@@ -255,6 +283,8 @@ export function claimable(r: LedgerDoc, companyTaxId?: string, today: string = t
     co === buyer &&
     missingRequired(r).length === 0 &&
     isIsoDate(r.date) &&
-    today <= claimDeadline(r.date)
+    r.copyKind !== "copy" &&
+    inClaimWindow(r) &&
+    !vatBlocked(r)
   );
 }

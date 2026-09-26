@@ -29,6 +29,7 @@ import { DeleteFlow } from "./DeleteFlow";
 import { Chip } from "./fields";
 import { InvoiceEdit } from "./InvoiceEdit";
 import { InvoiceView } from "./InvoiceView";
+import { TaxFields } from "./TaxFields";
 
 // The zoomable photo (react-zoom-pan-pinch) loads after the form is on screen
 const PhotoViewer = dynamic(() => import("./PhotoViewer").then((m) => m.PhotoViewer), {
@@ -337,6 +338,7 @@ export function DocumentReview({
                 render={({ field }) => <StickerPicker value={field.value ?? []} onChange={(v) => field.onChange(v)} />}
               />
             </div>
+            <TaxFields />
             </div>
           </div>
 

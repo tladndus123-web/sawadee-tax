@@ -89,7 +89,7 @@
     "dup": "Duplicate document",
     "conf": "AI confidence",
     "required": "Required particulars (Revenue Code §86/4)",
-    "claimWindow": "Input VAT claim window (3 years from issue)"
+    "claimWindow": "Input VAT claim window (6 months after the invoice month)"
   },
   "detail": {
     "missing": "missing",
@@ -608,7 +608,7 @@
     "generated": "Prepared on",
     "sectionClaim": "Claimable input tax",
     "sectionOther": "Other purchases (input tax not claimable)",
-    "otherHint": "Abbreviated receipts · not addressed to our company · required items missing · claim period passed, etc.",
+    "otherHint": "Abbreviated receipts · not addressed to our company · required items missing · claim period passed · forbidden input VAT (entertainment, passenger cars) · copies of invoices",
     "no": "No.",
     "date": "Date",
     "docNo": "Tax invoice no.",
@@ -677,5 +677,53 @@
     "cancel": "Cancel",
     "done": "Marked {count} as paid.",
     "fail": "Couldn't change them. Check the connection and try again."
+  },
+  "tax": {
+    "claimMonth": "Claim month (tax month)",
+    "claimOwn": "Invoice month · {month}",
+    "noDate": "Enter the date first",
+    "claimHint": "A late-received invoice can be claimed in the month it arrived. If the invoice month is closed, saving puts it in the next open month. A late claim must be noted on the invoice ('ถือเป็นภาษีซื้อในเดือนภาษี…') and is allowed up to 6 months after the invoice month.",
+    "vatClaim": "Input VAT",
+    "auto": "Automatic ({state})",
+    "yes": "Claim",
+    "no": "Don't claim",
+    "noHint": "Entertainment, and passenger cars (≤10 seats: purchase, hire, fuel, repairs) can't be claimed even on a full tax invoice (§82/5). If so, choose 'Don't claim'.",
+    "blockedHint": "This document's VAT is not claimed ({category}). It goes under 'Other purchases' in the report.",
+    "wht": "Withholding tax",
+    "whtNone": "None",
+    "whtRate": "Rate %",
+    "whtAmount": "Withheld {amount} (on the price before VAT)",
+    "whtHint": "Choose it when tax is withheld on paying services, rent, etc. It goes on the certificate (50 ทวิ) and the monthly filing list.",
+    "whtType": {
+      "service": "Services",
+      "professional": "Professional fees",
+      "contract": "Contract work",
+      "rent": "Rent",
+      "advertising": "Advertising",
+      "transport": "Transport",
+      "other": "Other"
+    },
+    "movedTo": "{month} is closed, so it was saved as a claim in {to}."
+  },
+  "whtList": {
+    "title": "Withholding tax list (ภ.ง.ด.53 · ภ.ง.ด.3)",
+    "short": "Withholding list",
+    "back": "To the ledger",
+    "print": "Print · save PDF",
+    "form53": "Paid to companies",
+    "form3": "Paid to individuals",
+    "none": "No withholding paid this month.",
+    "count": "{count}",
+    "online": "online {date}",
+    "note": "Only documents marked paid in this month with a withholding (by payment month). Tax IDs starting with 0 are treated as companies (ภ.ง.ด.53), 1–8 as individuals (ภ.ง.ด.3). Condition 1 = withheld at payment. Check against the originals before filing."
+  },
+  "whtDoc": {
+    "title": "Withholding tax certificate (50 ทวิ)",
+    "open": "Withholding certificate",
+    "banner": "This document has a withholding. You can print the certificate (50 ทวิ) for the vendor.",
+    "back": "To the document",
+    "print": "Print · save PDF",
+    "none": "This document has no withholding.",
+    "unpaid": "Not paid yet, so the payment date is blank."
   }
 }

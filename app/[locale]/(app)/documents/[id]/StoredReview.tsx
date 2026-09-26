@@ -2,7 +2,7 @@
 
 // A document from the temporary ledger (IndexedDB). Step 5 loads it from Supabase instead.
 
-import { ArchiveRestore, Loader2, Lock, Trash2 } from "lucide-react";
+import { ArchiveRestore, FileText, Loader2, Lock, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -14,7 +14,9 @@ import { monthKey } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
 import { restoreEntry, saveEntry, softDelete, useLedger, usePhotoUrl } from "@/lib/ledger-store";
 import { useMonthLocks } from "@/lib/month-lock-store";
+import { useMonthLabel } from "@/components/ledger/Stickers";
 import { useMe } from "@/lib/role-store";
+import { hasWht } from "@/lib/wht";
 
 export function StoredReview({ id }: { id: string }) {
   const t = useTranslations();
@@ -30,6 +32,7 @@ export function StoredReview({ id }: { id: string }) {
   const photoUrl = usePhotoUrl(entry?.photoPath ?? null);
   const company = useCompany();
   const locks = useMonthLocks();
+  const monthLabel = useMonthLabel();
   const [restoring, setRestoring] = useState(false);
   // Keeps the delete flow mounted while the shredder plays after the entry turns deleted
   const [deleting, setDeleting] = useState(false);
@@ -51,6 +54,17 @@ export function StoredReview({ id }: { id: string }) {
   return (
     <div className="grid gap-4">
       <h1 className="sr-only">{entry.doc.docNo || t("ui.documentForm")}</h1>
+      {entry.status === "final" && !entry.deletedAt && hasWht(entry.doc) && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-brand-soft/60 px-4 py-3 text-sm print:hidden">
+          <span>{t("whtDoc.banner")}</span>
+          <Button asChild variant="secondary" className="h-9 rounded-full px-4">
+            <Link href={`/documents/${entry.id}/wht`}>
+              <FileText className="size-4" />
+              {t("whtDoc.open")}
+            </Link>
+          </Button>
+        </div>
+      )}
       {entry.status === "final" && !entry.deletedAt && locks.has(monthKey(entry.doc)) && (
         <p className="flex items-start gap-2 rounded-2xl bg-muted px-4 py-3 text-sm text-foreground print:hidden">
           <Lock className="mt-0.5 size-4 flex-none text-muted-foreground" aria-hidden />
@@ -87,8 +101,8 @@ export function StoredReview({ id }: { id: string }) {
         isDraft={entry.status === "draft"}
         onSave={async (d) => {
           const wasDraft = entry.status === "draft";
-          await saveEntry(d, null, entry.id, "final", company.taxId);
-          toast.success(t("trash.saved"));
+          const { movedTo } = await saveEntry(d, null, entry.id, "final", company.taxId);
+          toast.success(movedTo ? t("tax.movedTo", { month: monthLabel(monthKey({ date: d.date })), to: monthLabel(movedTo) }) : t("trash.saved"));
           if (wasDraft) router.push("/ledger");
         }}
         onDraft={

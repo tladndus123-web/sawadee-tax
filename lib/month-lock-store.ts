@@ -36,6 +36,29 @@ export function useMonthLocks(): ReadonlySet<string> {
   return snap;
 }
 
+/** The closed months, fresh enough to decide a save (loads them if the screen never did) */
+export async function lockedMonths(): Promise<ReadonlySet<string>> {
+  if (Date.now() - loadedAt > FRESH_MS) await load();
+  return locked;
+}
+
+/** "2026-08" → "2026-09" */
+export const nextMonth = (ym: string): string => {
+  const d = new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)), 1));
+  return d.toISOString().slice(0, 7);
+};
+
+/**
+ * Claim month for an invoice whose own month is closed (already filed): the first month after it that is still
+ * open. "" when the invoice month itself is open (the usual case).
+ */
+export function openClaimMonth(invoiceMonth: string, closed: ReadonlySet<string>): string {
+  if (!/^\d{4}-\d{2}$/.test(invoiceMonth) || !closed.has(invoiceMonth)) return "";
+  let m = nextMonth(invoiceMonth);
+  while (closed.has(m)) m = nextMonth(m);
+  return m;
+}
+
 /** Admin only (the database refuses anyone else) */
 export async function closeMonth(month: string) {
   const { error } = await supabaseBrowser().from("month_locks").insert({ month });

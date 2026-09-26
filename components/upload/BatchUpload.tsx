@@ -25,6 +25,8 @@ import {
   useUploadQueue,
 } from "@/lib/upload-queue";
 import { cn } from "@/lib/utils";
+import { monthKey } from "@/lib/archive";
+import { useMonthLabel } from "@/components/ledger/Stickers";
 import { MaxNotice } from "./MaxNotice";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif";
@@ -32,6 +34,7 @@ const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.hei
 /** Pick / drop / shoot up to 5 photos; each is read by the AI at the same time, then checked one by one. */
 export function BatchUpload() {
   const t = useTranslations();
+  const monthLabel = useMonthLabel();
   const items = useUploadQueue();
   const company = useCompany();
   const { entries } = useLedger();
@@ -96,10 +99,10 @@ export function BatchUpload() {
           isNew
           onSave={async (doc) => {
             updateDoc(current.id, doc);
-            await saveEntry(doc, getPhoto(current.id), undefined, "final", company.taxId);
+            const { movedTo } = await saveEntry(doc, getPhoto(current.id), undefined, "final", company.taxId);
             removePhoto(current.id);
             setReviewing(null);
-            toast.success(t("trash.saved"));
+            toast.success(movedTo ? t("tax.movedTo", { month: monthLabel(monthKey({ date: doc.date })), to: monthLabel(movedTo) }) : t("trash.saved"));
           }}
           onDraft={async (doc) => {
             await saveEntry(doc, getPhoto(current.id), undefined, "draft", company.taxId);

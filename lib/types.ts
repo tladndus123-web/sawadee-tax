@@ -23,6 +23,15 @@ export const CATEGORIES = [
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
+/**
+ * Kind of income a withholding is made on (50 ทวิ, ภ.ง.ด.3 / ภ.ง.ด.53), with the usual rate for a company payer.
+ * service = ค่าบริการ, professional = ค่าวิชาชีพอิสระ, contract = ค่าจ้างทำของ, rent = ค่าเช่า,
+ * advertising = ค่าโฆษณา, transport = ค่าขนส่ง, other = อื่น ๆ.
+ */
+export const WHT_TYPES = ["service", "professional", "contract", "rent", "advertising", "transport", "other"] as const;
+export type WhtType = (typeof WHT_TYPES)[number];
+export const WHT_DEFAULT_RATE: Record<WhtType, number> = { service: 3, professional: 3, contract: 3, rent: 5, advertising: 2, transport: 1, other: 3 };
+
 export const PAYMENTS = ["credit", "cash", "transfer", "card", "other"] as const;
 export type Payment = (typeof PAYMENTS)[number];
 
@@ -141,4 +150,11 @@ export interface LedgerDoc {
   unclear: string[];
   note: Tri;
   fieldBoxes: Record<string, Box>;
+  /** Tax month the input VAT is claimed in ("YYYY-MM"); "" = the invoice's own month */
+  taxMonth: string;
+  /** Input VAT may not be claimed (§82/5); null = decided by the category (entertainment → not claimable) */
+  noClaim: boolean | null;
+  /** Withholding tax rate in % (0 = no withholding) and the kind of income */
+  whtRate: number;
+  whtType: WhtType | "";
 }

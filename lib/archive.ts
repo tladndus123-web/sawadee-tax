@@ -7,7 +7,14 @@ import type { LedgerDoc, Sticker } from "./types";
 export const NO_DATE = "none";
 
 /** "2026-09" from the document date; NO_DATE when the date is missing or unreadable */
-export const monthKey = (doc: Pick<LedgerDoc, "date">): string => (/^\d{4}-\d{2}/.test(doc.date) ? doc.date.slice(0, 7) : NO_DATE);
+/** Month of the invoice date ("YYYY-MM", or NO_DATE) */
+export const invoiceMonth = (doc: Pick<LedgerDoc, "date">): string => (/^\d{4}-\d{2}/.test(doc.date) ? doc.date.slice(0, 7) : NO_DATE);
+
+/**
+ * Month a document is booked in: its tax (claim) month when one is set — a late-received invoice claimed in a
+ * later month — otherwise the invoice month. Month groups, reports, the dashboard and month close all use it.
+ */
+export const monthKey = (doc: Pick<LedgerDoc, "date"> & Partial<Pick<LedgerDoc, "taxMonth">>): string => doc.taxMonth || invoiceMonth(doc);
 
 /** "2026-09" → a Date in that month (UTC, so formatting never slips a month) */
 export const monthDate = (key: string): Date => new Date(Date.UTC(Number(key.slice(0, 4)), Number(key.slice(5, 7)) - 1, 1));

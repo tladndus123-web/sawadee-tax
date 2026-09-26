@@ -62,6 +62,9 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
           {t("export.pdf")}
         </Link>
       </Button>
+      <Button asChild variant="ghost" className="h-9 rounded-full px-3 text-muted-foreground">
+        <Link href={`/ledger/wht/${month}`}>{t("whtList.short")}</Link>
+      </Button>
     </div>
   );
 }

@@ -51,7 +51,7 @@ describe("sample document", () => {
   });
 
   it("is claimable for our company", () => {
-    expect(claimable(doc(), COMPANY, TODAY)).toBe(true);
+    expect(claimable(doc(), COMPANY)).toBe(true);
     expect(claimable(doc(), "")).toBe(false); // review #8: needs our company
     expect(claimable(doc(), "0745538001265")).toBe(false);
     expect(claimable(doc((d) => (d.docType = "abbr")), COMPANY)).toBe(false);

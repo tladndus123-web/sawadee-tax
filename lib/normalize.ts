@@ -20,6 +20,8 @@ import {
   type Payment,
   type Totals,
   type Tri,
+  WHT_TYPES,
+  type WhtType,
 } from "./types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- normalize accepts untrusted input */
@@ -70,6 +72,10 @@ export function blank(): LedgerDoc {
     unclear: [],
     note: emptyTri(),
     fieldBoxes: {},
+    taxMonth: "",
+    noClaim: null,
+    whtRate: 0,
+    whtType: "",
   };
 }
 
@@ -201,6 +207,10 @@ export function normalize(input: unknown): LedgerDoc {
     unclear: Array.isArray(a.unclear) ? a.unclear.map(str).filter(Boolean).slice(0, 30) : [],
     note: tri(a.note),
     fieldBoxes: normalizeBoxes(a.fieldBoxes ?? a.field_boxes),
+    taxMonth: typeof a.taxMonth === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(a.taxMonth) ? a.taxMonth : "",
+    noClaim: typeof a.noClaim === "boolean" ? a.noClaim : null,
+    whtRate: Math.min(100, Math.max(0, Math.round((Number(a.whtRate) || 0) * 100) / 100)),
+    whtType: oneOf<WhtType | "">(["", ...WHT_TYPES], a.whtType, ""),
   };
 }
 

@@ -102,7 +102,7 @@ describe("#8 claimable only when the buyer is our company", () => {
   it("needs our company tax ID", () => {
     expect(claimable(doc(), "")).toBe(false);
     expect(claimable(doc(), "123")).toBe(false);
-    expect(claimable(doc(), COMPANY, "2026-09-25")).toBe(true);
+    expect(claimable(doc(), COMPANY)).toBe(true);
   });
 });
 

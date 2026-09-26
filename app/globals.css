@@ -176,6 +176,8 @@
   }
   html {
     @apply font-sans;
+    /* Jumps (skip link, "show on photo") glide; the reduced-motion rule below turns it off */
+    scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
     scroll-padding-top: 5.5rem;
     scroll-padding-bottom: 7rem;

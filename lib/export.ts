@@ -23,6 +23,8 @@ export interface ExportRow {
   branch: string;
   /** "00000" head office, 5-digit branch, "" unknown (purchase tax report form) */
   branchNo: string;
+  /** Claimed in a later tax month than the invoice month ("YYYY-MM"), else "" */
+  lateClaim: string;
   docType: LedgerDoc["docType"];
   category: LedgerDoc["category"];
   items: string;
@@ -73,7 +75,6 @@ export function buildMonthExport(
   docs: { doc: LedgerDoc; flags?: number }[],
   locale: string,
   companyTaxId: string,
-  today?: string,
 ): MonthExport {
   const lang = exportLang(locale);
   const sorted = [...docs].sort((a, b) => a.doc.date.localeCompare(b.doc.date) || a.doc.docNo.localeCompare(b.doc.docNo));
@@ -83,7 +84,7 @@ export function buildMonthExport(
 
   for (const { doc, flags = 0 } of sorted) {
     const vendor = pick(doc.seller.name, lang);
-    const ok = claimable(doc, companyTaxId, today);
+    const ok = claimable(doc, companyTaxId);
     rows.push({
       date: doc.date,
       docNo: doc.docNo,
@@ -92,6 +93,7 @@ export function buildMonthExport(
       taxId: doc.seller.taxId,
       branch: pick(doc.seller.branch, lang),
       branchNo: branchNo(doc.seller.branch),
+      lateClaim: doc.taxMonth && doc.taxMonth !== doc.date.slice(0, 7) ? doc.taxMonth : "",
       docType: doc.docType,
       category: doc.category,
       items: doc.items.map((i) => pick(i.desc, lang)).filter(Boolean).join(" / "),

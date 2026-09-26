@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(47);
+select plan(50);
 
 -- Fixtures: one admin, one staff, one signed-in stranger (no membership)
 insert into auth.users (id, email) values
@@ -117,6 +117,10 @@ select lives_ok($$ select public.save_document('00000000-0000-0000-0000-00000000
 select throws_like($$ select public.save_document('00000000-0000-0000-0000-0000000000e2', '{"status":"reviewed"}', '[]') $$, 'month_locked%', 'a draft cannot be saved into a closed month');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select throws_like($$ update public.documents set deleted_at = now(), delete_reason = 'dup' where id = '00000000-0000-0000-0000-0000000000e1' $$, 'month_locked%', 'even admins cannot delete in a closed month');
+-- A late invoice dated in the closed month is claimed in a later, open month
+select lives_ok($$ select public.save_document('00000000-0000-0000-0000-0000000000e3', '{"doc_no":"M-4","status":"reviewed","doc_date":"2026-08-25","tax_month":"2026-09"}', '[]') $$, 'a late invoice is saved into an open claim month');
+select is((select public.claim_month(tax_month, doc_date) from public.documents where id = '00000000-0000-0000-0000-0000000000e3'), '2026-09', 'it is reported in its claim month');
+select throws_like($$ update public.documents set tax_month = '2026-08' where id = '00000000-0000-0000-0000-0000000000e3' $$, 'month_locked%', 'it cannot be moved into the closed month');
 select lives_ok($$ delete from public.month_locks where month = '2026-08' $$, 'an admin reopens the month');
 select lives_ok($$ select public.save_document('00000000-0000-0000-0000-0000000000e1', '{"net":200}', '[]') $$, 'a reopened month can be edited again');
 

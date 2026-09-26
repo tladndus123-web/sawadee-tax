@@ -165,7 +165,14 @@ export function MonthReport({ month }: { month: string }) {
                 <tr key={`${r.docNo}-${i}`} className="break-inside-avoid border-b border-neutral-300">
                   <td className={`${cell} tabular-nums`}>{i + 1}</td>
                   <td className={`${cell} tabular-nums whitespace-nowrap`}>{dmy(r.date)}</td>
-                  <td className={`${cell} mono whitespace-nowrap`}>{r.docNo || "—"}</td>
+                  <td className={`${cell} mono whitespace-nowrap`}>
+                    {r.docNo || "—"}
+                    {r.lateClaim && (
+                      <span lang="th" className="block font-sans text-[9px] text-neutral-500">
+                        ถือเป็นภาษีซื้อในเดือนภาษี {r.lateClaim.slice(5, 7)}/{r.lateClaim.slice(0, 4)}
+                      </span>
+                    )}
+                  </td>
                   <td className={cell}>
                     {r.vendor}
                     {showThai && r.vendorTh && r.vendorTh !== r.vendor && (
@@ -175,14 +182,8 @@ export function MonthReport({ month }: { month: string }) {
                     )}
                   </td>
                   <td className={`${cell} mono whitespace-nowrap`}>{r.taxId || "—"}</td>
-                  <td className={`${cell} whitespace-nowrap`}>
-                    {branchLabel(r.branchNo, lang) || r.branch || "—"}
-                    {showThai && r.branchNo && (
-                      <span lang="th" className="block text-[9.5px] text-neutral-500">
-                        {branchLabel(r.branchNo, "th")}
-                      </span>
-                    )}
-                  </td>
+                  {/* One สถานประกอบการ column: head office 00000, a branch its 5-digit number (Notification 202 form notes) */}
+                  <td className={`${cell} mono whitespace-nowrap`}>{r.branchNo || "—"}</td>
                   <td className={cell}>{t(`docType.${r.docType}`)}</td>
                   <td className={num}>{fmt(r.taxable + r.exempt)}</td>
                   <td className={num}>{fmt(r.vat)}</td>

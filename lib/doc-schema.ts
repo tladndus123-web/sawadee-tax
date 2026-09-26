@@ -10,6 +10,7 @@ import {
   type LedgerDoc,
   PAYMENTS,
   STICKERS,
+  WHT_TYPES,
 } from "./types";
 
 const isoOrEmpty = z.string().refine((s) => s === "" || isIsoDate(s), "yyyy-mm-dd");
@@ -90,4 +91,8 @@ export const docSchema = z.object({
   unclear: z.array(z.string()),
   note: triSchema,
   fieldBoxes: z.record(z.string(), z.tuple([z.number(), z.number(), z.number(), z.number()])),
+  taxMonth: z.string().regex(/^(\d{4}-(0[1-9]|1[0-2]))?$/, "yyyy-mm"),
+  noClaim: z.boolean().nullable(),
+  whtRate: z.number().min(0).max(100),
+  whtType: z.enum(["", ...WHT_TYPES]),
 }) satisfies z.ZodType<LedgerDoc>;

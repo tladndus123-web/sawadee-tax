@@ -51,7 +51,7 @@ export function summarize(docs: Doc[], month: string, companyTaxId: string, toda
     if (monthKey(doc) === month) {
       count += 1;
       total += toSatang(doc.totals.net);
-      if (claimable(doc, companyTaxId, today)) vat += toSatang(doc.totals.vat);
+      if (claimable(doc, companyTaxId)) vat += toSatang(doc.totals.vat);
       if (check.has(id)) toCheck += 1;
     }
     if (isUnpaid(doc)) {

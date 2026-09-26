@@ -5,7 +5,9 @@
 // undo — enforced by RLS and triggers, not just this code. Who/when is stamped by the database.
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { invoiceMonth } from "./archive";
 import { type DocumentRow, docToRow, type ItemRow, rowToDoc } from "./db-map";
+import { lockedMonths, openClaimMonth } from "./month-lock-store";
 import { supabaseBrowser } from "./supabase/client";
 import type { LedgerDoc, Sticker } from "./types";
 
@@ -113,8 +115,14 @@ export async function saveEntry(
   id: string = doc.id || crypto.randomUUID(),
   status: EntryStatus = "final",
   companyTaxId?: string,
-): Promise<string> {
+): Promise<{ id: string; movedTo: string }> {
   const supabase = supabaseBrowser();
+  // A late invoice whose month is already closed (filed) is claimed in the next open month instead
+  let movedTo = "";
+  if (status === "final" && !doc.taxMonth) {
+    movedTo = openClaimMonth(invoiceMonth(doc), await lockedMonths());
+    if (movedTo) doc = { ...doc, taxMonth: movedTo };
+  }
   let photoPath: string | undefined;
   if (photo) {
     photoPath = `${id}/${Date.now()}.jpg`;
@@ -132,7 +140,7 @@ export async function saveEntry(
   });
   if (error) throw error;
   await reload();
-  return id;
+  return { id, movedTo };
 }
 
 /**

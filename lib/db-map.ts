@@ -56,6 +56,10 @@ export interface DocumentRow {
   stickers: string[];
   field_boxes: unknown;
   photo_path: string | null;
+  tax_month: string | null;
+  no_claim: boolean | null;
+  wht_rate: number | string;
+  wht_type: string;
   deleted_at: string | null;
   deleted_by: string | null;
   delete_reason: string | null;
@@ -121,6 +125,10 @@ export function docToRow(doc: LedgerDoc, status: DbStatus, companyTaxId?: string
       flags: flagsFor(doc, { companyTaxId }),
       stickers: doc.stickers,
       field_boxes: doc.fieldBoxes,
+      tax_month: doc.taxMonth || null,
+      no_claim: doc.noClaim,
+      wht_rate: doc.whtRate,
+      wht_type: doc.whtType,
     },
     items: doc.items.map((i, n) => ({ line_no: n + 1, code: i.code, desc: i.desc, wh: i.wh, qty: i.qty, unit: i.unit, price: i.price, amount: i.amount })),
   };
@@ -172,6 +180,10 @@ export function rowToDoc(row: DocumentRow, items: ItemRow[]): LedgerDoc {
     note: row.note,
     stickers: row.stickers,
     fieldBoxes: row.field_boxes,
+    taxMonth: row.tax_month ?? "",
+    noClaim: row.no_claim,
+    whtRate: row.wht_rate,
+    whtType: row.wht_type,
     items: [...items].sort((a, b) => a.line_no - b.line_no).map((i) => ({ code: i.code, desc: i.desc, wh: i.wh, qty: i.qty, unit: i.unit, price: i.price, amount: i.amount })),
   });
 }
