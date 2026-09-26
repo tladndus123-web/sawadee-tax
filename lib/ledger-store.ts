@@ -149,6 +149,17 @@ export async function setQuick(id: string, change: { paid?: boolean; paidDate?: 
   await reload();
 }
 
+/** Mark several documents paid (or unpaid) at once, e.g. after a payment run; one request */
+export async function setPaidMany(ids: string[], paid: boolean, paidDate: string) {
+  if (!ids.length) return;
+  const { error } = await supabaseBrowser()
+    .from("documents")
+    .update({ paid, paid_date: paid ? paidDate || null : null })
+    .in("id", ids);
+  if (error) throw error;
+  await reload();
+}
+
 /** Admin only. The database stamps who and when and refuses anyone else. */
 export async function softDelete(id: string, reason: string) {
   if (!isValidReason(reason)) throw new Error("reason required");

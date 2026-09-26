@@ -643,5 +643,39 @@
     "fail": "Couldn't change it. Only admins can close or reopen a month.",
     "blocked": "This month is closed. To edit, an admin has to reopen it in the ledger.",
     "docBanner": "This document's month is closed. Its contents can't change; only payment and stickers can. To edit, an admin has to reopen the month in the ledger."
+  },
+  "vat": {
+    "title": "VAT return · {month}",
+    "deadline": "Due {due} (e-filing usually until {online})",
+    "closed": "Closed",
+    "daysLeft": "{days} days left",
+    "today": "Due today",
+    "late": "Overdue",
+    "onlineOnly": "e-filing only",
+    "claimable": "Claimable VAT",
+    "docs": "Documents",
+    "toCheck": "To check",
+    "drafts": "Drafts",
+    "count": "{count}",
+    "todoHint": "Sort out the documents to check and the drafts first, so the report is right.",
+    "readyHint": "Ready. Check the report, file the return, then close the month.",
+    "doneHint": "This month is closed. Its documents won't change.",
+    "report": "Purchase tax report",
+    "toLedger": "Sort out in the ledger"
+  },
+  "bulk": {
+    "start": "Pay several",
+    "stop": "Done selecting",
+    "hint": "Tick the documents you paid. Only unpaid ones are shown.",
+    "selected": "{count} selected",
+    "markPaid": "Mark as paid",
+    "confirmTitle": "Mark {count} as paid?",
+    "confirmDesc": "Amounts to transfer per vendor. Check the payment date.",
+    "docs": "{count}",
+    "total": "Total",
+    "date": "Paid on",
+    "cancel": "Cancel",
+    "done": "Marked {count} as paid.",
+    "fail": "Couldn't change them. Check the connection and try again."
   }
 }

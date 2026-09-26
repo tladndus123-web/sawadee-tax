@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { summarize, trend, upcoming } from "./dashboard";
+import { summarize, trend, upcoming, vatFiling } from "./dashboard";
 import { sampleDoc } from "./sample";
 import type { LedgerDoc } from "./types";
 
@@ -67,5 +67,19 @@ describe("6-month trend", () => {
     expect(t.map((p) => p.month)).toEqual(["2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02"]);
     expect(t.map((p) => p.count)).toEqual([0, 0, 1, 0, 1, 0]);
     expect(t[4].net).toBe(64200);
+  });
+});
+
+describe("VAT return to prepare", () => {
+  it("is last month's until its e-filing date has passed", () => {
+    expect(vatFiling("2026-10-05")).toEqual({ month: "2026-09", due: "2026-10-15", dueOnline: "2026-10-23", daysLeft: 10, onlineOnly: false });
+    expect(vatFiling("2026-10-20")).toMatchObject({ month: "2026-09", daysLeft: 3, onlineOnly: true });
+  });
+  it("moves to this month after the 23rd", () => {
+    expect(vatFiling("2026-09-26")).toMatchObject({ month: "2026-09", due: "2026-10-15", daysLeft: 19 });
+  });
+  it("crosses the year", () => {
+    expect(vatFiling("2027-01-10")).toMatchObject({ month: "2026-12", due: "2027-01-15" });
+    expect(vatFiling("2026-12-28")).toMatchObject({ month: "2026-12", due: "2027-01-15" });
   });
 });

@@ -112,3 +112,33 @@ export function trend(docs: Doc[], endMonth: string, n = 6): TrendPoint[] {
     return { month: k, net: fromSatang(a.net), vat: fromSatang(a.vat), count: a.count };
   });
 }
+
+export interface VatFiling {
+  /** Tax month whose return (ภ.พ.30) is being prepared, "YYYY-MM" */
+  month: string;
+  /** Paper filing deadline: the 15th of the next month */
+  due: string;
+  /** e-Filing usually has until about the 23rd (the Revenue Department extends it each year) */
+  dueOnline: string;
+  /** Days to the next of those two deadlines (negative once both have passed) */
+  daysLeft: number;
+  /** The paper date has passed; only e-filing time is left */
+  onlineOnly: boolean;
+}
+
+const shiftMonth = (ym: string, by: number) => {
+  const [y, m] = ym.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + by, 1));
+  return d.toISOString().slice(0, 7);
+};
+
+/** Which VAT return to prepare today: last month's until its e-filing date has passed, then this month's */
+export function vatFiling(today: string): VatFiling {
+  const thisMonth = today.slice(0, 7);
+  const month = Number(today.slice(8, 10)) <= 23 ? shiftMonth(thisMonth, -1) : thisMonth;
+  const next = shiftMonth(month, 1);
+  const due = `${next}-15`;
+  const dueOnline = `${next}-23`;
+  const onlineOnly = today > due;
+  return { month, due, dueOnline, daysLeft: daysUntil(onlineOnly ? dueOnline : due, today), onlineOnly };
+}

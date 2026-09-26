@@ -17,6 +17,7 @@ import { dmy, todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { ActivityList } from "./ActivityList";
+import { VatCard } from "./VatCard";
 
 // The chart library (recharts) is the heaviest part of this page: load it after the numbers are on screen
 const TrendChart = dynamic(() => import("./TrendChart").then((m) => m.TrendChart), {
@@ -60,6 +61,9 @@ export function Dashboard() {
           </select>
         </label>
       </div>
+
+      {/* This month's job first: the VAT return that is due next */}
+      <VatCard entries={entries} companyTaxId={company.taxId} today={today} />
 
       {/* The four tiles of PROMPT §3 */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

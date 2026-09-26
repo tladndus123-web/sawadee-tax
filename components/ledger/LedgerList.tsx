@@ -1,10 +1,11 @@
 "use client";
 
-import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, FilePen, ImagePlus, Loader2, Lock, Search, Trash2, TriangleAlert, X } from "lucide-react";
+import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, CircleCheck, FilePen, ImagePlus, Loader2, Lock, Search, Trash2, TriangleAlert, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { memo, useDeferredValue, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link } from "@/i18n/navigation";
 import { type ArchiveFilter, groupByMonth, matches, monthKey, NO_DATE, search } from "@/lib/archive";
@@ -18,6 +19,7 @@ import { useMe } from "@/lib/role-store";
 import { dmy, todayBangkok } from "@/lib/thai-tax";
 import { STICKERS, type Sticker } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { BulkPayBar } from "./BulkPayBar";
 import { ExportButtons } from "./ExportButtons";
 import { MonthLockButton } from "./MonthLockButton";
 import { StickerDot, StickerDots, StickerPopover, useMonthLabel, useStickerLabel } from "./Stickers";
@@ -31,6 +33,21 @@ export function LedgerList() {
   const [filter, setFilter] = useState<ArchiveFilter>({ stickers: [], unpaidOnly: false });
   const isAdmin = me.role === "admin";
   const locks = useMonthLocks();
+  // Payment run: tick unpaid documents, then mark them all paid at once (BulkPayBar)
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const toggle = useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+  const stopSelecting = useCallback(() => {
+    setSelecting(false);
+    setSelected(new Set());
+  }, []);
   const view: LedgerView = tab === "trash" && !isAdmin ? "ledger" : tab;
   const counts = useMemo(
     () => ({ ledger: pick(entries, "ledger").length, drafts: pick(entries, "drafts").length, trash: pick(entries, "trash").length }),
@@ -91,7 +108,25 @@ export function LedgerList() {
             />
           </label>
         )}
-        {view === "ledger" && counts.ledger > 0 && <FilterBar filter={filter} onChange={setFilter} entries={list} />}
+        {view === "ledger" && counts.ledger > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <FilterBar filter={filter} onChange={setFilter} entries={list} />
+            <Button
+              type="button"
+              variant={selecting ? "secondary" : "ghost"}
+              className="h-9 rounded-full px-3.5 text-[13px]"
+              onClick={() => {
+                if (selecting) return stopSelecting();
+                setSelecting(true);
+                setFilter((f) => ({ ...f, unpaidOnly: true }));
+              }}
+            >
+              {selecting ? <X className="size-4" /> : <CircleCheck className="size-4" />}
+              {selecting ? t("bulk.stop") : t("bulk.start")}
+            </Button>
+          </div>
+        )}
+        {selecting && view === "ledger" && <p className="text-xs text-muted-foreground">{t("bulk.hint")}</p>}
         {view === "drafts" && <p className="rounded-2xl bg-warn-soft/60 px-4 py-3 text-xs leading-relaxed text-warn">{t("archive.draftNote")}</p>}
       </header>
 
@@ -130,8 +165,12 @@ export function LedgerList() {
               check={check}
               locked={locks.has(group.key)}
               isAdmin={isAdmin}
+              selecting={selecting}
+              selected={selected}
+              onToggle={toggle}
             />
           ))}
+          {selecting && <BulkPayBar chosen={list.filter((e) => selected.has(e.id) && !e.doc.paid)} onDone={stopSelecting} />}
         </div>
       )}
     </div>
@@ -175,6 +214,9 @@ const MonthSection = memo(function MonthSection({
   check,
   locked,
   isAdmin,
+  selecting,
+  selected,
+  onToggle,
 }: {
   group: ReturnType<typeof groupByMonth<LedgerEntry>>[number];
   defaultOpen: boolean;
@@ -184,6 +226,9 @@ const MonthSection = memo(function MonthSection({
   /** Tax month closed (month_locks): its saved documents can't change */
   locked: boolean;
   isAdmin: boolean;
+  selecting: boolean;
+  selected: ReadonlySet<string>;
+  onToggle: (id: string) => void;
 }) {
   const t = useTranslations("archive");
   const tl = useTranslations("lock");
@@ -233,7 +278,7 @@ const MonthSection = memo(function MonthSection({
           )}
           <ul className="grid gap-2">
             {group.items.map((e) => (
-              <DocRow key={e.id} e={e} flagged={check.has(e.id)} />
+              <DocRow key={e.id} e={e} flagged={check.has(e.id)} selectable={selecting && !e.doc.paid} checked={selected.has(e.id)} onToggle={onToggle} />
             ))}
           </ul>
         </div>
@@ -294,7 +339,22 @@ function Thumb({ path }: { path: string | null }) {
 const sellerOf = (e: LedgerEntry) => joinTri(e.doc.seller.name, "en") || joinTri(e.doc.seller.name, "th") || e.doc.docNo || "—";
 
 /** One document; stickers can be changed right from the list. */
-const DocRow = memo(function DocRow({ e, draft, flagged }: { e: LedgerEntry; draft?: boolean; flagged?: boolean }) {
+const DocRow = memo(function DocRow({
+  e,
+  draft,
+  flagged,
+  selectable,
+  checked,
+  onToggle,
+}: {
+  e: LedgerEntry;
+  draft?: boolean;
+  flagged?: boolean;
+  /** Payment run: this unpaid document can be ticked */
+  selectable?: boolean;
+  checked?: boolean;
+  onToggle?: (id: string) => void;
+}) {
   const t = useTranslations();
   const locale = useLocale();
   const monthLabel = useMonthLabel();
@@ -302,7 +362,15 @@ const DocRow = memo(function DocRow({ e, draft, flagged }: { e: LedgerEntry; dra
     await setQuick(e.id, { stickers });
   };
   return (
-    <li className="tap-row flex min-w-0 items-center gap-1 rounded-2xl bg-card pr-2 shadow-[0_0_0_1px_var(--border)] hover:shadow-[0_0_0_1px_var(--input),var(--shadow-soft)]">
+    <li className={cn("tap-row flex min-w-0 items-center gap-1 rounded-2xl bg-card pr-2 shadow-[0_0_0_1px_var(--border)] hover:shadow-[0_0_0_1px_var(--input),var(--shadow-soft)]", checked && "ring-2 ring-primary")}>
+      {selectable && (
+        <Checkbox
+          checked={!!checked}
+          onCheckedChange={() => onToggle?.(e.id)}
+          aria-label={sellerOf(e)}
+          className="ml-3 size-5 flex-none rounded-md"
+        />
+      )}
       <Link href={`/documents/${e.id}`} className="flex min-w-0 flex-1 items-center gap-3 p-2.5 sm:gap-4 sm:p-3">
         <Thumb path={e.photoPath} />
         <span className="min-w-0 flex-1">
