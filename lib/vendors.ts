@@ -7,7 +7,7 @@
 import { normalize, triHas } from "./normalize";
 import { digitsOnly, taxIdOk } from "./thai-tax";
 import { CATEGORIES, PAYMENTS } from "./types";
-import type { LedgerDoc, Tri } from "./types";
+import type { Category, LedgerDoc, Tri } from "./types";
 
 export interface Vendor {
   id: string;
@@ -165,4 +165,24 @@ export function applyVendor(doc: LedgerDoc, v: Vendor | null | undefined): { doc
     fixed.push("seller.fax");
   }
   return { doc: fixed.length ? { ...doc, seller } : doc, fixed };
+}
+
+/**
+ * The one category that stands for a vendor (for its icon): the vendor's rule if set, otherwise the category its
+ * saved documents use most (ties → the most recent of them, as `categories` is newest first), otherwise "other".
+ */
+export function vendorCategory(ruleCategory: string | null, categories: string[]): Category {
+  const valid = (c: string | null | undefined): c is Category => !!c && (CATEGORIES as readonly string[]).includes(c);
+  if (valid(ruleCategory)) return ruleCategory;
+  const count = new Map<Category, number>();
+  for (const c of categories) if (valid(c)) count.set(c, (count.get(c) ?? 0) + 1);
+  let best: Category = "other";
+  let n = 0;
+  for (const [c, k] of count) {
+    if (k > n) {
+      best = c;
+      n = k;
+    }
+  }
+  return best;
 }

@@ -10,13 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { monthKey } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
-import { type DueItem, summarize, trend, upcoming } from "@/lib/dashboard";
+import { type Doc, type DueItem, summarize, trend, upcoming } from "@/lib/dashboard";
 import { exportLang } from "@/lib/export";
 import { pick, setQuick, useLedger } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { useMonthLabel } from "@/components/ledger/Stickers";
+import { CategoryIcon } from "@/components/vendors/CategoryIcon";
+import { digitsOnly } from "@/lib/thai-tax";
+import { useVendors } from "@/lib/vendor-store";
+import { vendorCategory } from "@/lib/vendors";
 import { ActivityList } from "./ActivityList";
 import { VatCard } from "./VatCard";
 
@@ -50,7 +54,7 @@ export function Dashboard() {
   return (
     <div className="grid gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold tracking-tight">{monthLabel(month)}</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{monthLabel(month)}</h2>
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           {t("dash.month")}
           <select value={month} onChange={(e) => setMonth(e.target.value)} className="h-9 rounded-full border bg-card px-3 text-sm text-foreground">
@@ -100,11 +104,11 @@ export function Dashboard() {
       </div>
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <DueList items={due} />
+        <DueList items={due} docs={docs} />
         <TrendChart data={points} active={month} />
       </div>
 
-      <ActivityList limit={8} />
+      <ActivityList limit={5} />
     </div>
   );
 }
@@ -133,7 +137,7 @@ function Tile({
         key={value}
         className={cn(
           // Shrinks with the screen so "฿ 162,105.00" stays on one line in a two-column phone grid
-          "num-in text-[clamp(1.05rem,4.6vw,1.5rem)] leading-tight font-semibold tracking-tight whitespace-nowrap tabular-nums",
+          "num-in text-[clamp(1.15rem,5.2vw,1.625rem)] leading-tight font-semibold tracking-tight whitespace-nowrap tabular-nums",
           tone === "brand" && "text-brand",
           tone === "bad" && "text-bad",
           tone === "warn" && "text-warn",
@@ -147,7 +151,22 @@ function Tile({
 }
 
 /** Unpaid credit purchases, most urgent first; paying one is a single tap (with undo) */
-function DueList({ items }: { items: DueItem[] }) {
+function DueList({ items, docs }: { items: DueItem[]; docs: Doc[] }) {
+  const { vendors } = useVendors();
+  // The same icon as on the vendor page: the vendor's rule, else the category its documents use most
+  const iconOf = useMemo(() => {
+    const cats = new Map<string, { date: string; cat: string }[]>();
+    for (const { doc } of docs) {
+      const k = digitsOnly(doc.seller.taxId);
+      cats.set(k, [...(cats.get(k) ?? []), { date: doc.date, cat: doc.category }]);
+    }
+    const rule = new Map(vendors.map((v) => [v.taxId, v.ruleCategory]));
+    return (taxId: string, own: string) => {
+      const k = digitsOnly(taxId);
+      const seen = (cats.get(k) ?? []).sort((a, b) => b.date.localeCompare(a.date)).map((x) => x.cat);
+      return vendorCategory(rule.get(k) ?? null, seen.length ? seen : [own]);
+    };
+  }, [docs, vendors]);
   const t = useTranslations();
   const sd = useScreenDate();
   const locale = useLocale();
@@ -197,16 +216,17 @@ function DueList({ items }: { items: DueItem[] }) {
             const b = badge(it);
             const name = it.doc.seller.name[lang] || it.doc.seller.name.en || it.doc.seller.name.th || it.doc.docNo;
             return (
-              <li key={it.id} className="flex min-w-0 items-center gap-3 border-b border-border/60 py-2.5 last:border-0">
-                <Link href={`/documents/${it.id}`} className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{name}</span>
-                  <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                    <span className={cn("rounded-full px-2 py-0.5 font-semibold", b.cls)}>{b.text}</span>
-                    {it.doc.dueDate && <span className="tabular-nums">{sd(it.doc.dueDate)}</span>}
-                  </span>
+              <li key={it.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 border-b border-border/60 py-3 last:border-0">
+                <CategoryIcon category={iconOf(it.doc.seller.taxId, it.doc.category)} className="row-span-2" />
+                <Link href={`/documents/${it.id}`} className="truncate text-[15px] font-semibold hover:underline">
+                  {name}
                 </Link>
-                <span className="text-sm font-semibold tabular-nums">{baht(it.doc.totals.net)}</span>
-                <Button type="button" variant="outline" className="h-9 flex-none rounded-full px-3 text-xs" disabled={busy === it.id} onClick={() => void setPaid(it, true)}>
+                <span className="text-right text-[15px] font-semibold tabular-nums">{baht(it.doc.totals.net)}</span>
+                <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                  <span className={cn("rounded-full px-2 py-0.5 font-semibold", b.cls)}>{b.text}</span>
+                  {it.doc.dueDate && <span className="tabular-nums">{sd(it.doc.dueDate)}</span>}
+                </span>
+                <Button type="button" variant="outline" className="h-8 flex-none rounded-full px-3 text-xs" disabled={busy === it.id} onClick={() => void setPaid(it, true)}>
                   {busy === it.id ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
                   {t("dash.markPaid")}
                 </Button>

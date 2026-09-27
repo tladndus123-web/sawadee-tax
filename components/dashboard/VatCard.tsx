@@ -124,8 +124,8 @@ export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry
 function Fact({ label, value, tone }: { label: string; value: string; tone?: "brand" | "warn" }) {
   return (
     <div className="grid gap-0.5 rounded-2xl bg-muted/60 px-3 py-2.5">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className={cn("text-[15px] font-semibold tabular-nums", tone === "brand" && "text-brand", tone === "warn" && "text-warn")}>{value}</dd>
+      <dt className="text-[11px] font-medium text-muted-foreground">{label}</dt>
+      <dd className={cn("text-lg leading-tight font-semibold tracking-tight tabular-nums sm:text-xl", tone === "brand" && "text-brand", tone === "warn" && "text-warn")}>{value}</dd>
     </div>
   );
 }

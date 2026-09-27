@@ -23,8 +23,11 @@ import { digitsOnly } from "@/lib/thai-tax";
 import { FORM_LANGS, type Tri } from "@/lib/types";
 import { useMe } from "@/lib/role-store";
 import { deleteVendor, saveVendorName, useVendors } from "@/lib/vendor-store";
-import type { Vendor } from "@/lib/vendors";
+import { type Vendor, vendorCategory } from "@/lib/vendors";
+import { CategoryIcon } from "./CategoryIcon";
 import { VendorRule } from "./VendorRule";
+
+type Stat = { count: number; satang: number; last: string; cats: string[] };
 
 /** Vendor dictionary: every seller seen in saved documents, with their ledger totals. */
 export function VendorList() {
@@ -37,16 +40,19 @@ export function VendorList() {
 
   // Documents in the ledger (not drafts, not trash) per vendor tax ID
   const stats = useMemo(() => {
-    const m = new Map<string, { count: number; satang: number; last: string }>();
+    const m = new Map<string, Stat & { seen: { date: string; cat: string }[] }>();
     for (const e of entries) {
       if (e.deletedAt !== null || e.status !== "final") continue;
       const key = digitsOnly(e.doc.seller.taxId);
-      const s = m.get(key) ?? { count: 0, satang: 0, last: "" };
+      const s = m.get(key) ?? { count: 0, satang: 0, last: "", cats: [], seen: [] };
+      s.seen.push({ date: e.doc.date, cat: e.doc.category });
       s.count += 1;
       s.satang += toSatang(e.doc.totals.net);
       if (e.doc.date > s.last) s.last = e.doc.date;
       m.set(key, s);
     }
+    // newest first, so a tie between categories goes to the latest one
+    for (const s of m.values()) s.cats = s.seen.sort((a, b) => b.date.localeCompare(a.date)).map((x) => x.cat);
     return m;
   }, [entries]);
 
@@ -87,7 +93,7 @@ export function VendorList() {
   );
 }
 
-function VendorRow({ v, lang, stat }: { v: Vendor; lang: "th" | "en" | "ja"; stat?: { count: number; satang: number; last: string } }) {
+function VendorRow({ v, lang, stat }: { v: Vendor; lang: "th" | "en" | "ja"; stat?: Stat }) {
   const t = useTranslations("vendors");
   const sd = useScreenDate();
   const [editing, setEditing] = useState(false);
@@ -113,9 +119,7 @@ function VendorRow({ v, lang, stat }: { v: Vendor; lang: "th" | "en" | "ja"; sta
   return (
     <li className="workspace-panel grid gap-3 p-4 sm:p-5">
       <div className="flex min-w-0 flex-wrap items-start gap-3">
-        <span className="intelligence-mark is-soft size-10 flex-none">
-          <Building2 className="size-4" aria-hidden />
-        </span>
+        <CategoryIcon category={vendorCategory(v.ruleCategory, stat?.cats ?? [])} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-semibold">{shown || "—"}</p>
           {lang !== "th" && v.name.th && (
@@ -128,7 +132,8 @@ function VendorRow({ v, lang, stat }: { v: Vendor; lang: "th" | "en" | "ja"; sta
             {branch && <span className="rounded-full bg-muted px-2 py-0.5">{branch}</span>}
           </p>
         </div>
-        <div className="grid text-right">
+        {/* Phones: the totals get their own line under the name, so the name keeps the width */}
+        <div className="grid text-right max-sm:order-last max-sm:flex max-sm:basis-full max-sm:items-baseline max-sm:justify-between max-sm:gap-2 max-sm:pl-[52px] max-sm:text-left">
           <span className="text-[15px] font-semibold tabular-nums">{baht(fromSatang(stat?.satang ?? 0))}</span>
           <span className="text-xs text-muted-foreground">
             {t("docs", { count: stat?.count ?? 0 })}

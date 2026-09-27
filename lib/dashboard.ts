@@ -8,7 +8,7 @@ import { fromSatang, toSatang } from "./money";
 import type { LedgerDoc } from "./types";
 
 /** ack: warnings a person marked "문제 없음" (documents.ack_flags) */
-type Doc = { id: string; doc: LedgerDoc; ack?: readonly string[] };
+export type Doc = { id: string; doc: LedgerDoc; ack?: readonly string[] };
 
 export { isUnpaid } from "./archive";
 

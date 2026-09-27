@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { normalize } from "./normalize";
 import { sampleDoc } from "./sample";
-import { applyHistory, applyRule, applyVendor, canAutoRegister, pickVendor, suggestRule, type Vendor } from "./vendors";
+import { applyHistory, applyRule, applyVendor, canAutoRegister, pickVendor, suggestRule, type Vendor, vendorCategory } from "./vendors";
 
 const vendor: Vendor = {
   id: "v1",
@@ -119,5 +119,19 @@ describe("automatic registration rules (freee-style)", () => {
     expect(suggestRule([same, same], vendor)).toBeNull();
     expect(suggestRule([same, same, { category: "office", payment: "credit" }], vendor)).toBeNull();
     expect(suggestRule([same, same, same], ruled)).toBeNull();
+  });
+});
+
+describe("a vendor's icon category", () => {
+  it("the vendor's rule wins", () => {
+    expect(vendorCategory("fuel", ["food", "food"])).toBe("fuel");
+  });
+  it("otherwise the category its documents use most; ties go to the newest", () => {
+    expect(vendorCategory(null, ["office", "food", "food"])).toBe("food");
+    expect(vendorCategory(null, ["office", "food"])).toBe("office");
+  });
+  it("nothing known (or unknown values) → other", () => {
+    expect(vendorCategory(null, [])).toBe("other");
+    expect(vendorCategory("nope", ["??"])).toBe("other");
   });
 });

@@ -398,3 +398,8 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - UI 작업 전 코드 백업: 이 폴더 바깥 `work/backup-before-ui-v2/` (app · components · lib · messages · 옛 favicon).
 - 브라우저 확인 스크립트는 프로젝트 **바깥** `work/*.cjs`에 있어요 (`check-supabase-flow`, `check-step7`, `check-step8`, `check-line`, `check-print`, `check-report`, `check-responsive`, `check-members` 등 — 로컬 개발 서버 3130 + 로컬 Supabase + 설치된 Edge 기준, 결과 이미지는 `outputs/apple-ui-v2/`). 저장소 안 Playwright 테스트로 옮기면 좋아요.
 - 커밋 메시지 끝에는 `Co-Authored-By` 줄을 붙여 왔어요 (선택).
+
+### 거래처 아이콘 · 대시보드 글씨 (2026-09-27)
+- 거래처마다 분류에 맞는 아이콘(lucide, 오픈소스 ISC): 거래처 규칙의 항목 → 없으면 그 거래처 서류에 가장 많이 쓴 항목 → 없으면 "기타"(`vendorCategory` in `lib/vendors.ts`, `components/vendors/CategoryIcon.tsx`). 거래처 화면과 대시보드 "곧 지급할 청구서"에 표시.
+- 대시보드: 숫자를 키우고 이름표를 작게(글씨 크기 차이), "최근 기록" 5개, 청구서 줄은 이름·금액 한 줄 + 기한·버튼 한 줄. 거래처 줄은 휴대폰에서 금액이 이름 아래로.
+- Figma(현재 화면 캡처): https://www.figma.com/design/SQKsCvrVFc4nQXB3s0q27O
