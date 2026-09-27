@@ -45,6 +45,12 @@ export function useCompany(): CompanySettings {
   return snap;
 }
 
+/** The company's tax ID, loading the settings first if nothing has yet */
+export async function companyTaxId(): Promise<string> {
+  if (!current.loaded) await load();
+  return current.taxId;
+}
+
 /** Admin only (the database refuses anyone else). */
 export async function saveCompany(patch: Partial<{ tax_id: string; form_config: unknown; sticker_names: unknown }>) {
   const { data, error } = await supabaseBrowser().from("company_settings").update(patch).eq("id", 1).select("id");

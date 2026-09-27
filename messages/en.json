@@ -340,7 +340,9 @@
       "dark": "The photo is dark",
       "blurry": "The text is blurry",
       "small": "The photo is too small"
-    }
+    },
+    "autoSaved": "Saved automatically · vendor rule",
+    "open": "Open"
   },
   "role": {
     "admin": "Admin",
@@ -553,7 +555,16 @@
     "pickSearch": "Search by name or tax ID",
     "pickEmpty": "No matching vendor",
     "pickFilled": "Filled in from {name}",
-    "pickHint": "Pick from the list and the name, tax ID, address, phone and last category/payment are filled in at once — no typing in three languages."
+    "pickHint": "Pick from the list and the name, tax ID, address, phone and last category/payment are filled in at once — no typing in three languages.",
+    "rule": "Automatic rule",
+    "ruleNone": "Let the AI choose",
+    "ruleAuto": "Save without asking",
+    "ruleHint": "This vendor's documents always get this category and payment. With 'Save without asking' on, a document that passes every automatic check goes straight into the ledger (if any check fails, it waits for a person as usual).",
+    "ruleHintStaff": "This vendor's documents always get this category and payment. Only admins can switch on 'Save without asking'.",
+    "ruleSaved": "Rule saved",
+    "ruleSavedAuto": "Rule saved. Documents without problems are now saved without asking",
+    "ruleOffer": "{name}: the last 3 were all {category} · {payment}. Do it automatically from now on?",
+    "ruleOfferYes": "Do it automatically"
   },
   "dash": {
     "title": "Dashboard",

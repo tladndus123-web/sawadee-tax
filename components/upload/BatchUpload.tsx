@@ -2,6 +2,7 @@
 
 import { Building2, Camera, ChevronLeft, CircleAlert, CircleCheck, ImagePlus, Keyboard, Loader2, RotateCw, Sparkles, Square, TriangleAlert, X } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { useOfferRule } from "@/components/vendors/offer-rule";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.hei
 /** Pick / drop / shoot up to 5 photos; each is read by the AI at the same time, then checked one by one. */
 export function BatchUpload() {
   const t = useTranslations();
+  const offerRule = useOfferRule();
   const monthLabel = useMonthLabel();
   const items = useUploadQueue();
   const company = useCompany();
@@ -51,7 +53,7 @@ export function BatchUpload() {
   const now = useNow(items.some((it) => it.status === "reading" || it.status === "preparing"));
 
   const room = MAX_PHOTOS - items.length;
-  const settled = items.filter((it) => it.status === "done" || it.status === "failed" || it.status === "stopped").length;
+  const settled = items.filter((it) => it.status === "done" || it.status === "saved" || it.status === "failed" || it.status === "stopped").length;
   const current = items.find((it) => it.id === reviewing && it.doc);
 
   const add = (list: FileList | null) => {
@@ -105,6 +107,7 @@ export function BatchUpload() {
             removePhoto(current.id);
             setReviewing(null);
             toast.success(movedTo ? t("tax.movedTo", { month: monthLabel(monthKey({ date: doc.date })), to: monthLabel(movedTo) }) : t("trash.saved"));
+            void offerRule(doc);
           }}
           onDraft={async (doc) => {
             await saveEntry(doc, getPhoto(current.id), undefined, "draft", company.taxId);
@@ -252,7 +255,7 @@ function Row({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-semibold">{title}</p>
-        {it.status === "done" && it.doc ? (
+        {(it.status === "done" || it.status === "saved") && it.doc ? (
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
             <span className="font-semibold text-foreground tabular-nums">{baht(it.doc.totals.net)}</span>
             {it.doc.docNo && <span className="mono text-xs">{it.doc.docNo}</span>}
@@ -285,6 +288,11 @@ function Row({
             {t("batch.review")}
           </Button>
         )}
+        {it.status === "saved" && it.savedId && (
+          <Button asChild variant="secondary" className="h-10 rounded-full px-4">
+            <Link href={`/documents/${it.savedId}`}>{t("batch.open")}</Link>
+          </Button>
+        )}
         {(it.status === "failed" || it.status === "stopped") && it.preview && (
           <Button type="button" variant="secondary" className="h-10 rounded-full px-4" onClick={() => retryPhoto(it.id)}>
             <RotateCw className="size-4" />
@@ -313,6 +321,7 @@ function Status({ it, sec }: { it: UploadItem; sec: number }) {
     check: { icon: TriangleAlert, cls: "text-warn", text: t("check"), spin: false },
     reading: { icon: Sparkles, cls: "ai-text", text: t("reading", { sec }), spin: false },
     done: { icon: CircleCheck, cls: "text-ok", text: `${t("done")} · ${t("readIn", { sec })}`, spin: false },
+    saved: { icon: CircleCheck, cls: "text-ok", text: t("autoSaved"), spin: false },
     failed: { icon: CircleAlert, cls: "text-bad", text: t("failed"), spin: false },
     stopped: { icon: Square, cls: "text-muted-foreground", text: t("stopped"), spin: false },
   }[it.status];

@@ -6,7 +6,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { supabaseBrowser } from "./supabase/client";
 import type { Tri } from "./types";
-import { applyHistory, applyVendor, toVendor, type Vendor, type VendorFix, type VendorHistory, type VendorRow, vendorKey } from "./vendors";
+import { applyHistory, applyRule, applyVendor, SUGGEST_AFTER, suggestRule, toVendor, type Vendor, type VendorFix, type VendorHistory, type VendorRow, VENDOR_COLUMNS, vendorKey } from "./vendors";
 import type { LedgerDoc } from "./types";
 
 let vendors: Vendor[] = [];
@@ -14,7 +14,7 @@ let loaded = false;
 const listeners = new Set<() => void>();
 
 async function reload() {
-  const { data, error } = await supabaseBrowser().from("vendors").select("id, tax_id, name, address, branch, tel, fax").order("tax_id");
+  const { data, error } = await supabaseBrowser().from("vendors").select(VENDOR_COLUMNS).order("tax_id");
   if (error) throw error;
   vendors = (data as VendorRow[]).map(toVendor);
   loaded = true;
@@ -53,6 +53,41 @@ export async function deleteVendor(id: string) {
   await reload();
 }
 
+/** Set a vendor's automatic registration rule (auto_register: admins only — the database refuses others) */
+export async function saveVendorRule(
+  id: string,
+  patch: Partial<{ rule_category: string | null; rule_payment: string | null; auto_register: boolean }>,
+) {
+  const { data, error } = await supabaseBrowser().from("vendors").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("not allowed");
+  await reload();
+}
+
+/** "Always do it this way?" for the seller of a just-saved document, or null */
+export async function ruleSuggestionFor(doc: LedgerDoc): Promise<{ vendor: Vendor; rule: VendorHistory } | null> {
+  const key = vendorKey(doc);
+  if (!key) return null;
+  try {
+    const sb = supabaseBrowser();
+    const { data: row } = await sb.from("vendors").select(VENDOR_COLUMNS).eq("tax_id", key).maybeSingle();
+    if (!row) return null;
+    const vendor = toVendor(row as VendorRow);
+    const { data: recent } = await sb
+      .from("documents")
+      .select("category, payment")
+      .eq("vendor_id", vendor.id)
+      .eq("status", "reviewed")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(SUGGEST_AFTER);
+    const rule = suggestRule((recent as VendorHistory[] | null) ?? [], vendor);
+    return rule ? { vendor, rule } : null;
+  } catch {
+    return null;
+  }
+}
+
 /** category/payment of the vendor's newest saved document (null when none, or on any error) */
 export async function vendorHistory(vendorId: string): Promise<VendorHistory | null> {
   try {
@@ -70,18 +105,24 @@ export async function vendorHistory(vendorId: string): Promise<VendorHistory | n
   }
 }
 
-/** Tidy a fresh AI reading with the dictionary (never throws: without a match the reading is unchanged) */
-export async function withVendor(doc: LedgerDoc): Promise<{ doc: LedgerDoc; fixed: VendorFix[] }> {
+/**
+ * Tidy a fresh AI reading with the dictionary, then the vendor's last saved choice, then its rule (the rule wins).
+ * Never throws: without a match the reading is unchanged.
+ */
+export async function withVendor(doc: LedgerDoc): Promise<{ doc: LedgerDoc; fixed: VendorFix[]; vendor: Vendor | null }> {
   const key = vendorKey(doc);
-  if (!key) return { doc, fixed: [] };
+  if (!key) return { doc, fixed: [], vendor: null };
   try {
-    const { data } = await supabaseBrowser().from("vendors").select("id, tax_id, name, address, branch, tel, fax").eq("tax_id", key).maybeSingle();
-    const named = applyVendor(doc, data ? toVendor(data as VendorRow) : null);
-    if (!data) return named;
-    // The person's last saved category/payment for this vendor carries over to the fresh reading
-    const hist = applyHistory(named.doc, await vendorHistory((data as VendorRow).id));
-    return { doc: hist.doc, fixed: [...named.fixed, ...hist.fixed] };
+    const { data } = await supabaseBrowser().from("vendors").select(VENDOR_COLUMNS).eq("tax_id", key).maybeSingle();
+    const vendor = data ? toVendor(data as VendorRow) : null;
+    const named = applyVendor(doc, vendor);
+    if (!vendor) return { ...named, vendor: null };
+    // The person's last saved category/payment carries over; a rule set for the vendor wins over both
+    const hist = applyHistory(named.doc, await vendorHistory(vendor.id));
+    const ruled = applyRule(hist.doc, vendor);
+    const fixed = [...new Set([...named.fixed, ...hist.fixed, ...ruled.fixed])];
+    return { doc: ruled.doc, fixed, vendor };
   } catch {
-    return { doc, fixed: [] };
+    return { doc, fixed: [], vendor: null };
   }
 }

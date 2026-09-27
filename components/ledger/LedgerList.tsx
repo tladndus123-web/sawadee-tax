@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link } from "@/i18n/navigation";
+import { AddDocButtons } from "@/components/upload/AddDocButtons";
 import { type ArchiveFilter, groupByMonth, matches, monthKey, NO_DATE, search } from "@/lib/archive";
 import { joinTri } from "@/lib/form-labels";
 import { healThumb, type LedgerEntry, type LedgerView, pick, restoreEntry, restoreMany, setQuick, useLedger, usePhotoUrl } from "@/lib/ledger-store";
@@ -79,7 +80,10 @@ export function LedgerList() {
     <div className="mx-auto grid w-full max-w-5xl gap-6">
       <header className="grid gap-4">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("nav.ledger")}</h1>
+          <div className="grid gap-3">
+            <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("nav.ledger")}</h1>
+            <AddDocButtons size="sm" />
+          </div>
           <ToggleGroup type="single" className="segmented-control" value={view} onValueChange={(v) => {
               if (!v) return;
               setTab(v as LedgerView);
@@ -326,12 +330,7 @@ function Empty({ view, filtering, onClear }: { view: LedgerView; filtering: bool
             {t("archive.clear")}
           </Button>
         ) : (
-          <Button asChild className="rounded-full px-5">
-            <Link href="/upload">
-              <ImagePlus className="size-4" />
-              {t("batch.cta")}
-            </Link>
-          </Button>
+          <AddDocButtons className="justify-center" />
         ))}
     </div>
   );

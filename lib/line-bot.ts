@@ -14,7 +14,7 @@ import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
 import { imageType, lineBlobClient, lineClient, receiptCard, say } from "./line";
 import { supabaseAdmin } from "./supabase/admin";
 import { digitsOnly } from "./thai-tax";
-import { applyHistory, applyVendor, toVendor, type VendorHistory, type VendorRow, vendorKey } from "./vendors";
+import { applyHistory, applyRule, applyVendor, toVendor, type VendorHistory, type VendorRow, VENDOR_COLUMNS, vendorKey } from "./vendors";
 
 // In-memory limits (one server). Photos: 10 a minute per member, like the upload screen.
 const hits = new Map<string, number[]>();
@@ -141,7 +141,7 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   const key = vendorKey(doc);
   const [company, vendor, same] = await Promise.all([
     admin.from("company_settings").select("tax_id").eq("id", 1).maybeSingle(),
-    key ? admin.from("vendors").select("id, tax_id, name, address, branch, tel, fax").eq("tax_id", key).maybeSingle() : null,
+    key ? admin.from("vendors").select(VENDOR_COLUMNS).eq("tax_id", key).maybeSingle() : null,
     doc.docNo ? admin.from("documents").select("id, doc_no, seller").eq("doc_no", doc.docNo).is("deleted_at", null) : null,
   ]);
   doc = applyVendor(doc, vendor?.data ? toVendor(vendor.data as VendorRow) : null).doc;
@@ -156,6 +156,7 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
       .limit(1)
       .maybeSingle();
     doc = applyHistory(doc, (last.data as VendorHistory | null) ?? null).doc;
+    doc = applyRule(doc, toVendor(vendor.data as VendorRow)).doc;
   }
   const companyTaxId = (company.data?.tax_id as string | undefined) ?? "";
   const others: LedgerRef[] = (same?.data ?? []).map((d) => ({

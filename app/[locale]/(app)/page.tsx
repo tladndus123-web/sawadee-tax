@@ -1,7 +1,8 @@
 import type { Locale } from "@/i18n/routing";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ChevronRight, ImagePlus, Keyboard } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Dashboard } from "@/components/dashboard/Dashboard";
+import { AddDocButtons } from "@/components/upload/AddDocButtons";
 import { Link } from "@/i18n/navigation";
 
 /** Home = dashboard (PROMPT step 8) with the upload button up front */
@@ -21,17 +22,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             {t("dash.sample")}
             <ChevronRight className="size-4" aria-hidden />
           </Link>
-          <Link href="/documents/new" className="press flex min-h-11 items-center gap-2 rounded-full bg-secondary px-4 text-sm font-medium hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] active:scale-[0.97]">
-            <Keyboard className="size-4" aria-hidden />
-            {t("manual.short")}
-          </Link>
-          <Link
-            href="/upload"
-            className="flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 text-[15px] font-medium text-primary-foreground shadow-[0_1px_2px_rgb(0_0_0/12%)] press hover:bg-primary/90 active:scale-[0.97]"
-          >
-            <ImagePlus className="size-4" aria-hidden />
-            {t("batch.cta")}
-          </Link>
+          <AddDocButtons />
         </div>
       </header>
       <Dashboard />

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { normalize } from "./normalize";
 import { sampleDoc } from "./sample";
-import { applyHistory, applyVendor, pickVendor, type Vendor } from "./vendors";
+import { applyHistory, applyRule, applyVendor, canAutoRegister, pickVendor, suggestRule, type Vendor } from "./vendors";
 
 const vendor: Vendor = {
   id: "v1",
@@ -11,6 +11,9 @@ const vendor: Vendor = {
   branch: { th: "สำนักงานใหญ่", en: "Head office", ja: "本社" },
   tel: "034-000000",
   fax: "",
+  ruleCategory: null,
+  rulePayment: null,
+  autoRegister: false,
 };
 
 describe("vendor dictionary", () => {
@@ -88,5 +91,33 @@ describe("picking a vendor fills the seller in one go", () => {
     expect(out.seller.address.th).toBe("สาขา 2");
     expect(out.seller.branchCode).toBe("00002");
     expect(out.seller.tel).toBe(vendor.tel);
+  });
+});
+
+describe("automatic registration rules (freee-style)", () => {
+  const ruled = { ...vendor, ruleCategory: "food", rulePayment: "credit", autoRegister: true };
+  const fromVendor = () => normalize({ seller: { taxId: vendor.taxId }, category: "office", payment: "cash", confidence: "high" });
+
+  it("the rule wins over the AI and the history", () => {
+    const { doc, fixed } = applyRule(fromVendor(), ruled);
+    expect([doc.category, doc.payment]).toEqual(["food", "credit"]);
+    expect(fixed).toEqual(["category", "payment"]);
+    expect(applyRule(fromVendor(), vendor).fixed).toEqual([]);
+  });
+
+  it("saves without asking only when switched on, confident, and every check passes", () => {
+    expect(canAutoRegister(fromVendor(), ruled, [])).toBe(true);
+    expect(canAutoRegister(fromVendor(), vendor, [])).toBe(false);
+    expect(canAutoRegister(fromVendor(), ruled, ["unclear"])).toBe(false);
+    expect(canAutoRegister({ ...fromVendor(), confidence: "low" }, ruled, [])).toBe(false);
+    expect(canAutoRegister(normalize({ seller: { taxId: "0105557035035" } }), ruled, [])).toBe(false);
+  });
+
+  it("offers a rule after three identical saves, not before and not when it already exists", () => {
+    const same = { category: "food", payment: "credit" };
+    expect(suggestRule([same, same, same], vendor)).toEqual(same);
+    expect(suggestRule([same, same], vendor)).toBeNull();
+    expect(suggestRule([same, same, { category: "office", payment: "credit" }], vendor)).toBeNull();
+    expect(suggestRule([same, same, same], ruled)).toBeNull();
   });
 });

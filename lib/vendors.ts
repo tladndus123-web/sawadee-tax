@@ -17,6 +17,11 @@ export interface Vendor {
   branch: Tri;
   tel: string;
   fax: string;
+  /** Automatic registration rule (freee-style): always this category / payment for the vendor */
+  ruleCategory: string | null;
+  rulePayment: string | null;
+  /** Save a new document that passes every check without asking (admins switch it) */
+  autoRegister: boolean;
 }
 
 export interface VendorRow {
@@ -27,12 +32,29 @@ export interface VendorRow {
   branch: unknown;
   tel: string;
   fax: string;
+  rule_category?: string | null;
+  rule_payment?: string | null;
+  auto_register?: boolean | null;
 }
+
+/** Columns the app reads from public.vendors */
+export const VENDOR_COLUMNS = "id, tax_id, name, address, branch, tel, fax, rule_category, rule_payment, auto_register";
 
 /** Rows through normalize() so any stored shape becomes clean {th, en, ja} */
 export function toVendor(r: VendorRow): Vendor {
   const s = normalize({ seller: { name: r.name, address: r.address, branch: r.branch } }).seller;
-  return { id: r.id, taxId: r.tax_id, name: s.name, address: s.address, branch: s.branch, tel: r.tel ?? "", fax: r.fax ?? "" };
+  return {
+    id: r.id,
+    taxId: r.tax_id,
+    name: s.name,
+    address: s.address,
+    branch: s.branch,
+    tel: r.tel ?? "",
+    fax: r.fax ?? "",
+    ruleCategory: r.rule_category ?? null,
+    rulePayment: r.rule_payment ?? null,
+    autoRegister: !!r.auto_register,
+  };
 }
 
 /** Which seller fields the dictionary changed, as field paths */
@@ -74,6 +96,34 @@ const NO_TRI: Tri = { th: "", en: "", ja: "" };
  * branch, phone), and the vendor's last saved category/payment carry over. For the same vendor, what was
  * read from this paper is kept where the directory has nothing better (a branch prints its own address).
  */
+/** The vendor's rule wins over the AI and over history (the person set it on purpose) */
+export function applyRule(doc: LedgerDoc, v: Vendor | null | undefined): { doc: LedgerDoc; fixed: VendorFix[] } {
+  if (!v) return { doc, fixed: [] };
+  return applyHistory(doc, { category: v.ruleCategory ?? doc.category, payment: v.rulePayment ?? doc.payment });
+}
+
+/**
+ * Save without asking: only when an admin switched it on for this vendor, the reading is not of low confidence,
+ * and not a single automatic check failed (unclear fields, duplicates, sums, tax IDs… all count).
+ */
+export const canAutoRegister = (doc: LedgerDoc, v: Vendor | null | undefined, failingChecks: string[]): boolean =>
+  !!v?.autoRegister && vendorKey(doc) === v.taxId && doc.confidence !== "low" && failingChecks.length === 0;
+
+/** How many saves in a row with the same choice before a rule is offered */
+export const SUGGEST_AFTER = 3;
+
+/**
+ * "Always do it this way?" — offered when the vendor's last SUGGEST_AFTER saved documents all have the same
+ * category and payment, and the vendor has no rule saying so yet.
+ */
+export function suggestRule(recent: VendorHistory[], v: Vendor | null | undefined): VendorHistory | null {
+  if (!v || recent.length < SUGGEST_AFTER) return null;
+  const [first, ...rest] = recent.slice(0, SUGGEST_AFTER);
+  if (!rest.every((h) => h.category === first.category && h.payment === first.payment)) return null;
+  if (v.ruleCategory === first.category && v.rulePayment === first.payment) return null;
+  return first;
+}
+
 export function pickVendor(doc: LedgerDoc, v: Vendor, h: VendorHistory | null | undefined): LedgerDoc {
   const same = digitsOnly(doc.seller.taxId) === v.taxId;
   const keep = (read: Tri, dir: Tri) => (same && triHas(read) ? read : triHas(dir) ? { ...dir } : same ? read : { ...NO_TRI });
@@ -87,7 +137,7 @@ export function pickVendor(doc: LedgerDoc, v: Vendor, h: VendorHistory | null | 
     tel: same && doc.seller.tel ? doc.seller.tel : v.tel,
     fax: same && doc.seller.fax ? doc.seller.fax : v.fax,
   };
-  return applyHistory({ ...doc, seller }, h).doc;
+  return applyRule(applyHistory({ ...doc, seller }, h).doc, v).doc;
 }
 
 export function applyVendor(doc: LedgerDoc, v: Vendor | null | undefined): { doc: LedgerDoc; fixed: VendorFix[] } {

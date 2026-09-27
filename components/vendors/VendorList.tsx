@@ -23,6 +23,7 @@ import { FORM_LANGS, type Tri } from "@/lib/types";
 import { useMe } from "@/lib/role-store";
 import { deleteVendor, saveVendorName, useVendors } from "@/lib/vendor-store";
 import type { Vendor } from "@/lib/vendors";
+import { VendorRule } from "./VendorRule";
 
 /** Vendor dictionary: every seller seen in saved documents, with their ledger totals. */
 export function VendorList() {
@@ -143,6 +144,7 @@ function VendorRow({ v, lang, stat }: { v: Vendor; lang: "th" | "en" | "ja"; sta
           </Button>
         )}
       </div>
+      <VendorRule v={v} />
       <AlertDialog open={asking} onOpenChange={(o) => !busy && setAsking(o)}>
         <AlertDialogContent className="rounded-3xl sm:max-w-md">
           <AlertDialogHeader>

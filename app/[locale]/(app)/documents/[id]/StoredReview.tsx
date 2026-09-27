@@ -20,11 +20,13 @@ import { nextInQueue, queueProgress, reviewQueue } from "@/lib/review-queue";
 import { reviewRun } from "@/lib/review-run";
 import { todayBangkok } from "@/lib/thai-tax";
 import { hasWht } from "@/lib/wht";
+import { useOfferRule } from "@/components/vendors/offer-rule";
 
 export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: boolean }) {
   const t = useTranslations();
   const router = useRouter();
   const me = useMe();
+  const offerRule = useOfferRule();
   const { entries, loaded } = useLedger();
   const entry = entries.find((e) => e.id === id);
   // Same seller + same document number anywhere in the live ledger = possible duplicate
@@ -136,6 +138,7 @@ export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: 
           const wasDraft = entry.status === "draft";
           const { movedTo } = await saveEntry(d, null, entry.id, "final", company.taxId);
           toast.success(movedTo ? t("tax.movedTo", { month: monthLabel(monthKey({ date: d.date })), to: monthLabel(movedTo) }) : t("trash.saved"));
+          void offerRule(d);
           if (checkRun) goNext();
           else if (wasDraft) router.push("/ledger");
         }}

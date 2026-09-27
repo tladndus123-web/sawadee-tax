@@ -7,14 +7,19 @@ import { normalize } from "./normalize";
 import { isPdf, pdfToJpeg } from "./pdf-render";
 import { checkPhoto, type PhotoIssue } from "./photo-quality";
 import { isSlip } from "./slip-tiles";
+import { runChecks } from "./checks";
+import { companyTaxId } from "./company-store";
+import { saveEntry } from "./ledger-store";
+import { supabaseBrowser } from "./supabase/client";
 import { withVendor } from "./vendor-store";
-import type { VendorFix } from "./vendors";
+import { canAutoRegister, type VendorFix } from "./vendors";
 import type { LedgerDoc } from "./types";
 
 export { MAX_PHOTOS };
 
-/** "check" = the photo looks dark, blurry or small: waiting for the person to retake it or read it anyway */
-export type UploadStatus = "preparing" | "check" | "reading" | "done" | "failed" | "stopped";
+/** "check" = the photo looks dark, blurry or small: waiting for the person to retake it or read it anyway.
+ *  "saved" = the vendor's rule let it go straight into the ledger (every automatic check passed). */
+export type UploadStatus = "preparing" | "check" | "reading" | "done" | "saved" | "failed" | "stopped";
 export type UploadError = ExtractErrorCode | "network";
 
 export interface UploadItem {
@@ -31,6 +36,8 @@ export interface UploadItem {
   vendorFixed: VendorFix[];
   /** What looked wrong with the photo (status "check") */
   issues: PhotoIssue[];
+  /** Ledger id when it was saved automatically (status "saved") */
+  savedId?: string;
 }
 
 let items: UploadItem[] = [];
@@ -100,8 +107,12 @@ async function read(id: string) {
     const json = (await res.json().catch(() => ({}))) as { doc?: LedgerDoc; error?: ExtractErrorCode };
     if (res.ok && json.doc) {
       // normalize() again so a reply of any shape still fits the form, then tidy with the vendor dictionary
-      const { doc, fixed } = await withVendor(normalize(json.doc));
-      patch(id, { status: "done", doc, vendorFixed: fixed, finishedAt: Date.now() });
+      const { doc, fixed, vendor } = await withVendor(normalize(json.doc));
+      const savedId = vendor?.autoRegister ? await autoSave(doc, vendor, photo) : null;
+      if (savedId) {
+        photos.delete(id);
+        patch(id, { status: "saved", doc, vendorFixed: fixed, savedId, finishedAt: Date.now() });
+      } else patch(id, { status: "done", doc, vendorFixed: fixed, finishedAt: Date.now() });
     }
     else patch(id, { status: "failed", error: json.error ?? "aiFail", finishedAt: Date.now() });
   } catch {
@@ -109,6 +120,26 @@ async function read(id: string) {
     else patch(id, { status: "failed", error: "network", finishedAt: Date.now() });
   } finally {
     aborts.delete(id);
+  }
+}
+
+/**
+ * Straight into the ledger when the vendor's rule allows it and every automatic check passes — the same checks a
+ * person sees, including duplicates in the ledger. Returns the new id, or null to leave it for a person.
+ */
+async function autoSave(doc: LedgerDoc, vendor: Parameters<typeof canAutoRegister>[1], photo: File): Promise<string | null> {
+  try {
+    const taxId = await companyTaxId();
+    const { data: same } = doc.docNo
+      ? await supabaseBrowser().from("documents").select("id, doc_no, seller").eq("doc_no", doc.docNo).is("deleted_at", null)
+      : { data: [] };
+    const others = (same ?? []).map((d) => ({ id: d.id as string, docNo: d.doc_no as string, sellerTaxId: ((d.seller as { taxId?: string } | null)?.taxId as string) ?? "" }));
+    const failing = runChecks(doc, { companyTaxId: taxId, others }).filter((c) => !c.ok && !c.na).map((c) => c.key);
+    if (!canAutoRegister(doc, vendor, failing)) return null;
+    const { id } = await saveEntry(doc, photo, undefined, "final", taxId);
+    return id;
+  } catch {
+    return null;
   }
 }
 
