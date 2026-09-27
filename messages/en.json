@@ -914,5 +914,16 @@
       "channel": "Channel"
     },
     "invalid": "Skipped {count} lines with a negative total or VAT above the sales. Please check them by hand."
+  },
+  "ack": {
+    "button": "Looks fine",
+    "label": "Marked fine",
+    "done": "Marked as fine. The 'check' warning is off.",
+    "undo": "Undo",
+    "hint": "Press when you've checked the document and it's fine. Only the warning goes; whether its VAT can be claimed doesn't change.",
+    "open": "{count} automatic checks failed. If you've checked and it's fine, press 'Looks fine'.",
+    "marked": "Marked fine · {who} · {when}",
+    "someone": "someone",
+    "back": "Needs a look again"
   }
 }

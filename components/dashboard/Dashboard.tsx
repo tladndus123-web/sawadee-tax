@@ -34,7 +34,7 @@ export function Dashboard() {
   const { entries, loaded } = useLedger();
   const today = todayBangkok();
   const thisMonth = today.slice(0, 7);
-  const docs = useMemo(() => pick(entries, "ledger").map((e) => ({ id: e.id, doc: e.doc })), [entries]);
+  const docs = useMemo(() => pick(entries, "ledger").map((e) => ({ id: e.id, doc: e.doc, ack: e.ackFlags })), [entries]);
   const months = useMemo(() => {
     const set = new Set([thisMonth, ...docs.map((d) => monthKey(d.doc)).filter((k) => k !== "none")]);
     return [...set].sort().reverse();

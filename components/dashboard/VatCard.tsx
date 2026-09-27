@@ -33,7 +33,7 @@ export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry
   const closed = locks.has(f.month);
 
   const s = useMemo(
-    () => summarize(pick(entries, "ledger").map((e) => ({ id: e.id, doc: e.doc })), f.month, companyTaxId, today),
+    () => summarize(pick(entries, "ledger").map((e) => ({ id: e.id, doc: e.doc, ack: e.ackFlags })), f.month, companyTaxId, today),
     [entries, f.month, companyTaxId, today],
   );
   const drafts = useMemo(() => pick(entries, "drafts").filter((e) => monthKey(e.doc) === f.month).length, [entries, f.month]);

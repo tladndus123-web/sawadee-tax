@@ -7,7 +7,8 @@ import { claimable, flagsFor } from "./checks";
 import { fromSatang, toSatang } from "./money";
 import type { LedgerDoc } from "./types";
 
-type Doc = { id: string; doc: LedgerDoc };
+/** ack: warnings a person marked "문제 없음" (documents.ack_flags) */
+type Doc = { id: string; doc: LedgerDoc; ack?: readonly string[] };
 
 export const isUnpaid = (d: LedgerDoc) => d.payment === "credit" && !d.paid;
 
@@ -30,10 +31,19 @@ export interface Summary {
  * the photo). Duplicates count too, so every document is checked against the rest of the ledger.
  */
 export function needsCheck(docs: Doc[], companyTaxId: string, today: string): Set<string> {
+  return new Set(openWarnings(docs, companyTaxId, today).keys());
+}
+
+/**
+ * The warnings still open per document (id → check keys): failed checks other than "unclear", minus the ones a
+ * person marked "문제 없음". A warning that appears after the marking (an edit) is open again.
+ */
+export function openWarnings(docs: Doc[], companyTaxId: string, today: string): Map<string, string[]> {
   const others = docs.map(({ id, doc }) => ({ id, docNo: doc.docNo, sellerTaxId: doc.seller.taxId }));
-  const out = new Set<string>();
-  for (const { id, doc } of docs) {
-    if (flagsFor({ ...doc, id }, { companyTaxId, today, others }).some((f) => f !== "unclear")) out.add(id);
+  const out = new Map<string, string[]>();
+  for (const { id, doc, ack = [] } of docs) {
+    const open = flagsFor({ ...doc, id }, { companyTaxId, today, others }).filter((f) => f !== "unclear" && !ack.includes(f));
+    if (open.length) out.set(id, open);
   }
   return out;
 }

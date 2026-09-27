@@ -83,3 +83,21 @@ describe("VAT return to prepare", () => {
     expect(vatFiling("2026-12-28")).toMatchObject({ month: "2026-12", due: "2027-01-15" });
   });
 });
+
+describe("문제 없음 (accepted warnings)", async () => {
+  const { openWarnings, needsCheck } = await import("./dashboard");
+  const { sampleDoc } = await import("./sample");
+  const CO = "0105557035035";
+  const bad = { ...sampleDoc(), customer: { ...sampleDoc().customer, taxId: CO }, totals: { ...sampleDoc().totals, vat: 1 } };
+  it("an accepted warning no longer needs a look", () => {
+    const open = openWarnings([{ id: "a", doc: bad }], CO, "2026-09-27").get("a") ?? [];
+    expect(open).toContain("vat");
+    expect(needsCheck([{ id: "a", doc: bad, ack: open }], CO, "2026-09-27").size).toBe(0);
+  });
+  it("a warning that appears after the marking shows again", () => {
+    const later = { ...bad, docNo: "" };
+    const open = openWarnings([{ id: "a", doc: later, ack: ["vat"] }], CO, "2026-09-27").get("a") ?? [];
+    expect(open).not.toContain("vat");
+    expect(open.length).toBeGreaterThan(0);
+  });
+});

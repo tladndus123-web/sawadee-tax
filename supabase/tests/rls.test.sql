@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(74);
+select plan(79);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -161,6 +161,21 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select lives_ok($$ delete from public.vendors where tax_id = '9900000000014' $$, 'an admin removes a vendor');
 select is((select count(*)::int from public.vendors where tax_id = '9900000000014'), 0, 'the vendor is gone');
 select is((select count(*)::int from public.documents where doc_no in ('V-1', 'V-2') and vendor_id is null), 2, 'its documents stay, unlinked');
+
+-- "문제 없음": staff accept a document's warnings, even in a closed month; who / when are stamped
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select public.save_document('00000000-0000-0000-0000-0000000000a1', '{"doc_no":"ACK-1","status":"reviewed","doc_date":"2026-05-10","net":100}', '[{"line_no":1,"amount":100}]');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+insert into public.month_locks (month) values ('2026-05');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select lives_ok($$ update public.documents set ack_flags = array['vat', 'words'] where id = '00000000-0000-0000-0000-0000000000a1' $$, 'staff mark warnings as fine, even in a closed month');
+select is((select ack_by from public.documents where id = '00000000-0000-0000-0000-0000000000a1'), '00000000-0000-0000-0000-00000000000b'::uuid, 'who marked it is stamped');
+select isnt((select ack_at from public.documents where id = '00000000-0000-0000-0000-0000000000a1'), null, 'and when');
+select throws_like($$ update public.documents set net = 999 where id = '00000000-0000-0000-0000-0000000000a1' $$, 'month_locked%', 'the figures of a closed month still cannot change');
+update public.documents set ack_flags = '{}' where id = '00000000-0000-0000-0000-0000000000a1';
+select is((select ack_at from public.documents where id = '00000000-0000-0000-0000-0000000000a1'), null, 'undoing clears who / when');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+delete from public.month_locks where month = '2026-05';
 
 -- Sales: members add one line per day and channel; closed months are frozen; only admins delete
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');

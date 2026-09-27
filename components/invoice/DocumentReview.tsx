@@ -25,6 +25,7 @@ import { type Box, CATEGORIES, type LedgerDoc, PAYMENTS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { StickerDots, StickerPicker, useMonthLabel } from "@/components/ledger/Stickers";
 import { monthKey } from "@/lib/archive";
+import { AckBar } from "./AckBar";
 import { ChecksPanel } from "./ChecksPanel";
 import { DeleteFlow } from "./DeleteFlow";
 import { Chip } from "./fields";
@@ -77,6 +78,8 @@ export interface DocumentReviewProps {
   startEditing?: boolean;
   /** Typed by hand, no photo: no photo column, and the seller's name / tax ID can be typed on the quick card */
   manual?: boolean;
+  /** Saved documents: the warnings marked "문제 없음" and how to change that */
+  ack?: { flags: string[]; by: string | null; at: number | null; onSet: (flags: string[]) => Promise<void> };
   /** Download links of the stored picture and original PDF (saved documents) */
   downloads?: { photo: string | null; pdf: string | null };
   onClose: () => void;
@@ -102,6 +105,7 @@ export function DocumentReview({
   startEditing = false,
   manual = false,
   downloads,
+  ack,
 }: DocumentReviewProps) {
   const t = useTranslations();
   const form = useForm<LedgerDoc>({ defaultValues: initial, resolver: zodResolver(docSchema), mode: "onBlur" });
@@ -432,6 +436,7 @@ export function DocumentReview({
           </>
           )}
 
+          {ack && <AckBar results={results} ack={ack} />}
           <ChecksPanel results={results} unclear={doc.unclear} onJump={showField} className="print:hidden" />
 
           {/* Actions */}

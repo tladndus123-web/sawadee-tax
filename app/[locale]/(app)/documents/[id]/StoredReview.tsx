@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
 import { monthKey } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
-import { downloadLinks, restoreEntry, saveEntry, softDelete, useLedger, usePhotoUrl } from "@/lib/ledger-store";
+import { downloadLinks, restoreEntry, saveEntry, setAck, softDelete, useLedger, usePhotoUrl } from "@/lib/ledger-store";
 import { useMonthLocks } from "@/lib/month-lock-store";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { useMe } from "@/lib/role-store";
@@ -141,6 +141,7 @@ export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: 
         saveLabel={checkRun ? t("flow.next") : undefined}
         manual={!entry.photoPath}
         downloads={downloads}
+        ack={entry.status === "final" && !entry.deletedAt ? { flags: entry.ackFlags, by: entry.ackBy, at: entry.ackAt, onSet: (f) => setAck(entry.id, f) } : undefined}
         initial={entry.doc}
         photoUrl={photoUrl}
         companyTaxId={company.taxId}

@@ -5,12 +5,12 @@
 import { needsCheck } from "./dashboard";
 import type { LedgerDoc } from "./types";
 
-type QueueEntry = { id: string; status: "draft" | "final"; doc: LedgerDoc; createdAt: number; deletedAt: number | null };
+type QueueEntry = { id: string; status: "draft" | "final"; doc: LedgerDoc; createdAt: number; deletedAt: number | null; ackFlags?: string[] };
 
 export function reviewQueue(entries: QueueEntry[], companyTaxId: string, today: string): string[] {
   const live = entries.filter((e) => e.deletedAt === null);
   const saved = live.filter((e) => e.status === "final");
-  const flagged = needsCheck(saved.map((e) => ({ id: e.id, doc: e.doc })), companyTaxId, today);
+  const flagged = needsCheck(saved.map((e) => ({ id: e.id, doc: e.doc, ack: e.ackFlags })), companyTaxId, today);
   return live
     .filter((e) => e.status === "draft" || flagged.has(e.id))
     .sort((a, b) => a.createdAt - b.createdAt)

@@ -12,10 +12,10 @@ import { Link } from "@/i18n/navigation";
 import { AddDocButtons } from "@/components/upload/AddDocButtons";
 import { type ArchiveFilter, groupByMonth, matches, monthKey, NO_DATE, search } from "@/lib/archive";
 import { joinTri } from "@/lib/form-labels";
-import { healThumb, type LedgerEntry, type LedgerView, pick, restoreEntry, restoreMany, setQuick, useLedger, usePhotoUrl } from "@/lib/ledger-store";
+import { healThumb, type LedgerEntry, type LedgerView, pick, restoreEntry, restoreMany, setQuick, useLedger, usePhotoUrl, setAck } from "@/lib/ledger-store";
 import { useMonthLocks } from "@/lib/month-lock-store";
 import { useCompany } from "@/lib/company-store";
-import { needsCheck } from "@/lib/dashboard";
+import { openWarnings } from "@/lib/dashboard";
 import { baht } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
 import { todayBangkok } from "@/lib/thai-tax";
@@ -73,7 +73,7 @@ export function LedgerList() {
   const company = useCompany();
   // Same rule as the dashboard tile "needs a look", duplicates included
   const check = useMemo(
-    () => needsCheck(pick(entries, "ledger").map((e) => ({ id: e.id, doc: e.doc })), company.taxId, todayBangkok()),
+    () => openWarnings(pick(entries, "ledger").map((e) => ({ id: e.id, doc: e.doc, ack: e.ackFlags })), company.taxId, todayBangkok()),
     [entries, company.taxId],
   );
 
@@ -250,7 +250,7 @@ const MonthSection = memo(function MonthSection({
   defaultOpen: boolean;
   /** Every saved document of this month (exports ignore the sticker / unpaid filter) */
   monthEntries: LedgerEntry[];
-  check: Set<string>;
+  check: Map<string, string[]>;
   /** Tax month closed (month_locks): its saved documents can't change */
   locked: boolean;
   isAdmin: boolean;
@@ -306,7 +306,7 @@ const MonthSection = memo(function MonthSection({
           )}
           <ul className="grid gap-2">
             {group.items.map((e) => (
-              <DocRow key={e.id} e={e} flagged={check.has(e.id)} selectable={selecting && !e.doc.paid} checked={selected.has(e.id)} onToggle={onToggle} />
+              <DocRow key={e.id} e={e} open={check.get(e.id)} selectable={selecting && !e.doc.paid} checked={selected.has(e.id)} onToggle={onToggle} />
             ))}
           </ul>
         </div>
@@ -365,14 +365,15 @@ const sellerOf = (e: LedgerEntry) => joinTri(e.doc.seller.name, "en") || joinTri
 const DocRow = memo(function DocRow({
   e,
   draft,
-  flagged,
+  open,
   selectable,
   checked,
   onToggle,
 }: {
   e: LedgerEntry;
   draft?: boolean;
-  flagged?: boolean;
+  /** Warnings still open (not marked "문제 없음") */
+  open?: string[];
   /** Payment run: this unpaid document can be ticked */
   selectable?: boolean;
   checked?: boolean;
@@ -384,6 +385,18 @@ const DocRow = memo(function DocRow({
   const monthLabel = useMonthLabel();
   const setStickers = async (stickers: Sticker[]) => {
     await setQuick(e.id, { stickers });
+  };
+  const flagged = !!open?.length;
+  const accepted = !flagged && e.ackFlags.length > 0;
+  // "문제 없음": the open warnings join the accepted ones; undo restores what was there before
+  const accept = async () => {
+    const before = e.ackFlags;
+    try {
+      await setAck(e.id, [...before, ...(open ?? [])]);
+      toast.success(t("ack.done"), { action: { label: t("ack.undo"), onClick: () => void setAck(e.id, before) } });
+    } catch {
+      toast.error(t("app.saveFail"));
+    }
   };
   return (
     <li className={cn("tap-row flex min-w-0 items-center gap-1 rounded-2xl bg-card pr-2 shadow-[0_0_0_1px_var(--border)] hover:shadow-[0_0_0_1px_var(--input),var(--shadow-soft)]", checked && "ring-2 ring-primary")}>
@@ -414,6 +427,12 @@ const DocRow = memo(function DocRow({
                 {t("app.sCheck")}
               </span>
             )}
+            {accepted && (
+              <span className="inline-flex items-center gap-1 font-medium text-ok">
+                <CircleCheck className="size-3" aria-hidden />
+                {t("ack.label")}
+              </span>
+            )}
           </span>
           {draft && (
             <span className="mt-0.5 block text-[11px] text-muted-foreground">
@@ -423,6 +442,17 @@ const DocRow = memo(function DocRow({
         </span>
         <span className="hidden text-right text-[15px] font-semibold tabular-nums sm:block">{baht(e.doc.totals.net)}</span>
       </Link>
+      {flagged && !draft && (
+        <button
+          type="button"
+          onClick={() => void accept()}
+          className="press flex h-8 flex-none items-center gap-1 rounded-full bg-secondary px-2.5 text-xs font-medium hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)]"
+          title={t("ack.hint")}
+        >
+          <CircleCheck className="size-3.5 text-ok" aria-hidden />
+          {t("ack.button")}
+        </button>
+      )}
       <StickerPopover value={e.doc.stickers} onChange={setStickers} label={t("archive.stickerEdit")} />
       <ChevronRight className="hidden size-4 flex-none text-muted-foreground sm:block" aria-hidden />
     </li>

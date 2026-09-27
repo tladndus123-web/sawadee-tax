@@ -26,6 +26,10 @@ export interface LedgerEntry {
   deletedAt: number | null;
   /** Display name (or email) of the admin who deleted it */
   deletedBy: string | null;
+  /** Warnings a person marked "문제 없음", who (display name) and when */
+  ackFlags: string[];
+  ackBy: string | null;
+  ackAt: number | null;
   deleteReason: string | null;
 }
 
@@ -63,7 +67,7 @@ async function reload() {
   if (error) throw error;
   const who = new Map((members ?? []).map((m) => [m.user_id as string, (m.name as string) || (m.email as string)]));
   entries = (rows ?? []).map((r) => {
-    const row = r as DocumentRow & { document_items: ItemRow[] };
+    const row = r as DocumentRow & { document_items: ItemRow[]; ack_flags?: string[] | null; ack_by?: string | null; ack_at?: string | null };
     return {
       id: row.id,
       status: row.status === "draft" ? "draft" : "final",
@@ -74,6 +78,9 @@ async function reload() {
       deletedAt: time(row.deleted_at),
       deletedBy: row.deleted_by ? (who.get(row.deleted_by) ?? null) : null,
       deleteReason: row.delete_reason,
+      ackFlags: row.ack_flags ?? [],
+      ackBy: row.ack_by ? (who.get(row.ack_by) ?? null) : null,
+      ackAt: time(row.ack_at ?? null),
     };
   });
   loaded = true;
@@ -101,6 +108,13 @@ export function useLedger(): { entries: LedgerEntry[]; loaded: boolean } {
     return () => window.removeEventListener("focus", onFocus);
   }, []);
   return { entries: snap, loaded };
+}
+
+/** Mark a document's warnings "문제 없음" ([] undoes it). Who / when are stamped by the database. */
+export async function setAck(id: string, flags: string[]) {
+  const { error } = await supabaseBrowser().from("documents").update({ ack_flags: [...new Set(flags)].sort() }).eq("id", id);
+  if (error) throw error;
+  await reload();
 }
 
 /**
