@@ -7,7 +7,13 @@ import { Wand2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useMe } from "@/lib/role-store";
 import { CATEGORIES, PAYMENTS } from "@/lib/types";
@@ -39,35 +45,75 @@ export function VendorRule({ v }: { v: Vendor }) {
         <Wand2 className="size-3.5" aria-hidden />
         {t("vendors.rule")}
       </p>
-      <div className="flex flex-wrap items-center gap-2">
-        <Select value={v.ruleCategory ?? NONE} disabled={busy} onValueChange={(x) => void save({ rule_category: x === NONE ? null : x })}>
-          <SelectTrigger size="sm" className="h-9 min-w-36 bg-background" aria-label={t("app.category")}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NONE}>{t("app.category")} · {t("vendors.ruleNone")}</SelectItem>
-            {CATEGORIES.map((k) => (
-              <SelectItem key={k} value={k}>{t(`category.${k}`)}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={v.rulePayment ?? NONE} disabled={busy} onValueChange={(x) => void save({ rule_payment: x === NONE ? null : x })}>
-          <SelectTrigger size="sm" className="h-9 min-w-36 bg-background" aria-label={t("app.payment")}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NONE}>{t("app.payment")} · {t("vendors.ruleNone")}</SelectItem>
-            {PAYMENTS.map((k) => (
-              <SelectItem key={k} value={k}>{t(`payment.${k}`)}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <label className="ml-auto flex items-center gap-2 text-sm">
-          <Switch checked={v.autoRegister} disabled={busy || !isAdmin} onCheckedChange={(on) => void save({ auto_register: on })} />
+      <div className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap">
+        <div className="grid min-w-0 gap-1">
+          <span className="px-1 text-[11px] text-muted-foreground">
+            {t("app.category")}
+          </span>
+          <Select
+            value={v.ruleCategory ?? NONE}
+            disabled={busy}
+            onValueChange={(x) =>
+              void save({ rule_category: x === NONE ? null : x })
+            }
+          >
+            <SelectTrigger
+              size="sm"
+              className="h-9 w-full min-w-0 bg-background sm:w-auto sm:min-w-36"
+              aria-label={t("app.category")}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>{t("vendors.ruleNone")}</SelectItem>
+              {CATEGORIES.map((k) => (
+                <SelectItem key={k} value={k}>
+                  {t(`category.${k}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid min-w-0 gap-1">
+          <span className="px-1 text-[11px] text-muted-foreground">
+            {t("app.payment")}
+          </span>
+          <Select
+            value={v.rulePayment ?? NONE}
+            disabled={busy}
+            onValueChange={(x) =>
+              void save({ rule_payment: x === NONE ? null : x })
+            }
+          >
+            <SelectTrigger
+              size="sm"
+              className="h-9 w-full min-w-0 bg-background sm:w-auto sm:min-w-36"
+              aria-label={t("app.payment")}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>{t("vendors.ruleNone")}</SelectItem>
+              {PAYMENTS.map((k) => (
+                <SelectItem key={k} value={k}>
+                  {t(`payment.${k}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <label className="col-span-2 flex items-center gap-2 text-sm sm:ml-auto">
+          <Switch
+            checked={v.autoRegister}
+            disabled={busy || !isAdmin}
+            onCheckedChange={(on) => void save({ auto_register: on })}
+          />
           {t("vendors.ruleAuto")}
         </label>
       </div>
-      <p className="text-[11px] leading-snug text-muted-foreground">{isAdmin ? t("vendors.ruleHint") : t("vendors.ruleHintStaff")}</p>
+      <p className="text-[11px] leading-snug text-muted-foreground">
+        {isAdmin ? t("vendors.ruleHint") : t("vendors.ruleHintStaff")}
+      </p>
     </div>
   );
 }
