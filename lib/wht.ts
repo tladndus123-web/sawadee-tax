@@ -9,6 +9,10 @@ import type { LedgerDoc, Tri, WhtType } from "./types";
 /** Amount the tax is taken from: the price before VAT (taxable + exempt) */
 export const whtBase = (t: Pick<LedgerDoc["totals"], "taxable" | "exempt">): number => fromSatang(toSatang(t.taxable) + toSatang(t.exempt));
 
+/** Withholding on services, hire of work, advertising, transport… applies only from this amount per contract
+ *  (Revenue Department Order ท.ป.4/2528 ข้อ 12/7) — below it the person is warned, not blocked */
+export const WHT_MIN_BASE = 1000;
+
 /** base × rate %, rounded to the satang */
 export const whtAmount = (t: Pick<LedgerDoc["totals"], "taxable" | "exempt">, ratePct: number): number =>
   fromSatang(Math.round(((toSatang(t.taxable) + toSatang(t.exempt)) * ratePct) / 100));

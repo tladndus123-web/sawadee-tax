@@ -42,6 +42,12 @@ describe("required particulars (§86/4)", () => {
     expect(check(d, "required")).toMatchObject({ ok: false, paths: ["docTitle", "docNo", "customer.address", "customer.branch"] });
   });
 
+  it("needs at least one described item line (§86/4(5))", () => {
+    expect(missingRequired(doc((d) => (d.items = [])))).toEqual(["items.0.desc"]);
+    expect(missingRequired(doc((d) => (d.items = d.items.map((i) => ({ ...i, desc: { th: "", en: "", ja: "" } })))))).toEqual(["items.0.desc"]);
+    expect(claimable(doc((d) => (d.items = [])), COMPANY)).toBe(false);
+  });
+
   it("accepts buyer details printed only in English", () => {
     expect(missingRequired(doc((d) => (d.customer.name = { th: "", en: "Sunyu Create Co., Ltd.", ja: "" })))).toEqual([]);
   });

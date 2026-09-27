@@ -67,7 +67,13 @@ function Party({ title, name, taxId, branch, address }: { title: string; name: s
   );
 }
 
-function Copy({ doc, payer, copy }: { doc: LedgerDoc; payer: Customer; copy: 1 | 2 }) {
+const COPY_LABEL = {
+  1: "ฉบับที่ 1 (สำหรับผู้ถูกหักภาษี ณ ที่จ่าย ใช้แนบพร้อมกับแบบแสดงรายการภาษี)",
+  2: "ฉบับที่ 2 (สำหรับผู้ถูกหักภาษี ณ ที่จ่าย เก็บไว้เป็นหลักฐาน)",
+  3: "สำเนาคู่ฉบับ (สำหรับผู้มีหน้าที่หักภาษี ณ ที่จ่าย เก็บไว้เป็นหลักฐาน)",
+} as const;
+
+function Copy({ doc, payer, copy }: { doc: LedgerDoc; payer: Customer; copy: 1 | 2 | 3 }) {
   const form = payeeForm(doc.seller.taxId);
   const paid = whtBase(doc.totals);
   const tax = whtTax(doc);
@@ -78,7 +84,7 @@ function Copy({ doc, payer, copy }: { doc: LedgerDoc; payer: Customer; copy: 1 |
     <section className="wht-copy grid gap-2 text-[10px] leading-snug text-neutral-900">
       <div className="flex items-start justify-between gap-4">
         <p className="text-neutral-700">
-          {copy === 1 ? "ฉบับที่ 1 (สำหรับผู้ถูกหักภาษี ณ ที่จ่าย ใช้แนบพร้อมกับแบบแสดงรายการภาษี)" : "ฉบับที่ 2 (สำหรับผู้ถูกหักภาษี ณ ที่จ่าย เก็บไว้เป็นหลักฐาน)"}
+          {COPY_LABEL[copy]}
         </p>
         <p className="whitespace-nowrap">เล่มที่ ………… เลขที่ …………</p>
       </div>
@@ -232,6 +238,7 @@ export function WhtCertificate({ id }: { id: string }) {
       <article className="report-paper grid gap-10 border border-neutral-200 bg-white p-5 shadow-sm sm:p-8 print:gap-0 print:border-0 print:p-0 print:shadow-none">
         <Copy doc={entry.doc} payer={payer} copy={1} />
         <Copy doc={entry.doc} payer={payer} copy={2} />
+        <Copy doc={entry.doc} payer={payer} copy={3} />
       </article>
     </div>
   );

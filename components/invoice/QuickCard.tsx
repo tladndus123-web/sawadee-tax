@@ -25,7 +25,16 @@ export function QuickCard({ onJump, manual = false }: { onJump: (path: string) =
   const unsure = new Set(unclear ?? []);
   const sellerName = seller?.name?.[lang] || seller?.name?.th || seller?.name?.en || seller?.name?.ja || "";
 
-  const setTotals = (n: number, v: number) => setValue("totals", quickTotals(getValues("totals"), n, v), { shouldDirty: true });
+  const setTotals = (n: number, v: number) => {
+    const next = quickTotals(getValues("totals"), n, v);
+    setValue("totals", next, { shouldDirty: true });
+    // A hand-typed document has one item line: it carries the whole amount before discount (qty 1)
+    if (manual && getValues("items").length === 1) {
+      setValue("items.0.qty", 1, { shouldDirty: true });
+      setValue("items.0.price", next.total, { shouldDirty: true });
+      setValue("items.0.amount", next.total, { shouldDirty: true });
+    }
+  };
 
   return (
     <div className="workspace-panel grid gap-5 p-5 text-sm">
@@ -45,6 +54,9 @@ export function QuickCard({ onJump, manual = false }: { onJump: (path: string) =
               />
             </Row>
           </div>
+          <Row label={t("quick.what")} path="items.0.desc" unsure={unsure} onJump={onJump}>
+            <Input className="h-10" aria-label={t("quick.what")} placeholder={t("quick.whatHint")} {...register(`items.0.desc.${lang}`)} />
+          </Row>
           <p className="text-[11px] leading-snug text-muted-foreground">{t("tr.hint")}</p>
         </div>
       ) : (

@@ -89,6 +89,8 @@ export function missingRequired(r: LedgerDoc): string[] {
   if (!triHas(r.customer.name)) miss.push("customer.name");
   if (!triHas(r.customer.address)) miss.push("customer.address");
   if (!triHas(r.customer.branch)) miss.push("customer.branch");
+  // §86/4(5): what was sold — at least one item line with a description
+  if (!r.items.some((i) => triHas(i.desc))) miss.push("items.0.desc");
   return miss;
 }
 

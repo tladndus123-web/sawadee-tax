@@ -717,7 +717,8 @@
       "transport": "Transport",
       "other": "Other"
     },
-    "movedTo": "{month} is closed, so it was saved as a claim in {to}."
+    "movedTo": "{month} is closed, so it was saved as a claim in {to}.",
+    "whtUnderMin": "Withholding usually doesn't apply under 1,000 baht per contract (Order ท.ป.4/2528), unless one contract is paid in parts."
   },
   "whtList": {
     "title": "Withholding tax list (ภ.ง.ด.53 · ภ.ง.ด.3)",
@@ -782,6 +783,8 @@
     "detail": "Detailed",
     "vat7": "Work out 7%",
     "unsure": "Check",
-    "taxSettings": "Tax settings (claim month · input VAT · withholding)"
+    "taxSettings": "Tax settings (claim month · input VAT · withholding)",
+    "what": "What was bought",
+    "whatHint": "e.g. Frozen dough 3.5 kg × 10"
   }
 }

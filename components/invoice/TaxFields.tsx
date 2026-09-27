@@ -14,7 +14,7 @@ import { invoiceMonth, NO_DATE } from "@/lib/archive";
 import { vatBlocked } from "@/lib/checks";
 import { nextMonth } from "@/lib/month-lock-store";
 import { baht } from "@/lib/money";
-import { whtAmount } from "@/lib/wht";
+import { WHT_MIN_BASE, whtAmount, whtBase } from "@/lib/wht";
 import { type LedgerDoc, WHT_DEFAULT_RATE, WHT_TYPES, type WhtType } from "@/lib/types";
 
 const CLAIM = { auto: null, yes: false, no: true } as const;
@@ -144,6 +144,9 @@ export function TaxFields() {
         </div>
         <span className="text-[11px] leading-snug text-muted-foreground">
           {whtType ? t("whtAmount", { amount: baht(amount) }) : t("whtHint")}
+          {whtType && whtBase({ taxable: Number(taxable) || 0, exempt: Number(exempt) || 0 }) < WHT_MIN_BASE && (
+            <span className="mt-1 block text-warn">{t("whtUnderMin")}</span>
+          )}
         </span>
       </div>
 
