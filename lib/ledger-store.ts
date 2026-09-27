@@ -54,6 +54,18 @@ let loaded = false;
 let loadedAt = 0;
 let loading: Promise<void> | null = null;
 const listeners = new Set<() => void>();
+/** Member id → display name (or email), kept from the last full load for stamps patched in place */
+let names = new Map<string, string>();
+
+/**
+ * Small changes (paid, stickers, "문제 없음") patch the documents already in memory instead of downloading the whole
+ * ledger again — that download grows with every document (about 4.6 KB each), a click should not.
+ */
+function patchEntries(ids: string[], change: (e: LedgerEntry) => LedgerEntry) {
+  const set = new Set(ids);
+  entries = entries.map((e) => (set.has(e.id) ? change(e) : e));
+  listeners.forEach((l) => l());
+}
 
 /** Screens opened within this time reuse the copy in memory instead of downloading the whole ledger again */
 const FRESH_MS = 30_000;
@@ -66,6 +78,7 @@ async function reload() {
   ]);
   if (error) throw error;
   const who = new Map((members ?? []).map((m) => [m.user_id as string, (m.name as string) || (m.email as string)]));
+  names = who;
   entries = (rows ?? []).map((r) => {
     const row = r as DocumentRow & { document_items: ItemRow[]; ack_flags?: string[] | null; ack_by?: string | null; ack_at?: string | null };
     return {
@@ -112,9 +125,15 @@ export function useLedger(): { entries: LedgerEntry[]; loaded: boolean } {
 
 /** Mark a document's warnings "문제 없음" ([] undoes it). Who / when are stamped by the database. */
 export async function setAck(id: string, flags: string[]) {
-  const { error } = await supabaseBrowser().from("documents").update({ ack_flags: [...new Set(flags)].sort() }).eq("id", id);
+  const { data, error } = await supabaseBrowser()
+    .from("documents")
+    .update({ ack_flags: [...new Set(flags)].sort() })
+    .eq("id", id)
+    .select("ack_flags, ack_by, ack_at")
+    .single();
   if (error) throw error;
-  await reload();
+  const row = data as { ack_flags: string[] | null; ack_by: string | null; ack_at: string | null };
+  patchEntries([id], (e) => ({ ...e, ackFlags: row.ack_flags ?? [], ackBy: row.ack_by ? (names.get(row.ack_by) ?? null) : null, ackAt: time(row.ack_at) }));
 }
 
 /**
@@ -172,7 +191,16 @@ export async function setQuick(id: string, change: { paid?: boolean; paidDate?: 
   if (change.stickers) row.stickers = change.stickers;
   const { error } = await supabaseBrowser().from("documents").update(row).eq("id", id);
   if (error) throw error;
-  await reload();
+  patchEntries([id], (e) => ({
+    ...e,
+    doc: {
+      ...e.doc,
+      ...(change.paid !== undefined ? { paid: change.paid } : {}),
+      ...(change.paidDate !== undefined ? { paidDate: change.paidDate } : {}),
+      ...(change.stickers ? { stickers: change.stickers } : {}),
+    },
+    updatedAt: Date.now(),
+  }));
 }
 
 /** Mark several documents paid (or unpaid) at once, e.g. after a payment run; one request */
@@ -183,7 +211,7 @@ export async function setPaidMany(ids: string[], paid: boolean, paidDate: string
     .update({ paid, paid_date: paid ? paidDate || null : null })
     .in("id", ids);
   if (error) throw error;
-  await reload();
+  patchEntries(ids, (e) => ({ ...e, doc: { ...e.doc, paid, paidDate: paid ? paidDate : "" }, updatedAt: Date.now() }));
 }
 
 /** Admin only. The database stamps who and when and refuses anyone else. */

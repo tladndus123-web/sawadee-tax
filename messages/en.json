@@ -578,7 +578,7 @@
     "dueToday": "Due today",
     "overdueBy": "{days} days overdue",
     "noDue": "No due date",
-    "markPaid": "Mark paid",
+    "markPaid": "Mark as paid",
     "markedPaid": "Marked as paid.",
     "trend": "Purchases, last 6 months",
     "trendHint": "Net total of the documents saved each month",
@@ -916,12 +916,12 @@
     "invalid": "Skipped {count} lines with a negative total or VAT above the sales. Please check them by hand."
   },
   "ack": {
-    "button": "Looks fine",
+    "button": "Mark as fine",
     "label": "Checked by {who}",
     "done": "Marked as fine. The 'check' warning is off.",
     "undo": "Undo",
     "hint": "Press when you've checked the document and it's fine. Only the warning goes; whether its VAT can be claimed doesn't change.",
-    "open": "{count} automatic checks failed. If you've checked and it's fine, press 'Looks fine'.",
+    "open": "{count} automatic checks failed. If you've checked and it's fine, press 'Mark as fine'.",
     "marked": "Failed automatic checks reviewed by a person · {who} · {when}",
     "someone": "someone",
     "back": "Needs a look again"

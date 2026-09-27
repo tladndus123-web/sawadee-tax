@@ -1,6 +1,6 @@
 "use client";
 
-import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, CircleCheck, FilePen, ImagePlus, Loader2, Lock, Search, Trash2, TriangleAlert, X, UserCheck } from "lucide-react";
+import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, CircleCheck, FilePen, ImagePlus, Loader2, Lock, Search, Trash2, TriangleAlert, X, UserCheck, Check } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
@@ -447,10 +447,10 @@ const DocRow = memo(function DocRow({
         <button
           type="button"
           onClick={() => void accept()}
-          className="press flex h-8 flex-none items-center gap-1 rounded-full bg-secondary px-2.5 text-xs font-medium hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)]"
+          className="press flex h-8 flex-none items-center gap-1 rounded-full border border-input bg-background px-2.5 text-xs font-medium hover:bg-muted"
           title={t("ack.hint")}
         >
-          <CircleCheck className="size-3.5 text-ok" aria-hidden />
+          <Check className="size-3.5" aria-hidden />
           {t("ack.button")}
         </button>
       )}

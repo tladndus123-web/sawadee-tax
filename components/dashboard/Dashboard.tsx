@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CircleCheck, Clock, Loader2, Receipt, Undo2, Wallet } from "lucide-react";
+import { AlertTriangle, CircleCheck, Clock, Loader2, Receipt, Undo2, Wallet, Check } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
 import dynamic from "next/dynamic";
@@ -206,9 +206,9 @@ function DueList({ items }: { items: DueItem[] }) {
                   </span>
                 </Link>
                 <span className="text-sm font-semibold tabular-nums">{baht(it.doc.totals.net)}</span>
-                <Button type="button" variant="secondary" className="h-9 rounded-full px-3" disabled={busy === it.id} onClick={() => void setPaid(it, true)}>
-                  {busy === it.id ? <Loader2 className="size-4 animate-spin" /> : <CircleCheck className="size-4 text-ok" />}
-                  <span className="max-sm:sr-only">{t("dash.markPaid")}</span>
+                <Button type="button" variant="outline" className="h-9 flex-none rounded-full px-3 text-xs" disabled={busy === it.id} onClick={() => void setPaid(it, true)}>
+                  {busy === it.id ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                  {t("dash.markPaid")}
                 </Button>
               </li>
             );
