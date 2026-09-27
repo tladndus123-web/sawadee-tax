@@ -1,6 +1,6 @@
 "use client";
 
-import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, CircleCheck, FilePen, ImagePlus, Loader2, Lock, Search, Trash2, TriangleAlert, X } from "lucide-react";
+import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, CircleCheck, FilePen, ImagePlus, Loader2, Lock, Search, Trash2, TriangleAlert, X, UserCheck } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
@@ -428,9 +428,10 @@ const DocRow = memo(function DocRow({
               </span>
             )}
             {accepted && (
-              <span className="inline-flex items-center gap-1 font-medium text-ok">
-                <CircleCheck className="size-3" aria-hidden />
-                {t("ack.label")}
+              // A person looked at the warnings and let them go — not the app saying all is well: neutral, with who
+              <span className="inline-flex items-center gap-1 font-medium text-muted-foreground" title={t("ack.hint")}>
+                <UserCheck className="size-3" aria-hidden />
+                {t("ack.label", { who: e.ackBy ?? t("ack.someone") })}
               </span>
             )}
           </span>

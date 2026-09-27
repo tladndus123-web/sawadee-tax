@@ -3,7 +3,7 @@
 // "문제 없음" on the document screen: the warnings still open can be marked fine (the "확인 필요" alert goes away),
 // and a marking can be taken back. Only the warning goes — whether the VAT can be claimed does not change.
 
-import { CircleCheck, Loader2, RotateCcw } from "lucide-react";
+import { CircleCheck, Loader2, RotateCcw, UserCheck } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -51,8 +51,8 @@ export function AckBar({
 
   const when = ack.at ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(ack.at) : "";
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-ok-soft px-4 py-3 text-sm print:hidden">
-      <CircleCheck className="size-4 flex-none text-ok" aria-hidden />
+    <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-muted px-4 py-3 text-sm print:hidden">
+      <UserCheck className="size-4 flex-none text-muted-foreground" aria-hidden />
       <span className="min-w-0 flex-1">{t("ack.marked", { who: ack.by ?? t("ack.someone"), when })}</span>
       <Button type="button" variant="ghost" className="h-9 rounded-full px-3" disabled={busy} onClick={() => void set([], t("ack.back"))}>
         {busy ? <Loader2 className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}

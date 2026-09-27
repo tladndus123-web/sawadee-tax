@@ -917,12 +917,12 @@
   },
   "ack": {
     "button": "Looks fine",
-    "label": "Marked fine",
+    "label": "Checked by {who}",
     "done": "Marked as fine. The 'check' warning is off.",
     "undo": "Undo",
     "hint": "Press when you've checked the document and it's fine. Only the warning goes; whether its VAT can be claimed doesn't change.",
     "open": "{count} automatic checks failed. If you've checked and it's fine, press 'Looks fine'.",
-    "marked": "Marked fine · {who} · {when}",
+    "marked": "Failed automatic checks reviewed by a person · {who} · {when}",
     "someone": "someone",
     "back": "Needs a look again"
   }
