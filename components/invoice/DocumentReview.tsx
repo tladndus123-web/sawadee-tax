@@ -72,8 +72,10 @@ export interface DocumentReviewProps {
   onDraft?: (doc: LedgerDoc) => Promise<void>;
   /** Text on the save button (default "save"), e.g. "confirm → next" while checking one by one */
   saveLabel?: string;
-  /** Open in edit mode (a document typed by hand) */
+  /** Open in edit mode */
   startEditing?: boolean;
+  /** Typed by hand, no photo: no photo column, and the seller's name / tax ID can be typed on the quick card */
+  manual?: boolean;
   onClose: () => void;
 }
 
@@ -95,6 +97,7 @@ export function DocumentReview({
   notice,
   saveLabel,
   startEditing = false,
+  manual = false,
 }: DocumentReviewProps) {
   const t = useTranslations();
   const form = useForm<LedgerDoc>({ defaultValues: initial, resolver: zodResolver(docSchema), mode: "onBlur" });
@@ -218,9 +221,12 @@ export function DocumentReview({
     <FormProvider {...form}>
       <form
         onSubmit={save}
-        className="grid min-w-0 grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:gap-8 print:block"
+        className={cn(
+          "grid min-w-0 grid-cols-[minmax(0,1fr)] items-start gap-6 lg:gap-8 print:block",
+          manual ? "mx-auto w-full max-w-3xl" : "lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]",
+        )}
       >
-        <header className="flex min-w-0 flex-wrap items-start justify-between gap-5 lg:col-span-2 print:hidden">
+        <header className={cn("flex min-w-0 flex-wrap items-start justify-between gap-5 print:hidden", !manual && "lg:col-span-2")}>
           <div className="min-w-0">
             <p className="mb-2 flex items-center gap-2 text-sm font-medium text-brand">
               <FileText className="size-4" aria-hidden />
@@ -245,6 +251,7 @@ export function DocumentReview({
           </div>
         </header>
 
+        {!manual && <>
         <div className="sticky top-16 z-30 -mx-1 min-w-0 rounded-[14px] bg-background/80 p-1 backdrop-blur-xl lg:hidden print:hidden">
           <ToggleGroup type="single" className="segmented-control w-full" value={mobilePanel} onValueChange={(v) => v && setMobilePanel(v as "form" | "photo")} aria-label={t("ui.documentForm")}>
             <ToggleGroupItem value="form" className="min-w-0 flex-1 gap-2 px-3 text-xs leading-snug whitespace-normal"><FileText className="size-4" aria-hidden />{t("ui.documentForm")}</ToggleGroupItem>
@@ -271,6 +278,7 @@ export function DocumentReview({
             <p className="border-t px-5 py-3 text-xs leading-relaxed text-muted-foreground">{t("ui.originalHint")}</p>
           </div>
         </aside>
+        </>}
 
         <div className={cn("grid min-w-0 content-start gap-5 print:block", mobilePanel === "photo" && "hidden lg:grid")}>
           {/* Header: title + form language + view/edit */}
@@ -312,7 +320,7 @@ export function DocumentReview({
           {!isSample && <VendorPicker />}
 
           {view === "quick" ? (
-            <QuickCard onJump={showField} />
+            <QuickCard onJump={showField} manual={manual} />
           ) : (
           <>
           {/* Category, payment, paid */}

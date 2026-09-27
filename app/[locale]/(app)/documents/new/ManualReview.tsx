@@ -1,7 +1,7 @@
 "use client";
 
-// A document typed by hand (no photo): an empty full tax invoice dated today, opened in edit mode. Pick the
-// vendor to fill the seller, type each text in any one language — the other two are translated on save.
+// A document typed by hand (no photo): an empty full tax invoice dated today, on the quick card. Pick the vendor
+// (or type the seller in one language) and fill the total — the other languages are translated on save.
 
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -30,7 +30,7 @@ export function ManualReview() {
         initial={initial}
         photoUrl={null}
         isNew
-        startEditing
+        manual
         companyTaxId={company.taxId}
         onSave={async (d) => {
           const { id } = await saveEntry(withBuyer(d), null, undefined, "final", company.taxId);

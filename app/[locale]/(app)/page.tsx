@@ -1,6 +1,6 @@
 import type { Locale } from "@/i18n/routing";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ChevronRight, ImagePlus } from "lucide-react";
+import { ChevronRight, ImagePlus, Keyboard } from "lucide-react";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { Link } from "@/i18n/navigation";
 
@@ -20,6 +20,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
           <Link href="/documents/sample" className="press flex min-h-11 items-center gap-1 rounded-full px-4 text-sm font-medium text-primary hover:bg-primary/10 active:scale-[0.97]">
             {t("dash.sample")}
             <ChevronRight className="size-4" aria-hidden />
+          </Link>
+          <Link href="/documents/new" className="press flex min-h-11 items-center gap-2 rounded-full bg-secondary px-4 text-sm font-medium hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] active:scale-[0.97]">
+            <Keyboard className="size-4" aria-hidden />
+            {t("manual.short")}
           </Link>
           <Link
             href="/upload"

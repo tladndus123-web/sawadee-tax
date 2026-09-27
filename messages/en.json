@@ -773,7 +773,8 @@
   },
   "manual": {
     "start": "Type it in without a photo",
-    "title": "Document typed by hand"
+    "title": "Document typed by hand",
+    "short": "Type it in"
   },
   "quick": {
     "view": "View",

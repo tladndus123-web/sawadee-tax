@@ -126,6 +126,7 @@ export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: 
       <DocumentReview
         key={entry.id}
         saveLabel={checkRun ? t("flow.next") : undefined}
+        manual={!entry.photoPath}
         initial={entry.doc}
         photoUrl={photoUrl}
         companyTaxId={company.taxId}

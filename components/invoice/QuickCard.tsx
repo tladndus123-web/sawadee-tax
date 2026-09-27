@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { MoneyInput } from "./fields";
 import { TaxFields } from "./TaxFields";
 
-export function QuickCard({ onJump }: { onJump: (path: string) => void }) {
+export function QuickCard({ onJump, manual = false }: { onJump: (path: string) => void; manual?: boolean }) {
   const t = useTranslations();
   const lang = exportLang(useLocale());
   const { control, register, setValue, getValues } = useFormContext<LedgerDoc>();
@@ -29,12 +29,32 @@ export function QuickCard({ onJump }: { onJump: (path: string) => void }) {
 
   return (
     <div className="workspace-panel grid gap-5 p-5 text-sm">
-      <Row label={t("labels.seller")} path="seller.name" unsure={unsure} onJump={onJump}>
-        <p className="min-h-10 content-center text-[15px] font-semibold [overflow-wrap:anywhere]">
-          {sellerName || <span className="font-normal text-muted-foreground">—</span>}
-          {seller?.taxId && <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">{seller.taxId}</span>}
-        </p>
-      </Row>
+      {manual ? (
+        <div className="grid gap-3">
+          <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)]">
+            <Row label={t("labels.seller")} path="seller.name" unsure={unsure} onJump={onJump}>
+              <Input className="h-10" aria-label={t("labels.seller")} {...register(`seller.name.${lang}`)} />
+            </Row>
+            <Row label={t("labels.taxId")} path="seller.taxId" unsure={unsure} onJump={onJump}>
+              <Input
+                className="mono h-10"
+                inputMode="numeric"
+                maxLength={13}
+                aria-label={t("labels.taxId")}
+                {...register("seller.taxId", { setValueAs: (v: string) => String(v ?? "").replace(/\D/g, "") })}
+              />
+            </Row>
+          </div>
+          <p className="text-[11px] leading-snug text-muted-foreground">{t("tr.hint")}</p>
+        </div>
+      ) : (
+        <Row label={t("labels.seller")} path="seller.name" unsure={unsure} onJump={onJump}>
+          <p className="min-h-10 content-center text-[15px] font-semibold [overflow-wrap:anywhere]">
+            {sellerName || <span className="font-normal text-muted-foreground">—</span>}
+            {seller?.taxId && <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">{seller.taxId}</span>}
+          </p>
+        </Row>
+      )}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Row label={t("labels.docNo")} path="docNo" unsure={unsure} onJump={onJump}>
