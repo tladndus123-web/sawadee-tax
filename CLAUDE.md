@@ -8,8 +8,11 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 
 ## Working with the owner
 - Reply in **Korean**, plainly (not a developer). Explain what changed and what they need to do, step by step.
-- Ask when a product decision is theirs ("모르는건 나한테 물어봐"). When a change is done and checked, **commit and deploy
-  right away** (owner's request, 2026-09-26); end commit messages with the `Co-Authored-By` line.
+- Ask when a product decision is theirs ("모르는건 나한테 물어봐"). When a change is done and checked, **commit, push and deploy
+  right away** (owner's request, 2026-09-26; push to GitHub after every commit since 2026-09-27 so the collaborator
+  has the latest code — `git pull --rebase` first); end commit messages with the `Co-Authored-By` line.
+- Code: https://github.com/tladndus123-web/sawadee-tax (private, shared with a collaborator). Deploys still go from
+  this PC (`npx vercel deploy --prod`), not from GitHub. Keys never go into git.
 - **Never ask for keys in chat.** Keys live in `.env.local` (local dev) and `.env.deploy` (deploy: Supabase
   cloud + Vercel + Gmail app password), both git-ignored. Open the file for them (Notepad) and validate
   without printing values.
