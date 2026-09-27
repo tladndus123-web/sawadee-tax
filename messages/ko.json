@@ -344,7 +344,8 @@
     },
     "autoSaved": "자동 등록됨 · 거래처 규칙",
     "open": "보기",
-    "queued": "순서 기다리는 중"
+    "queued": "순서 기다리는 중",
+    "dropPhone": "서류 사진을 고르거나 찍으세요"
   },
   "role": {
     "admin": "관리자",
@@ -572,7 +573,7 @@
     "title": "대시보드",
     "month": "기준 달",
     "upcoming": "곧 지급할 청구서",
-    "upcomingHint": "외상 매입 중 아직 지급하지 않은 것",
+    "upcomingHint": "지급 완료로 표시하지 않은 청구서",
     "upcomingEmpty": "지급할 청구서가 없어요.",
     "dueIn": "{days}일 남음",
     "dueToday": "오늘까지",
@@ -600,7 +601,11 @@
     "unpaidCount": "{count}건",
     "checkHint": "자동 확인에 걸린 서류",
     "monthDocs": "이 달 {count}건",
-    "overdueCount": "기한 지남 {count}건"
+    "overdueCount": "기한 지남 {count}건",
+    "activityMore": "{count}개 더 보기",
+    "profitTitle": "이번 달 남은 돈 (이익)",
+    "profitLine": "매출 {sales} − 비용 {cost}",
+    "profitEmpty": "이 달 매출을 넣으면 이익이 보여요 →"
   },
   "line": {
     "title": "LINE 연결",

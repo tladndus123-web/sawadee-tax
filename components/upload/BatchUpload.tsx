@@ -136,9 +136,7 @@ export function BatchUpload() {
         <MaxNotice />
       </header>
 
-      <UploadTips />
-
-      {/* Drop zone */}
+      {/* Drop zone first, so on a phone the buttons are on the first screen; the tips follow */}
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -151,14 +149,17 @@ export function BatchUpload() {
           add(e.dataTransfer.files);
         }}
         className={cn(
-          "workspace-panel ai-ring grid justify-items-center gap-5 rounded-[1.75rem] px-6 py-10 text-center transition-transform sm:py-14",
+          "workspace-panel ai-ring grid justify-items-center gap-5 rounded-[1.75rem] px-6 py-8 text-center transition-transform sm:py-14",
           dragging && "scale-[1.01]",
           room <= 0 && "opacity-70",
         )}
       >
         <span className="ai-orb size-16"><Sparkles className="size-7" aria-hidden /></span>
         <div className="grid gap-1">
-          <p className="text-lg font-semibold tracking-tight">{t("batch.drop")}</p>
+          <p className="text-lg font-semibold tracking-tight">
+            <span className="max-sm:hidden">{t("batch.drop")}</span>
+            <span className="sm:hidden">{t("batch.dropPhone")}</span>
+          </p>
           <p className="text-sm text-muted-foreground">{t("batch.formats")}</p>
         </div>
         <div className="flex flex-wrap justify-center gap-2">
@@ -194,6 +195,8 @@ export function BatchUpload() {
         )}
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
       </div>
+
+      {items.length === 0 && <UploadTips />}
 
       {items.length > 0 && (
         <section className="grid gap-3" aria-label={t("batch.back")}>

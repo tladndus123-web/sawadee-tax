@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CircleCheck, Clock, Loader2, Receipt, Undo2, Wallet, Check } from "lucide-react";
+import { AlertTriangle, ChevronRight, CircleCheck, Clock, Loader2, Receipt, TrendingUp, Undo2, Wallet, Check } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
 import dynamic from "next/dynamic";
@@ -21,6 +21,8 @@ import { CategoryIcon } from "@/components/vendors/CategoryIcon";
 import { digitsOnly } from "@/lib/thai-tax";
 import { useVendors } from "@/lib/vendor-store";
 import { vendorCategory } from "@/lib/vendors";
+import { monthResult } from "@/lib/sales";
+import { useSales } from "@/lib/sales-store";
 import { ActivityList } from "./ActivityList";
 import { VatCard } from "./VatCard";
 
@@ -48,6 +50,9 @@ export function Dashboard() {
   const s = useMemo(() => summarize(docs, month, company.taxId, today), [docs, month, company.taxId, today]);
   const due = useMemo(() => upcoming(docs, today), [docs, today]);
   const points = useMemo(() => trend(docs, month), [docs, month]);
+  const { sales } = useSales();
+  const result = useMemo(() => monthResult(sales, docs.map((d) => d.doc), month, company.taxId), [sales, docs, month, company.taxId]);
+  const hasSales = result.days > 0;
 
   if (!loaded) return <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
 
@@ -66,6 +71,29 @@ export function Dashboard() {
           </select>
         </label>
       </div>
+
+      {/* The one number owners ask first: what is left this month (same figure as the sales page) */}
+      <Link href="/sales" className="workspace-panel tap-row flex items-center gap-3 px-4 py-3.5 sm:px-5">
+        <span className="intelligence-mark is-soft size-10 flex-none">
+          <TrendingUp className="size-4 text-brand" aria-hidden />
+        </span>
+        <span className="grid min-w-0 flex-1 gap-0.5">
+          <span className="text-xs font-medium text-muted-foreground">{t("dash.profitTitle")}</span>
+          {hasSales ? (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {t("dash.profitLine", { sales: baht(result.salesValue), cost: baht(result.purchasesCost) })}
+            </span>
+          ) : (
+            <span className="text-xs text-primary">{t("dash.profitEmpty")}</span>
+          )}
+        </span>
+        {hasSales && (
+          <span className={cn("text-[clamp(1.15rem,5.2vw,1.5rem)] font-semibold whitespace-nowrap tabular-nums", result.profit < 0 ? "text-bad" : "text-brand")}>
+            {baht(result.profit)}
+          </span>
+        )}
+        <ChevronRight className="size-4 flex-none text-muted-foreground" aria-hidden />
+      </Link>
 
       {/* This month's job first: the VAT return that is due next */}
       <VatCard entries={entries} companyTaxId={company.taxId} today={today} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArchiveRestore, FilePlus2, History, Pencil, Trash2 } from "lucide-react";
+import { ArchiveRestore, ChevronDown, FilePlus2, History, Pencil, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
@@ -10,10 +10,12 @@ import { cn } from "@/lib/utils";
 const ICON = { create: FilePlus2, update: Pencil, delete: Trash2, restore: ArchiveRestore } as const;
 
 /** Recent audit trail: the whole company (dashboard) or one document (its review screen) */
-export function ActivityList({ documentId, limit = 12, title }: { documentId?: string; limit?: number; title?: string }) {
+/** Loads up to `limit`, shows `shown` at first (a "show more" button reveals the rest) */
+export function ActivityList({ documentId, limit = 12, shown, title }: { documentId?: string; limit?: number; shown?: number; title?: string }) {
   const t = useTranslations("dash");
   const locale = useLocale();
   const [items, setItems] = useState<Activity[] | null>(null);
+  const [all, setAll] = useState(false);
   useEffect(() => {
     let alive = true;
     loadActivity({ documentId, limit })
@@ -33,7 +35,7 @@ export function ActivityList({ documentId, limit = 12, title }: { documentId?: s
       </h2>
       {items && items.length === 0 && <p className="text-sm text-muted-foreground">{t("activityEmpty")}</p>}
       <ol className="grid">
-        {(items ?? []).map((a) => {
+        {(items ?? []).slice(0, all || !shown ? undefined : shown).map((a) => {
           const Icon = ICON[a.action];
           const label = [a.seller, a.docNo].filter(Boolean).join(" · ");
           return (
@@ -61,6 +63,12 @@ export function ActivityList({ documentId, limit = 12, title }: { documentId?: s
           );
         })}
       </ol>
+      {!all && shown && items && items.length > shown && (
+        <button type="button" onClick={() => setAll(true)} className="press flex h-9 items-center justify-center gap-1 rounded-full text-sm font-medium text-primary hover:bg-primary/10">
+          {t("activityMore", { count: items.length - shown })}
+          <ChevronDown className="size-4" aria-hidden />
+        </button>
+      )}
     </section>
   );
 }

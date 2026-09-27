@@ -399,7 +399,7 @@ const DocRow = memo(function DocRow({
     }
   };
   return (
-    <li className={cn("tap-row flex min-w-0 items-center gap-1 rounded-2xl bg-card pr-2 shadow-[0_0_0_1px_var(--border)] hover:shadow-[0_0_0_1px_var(--input),var(--shadow-soft)]", checked && "ring-2 ring-primary")}>
+    <li className={cn("tap-row flex min-w-0 flex-wrap items-center gap-x-1 rounded-2xl bg-card pr-2 shadow-[0_0_0_1px_var(--border)] hover:shadow-[0_0_0_1px_var(--input),var(--shadow-soft)]", checked && "ring-2 ring-primary")}>
       {selectable && (
         <Checkbox
           checked={!!checked}
@@ -411,11 +411,11 @@ const DocRow = memo(function DocRow({
       <Link href={`/documents/${e.id}`} className="flex min-w-0 flex-1 items-center gap-3 p-2.5 sm:gap-4 sm:p-3">
         <Thumb path={e.photoPath} />
         <span className="min-w-0 flex-1">
-          <span className="flex min-w-0 items-center gap-2">
+          <span className="flex min-w-0 items-baseline gap-2">
             <span className="truncate text-[15px] font-semibold">{sellerOf(e)}</span>
             {draft && <span className="flex-none rounded-full bg-warn-soft px-2 py-0.5 text-[11px] font-semibold text-warn">{t("archive.draftBadge")}</span>}
+            <span className="ml-auto flex-none text-[15px] font-semibold whitespace-nowrap tabular-nums">{baht(e.doc.totals.net)}</span>
           </span>
-          <span className="mt-0.5 block text-[15px] font-semibold tabular-nums sm:hidden">{baht(e.doc.totals.net)}</span>
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs whitespace-nowrap text-muted-foreground">
             {e.doc.docNo && <span className="mono max-sm:hidden">{e.doc.docNo}</span>}
             {e.doc.date && <span>{sd(e.doc.date)}</span>}
@@ -441,13 +441,14 @@ const DocRow = memo(function DocRow({
             </span>
           )}
         </span>
-        <span className="hidden text-right text-[15px] font-semibold tabular-nums sm:block">{baht(e.doc.totals.net)}</span>
       </Link>
+      {/* phones: a line break, so the button below gets a line of its own */}
+      {flagged && !draft && <span aria-hidden className="h-0 basis-full sm:hidden max-sm:order-last" />}
       {flagged && !draft && (
         <button
           type="button"
           onClick={() => void accept()}
-          className="press flex h-8 flex-none items-center gap-1 rounded-full border border-input bg-background px-2.5 text-xs font-medium hover:bg-muted"
+          className="press flex h-8 flex-none items-center gap-1 rounded-full border border-input bg-background px-2.5 text-xs font-medium hover:bg-muted max-sm:order-last max-sm:mb-2.5 max-sm:ml-[70px]"
           title={t("ack.hint")}
         >
           <Check className="size-3.5" aria-hidden />

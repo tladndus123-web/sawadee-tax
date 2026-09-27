@@ -178,7 +178,7 @@ export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: 
         onClose={() => router.push("/ledger")}
       />
       <div className="print:hidden lg:ml-[calc(360px+2rem)]">
-        <ActivityList key={entry.updatedAt} documentId={entry.id} limit={20} title={t("dash.history")} />
+        <ActivityList key={entry.updatedAt} documentId={entry.id} limit={30} shown={5} title={t("dash.history")} />
       </div>
     </div>
   );

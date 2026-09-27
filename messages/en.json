@@ -344,7 +344,8 @@
     },
     "autoSaved": "Saved automatically · vendor rule",
     "open": "Open",
-    "queued": "Waiting its turn"
+    "queued": "Waiting its turn",
+    "dropPhone": "Pick or take photos of documents"
   },
   "role": {
     "admin": "Admin",
@@ -572,7 +573,7 @@
     "title": "Dashboard",
     "month": "Month",
     "upcoming": "Bills to pay soon",
-    "upcomingHint": "Credit purchases not paid yet",
+    "upcomingHint": "Bills not marked paid yet",
     "upcomingEmpty": "Nothing to pay.",
     "dueIn": "{days} days left",
     "dueToday": "Due today",
@@ -600,7 +601,11 @@
     "unpaidCount": "{count} docs",
     "checkHint": "Documents failing an automatic check",
     "monthDocs": "{count} this month",
-    "overdueCount": "{count} overdue"
+    "overdueCount": "{count} overdue",
+    "activityMore": "Show {count} more",
+    "profitTitle": "Profit this month",
+    "profitLine": "Sales {sales} − costs {cost}",
+    "profitEmpty": "Add this month's sales to see the profit →"
   },
   "line": {
     "title": "LINE",

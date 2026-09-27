@@ -344,7 +344,8 @@
     },
     "autoSaved": "自動登録済み・取引先ルール",
     "open": "開く",
-    "queued": "順番待ち"
+    "queued": "順番待ち",
+    "dropPhone": "書類の写真を選ぶか撮影してください"
   },
   "role": {
     "admin": "管理者",
@@ -572,7 +573,7 @@
     "title": "ダッシュボード",
     "month": "対象月",
     "upcoming": "支払期限が近い請求書",
-    "upcomingHint": "掛けで購入し、まだ支払っていないもの",
+    "upcomingHint": "支払済みにしていない請求書",
     "upcomingEmpty": "支払う請求書はありません。",
     "dueIn": "あと{days}日",
     "dueToday": "今日まで",
@@ -600,7 +601,11 @@
     "unpaidCount": "{count}件",
     "checkHint": "自動チェックで引っかかった書類",
     "monthDocs": "今月 {count}件",
-    "overdueCount": "期限切れ {count}件"
+    "overdueCount": "期限切れ {count}件",
+    "activityMore": "さらに{count}件を表示",
+    "profitTitle": "今月の利益",
+    "profitLine": "売上 {sales} − 費用 {cost}",
+    "profitEmpty": "今月の売上を入れると利益が表示されます →"
   },
   "line": {
     "title": "LINE連携",
