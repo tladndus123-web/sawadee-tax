@@ -2,6 +2,7 @@
 
 import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, CircleCheck, FilePen, ImagePlus, Loader2, Lock, Search, Trash2, TriangleAlert, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { useScreenDate } from "@/components/ScreenDate";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import { useCompany } from "@/lib/company-store";
 import { needsCheck } from "@/lib/dashboard";
 import { baht } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
-import { dmy, todayBangkok } from "@/lib/thai-tax";
+import { todayBangkok } from "@/lib/thai-tax";
 import { STICKERS, type Sticker } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { BulkPayBar } from "./BulkPayBar";
@@ -378,6 +379,7 @@ const DocRow = memo(function DocRow({
   onToggle?: (id: string) => void;
 }) {
   const t = useTranslations();
+  const sd = useScreenDate();
   const locale = useLocale();
   const monthLabel = useMonthLabel();
   const setStickers = async (stickers: Sticker[]) => {
@@ -403,7 +405,7 @@ const DocRow = memo(function DocRow({
           <span className="mt-0.5 block text-[15px] font-semibold tabular-nums sm:hidden">{baht(e.doc.totals.net)}</span>
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs whitespace-nowrap text-muted-foreground">
             {e.doc.docNo && <span className="mono max-sm:hidden">{e.doc.docNo}</span>}
-            {e.doc.date && <span>{dmy(e.doc.date)}</span>}
+            {e.doc.date && <span>{sd(e.doc.date)}</span>}
             {draft && <span className="font-medium">{monthLabel(monthKey(e.doc))}</span>}
             {!e.doc.paid && !draft && <span className="text-warn">{t("app.unpaid")}</span>}
             {flagged && (

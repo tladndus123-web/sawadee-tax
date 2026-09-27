@@ -2,6 +2,7 @@
 
 import { Building2, Loader2, Pencil, Search, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { useScreenDate } from "@/components/ScreenDate";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -18,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { exportLang } from "@/lib/export";
 import { useLedger } from "@/lib/ledger-store";
 import { baht, fromSatang, toSatang } from "@/lib/money";
-import { digitsOnly, dmy } from "@/lib/thai-tax";
+import { digitsOnly } from "@/lib/thai-tax";
 import { FORM_LANGS, type Tri } from "@/lib/types";
 import { useMe } from "@/lib/role-store";
 import { deleteVendor, saveVendorName, useVendors } from "@/lib/vendor-store";
@@ -88,6 +89,7 @@ export function VendorList() {
 
 function VendorRow({ v, lang, stat }: { v: Vendor; lang: "th" | "en" | "ja"; stat?: { count: number; satang: number; last: string } }) {
   const t = useTranslations("vendors");
+  const sd = useScreenDate();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState<Tri>(v.name);
   const [busy, setBusy] = useState(false);
@@ -130,7 +132,7 @@ function VendorRow({ v, lang, stat }: { v: Vendor; lang: "th" | "en" | "ja"; sta
           <span className="text-[15px] font-semibold tabular-nums">{baht(fromSatang(stat?.satang ?? 0))}</span>
           <span className="text-xs text-muted-foreground">
             {t("docs", { count: stat?.count ?? 0 })}
-            {stat?.last ? ` · ${t("last", { date: dmy(stat.last) })}` : ""}
+            {stat?.last ? ` · ${t("last", { date: sd(stat.last) })}` : ""}
           </span>
         </div>
         {!editing && (

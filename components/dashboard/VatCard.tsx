@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarClock, CircleCheck, FileText, ListChecks, Lock, TriangleAlert } from "lucide-react";
+import { useScreenDate } from "@/components/ScreenDate";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { MonthLockButton } from "@/components/ledger/MonthLockButton";
@@ -14,7 +15,6 @@ import { useMonthLocks } from "@/lib/month-lock-store";
 import { useMe } from "@/lib/role-store";
 import { reviewQueue } from "@/lib/review-queue";
 import { reviewRun } from "@/lib/review-run";
-import { dmy } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
  */
 export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry[]; companyTaxId: string; today: string }) {
   const t = useTranslations("vat");
+  const sd = useScreenDate();
   const tf = useTranslations("flow");
   const monthLabel = useMonthLabel();
   const me = useMe();
@@ -51,7 +52,7 @@ export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry
             {t("title", { month: label })}
           </h2>
           <p className="text-xs text-muted-foreground">
-            {t("deadline", { due: dmy(f.due), online: dmy(f.dueOnline) })}
+            {t("deadline", { due: sd(f.due), online: sd(f.dueOnline) })}
           </p>
         </div>
         {closed ? (

@@ -2,6 +2,7 @@
 
 import { AlertTriangle, CircleCheck, Clock, Loader2, Receipt, Undo2, Wallet } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { useScreenDate } from "@/components/ScreenDate";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -13,7 +14,7 @@ import { type DueItem, summarize, trend, upcoming } from "@/lib/dashboard";
 import { exportLang } from "@/lib/export";
 import { pick, setQuick, useLedger } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
-import { dmy, todayBangkok } from "@/lib/thai-tax";
+import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { ActivityList } from "./ActivityList";
@@ -148,6 +149,7 @@ function Tile({
 /** Unpaid credit purchases, most urgent first; paying one is a single tap (with undo) */
 function DueList({ items }: { items: DueItem[] }) {
   const t = useTranslations();
+  const sd = useScreenDate();
   const locale = useLocale();
   const lang = exportLang(locale);
   const [busy, setBusy] = useState<string | null>(null);
@@ -200,7 +202,7 @@ function DueList({ items }: { items: DueItem[] }) {
                   <span className="block truncate text-sm font-medium">{name}</span>
                   <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                     <span className={cn("rounded-full px-2 py-0.5 font-semibold", b.cls)}>{b.text}</span>
-                    {it.doc.dueDate && <span className="tabular-nums">{dmy(it.doc.dueDate)}</span>}
+                    {it.doc.dueDate && <span className="tabular-nums">{sd(it.doc.dueDate)}</span>}
                   </span>
                 </Link>
                 <span className="text-sm font-semibold tabular-nums">{baht(it.doc.totals.net)}</span>
