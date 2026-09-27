@@ -10,20 +10,23 @@ export interface CompanySettings {
   taxId: string;
   formConfig: unknown;
   stickerNames: Record<string, unknown>;
+  /** Delivery-app commission rates in percent per channel (lib/app-fees) */
+  appFees: Record<string, unknown>;
 }
 
-const EMPTY: CompanySettings = { loaded: false, taxId: "", formConfig: {}, stickerNames: {} };
+const EMPTY: CompanySettings = { loaded: false, taxId: "", formConfig: {}, stickerNames: {}, appFees: {} };
 let current: CompanySettings = EMPTY;
 let started = false;
 const listeners = new Set<() => void>();
 
 async function load() {
-  const { data } = await supabaseBrowser().from("company_settings").select("tax_id, form_config, sticker_names").eq("id", 1).maybeSingle();
+  const { data } = await supabaseBrowser().from("company_settings").select("tax_id, form_config, sticker_names, app_fees").eq("id", 1).maybeSingle();
   current = {
     loaded: true,
     taxId: data?.tax_id ?? "",
     formConfig: data?.form_config ?? {},
     stickerNames: (data?.sticker_names as Record<string, unknown>) ?? {},
+    appFees: (data?.app_fees as Record<string, unknown>) ?? {},
   };
   listeners.forEach((l) => l());
 }
@@ -52,7 +55,7 @@ export async function companyTaxId(): Promise<string> {
 }
 
 /** Admin only (the database refuses anyone else). */
-export async function saveCompany(patch: Partial<{ tax_id: string; form_config: unknown; sticker_names: unknown }>) {
+export async function saveCompany(patch: Partial<{ tax_id: string; form_config: unknown; sticker_names: unknown; app_fees: unknown }>) {
   const { data, error } = await supabaseBrowser().from("company_settings").update(patch).eq("id", 1).select("id");
   if (error) throw error;
   if (!data?.length) throw new Error("not allowed");

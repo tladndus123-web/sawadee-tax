@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(79);
+select plan(81);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -190,6 +190,13 @@ select throws_like($$ update public.sales set gross = 20000 where sale_date = '2
 select throws_like($$ insert into public.sales (sale_date, channel, gross) values ('2026-06-12', 'grab', 500) $$, 'month_locked%', 'nor be added to');
 delete from public.month_locks where month = '2026-06';
 select lives_ok($$ delete from public.sales where sale_date = '2026-06-10' $$, 'an admin deletes sales of an open month');
+
+-- Delivery-app commission rates: company-wide, only admins change them
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+update public.company_settings set app_fees = '{"grab": 99}' where id = 1;
+select is((select app_fees ->> 'grab' from public.company_settings where id = 1), null, 'staff cannot change the app commission rates');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select throws_ok($$ update public.company_settings set app_fees = '[30]' where id = 1 $$, '23514', NULL, 'rates are kept per channel (an object)');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

@@ -21,6 +21,8 @@ import { todayBangkok } from "@/lib/thai-tax";
 import { preparePhoto } from "@/lib/upload-queue";
 import { isPdf } from "@/lib/pdf-render";
 import { cn } from "@/lib/utils";
+import { monthFees } from "@/lib/app-fees";
+import { AppFeesCard } from "./AppFeesCard";
 import { PosImport } from "./PosImport";
 import { type SaleDraft, SaleSheet } from "./SaleSheet";
 
@@ -49,6 +51,7 @@ export function SalesPage() {
     return [...set].sort().reverse();
   }, [sales, purchases, today]);
   const r = useMemo(() => monthResult(sales, purchases, month, company.taxId), [sales, purchases, month, company.taxId]);
+  const fees = useMemo(() => monthFees(sales, month, company.appFees), [sales, month, company.appFees]);
   const days = useMemo(() => sales.filter((s) => saleMonth(s) === month), [sales, month]);
   const existingFor = (d: SaleDraft) => sales.find((x) => x.date === d.date && x.channel === d.channel && x.id !== d.id) ?? null;
 
@@ -161,8 +164,17 @@ export function SalesPage() {
             ))}
           </div>
         )}
+        {fees.fee > 0 && (
+          <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
+            <span className="text-muted-foreground">{t("fees.afterFee")}</span>
+            <b className={cn("tabular-nums", r.profit - fees.fee < 0 ? "text-bad" : "text-brand")}>{baht(r.profit - fees.fee)}</b>
+          </p>
+        )}
         <p className="text-[11px] leading-relaxed text-muted-foreground">{t("sales.resultNote")}</p>
       </section>
+
+      {/* Delivery apps: commission and payout (shown once the month has app sales) */}
+      {fees.lines.length > 0 && <AppFeesCard f={fees} />}
 
       {/* Days */}
       <section className="grid gap-2" aria-label={t("sales.days")}>

@@ -925,5 +925,21 @@
     "marked": "Failed automatic checks reviewed by a person · {who} · {when}",
     "someone": "someone",
     "back": "Needs a look again"
+  },
+  "fees": {
+    "title": "Delivery app commission (estimate)",
+    "edit": "Change rates",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "Commission rates saved",
+    "bad": "Enter a number from 0 to 100",
+    "empty": "No delivery-app sales this month.",
+    "line": "Orders {gross} · commission {fee}",
+    "payout": "Expected payout",
+    "gross": "Orders",
+    "fee": "Commission (incl. VAT)",
+    "payoutTotal": "Expected payout",
+    "afterFee": "After app commission",
+    "note": "Commission = orders × GP rate, plus 7% VAT on the commission. Rates differ by app and contract, so this is an estimate — check the app's statement for the exact amount. Record the app's commission tax invoice as a purchase to claim that VAT."
   }
 }

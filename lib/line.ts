@@ -83,6 +83,42 @@ export function dueReminder(items: DueItem[], url: string): string | null {
   ].join("\n");
 }
 
+/** Days before the VAT return's deadline on which the admins get a LINE reminder */
+export const VAT_REMIND_DAYS = [3, 1];
+
+export interface VatReminder {
+  /** Tax month being filed, YYYY-MM */
+  month: string;
+  /** The deadline that counts now (paper, or the online one after it) */
+  due: string;
+  daysLeft: number;
+  toCheck: number;
+  drafts: number;
+  claimableVat: number;
+}
+
+/**
+ * The VAT return (ภ.พ.30) reminder, Thai + Japanese like the payment one — sent only a few days before the
+ * deadline and only while the month is still open, with what is left to do.
+ */
+export function vatReminder(v: VatReminder, url: string): string | null {
+  if (!VAT_REMIND_DAYS.includes(v.daysLeft)) return null;
+  const [y, m] = v.month.split("-");
+  const todo = v.toCheck + v.drafts;
+  return [
+    "แจ้งเตือนยื่น ภ.พ.30 · 付加価値税申告のお知らせ",
+    `เดือนภาษี ${m}/${Number(y) + 543} · ยื่นภายใน ${dmy(v.due)} (อีก ${v.daysLeft} วัน)`,
+    `${y}年${Number(m)}月分 · 期限 ${dmy(v.due)}（あと${v.daysLeft}日）`,
+    "",
+    `ภาษีซื้อที่ขอคืนได้ / 控除できる仕入VAT: ${baht(v.claimableVat)}`,
+    todo
+      ? `ต้องตรวจ ${v.toCheck} · ฉบับร่าง ${v.drafts} — กรุณาจัดการก่อนยื่น\n要確認 ${v.toCheck}件 · 下書き ${v.drafts}件 — 申告前に整理してください`
+      : "เอกสารพร้อมยื่นแล้ว / 書類は申告の準備ができています",
+    "",
+    url,
+  ].join("\n");
+}
+
 /** LINE sends photos as JPEG, but look at the bytes rather than trust that */
 export function imageType(b: Buffer): "image/jpeg" | "image/png" | "image/webp" | null {
   if (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
