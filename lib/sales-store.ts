@@ -5,6 +5,8 @@
 // bucket under sales/.
 
 import { useEffect, useSyncExternalStore } from "react";
+import { lockedMonths } from "./month-lock-store";
+import type { ImportDay } from "./pos-import";
 import { CHANNELS, type Channel, type Sale } from "./sales";
 import { supabaseBrowser } from "./supabase/client";
 
@@ -101,6 +103,35 @@ export async function saveSale(s: Omit<Sale, "id" | "photoPath"> & { id?: string
   if (error) throw error;
   await reload();
   return (data as { id: string }).id;
+}
+
+/**
+ * Save many days at once (POS file import). Each day and channel replaces what is there; days in a closed month
+ * are left out and reported back, so one closed month never blocks the rest.
+ */
+export async function saveSalesBulk(days: ImportDay[]): Promise<{ saved: number; locked: number; invalid: number }> {
+  const closed = await lockedMonths();
+  // The database refuses negative days (refunds only) and VAT above the sales; they are left for a person
+  const valid = days.filter((d) => d.gross >= 0 && d.vat >= 0 && d.exempt >= 0 && d.vat + d.exempt <= d.gross);
+  const open = valid.filter((d) => !closed.has(d.date.slice(0, 7)));
+  if (open.length) {
+    const rows = open.map((d) => ({
+      sale_date: d.date,
+      channel: d.channel,
+      doc_from: d.docFrom,
+      doc_to: d.docTo,
+      bills: Math.max(0, d.bills),
+      gross: d.gross,
+      vat: d.vat,
+      exempt: d.exempt,
+      note: "",
+      source: "excel" as const,
+    }));
+    const { error } = await supabaseBrowser().from("sales").upsert(rows, { onConflict: "sale_date,channel" });
+    if (error) throw error;
+  }
+  await reload();
+  return { saved: open.length, locked: valid.length - open.length, invalid: days.length - valid.length };
 }
 
 /** Admins only (the database refuses anyone else) */

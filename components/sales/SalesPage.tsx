@@ -3,7 +3,7 @@
 // Sales: the month's result (sales − purchases), the days of sales by channel, and the two ways to add a day —
 // a photo / PDF of the POS closing report (the AI reads it) or typing it in. The sales tax report opens from here.
 
-import { Camera, FileText, Keyboard, Loader2, TrendingUp } from "lucide-react";
+import { Camera, FileSpreadsheet, FileText, Keyboard, Loader2, TrendingUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ import { todayBangkok } from "@/lib/thai-tax";
 import { preparePhoto } from "@/lib/upload-queue";
 import { isPdf } from "@/lib/pdf-render";
 import { cn } from "@/lib/utils";
+import { PosImport } from "./PosImport";
 import { type SaleDraft, SaleSheet } from "./SaleSheet";
 
 type Open = { draft: SaleDraft; photo?: File | null; preview?: string | null; unclear?: string[] };
@@ -39,6 +40,7 @@ export function SalesPage() {
   const [month, setMonth] = useState(today.slice(0, 7));
   const [open, setOpen] = useState<Open | null>(null);
   const [reading, setReading] = useState(false);
+  const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const purchases = useMemo(() => pick(entries, "ledger").map((e) => e.doc), [entries]);
@@ -92,6 +94,10 @@ export function SalesPage() {
           <Button type="button" className="h-11 rounded-full px-5 text-[15px]" disabled={reading} onClick={() => fileRef.current?.click()}>
             {reading ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
             {reading ? t("sales.reading") : t("sales.addPhoto")}
+          </Button>
+          <Button type="button" variant="secondary" className="h-11 rounded-full px-4" onClick={() => setImporting(true)}>
+            <FileSpreadsheet className="size-4" />
+            {t("pos.button")}
           </Button>
           <Button type="button" variant="secondary" className="h-11 rounded-full px-4" onClick={() => setOpen({ draft: blank(today) })}>
             <Keyboard className="size-4" />
@@ -187,6 +193,7 @@ export function SalesPage() {
         )}
       </section>
 
+      {importing && <PosImport existing={sales} onClose={() => setImporting(false)} />}
       {open && (
         <SaleSheet
           key={open.draft.id ?? "new"}

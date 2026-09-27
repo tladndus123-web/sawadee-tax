@@ -881,5 +881,38 @@
       "robinhood": "Robinhood",
       "other": "その他"
     }
+  },
+  "pos": {
+    "button": "POS Excel",
+    "title": "POS Excelの取り込み",
+    "hint": "POSから出力した売上ファイル（.xlsx、.csv）を選ぶと、日付・合計・VATの列を自動で見つけ、1日・販売経路ごとに合計します。列が違う場合は下で変更できます。",
+    "pick": "ファイルを選ぶ",
+    "other": "別のファイル",
+    "columns": "見つけた列（変更できます）",
+    "none": "— なし —",
+    "defaultChannel": "経路がない場合",
+    "headerRow": "見出し行",
+    "nothing": "日付と売上合計の列を選んでください。空のままなら見出し行を変えてみてください。",
+    "preview": "{days}日・{lines}行・合計 {total}",
+    "skipped": "合計・空の行 {count}行をスキップ",
+    "replacing": "既存の{count}行はファイルの数字に置き換わります。",
+    "vatComputed": "ファイルにVAT列がないため7/107で計算しました。",
+    "import": "{lines}行を取り込む",
+    "saved": "売上{count}行を取り込みました",
+    "locked": "締めた月の{count}行はスキップしました",
+    "xls": "古い.xlsファイルは開けません。Excelで.xlsxとして保存してください。",
+    "readFail": "ファイルを開けませんでした。.xlsxか.csvか確認してください。",
+    "noHeader": "見出し行を自動で見つけられませんでした。下で列を選んでください。",
+    "f": {
+      "date": "日付",
+      "gross": "売上合計",
+      "vat": "VAT",
+      "preVat": "税抜金額",
+      "exempt": "非課税売上",
+      "receipt": "レシート番号",
+      "bills": "レシート数",
+      "channel": "販売経路"
+    },
+    "invalid": "合計がマイナス、またはVATが合計より大きい{count}行はスキップしました。手動で確認してください。"
   }
 }

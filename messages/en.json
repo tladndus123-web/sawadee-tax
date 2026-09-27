@@ -881,5 +881,38 @@
       "robinhood": "Robinhood",
       "other": "Other"
     }
+  },
+  "pos": {
+    "button": "POS Excel",
+    "title": "Import POS Excel",
+    "hint": "Pick the sales file exported from your POS (.xlsx, .csv). The date, total and VAT columns are found automatically and added up per day and channel. Change any column below if it's wrong.",
+    "pick": "Choose file",
+    "other": "Another file",
+    "columns": "Columns found (you can change them)",
+    "none": "— none —",
+    "defaultChannel": "When no channel",
+    "headerRow": "Header row",
+    "nothing": "Choose the date and total columns. If it's still empty, try another header row.",
+    "preview": "{days} days · {lines} lines · total {total}",
+    "skipped": "{count} total/empty rows skipped",
+    "replacing": "{count} lines already there will be replaced by the file's numbers.",
+    "vatComputed": "The file has no VAT column, so VAT was worked out as 7/107.",
+    "import": "Import {lines} lines",
+    "saved": "Imported {count} lines of sales",
+    "locked": "Skipped {count} lines in closed months",
+    "xls": "Old .xls files can't be opened. Save it as .xlsx in Excel.",
+    "readFail": "Couldn't open the file. Check it is .xlsx or .csv.",
+    "noHeader": "Couldn't find the header row automatically. Choose the columns below.",
+    "f": {
+      "date": "Date",
+      "gross": "Total sales",
+      "vat": "VAT",
+      "preVat": "Before VAT",
+      "exempt": "VAT-exempt",
+      "receipt": "Receipt no.",
+      "bills": "Bills",
+      "channel": "Channel"
+    },
+    "invalid": "Skipped {count} lines with a negative total or VAT above the sales. Please check them by hand."
   }
 }
