@@ -8,6 +8,7 @@ import { normalize } from "./normalize";
 import { isPdf, pdfToJpeg } from "./pdf-render";
 import { checkPhoto, type PhotoIssue } from "./photo-quality";
 import { isSlip } from "./slip-tiles";
+import { paidAtTill } from "./archive";
 import { runChecks } from "./checks";
 import { companyTaxId } from "./company-store";
 import { saveEntry } from "./ledger-store";
@@ -126,7 +127,9 @@ async function readNow(id: string) {
     const json = (await res.json().catch(() => ({}))) as { doc?: LedgerDoc; error?: ExtractErrorCode };
     if (res.ok && json.doc) {
       // normalize() again so a reply of any shape still fits the form, then tidy with the vendor dictionary
-      const { doc, fixed, vendor } = await withVendor(normalize(json.doc));
+      const tidied = await withVendor(normalize(json.doc));
+      const { fixed, vendor } = tidied;
+      const doc = paidAtTill(tidied.doc);
       const savedId = vendor?.autoRegister ? await autoSave(doc, vendor, photo, pdfs.get(id) ?? null) : null;
       if (savedId) {
         photos.delete(id);

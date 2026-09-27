@@ -10,6 +10,7 @@ import crypto from "node:crypto";
 import type { messagingApi, webhook } from "@line/bot-sdk";
 import { type LedgerRef, runChecks } from "./checks";
 import { docToRow } from "./db-map";
+import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
 import { imageType, lineBlobClient, lineClient, receiptCard, say } from "./line";
 import { supabaseAdmin } from "./supabase/admin";
@@ -158,6 +159,7 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
     doc = applyHistory(doc, (last.data as VendorHistory | null) ?? null).doc;
     doc = applyRule(doc, toVendor(vendor.data as VendorRow)).doc;
   }
+  doc = paidAtTill(doc);
   const companyTaxId = (company.data?.tax_id as string | undefined) ?? "";
   const others: LedgerRef[] = (same?.data ?? []).map((d) => ({
     id: d.id as string,

@@ -409,6 +409,7 @@ export function DocumentReview({
                         const on = v === true;
                         field.onChange(on);
                         if (on && !getValues("paidDate")) setValue("paidDate", todayBangkok(), { shouldDirty: true });
+                        if (!on) setValue("paidDate", "", { shouldDirty: true });
                       }}
                     />
                     {t("app.paid")}

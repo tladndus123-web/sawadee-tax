@@ -5,10 +5,21 @@ import { fromSatang, toSatang } from "./money";
 import type { LedgerDoc, Sticker } from "./types";
 
 /**
- * Still to be paid: bought on credit, or with a due date printed, and not marked paid. Cash, transfer and card
- * receipts without a due date were paid at the till. The one rule for the ledger, its filters and the dashboard.
+ * Still to be paid = not marked paid. What the person ticks always wins (unticking "paid" puts it back on the
+ * list). Receipts paid at the till start out ticked instead — see paidAtTill(). The one rule for the ledger, its
+ * filters and the dashboard.
  */
-export const isUnpaid = (d: Pick<LedgerDoc, "paid" | "payment" | "dueDate">) => !d.paid && (d.payment === "credit" || !!d.dueDate);
+export const isUnpaid = (d: Pick<LedgerDoc, "paid">) => !d.paid;
+
+/**
+ * A fresh reading of a receipt paid on the spot — cash, transfer or card, and no due date printed — starts out
+ * marked paid on its own date, so it never shows up as money still owed. Only for new readings: a saved
+ * document keeps whatever a person set.
+ */
+export function paidAtTill<T extends Pick<LedgerDoc, "paid" | "paidDate" | "payment" | "dueDate" | "date">>(d: T): T {
+  if (d.paid || d.dueDate || !["cash", "transfer", "card"].includes(d.payment)) return d;
+  return { ...d, paid: true, paidDate: d.paidDate || d.date };
+}
 
 export const NO_DATE = "none";
 

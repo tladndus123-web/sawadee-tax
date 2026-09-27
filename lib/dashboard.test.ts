@@ -16,7 +16,7 @@ describe("dashboard summary", () => {
   it("adds up the month, claimable VAT and unpaid credit purchases", () => {
     const docs = [
       d(), // Sept, credit, unpaid, due 08/10, claimable 4,200
-      d((x) => ((x.date = "2026-09-01"), (x.totals.net = 0.1), (x.totals.vat = 0), (x.payment = "cash"), (x.dueDate = ""))), // cash receipt: no due date
+      d((x) => ((x.date = "2026-09-01"), (x.totals.net = 0.1), (x.totals.vat = 0), (x.payment = "cash"), (x.dueDate = ""), (x.paid = true))), // cash receipt: paid at the till
       d((x) => ((x.date = "2026-08-10"), (x.dueDate = "2026-08-25"))), // August, overdue
     ];
     const s = summarize(docs, "2026-09", COMPANY, TODAY);

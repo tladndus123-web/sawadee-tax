@@ -136,6 +136,7 @@ export function QuickCard({ onJump, manual = false }: { onJump: (path: string) =
                   const on = v === true;
                   field.onChange(on);
                   if (on && !getValues("paidDate")) setValue("paidDate", todayBangkok(), { shouldDirty: true });
+                        if (!on) setValue("paidDate", "", { shouldDirty: true });
                 }}
               />
               {t("app.paid")}
