@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link } from "@/i18n/navigation";
 import { AddDocButtons } from "@/components/upload/AddDocButtons";
-import { type ArchiveFilter, groupByMonth, matches, monthKey, NO_DATE, search } from "@/lib/archive";
+import { type ArchiveFilter, groupByMonth, matches, monthKey, NO_DATE, search, isUnpaid } from "@/lib/archive";
 import { joinTri } from "@/lib/form-labels";
 import { healThumb, type LedgerEntry, type LedgerView, pick, restoreEntry, restoreMany, setQuick, useLedger, usePhotoUrl, setAck } from "@/lib/ledger-store";
 import { useMonthLocks } from "@/lib/month-lock-store";
@@ -198,7 +198,7 @@ export function LedgerList() {
               onToggle={toggle}
             />
           ))}
-          {selecting && <BulkPayBar chosen={list.filter((e) => selected.has(e.id) && !e.doc.paid)} onDone={stopSelecting} />}
+          {selecting && <BulkPayBar chosen={list.filter((e) => selected.has(e.id) && isUnpaid(e.doc))} onDone={stopSelecting} />}
         </div>
       )}
     </div>
@@ -306,7 +306,7 @@ const MonthSection = memo(function MonthSection({
           )}
           <ul className="grid gap-2">
             {group.items.map((e) => (
-              <DocRow key={e.id} e={e} open={check.get(e.id)} selectable={selecting && !e.doc.paid} checked={selected.has(e.id)} onToggle={onToggle} />
+              <DocRow key={e.id} e={e} open={check.get(e.id)} selectable={selecting && isUnpaid(e.doc)} checked={selected.has(e.id)} onToggle={onToggle} />
             ))}
           </ul>
         </div>
@@ -420,7 +420,7 @@ const DocRow = memo(function DocRow({
             {e.doc.docNo && <span className="mono max-sm:hidden">{e.doc.docNo}</span>}
             {e.doc.date && <span>{sd(e.doc.date)}</span>}
             {draft && <span className="font-medium">{monthLabel(monthKey(e.doc))}</span>}
-            {!e.doc.paid && !draft && <span className="text-warn">{t("app.unpaid")}</span>}
+            {isUnpaid(e.doc) && !draft && <span className="text-warn">{t("app.unpaid")}</span>}
             {flagged && (
               <span className="inline-flex items-center gap-1 font-medium text-bad">
                 <TriangleAlert className="size-3" aria-hidden />

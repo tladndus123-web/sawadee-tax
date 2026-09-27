@@ -24,7 +24,7 @@ import { applyTranslations, translationJobs } from "@/lib/translate-gaps";
 import { type Box, CATEGORIES, type LedgerDoc, PAYMENTS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { StickerDots, StickerPicker, useMonthLabel } from "@/components/ledger/Stickers";
-import { monthKey } from "@/lib/archive";
+import { isUnpaid, monthKey } from "@/lib/archive";
 import { AckBar } from "./AckBar";
 import { ChecksPanel } from "./ChecksPanel";
 import { DeleteFlow } from "./DeleteFlow";
@@ -352,7 +352,7 @@ export function DocumentReview({
           <div className="workspace-panel overflow-hidden text-sm print:hidden">
             <button type="button" className="flex min-h-12 w-full items-center justify-between gap-3 px-5 py-3 text-left font-medium sm:hidden" aria-expanded={metadataOpen} aria-controls="document-payment-details" onClick={() => setMetadataOpen((open) => !open)}>
               <span>{t("app.category")} · {t("app.payment")}</span>
-              <span className="flex items-center gap-2 text-xs text-muted-foreground"><StickerDots stickers={doc.stickers} />{paid ? t("app.paid") : t("app.unpaid")}<ChevronDown aria-hidden className={cn("size-4 transition-transform", metadataOpen && "rotate-180")} /></span>
+              <span className="flex items-center gap-2 text-xs text-muted-foreground"><StickerDots stickers={doc.stickers} />{isUnpaid(doc) ? t("app.unpaid") : t("app.paid")}<ChevronDown aria-hidden className={cn("size-4 transition-transform", metadataOpen && "rotate-180")} /></span>
             </button>
             <div id="document-payment-details" className={cn("grid gap-4 border-t p-5 sm:grid-cols-2 sm:border-t-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]", !metadataOpen && "hidden sm:grid")}>
             <label className="grid min-w-0 content-start gap-2">

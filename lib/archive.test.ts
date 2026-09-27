@@ -52,3 +52,17 @@ describe("ledger search", () => {
     expect(search(doc, "  ")).toBe(true);
   });
 });
+
+describe("one rule for 'unpaid' (ledger, filters, dashboard)", async () => {
+  const { isUnpaid } = await import("./archive");
+  it("credit or a printed due date, not marked paid", () => {
+    expect(isUnpaid({ paid: false, payment: "credit", dueDate: "" })).toBe(true);
+    expect(isUnpaid({ paid: false, payment: "transfer", dueDate: "2026-10-08" })).toBe(true);
+    expect(isUnpaid({ paid: true, payment: "credit", dueDate: "2026-10-08" })).toBe(false);
+  });
+  it("cash / transfer / card receipts without a due date were paid at the till", () => {
+    expect(isUnpaid({ paid: false, payment: "transfer", dueDate: "" })).toBe(false);
+    expect(isUnpaid({ paid: false, payment: "cash", dueDate: "" })).toBe(false);
+    expect(isUnpaid({ paid: false, payment: "card", dueDate: "" })).toBe(false);
+  });
+});

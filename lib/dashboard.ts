@@ -2,7 +2,7 @@
 // Like the prototype's renderSummary: "unpaid" means credit purchases not marked paid —
 // cash / card / transfer receipts are paid at the till.
 
-import { monthKey } from "./archive";
+import { isUnpaid, monthKey } from "./archive";
 import { claimable, flagsFor } from "./checks";
 import { fromSatang, toSatang } from "./money";
 import type { LedgerDoc } from "./types";
@@ -10,7 +10,7 @@ import type { LedgerDoc } from "./types";
 /** ack: warnings a person marked "문제 없음" (documents.ack_flags) */
 type Doc = { id: string; doc: LedgerDoc; ack?: readonly string[] };
 
-export const isUnpaid = (d: LedgerDoc) => d.payment === "credit" && !d.paid;
+export { isUnpaid } from "./archive";
 
 export interface Summary {
   /** Net total of the month's documents */

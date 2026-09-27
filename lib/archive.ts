@@ -4,6 +4,12 @@
 import { fromSatang, toSatang } from "./money";
 import type { LedgerDoc, Sticker } from "./types";
 
+/**
+ * Still to be paid: bought on credit, or with a due date printed, and not marked paid. Cash, transfer and card
+ * receipts without a due date were paid at the till. The one rule for the ledger, its filters and the dashboard.
+ */
+export const isUnpaid = (d: Pick<LedgerDoc, "paid" | "payment" | "dueDate">) => !d.paid && (d.payment === "credit" || !!d.dueDate);
+
 export const NO_DATE = "none";
 
 /** "2026-09" from the document date; NO_DATE when the date is missing or unreadable */
@@ -43,7 +49,7 @@ export function groupByMonth<T extends { doc: LedgerDoc }>(items: T[]): MonthGro
         items: sorted,
         net: fromSatang(sorted.reduce((s, x) => s + toSatang(x.doc.totals.net), 0)),
         vat: fromSatang(sorted.reduce((s, x) => s + toSatang(x.doc.totals.vat), 0)),
-        unpaid: sorted.filter((x) => !x.doc.paid).length,
+        unpaid: sorted.filter((x) => isUnpaid(x.doc)).length,
       };
     });
 }
@@ -55,7 +61,7 @@ export interface ArchiveFilter {
 
 /** A document passes when it has any of the chosen stickers (or none are chosen). */
 export const matches = (doc: LedgerDoc, f: ArchiveFilter): boolean =>
-  (!f.stickers.length || f.stickers.some((s) => doc.stickers.includes(s))) && (!f.unpaidOnly || !doc.paid);
+  (!f.stickers.length || f.stickers.some((s) => doc.stickers.includes(s))) && (!f.unpaidOnly || isUnpaid(doc));
 
 const fold = (s: string) => s.normalize("NFKC").toLowerCase();
 const tri = (t: { th: string; en: string; ja: string }) => `${t.th} ${t.en} ${t.ja}`;
