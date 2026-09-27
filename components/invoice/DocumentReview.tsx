@@ -31,6 +31,7 @@ import { Chip } from "./fields";
 import { InvoiceEdit } from "./InvoiceEdit";
 import { InvoiceView } from "./InvoiceView";
 import { TaxFields } from "./TaxFields";
+import { QuickCard } from "./QuickCard";
 import { VendorPicker } from "./VendorPicker";
 
 // The zoomable photo (react-zoom-pan-pinch) loads after the form is on screen
@@ -40,6 +41,9 @@ const PhotoViewer = dynamic(() => import("./PhotoViewer").then((m) => m.PhotoVie
 });
 
 const FORM_KEY = "trl.formMode";
+/** "quick" = the quick card (default), "detail" = the whole paper form; remembered per browser */
+const VIEW_KEY = "trl.reviewView";
+type ReviewView = "quick" | "detail";
 const FORM_MODES: [FormMode, string][] = [
   ["all", ""],
   ["th", "ไทย"],
@@ -100,6 +104,7 @@ export function DocumentReview({
   const results = useMemo(() => runChecks(doc, { companyTaxId, others }), [doc, companyTaxId, others]);
 
   const [editing, setEditing] = useState(startEditing);
+  const [view, setView] = useState<ReviewView>(startEditing ? "detail" : "quick");
   const [mobilePanel, setMobilePanel] = useState<"form" | "photo">("form");
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -125,6 +130,20 @@ export function DocumentReview({
       if (v && ["all", "th", "en", "ja"].includes(v)) setFormMode(v);
     } catch {}
   }, []);
+  useEffect(() => {
+    if (startEditing) return;
+    try {
+      const v = localStorage.getItem(VIEW_KEY);
+      if (v === "quick" || v === "detail") setView(v);
+    } catch {}
+  }, [startEditing]);
+  const changeView = (v: string) => {
+    if (v !== "quick" && v !== "detail") return;
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {}
+  };
   const changeFormMode = (v: string) => {
     if (!v) return;
     setFormMode(v as FormMode);
@@ -258,7 +277,11 @@ export function DocumentReview({
           <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
             <h3 className="hidden text-sm font-semibold sm:block">{t("ui.documentForm")}</h3>
             <div className="flex flex-wrap items-center gap-3">
-              {!editing && (
+              <ToggleGroup type="single" variant="outline" size="sm" className="segmented-control" value={view} onValueChange={changeView} aria-label={t("quick.view")}>
+                <ToggleGroupItem value="quick" className="px-3">{t("quick.quick")}</ToggleGroupItem>
+                <ToggleGroupItem value="detail" className="px-3">{t("quick.detail")}</ToggleGroupItem>
+              </ToggleGroup>
+              {view === "detail" && !editing && (
                 <ToggleGroup type="single" variant="outline" size="sm" className="segmented-control" value={formMode} onValueChange={changeFormMode} aria-label={t("app.formLang")}>
                   {FORM_MODES.map(([k, label]) => (
                     <ToggleGroupItem key={k} value={k} lang={k === "all" ? undefined : k} className="px-2.5">
@@ -267,7 +290,7 @@ export function DocumentReview({
                   ))}
                 </ToggleGroup>
               )}
-              <ToggleGroup
+              {view === "detail" && <ToggleGroup
                 type="single"
                 variant="outline"
                 size="sm"
@@ -282,12 +305,16 @@ export function DocumentReview({
                 <ToggleGroupItem value="edit" className="px-3">
                   {t("app.edit")}
                 </ToggleGroupItem>
-              </ToggleGroup>
+              </ToggleGroup>}
             </div>
           </div>
 
           {!isSample && <VendorPicker />}
 
+          {view === "quick" ? (
+            <QuickCard onJump={showField} />
+          ) : (
+          <>
           {/* Category, payment, paid */}
           <div className="workspace-panel overflow-hidden text-sm print:hidden">
             <button type="button" className="flex min-h-12 w-full items-center justify-between gap-3 px-5 py-3 text-left font-medium sm:hidden" aria-expanded={metadataOpen} aria-controls="document-payment-details" onClick={() => setMetadataOpen((open) => !open)}>
@@ -378,6 +405,8 @@ export function DocumentReview({
             </p>
           )}
           {editing ? <InvoiceEdit mode={formMode} /> : <InvoiceView doc={doc} mode={formMode} onUnsure={showField} signable />}
+          </>
+          )}
 
           <ChecksPanel results={results} unclear={doc.unclear} onJump={showField} className="print:hidden" />
 

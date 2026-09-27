@@ -774,5 +774,13 @@
   "manual": {
     "start": "Type it in without a photo",
     "title": "Document typed by hand"
+  },
+  "quick": {
+    "view": "View",
+    "quick": "Quick",
+    "detail": "Detailed",
+    "vat7": "Work out 7%",
+    "unsure": "Check",
+    "taxSettings": "Tax settings (claim month · input VAT · withholding)"
   }
 }
