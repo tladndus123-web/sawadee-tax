@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, ChevronDown, FileImage, FilePen, FileText, Languages, Loader2, Printer, Save, X } from "lucide-react";
+import { CalendarDays, ChevronDown, FileImage, FilePen, FileText, Loader2, Printer, Save, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
@@ -32,6 +32,7 @@ import { InvoiceEdit } from "./InvoiceEdit";
 import { InvoiceView } from "./InvoiceView";
 import { TaxFields } from "./TaxFields";
 import { QuickCard } from "./QuickCard";
+import { TranslateBadge } from "./TranslateBadge";
 import { VendorPicker } from "./VendorPicker";
 
 // The zoomable photo (react-zoom-pan-pinch) loads after the form is on screen
@@ -180,6 +181,7 @@ export function DocumentReview({
       });
       const json = (await res.json().catch(() => ({}))) as { items?: Partial<Record<"th" | "en" | "ja", string>>[] };
       if (!res.ok || !json.items) throw new Error(String(res.status));
+      toast.success(t("tr.done", { count: jobs.length }), { icon: "✨" });
       return applyTranslations(d, jobs, json.items);
     } catch {
       toast.warning(t("tr.failed"));
@@ -406,12 +408,7 @@ export function DocumentReview({
             </div>
           </div>
 
-          {editing && (
-            <p className="flex items-start gap-2 rounded-2xl bg-brand-soft px-4 py-3 text-sm text-foreground print:hidden">
-              <Languages className="mt-0.5 size-4 flex-none text-brand" aria-hidden />
-              {t("tr.hint")}
-            </p>
-          )}
+          {editing && <TranslateBadge />}
           {editing ? <InvoiceEdit mode={formMode} /> : <InvoiceView doc={doc} mode={formMode} onUnsure={showField} signable />}
           </>
           )}

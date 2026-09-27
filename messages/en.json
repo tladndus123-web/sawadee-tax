@@ -781,7 +781,9 @@
   },
   "tr": {
     "hint": "Type in just one language. When you save, the AI translates each changed field into the other two.",
-    "failed": "Couldn't translate automatically, so it was saved as typed."
+    "failed": "Couldn't translate automatically, so it was saved as typed.",
+    "badge": "AI auto-translation",
+    "done": "The AI translated {count} fields into Thai, English and Japanese"
   },
   "manual": {
     "start": "Type it in without a photo",

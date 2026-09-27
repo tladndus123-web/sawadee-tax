@@ -16,12 +16,13 @@ import { CATEGORIES, type LedgerDoc, PAYMENTS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { MoneyInput } from "./fields";
 import { TaxFields } from "./TaxFields";
+import { OtherLangs, TranslateBadge } from "./TranslateBadge";
 
 export function QuickCard({ onJump, manual = false }: { onJump: (path: string) => void; manual?: boolean }) {
   const t = useTranslations();
   const lang = exportLang(useLocale());
   const { control, register, setValue, getValues } = useFormContext<LedgerDoc>();
-  const [seller, unclear, net, vat, paid] = useWatch({ control, name: ["seller", "unclear", "totals.net", "totals.vat", "paid"] });
+  const [seller, unclear, net, vat, paid, firstItem] = useWatch({ control, name: ["seller", "unclear", "totals.net", "totals.vat", "paid", "items.0"] });
   const unsure = new Set(unclear ?? []);
   const sellerName = seller?.name?.[lang] || seller?.name?.th || seller?.name?.en || seller?.name?.ja || "";
 
@@ -40,9 +41,11 @@ export function QuickCard({ onJump, manual = false }: { onJump: (path: string) =
     <div className="workspace-panel grid gap-5 p-5 text-sm">
       {manual ? (
         <div className="grid gap-3">
+          <TranslateBadge />
           <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)]">
             <Row label={t("labels.seller")} path="seller.name" unsure={unsure} onJump={onJump}>
               <Input className="h-10" aria-label={t("labels.seller")} {...register(`seller.name.${lang}`)} />
+              <OtherLangs value={seller?.name} lang={lang} />
             </Row>
             <Row label={t("labels.taxId")} path="seller.taxId" unsure={unsure} onJump={onJump}>
               <Input
@@ -56,8 +59,8 @@ export function QuickCard({ onJump, manual = false }: { onJump: (path: string) =
           </div>
           <Row label={t("quick.what")} path="items.0.desc" unsure={unsure} onJump={onJump}>
             <Input className="h-10" aria-label={t("quick.what")} placeholder={t("quick.whatHint")} {...register(`items.0.desc.${lang}`)} />
+            <OtherLangs value={firstItem?.desc} lang={lang} />
           </Row>
-          <p className="text-[11px] leading-snug text-muted-foreground">{t("tr.hint")}</p>
         </div>
       ) : (
         <Row label={t("labels.seller")} path="seller.name" unsure={unsure} onJump={onJump}>
