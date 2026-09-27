@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, CircleCheck, FileText, Lock, TriangleAlert } from "lucide-react";
+import { CalendarClock, CircleCheck, FileText, ListChecks, Lock, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { MonthLockButton } from "@/components/ledger/MonthLockButton";
@@ -12,6 +12,8 @@ import { type LedgerEntry, pick } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
 import { useMonthLocks } from "@/lib/month-lock-store";
 import { useMe } from "@/lib/role-store";
+import { reviewQueue } from "@/lib/review-queue";
+import { reviewRun } from "@/lib/review-run";
 import { dmy } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +23,7 @@ import { cn } from "@/lib/utils";
  */
 export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry[]; companyTaxId: string; today: string }) {
   const t = useTranslations("vat");
+  const tf = useTranslations("flow");
   const monthLabel = useMonthLabel();
   const me = useMe();
   const locks = useMonthLocks();
@@ -33,6 +36,9 @@ export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry
     [entries, f.month, companyTaxId, today],
   );
   const drafts = useMemo(() => pick(entries, "drafts").filter((e) => monthKey(e.doc) === f.month).length, [entries, f.month]);
+
+  // Everything that still needs a look, any month, oldest first
+  const firstToCheck = useMemo(() => reviewQueue(entries, companyTaxId, today)[0], [entries, companyTaxId, today]);
 
   const urgent = !closed && f.daysLeft <= 5;
   const late = !closed && f.daysLeft < 0;
@@ -86,6 +92,16 @@ export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
+        {firstToCheck && (
+          <Link
+            href={`/documents/${firstToCheck}?check=1`}
+            onClick={() => reviewRun.start()}
+            className="press inline-flex h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 active:scale-[0.97]"
+          >
+            <ListChecks className="size-4" aria-hidden />
+            {tf("start")}
+          </Link>
+        )}
         <Link
           href={`/ledger/report/${f.month}`}
           className="press inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-4 text-sm font-medium hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] active:scale-[0.97]"

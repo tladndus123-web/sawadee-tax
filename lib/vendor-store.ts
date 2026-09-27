@@ -53,25 +53,33 @@ export async function deleteVendor(id: string) {
   await reload();
 }
 
+/** category/payment of the vendor's newest saved document (null when none, or on any error) */
+export async function vendorHistory(vendorId: string): Promise<VendorHistory | null> {
+  try {
+    const { data } = await supabaseBrowser()
+      .from("documents")
+      .select("category, payment")
+      .eq("vendor_id", vendorId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return (data as VendorHistory | null) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Tidy a fresh AI reading with the dictionary (never throws: without a match the reading is unchanged) */
 export async function withVendor(doc: LedgerDoc): Promise<{ doc: LedgerDoc; fixed: VendorFix[] }> {
   const key = vendorKey(doc);
   if (!key) return { doc, fixed: [] };
   try {
-    const sb = supabaseBrowser();
-    const { data } = await sb.from("vendors").select("id, tax_id, name, address, branch, tel, fax").eq("tax_id", key).maybeSingle();
+    const { data } = await supabaseBrowser().from("vendors").select("id, tax_id, name, address, branch, tel, fax").eq("tax_id", key).maybeSingle();
     const named = applyVendor(doc, data ? toVendor(data as VendorRow) : null);
     if (!data) return named;
     // The person's last saved category/payment for this vendor carries over to the fresh reading
-    const { data: last } = await sb
-      .from("documents")
-      .select("category, payment")
-      .eq("vendor_id", (data as VendorRow).id)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const hist = applyHistory(named.doc, (last as VendorHistory | null) ?? null);
+    const hist = applyHistory(named.doc, await vendorHistory((data as VendorRow).id));
     return { doc: hist.doc, fixed: [...named.fixed, ...hist.fixed] };
   } catch {
     return { doc, fixed: [] };

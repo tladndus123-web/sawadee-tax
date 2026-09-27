@@ -2,7 +2,7 @@
 
 // A document from the temporary ledger (IndexedDB). Step 5 loads it from Supabase instead.
 
-import { ArchiveRestore, FileText, Loader2, Lock, Trash2 } from "lucide-react";
+import { ArchiveRestore, FileText, ListChecks, Loader2, Lock, SkipForward, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -16,9 +16,12 @@ import { restoreEntry, saveEntry, softDelete, useLedger, usePhotoUrl } from "@/l
 import { useMonthLocks } from "@/lib/month-lock-store";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { useMe } from "@/lib/role-store";
+import { nextInQueue, queueProgress, reviewQueue } from "@/lib/review-queue";
+import { reviewRun } from "@/lib/review-run";
+import { todayBangkok } from "@/lib/thai-tax";
 import { hasWht } from "@/lib/wht";
 
-export function StoredReview({ id }: { id: string }) {
+export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: boolean }) {
   const t = useTranslations();
   const router = useRouter();
   const me = useMe();
@@ -36,6 +39,19 @@ export function StoredReview({ id }: { id: string }) {
   const [restoring, setRestoring] = useState(false);
   // Keeps the delete flow mounted while the shredder plays after the entry turns deleted
   const [deleting, setDeleting] = useState(false);
+
+  // "Check one by one": what still needs a look, and moving on to the next one
+  const queue = useMemo(() => (checkRun ? reviewQueue(entries, company.taxId, todayBangkok()) : []), [checkRun, entries, company.taxId]);
+  const progress = queueProgress(queue, id, reviewRun.done);
+  const goNext = () => {
+    reviewRun.mark(id);
+    const next = nextInQueue(queue, id, reviewRun.done);
+    if (next) router.push(`/documents/${next}?check=1`);
+    else {
+      toast.success(t("flow.allDone"));
+      router.push("/");
+    }
+  };
 
   if (!loaded) return <Loader2 className="mx-auto mt-20 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
 
@@ -92,8 +108,24 @@ export function StoredReview({ id }: { id: string }) {
           </Button>
         </div>
       )}
+      {checkRun && !entry.deletedAt && (
+        <div className="sticky top-16 z-40 flex flex-wrap items-center gap-2 rounded-2xl bg-brand-soft px-4 py-2.5 text-sm backdrop-blur-xl print:hidden lg:top-20">
+          <ListChecks className="size-4 flex-none text-brand" aria-hidden />
+          <span className="font-semibold text-brand tabular-nums">{t("flow.progress", { at: progress.at, total: progress.total })}</span>
+          <span className="flex-1" />
+          <Button type="button" variant="ghost" className="h-9 rounded-full px-3" onClick={goNext}>
+            <SkipForward className="size-4" />
+            {t("flow.skip")}
+          </Button>
+          <Button type="button" variant="ghost" className="h-9 rounded-full px-3" onClick={() => router.push("/")}>
+            <X className="size-4" />
+            <span className="max-sm:sr-only">{t("flow.stop")}</span>
+          </Button>
+        </div>
+      )}
       <DocumentReview
         key={entry.id}
+        saveLabel={checkRun ? t("flow.next") : undefined}
         initial={entry.doc}
         photoUrl={photoUrl}
         companyTaxId={company.taxId}
@@ -103,7 +135,8 @@ export function StoredReview({ id }: { id: string }) {
           const wasDraft = entry.status === "draft";
           const { movedTo } = await saveEntry(d, null, entry.id, "final", company.taxId);
           toast.success(movedTo ? t("tax.movedTo", { month: monthLabel(monthKey({ date: d.date })), to: monthLabel(movedTo) }) : t("trash.saved"));
-          if (wasDraft) router.push("/ledger");
+          if (checkRun) goNext();
+          else if (wasDraft) router.push("/ledger");
         }}
         onDraft={
           entry.status === "draft"

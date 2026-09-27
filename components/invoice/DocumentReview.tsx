@@ -30,6 +30,7 @@ import { Chip } from "./fields";
 import { InvoiceEdit } from "./InvoiceEdit";
 import { InvoiceView } from "./InvoiceView";
 import { TaxFields } from "./TaxFields";
+import { VendorPicker } from "./VendorPicker";
 
 // The zoomable photo (react-zoom-pan-pinch) loads after the form is on screen
 const PhotoViewer = dynamic(() => import("./PhotoViewer").then((m) => m.PhotoViewer), {
@@ -64,6 +65,8 @@ export interface DocumentReviewProps {
   notice?: React.ReactNode;
   /** Save without validation to finish later */
   onDraft?: (doc: LedgerDoc) => Promise<void>;
+  /** Text on the save button (default "save"), e.g. "confirm → next" while checking one by one */
+  saveLabel?: string;
   onClose: () => void;
 }
 
@@ -83,6 +86,7 @@ export function DocumentReview({
   onDraft,
   onClose,
   notice,
+  saveLabel,
 }: DocumentReviewProps) {
   const t = useTranslations();
   const form = useForm<LedgerDoc>({ defaultValues: initial, resolver: zodResolver(docSchema), mode: "onBlur" });
@@ -259,6 +263,8 @@ export function DocumentReview({
             </div>
           </div>
 
+          {!isSample && <VendorPicker />}
+
           {/* Category, payment, paid */}
           <div className="workspace-panel overflow-hidden text-sm print:hidden">
             <button type="button" className="flex min-h-12 w-full items-center justify-between gap-3 px-5 py-3 text-left font-medium sm:hidden" aria-expanded={metadataOpen} aria-controls="document-payment-details" onClick={() => setMetadataOpen((open) => !open)}>
@@ -350,7 +356,7 @@ export function DocumentReview({
           <div className="review-actions flex flex-wrap items-center gap-2 print:hidden">
             <Button type="submit" className="h-11 rounded-full px-6 text-[15px] max-sm:flex-1" disabled={!!busy}>
               {busy === "save" ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-              {busy === "save" ? t("app.saving") : t("app.save")}
+              {busy === "save" ? t("app.saving") : (saveLabel ?? t("app.save"))}
             </Button>
             {onDraft && (
               <Button type="button" variant="secondary" className="h-11 rounded-full px-4" onClick={draft} disabled={!!busy}>

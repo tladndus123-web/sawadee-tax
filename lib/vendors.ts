@@ -67,6 +67,29 @@ export function applyHistory(doc: LedgerDoc, h: VendorHistory | null | undefined
   return fixed.length ? { doc: out, fixed } : { doc, fixed };
 }
 
+const NO_TRI: Tri = { th: "", en: "", ja: "" };
+
+/**
+ * The person picked a vendor from the directory: the seller becomes that vendor (name, tax ID, address,
+ * branch, phone), and the vendor's last saved category/payment carry over. For the same vendor, what was
+ * read from this paper is kept where the directory has nothing better (a branch prints its own address).
+ */
+export function pickVendor(doc: LedgerDoc, v: Vendor, h: VendorHistory | null | undefined): LedgerDoc {
+  const same = digitsOnly(doc.seller.taxId) === v.taxId;
+  const keep = (read: Tri, dir: Tri) => (same && triHas(read) ? read : triHas(dir) ? { ...dir } : same ? read : { ...NO_TRI });
+  const seller = {
+    ...doc.seller,
+    taxId: v.taxId,
+    name: triHas(v.name) ? { ...v.name } : doc.seller.name,
+    address: keep(doc.seller.address, v.address),
+    branch: keep(doc.seller.branch, v.branch),
+    branchCode: same ? doc.seller.branchCode : "",
+    tel: same && doc.seller.tel ? doc.seller.tel : v.tel,
+    fax: same && doc.seller.fax ? doc.seller.fax : v.fax,
+  };
+  return applyHistory({ ...doc, seller }, h).doc;
+}
+
 export function applyVendor(doc: LedgerDoc, v: Vendor | null | undefined): { doc: LedgerDoc; fixed: VendorFix[] } {
   if (!v || vendorKey(doc) !== v.taxId) return { doc, fixed: [] };
   const seller = { ...doc.seller };

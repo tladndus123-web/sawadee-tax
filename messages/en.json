@@ -547,7 +547,13 @@
     "deleteDesc": "It only leaves the list. This vendor's {count} documents stay in the ledger as they are. If a document from this vendor is saved later, it is added to the list again.",
     "deleted": "Removed from the vendor list.",
     "deleteFail": "Couldn't remove it. Only admins can remove vendors.",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "pickLabel": "Vendor",
+    "pick": "Choose a vendor",
+    "pickSearch": "Search by name or tax ID",
+    "pickEmpty": "No matching vendor",
+    "pickFilled": "Filled in from {name}",
+    "pickHint": "Pick from the list and the name, tax ID, address, phone and last category/payment are filled in at once — no typing in three languages."
   },
   "dash": {
     "title": "Dashboard",
@@ -752,5 +758,13 @@
     "all": "Select all",
     "none": "Clear",
     "restored": "Restored {count} to the ledger."
+  },
+  "flow": {
+    "start": "Check one by one",
+    "progress": "Checking {at} / {total}",
+    "next": "Confirm → next",
+    "skip": "Skip",
+    "stop": "Stop",
+    "allDone": "All documents to check are done"
   }
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { normalize } from "./normalize";
 import { sampleDoc } from "./sample";
-import { applyHistory, applyVendor, type Vendor } from "./vendors";
+import { applyHistory, applyVendor, pickVendor, type Vendor } from "./vendors";
 
 const vendor: Vendor = {
   id: "v1",
@@ -67,5 +67,26 @@ describe("the vendor's last saved category and payment carry over", () => {
     const junk = applyHistory(base(), { category: "nonsense", payment: "" });
     expect(junk.fixed).toEqual([]);
     expect(junk.doc.category).toBe("other");
+  });
+});
+
+describe("picking a vendor fills the seller in one go", () => {
+  it("replaces another seller completely and carries the vendor's category/payment", () => {
+    const d = normalize({ seller: { name: { th: "ร้านอื่น", en: "Other", ja: "" }, taxId: "0105557035035", address: { th: "ที่อื่น", en: "", ja: "" }, tel: "02-000", branchCode: "00001" }, category: "other", payment: "other" });
+    const out = pickVendor(d, vendor, { category: "food", payment: "credit" });
+    expect(out.seller.taxId).toBe(vendor.taxId);
+    expect(out.seller.name).toEqual(vendor.name);
+    expect(out.seller.address).toEqual(vendor.address);
+    expect(out.seller.tel).toBe(vendor.tel);
+    expect(out.seller.branchCode).toBe("");
+    expect([out.category, out.payment]).toEqual(["food", "credit"]);
+  });
+  it("keeps what this paper printed for the same vendor (a branch address)", () => {
+    const d = normalize({ seller: { name: { th: "x", en: "", ja: "" }, taxId: vendor.taxId, address: { th: "สาขา 2", en: "Branch 2", ja: "" }, tel: "", branchCode: "00002" } });
+    const out = pickVendor(d, vendor, null);
+    expect(out.seller.name).toEqual(vendor.name);
+    expect(out.seller.address.th).toBe("สาขา 2");
+    expect(out.seller.branchCode).toBe("00002");
+    expect(out.seller.tel).toBe(vendor.tel);
   });
 });
