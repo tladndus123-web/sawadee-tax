@@ -3,7 +3,7 @@
 // Sales: the month's result (sales − purchases), the days of sales by channel, and the two ways to add a day —
 // a photo / PDF of the POS closing report (the AI reads it) or typing it in. The sales tax report opens from here.
 
-import { Camera, FileSpreadsheet, FileText, Keyboard, Loader2, TrendingUp } from "lucide-react";
+import { Camera, FileSpreadsheet, FileText, Keyboard, Loader2, Table2, TrendingUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -122,7 +122,11 @@ export function SalesPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold">{monthLabel(month)}</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/sales/pl" className="press inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-4 text-sm font-medium">
+            <Table2 className="size-4 text-brand" aria-hidden />
+            {t("pl.title")}
+          </Link>
           <Link href={`/sales/report/${month}`} className="press inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-4 text-sm font-medium">
             <FileText className="size-4 text-bad" aria-hidden />
             {t("sales.report")}

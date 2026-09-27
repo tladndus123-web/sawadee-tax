@@ -941,5 +941,23 @@
     "payoutTotal": "Expected payout",
     "afterFee": "After app commission",
     "note": "Commission = orders × GP rate, plus 7% VAT on the commission. Rates differ by app and contract, so this is an estimate — check the app's statement for the exact amount. Record the app's commission tax invoice as a purchase to claim that VAT."
+  },
+  "pl": {
+    "title": "P&L by category",
+    "intro": "Sales by channel and costs by category, several months side by side. All amounts exclude VAT (VAT that cannot be claimed counts as a cost).",
+    "item": "Item",
+    "total": "Total",
+    "sales": "Sales (excl. VAT)",
+    "salesTotal": "Total sales",
+    "costs": "Purchases & costs",
+    "costTotal": "Total costs",
+    "profit": "Profit",
+    "excel": "Download Excel",
+    "downloaded": "Downloaded {name}",
+    "until": "Last month",
+    "untilMonth": "Until {month}",
+    "span": "Period",
+    "months": "{count} months",
+    "note": "Purchases count by invoice date. Costs not in the ledger (wages, rent paid without a document) are missing. Delivery-app commission is included only when the app's tax invoice is recorded as a purchase. Check final figures with your accountant."
   }
 }
