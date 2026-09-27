@@ -101,8 +101,8 @@ export interface VatReminder {
  * The VAT return (ภ.พ.30) reminder, Thai + Japanese like the payment one — sent only a few days before the
  * deadline and only while the month is still open, with what is left to do.
  */
-export function vatReminder(v: VatReminder, url: string): string | null {
-  if (!VAT_REMIND_DAYS.includes(v.daysLeft)) return null;
+export function vatReminder(v: VatReminder, url: string, opts: { force?: boolean } = {}): string | null {
+  if (!opts.force && !VAT_REMIND_DAYS.includes(v.daysLeft)) return null;
   const [y, m] = v.month.split("-");
   const todo = v.toCheck + v.drafts;
   return [

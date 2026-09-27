@@ -620,7 +620,12 @@
     "step2": "Tap [{button}].",
     "step3": "Send the code to the bot in the LINE chat and you're connected. The code works for 10 minutes.",
     "qrAlt": "QR code to add the LINE bot as a friend",
-    "qrCaption": "Scan with LINE"
+    "qrCaption": "Scan with LINE",
+    "testHint": "Every morning at 9 admins get LINE reminders: bills due within 7 days, and the VAT return 3 days and 1 day before its deadline. Send today's content to your own LINE only as a test (the VAT reminder shows whatever the date).",
+    "testSend": "Send a test reminder",
+    "testSent": "Test reminder sent to LINE. Check your phone.",
+    "testFail": "Could not send. Please try again later.",
+    "testRate": "Up to 3 tests per 10 minutes."
   },
   "report": {
     "title": "Input Tax Report",

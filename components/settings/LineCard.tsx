@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleCheck, Link2Off, Loader2, MessageCircle, ScanLine } from "lucide-react";
+import { BellRing, CircleCheck, Link2Off, Loader2, MessageCircle, ScanLine } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -78,6 +78,22 @@ export function LineCard() {
     }
   };
 
+  // Admins: the reminders as they would look today, pushed to their own LINE only
+  const [testing, setTesting] = useState(false);
+  const sendTest = async () => {
+    setTesting(true);
+    try {
+      const res = await fetch("/api/line/test-reminder", { method: "POST" });
+      const json = (await res.json().catch(() => ({}))) as { sent?: number; error?: string };
+      if (res.ok) toast.success(t("testSent"));
+      else toast.error(json.error === "rate" ? t("testRate") : t("testFail"));
+    } catch {
+      toast.error(t("testFail"));
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const unlink = async () => {
     setBusy(true);
     try {
@@ -112,6 +128,15 @@ export function LineCard() {
             <Link2Off className="size-4" />
             {t("unlink")}
           </Button>
+          {me.role === "admin" && (
+            <div className="grid w-full gap-2 rounded-2xl bg-muted/50 p-3">
+              <p className="text-xs leading-relaxed text-muted-foreground">{t("testHint")}</p>
+              <Button type="button" variant="outline" className="h-10 w-fit rounded-full bg-background" disabled={testing} onClick={() => void sendTest()}>
+                {testing ? <Loader2 className="size-4 animate-spin" /> : <BellRing className="size-4" />}
+                {t("testSend")}
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid items-start gap-6 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-8">

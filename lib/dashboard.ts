@@ -83,7 +83,7 @@ export interface DueItem extends Doc {
   days: number | null;
 }
 
-/** Unpaid credit purchases, most urgent first; within a week counts as "soon", no due date last. */
+/** Bills not ticked paid (isUnpaid), most urgent first; within a week counts as "soon", no due date last. */
 export function upcoming(docs: Doc[], today: string): DueItem[] {
   return docs
     .filter(({ doc }) => isUnpaid(doc))

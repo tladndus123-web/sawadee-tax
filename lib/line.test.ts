@@ -69,7 +69,24 @@ describe("VAT return reminder (LINE)", async () => {
     expect(text).toContain("8,400.00");
     expect(text.endsWith("https://x")).toBe(true);
   });
+  it("a test is sent on any day", () => {
+    expect(vatReminder({ ...base, daysLeft: 17 }, "https://x", { force: true })).toContain("あと17日");
+  });
   it("says the documents are ready when nothing is left", () => {
     expect(vatReminder({ ...base, toCheck: 0, drafts: 0, daysLeft: 1 }, "https://x")).toContain("準備ができています");
+  });
+});
+
+describe("payment reminder covers every unpaid bill, not only credit (same rule as the dashboard)", async () => {
+  const { upcoming } = await import("./dashboard");
+  it("a bank-transfer bill with a due date, not ticked paid, is reminded", () => {
+    const doc = { ...sampleDoc(), payment: "transfer" as const, paid: false, dueDate: "2026-10-01" };
+    const text = dueReminder(upcoming([{ id: "t1", doc }], "2026-09-28"), "https://x");
+    expect(text).not.toBeNull();
+    expect(text).toContain("01/10/2026");
+  });
+  it("once ticked paid, it is not", () => {
+    const doc = { ...sampleDoc(), payment: "transfer" as const, paid: true, dueDate: "2026-10-01" };
+    expect(dueReminder(upcoming([{ id: "t1", doc }], "2026-09-28"), "https://x")).toBeNull();
   });
 });
