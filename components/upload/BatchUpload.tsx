@@ -33,6 +33,7 @@ import { monthKey } from "@/lib/archive";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { ContinuousCamera } from "./ContinuousCamera";
 import { MaxNotice } from "./MaxNotice";
+import { UploadTips } from "./UploadTips";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,application/pdf,.pdf";
 
@@ -133,6 +134,8 @@ export function BatchUpload() {
         <p className="max-w-2xl text-[15px] leading-relaxed text-muted-foreground">{t("batch.intro", { max: MAX_QUEUE, at: MAX_PHOTOS })}</p>
         <MaxNotice />
       </header>
+
+      <UploadTips />
 
       {/* Drop zone */}
       <div

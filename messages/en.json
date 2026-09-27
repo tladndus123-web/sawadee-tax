@@ -311,7 +311,7 @@
     "intro": "Upload up to {max} tax invoices or receipts and the AI reads them {at} at a time. Quick shoot can even take two per shot.",
     "cta": "Upload photos",
     "drop": "Drag photos or PDFs here",
-    "formats": "JPG · PNG · HEIC (iPhone) · PDF · one document per photo",
+    "formats": "JPG · PNG · HEIC (iPhone) · PDF · one document per photo (two in Quick shoot)",
     "camera": "Quick shoot",
     "limit": "You can upload up to {max} photos at once. {count} were left out.",
     "full": "All {max} photos are in. Remove one to add another.",
@@ -815,5 +815,13 @@
     "shoot": "Shoot",
     "done": "Done",
     "close": "Close"
+  },
+  "tips": {
+    "label": "What's new",
+    "new": "NEW",
+    "twoTitle": "Two documents per shot",
+    "twoBody": "In 'Quick shoot' on your phone, lay two documents side by side and take one picture. Each half is read separately, so accuracy stays the same and the cost per document doesn't change.",
+    "moreTitle": "Up to {max} at once",
+    "moreBody": "You can now add {max} photos at once instead of 5. The AI reads them {at} at a time."
   }
 }
