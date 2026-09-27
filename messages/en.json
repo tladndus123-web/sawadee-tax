@@ -766,5 +766,13 @@
     "skip": "Skip",
     "stop": "Stop",
     "allDone": "All documents to check are done"
+  },
+  "tr": {
+    "hint": "Type in just one language. When you save, the AI translates each changed field into the other two.",
+    "failed": "Couldn't translate automatically, so it was saved as typed."
+  },
+  "manual": {
+    "start": "Type it in without a photo",
+    "title": "Document typed by hand"
   }
 }

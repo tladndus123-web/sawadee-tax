@@ -1,6 +1,7 @@
 "use client";
 
-import { Building2, Camera, ChevronLeft, CircleAlert, CircleCheck, ImagePlus, Loader2, RotateCw, Sparkles, Square, TriangleAlert, X } from "lucide-react";
+import { Building2, Camera, ChevronLeft, CircleAlert, CircleCheck, ImagePlus, Keyboard, Loader2, RotateCw, Sparkles, Square, TriangleAlert, X } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -170,6 +171,10 @@ export function BatchUpload() {
             {room > 0 ? t("batch.room", { count: room }) : t("batch.full", { max: MAX_PHOTOS })}
           </p>
         </div>
+        <Link href="/documents/new" className="press inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-primary hover:bg-primary/10 active:scale-[0.97]">
+          <Keyboard className="size-4" aria-hidden />
+          {t("manual.start")}
+        </Link>
         <input ref={pickRef} type="file" accept={ACCEPT} multiple hidden onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
       </div>

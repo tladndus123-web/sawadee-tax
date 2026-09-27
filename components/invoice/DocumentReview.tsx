@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, ChevronDown, FileImage, FilePen, FileText, Loader2, Printer, Save, X } from "lucide-react";
+import { CalendarDays, ChevronDown, FileImage, FilePen, FileText, Languages, Loader2, Printer, Save, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
@@ -20,6 +20,7 @@ import { useMe } from "@/lib/role-store";
 import { baht } from "@/lib/money";
 import { dropEmptyItems, normalize } from "@/lib/normalize";
 import { todayBangkok } from "@/lib/thai-tax";
+import { applyTranslations, translationJobs } from "@/lib/translate-gaps";
 import { type Box, CATEGORIES, type LedgerDoc, PAYMENTS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { StickerDots, StickerPicker, useMonthLabel } from "@/components/ledger/Stickers";
@@ -67,6 +68,8 @@ export interface DocumentReviewProps {
   onDraft?: (doc: LedgerDoc) => Promise<void>;
   /** Text on the save button (default "save"), e.g. "confirm → next" while checking one by one */
   saveLabel?: string;
+  /** Open in edit mode (a document typed by hand) */
+  startEditing?: boolean;
   onClose: () => void;
 }
 
@@ -87,6 +90,7 @@ export function DocumentReview({
   onClose,
   notice,
   saveLabel,
+  startEditing = false,
 }: DocumentReviewProps) {
   const t = useTranslations();
   const form = useForm<LedgerDoc>({ defaultValues: initial, resolver: zodResolver(docSchema), mode: "onBlur" });
@@ -95,7 +99,7 @@ export function DocumentReview({
   const doc = useMemo(() => normalize({ ...watched, id: initial.id }), [watched, initial.id]);
   const results = useMemo(() => runChecks(doc, { companyTaxId, others }), [doc, companyTaxId, others]);
 
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startEditing);
   const [mobilePanel, setMobilePanel] = useState<"form" | "photo">("form");
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -142,12 +146,31 @@ export function DocumentReview({
     });
   };
 
+  // Fields changed in exactly one language get the other two from the AI; a failed translation never blocks saving
+  const translated = async (d: LedgerDoc): Promise<LedgerDoc> => {
+    const jobs = translationJobs(d, normalize(initial));
+    if (!jobs.length) return d;
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ items: jobs.map(({ from, text, to }) => ({ from, text, to })) }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { items?: Partial<Record<"th" | "en" | "ja", string>>[] };
+      if (!res.ok || !json.items) throw new Error(String(res.status));
+      return applyTranslations(d, jobs, json.items);
+    } catch {
+      toast.warning(t("tr.failed"));
+      return d;
+    }
+  };
+
   // Drafts skip validation: half-finished documents are the point
   const draft = async () => {
     if (!onDraft) return;
     setBusy("draft");
     try {
-      await onDraft(dropEmptyItems(normalize({ ...getValues(), id: initial.id })));
+      await onDraft(await translated(dropEmptyItems(normalize({ ...getValues(), id: initial.id }))));
     } catch (e) {
       toast.error(isMonthLocked(e) ? t("lock.blocked") : t("app.saveFail"));
     } finally {
@@ -159,7 +182,7 @@ export function DocumentReview({
     async (d) => {
       setBusy("save");
       try {
-        await onSave(dropEmptyItems(normalize({ ...d, id: initial.id })));
+        await onSave(await translated(dropEmptyItems(normalize({ ...d, id: initial.id }))));
       } catch (e) {
         toast.error(isMonthLocked(e) ? t("lock.blocked") : t("app.saveFail"));
       } finally {
@@ -348,6 +371,12 @@ export function DocumentReview({
             </div>
           </div>
 
+          {editing && (
+            <p className="flex items-start gap-2 rounded-2xl bg-brand-soft px-4 py-3 text-sm text-foreground print:hidden">
+              <Languages className="mt-0.5 size-4 flex-none text-brand" aria-hidden />
+              {t("tr.hint")}
+            </p>
+          )}
           {editing ? <InvoiceEdit mode={formMode} /> : <InvoiceView doc={doc} mode={formMode} onUnsure={showField} signable />}
 
           <ChecksPanel results={results} unclear={doc.unclear} onJump={showField} className="print:hidden" />
