@@ -103,13 +103,18 @@ export function useLedger(): { entries: LedgerEntry[]; loaded: boolean } {
   return { entries: snap, loaded };
 }
 
-/** Insert or update a document (and its items) in one transaction; a new photo goes to storage first. */
+/**
+ * Insert or update a document (and its items) in one transaction; a new photo goes to storage first.
+ * `original`: the PDF the picture was drawn from (e-Tax Invoice) — kept as it is next to the picture, because the
+ * buyer must keep the electronic original (RD e-Tax Invoice rules), not only a printout.
+ */
 export async function saveEntry(
   doc: LedgerDoc,
   photo: Blob | null,
   id: string = doc.id || crypto.randomUUID(),
   status: EntryStatus = "final",
   companyTaxId?: string,
+  original?: File | null,
 ): Promise<{ id: string; movedTo: string }> {
   const supabase = supabaseBrowser();
   // A late invoice whose month is already closed (filed) is claimed in the next open month instead
@@ -126,6 +131,10 @@ export async function saveEntry(
     // Small copy for the ledger list; best effort (the list falls back to the full photo)
     const thumb = await makeThumb(photo);
     if (thumb) await supabase.storage.from(BUCKET).upload(thumbPath(photoPath), thumb, { contentType: "image/jpeg" });
+    if (original && (original.type === "application/pdf" || /\.pdf$/i.test(original.name))) {
+      const { error: pdfError } = await supabase.storage.from(BUCKET).upload(originalPdfPath(photoPath), original, { contentType: "application/pdf" });
+      if (pdfError) throw pdfError;
+    }
   }
   const { row, items } = docToRow({ ...doc, id }, status === "final" ? "reviewed" : "draft", companyTaxId);
   const { error } = await supabase.rpc("save_document", {
@@ -225,10 +234,24 @@ export async function purgeMany(ids: string[]): Promise<{ done: number; locked: 
   }
   for (const photo of photos) {
     const { count } = await supabase.from("documents").select("id", { count: "exact", head: true }).eq("photo_path", photo);
-    if (!count) await supabase.storage.from(BUCKET).remove([photo, thumbPath(photo)]);
+    if (!count) await supabase.storage.from(BUCKET).remove([photo, thumbPath(photo), originalPdfPath(photo)]);
   }
   await reload();
   return out;
+}
+
+/** Where the original PDF of a document uploaded as a PDF lives (next to its picture; none for photos) */
+export const originalPdfPath = (photoPath: string) => photoPath.replace(/(\.[a-z0-9]+)?$/i, ".pdf");
+
+/** Download links (valid 1 hour) for a document's picture and, when it came as a PDF, the original PDF */
+export async function downloadLinks(photoPath: string, name: string): Promise<{ photo: string | null; pdf: string | null }> {
+  const bucket = supabaseBrowser().storage.from(BUCKET);
+  const safe = name.replace(/[\\/:*?"<>|\s]+/g, "_") || "document";
+  const [photo, pdf] = await Promise.all([
+    bucket.createSignedUrl(photoPath, 3600, { download: `${safe}.jpg` }),
+    bucket.createSignedUrl(originalPdfPath(photoPath), 3600, { download: `${safe}.pdf` }),
+  ]);
+  return { photo: photo.data?.signedUrl ?? null, pdf: pdf.error ? null : (pdf.data?.signedUrl ?? null) };
 }
 
 /** Where the small list copy of a photo lives (photos saved before 2026-09-26 have none) */

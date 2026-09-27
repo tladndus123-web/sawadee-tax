@@ -127,7 +127,7 @@ async function readNow(id: string) {
     if (res.ok && json.doc) {
       // normalize() again so a reply of any shape still fits the form, then tidy with the vendor dictionary
       const { doc, fixed, vendor } = await withVendor(normalize(json.doc));
-      const savedId = vendor?.autoRegister ? await autoSave(doc, vendor, photo) : null;
+      const savedId = vendor?.autoRegister ? await autoSave(doc, vendor, photo, pdfs.get(id) ?? null) : null;
       if (savedId) {
         photos.delete(id);
         patch(id, { status: "saved", doc, vendorFixed: fixed, savedId, finishedAt: Date.now() });
@@ -146,7 +146,7 @@ async function readNow(id: string) {
  * Straight into the ledger when the vendor's rule allows it and every automatic check passes — the same checks a
  * person sees, including duplicates in the ledger. Returns the new id, or null to leave it for a person.
  */
-async function autoSave(doc: LedgerDoc, vendor: Parameters<typeof canAutoRegister>[1], photo: File): Promise<string | null> {
+async function autoSave(doc: LedgerDoc, vendor: Parameters<typeof canAutoRegister>[1], photo: File, pdf: File | null): Promise<string | null> {
   try {
     const taxId = await companyTaxId();
     const { data: same } = doc.docNo
@@ -155,7 +155,7 @@ async function autoSave(doc: LedgerDoc, vendor: Parameters<typeof canAutoRegiste
     const others = (same ?? []).map((d) => ({ id: d.id as string, docNo: d.doc_no as string, sellerTaxId: ((d.seller as { taxId?: string } | null)?.taxId as string) ?? "" }));
     const failing = runChecks(doc, { companyTaxId: taxId, others }).filter((c) => !c.ok && !c.na).map((c) => c.key);
     if (!canAutoRegister(doc, vendor, failing)) return null;
-    const { id } = await saveEntry(doc, photo, undefined, "final", taxId);
+    const { id } = await saveEntry(doc, photo, undefined, "final", taxId, pdf);
     return id;
   } catch {
     return null;
@@ -185,6 +185,9 @@ export function addPhotos(files: File[]): number {
   }
   return accepted.length;
 }
+
+/** The original PDF a photo was drawn from (null for photos), stored with the document too */
+export const getOriginal = (id: string): File | null => pdfs.get(id) ?? null;
 
 /** The prepared JPEG, stored with the document when it is saved */
 export const getPhoto = (id: string): File | null => photos.get(id) ?? null;

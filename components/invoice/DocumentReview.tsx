@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, ChevronDown, FileImage, FilePen, FileText, Loader2, Printer, Save, X } from "lucide-react";
+import { CalendarDays, ChevronDown, Download, FileImage, FilePen, FileText, Loader2, Printer, Save, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
@@ -77,6 +77,8 @@ export interface DocumentReviewProps {
   startEditing?: boolean;
   /** Typed by hand, no photo: no photo column, and the seller's name / tax ID can be typed on the quick card */
   manual?: boolean;
+  /** Download links of the stored picture and original PDF (saved documents) */
+  downloads?: { photo: string | null; pdf: string | null };
   onClose: () => void;
 }
 
@@ -99,6 +101,7 @@ export function DocumentReview({
   saveLabel,
   startEditing = false,
   manual = false,
+  downloads,
 }: DocumentReviewProps) {
   const t = useTranslations();
   const form = useForm<LedgerDoc>({ defaultValues: initial, resolver: zodResolver(docSchema), mode: "onBlur" });
@@ -264,9 +267,25 @@ export function DocumentReview({
         {/* Photo */}
         <aside id="photo-panel" tabIndex={-1} aria-label={t("review.original")} className={cn("min-w-0 scroll-mt-36 rounded-3xl lg:sticky lg:top-24 print:hidden", mobilePanel !== "photo" && "hidden lg:block")}>
           <div className="workspace-panel overflow-hidden">
-            <div className="flex items-center gap-2 border-b px-5 py-3.5 text-sm font-semibold">
+            <div className="flex flex-wrap items-center gap-2 border-b px-5 py-3.5 text-sm font-semibold">
               <FileImage className="size-4 text-muted-foreground" aria-hidden />
               {t("review.original")}
+              {(downloads?.pdf || downloads?.photo) && (
+                <span className="ml-auto flex gap-1.5">
+                  {downloads.pdf && (
+                    <a href={downloads.pdf} className="press inline-flex h-8 items-center gap-1.5 rounded-full bg-primary px-3 text-xs font-medium text-primary-foreground">
+                      <Download className="size-3.5" aria-hidden />
+                      {t("dl.pdf")}
+                    </a>
+                  )}
+                  {downloads.photo && (
+                    <a href={downloads.photo} className="press inline-flex h-8 items-center gap-1.5 rounded-full bg-secondary px-3 text-xs font-medium">
+                      <Download className="size-3.5" aria-hidden />
+                      {t("dl.photo")}
+                    </a>
+                  )}
+                </span>
+              )}
             </div>
             <div className="p-3">
               {(isDesktop || mobilePanel === "photo") && <PhotoViewer

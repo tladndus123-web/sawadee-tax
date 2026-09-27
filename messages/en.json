@@ -823,5 +823,9 @@
     "twoBody": "In 'Quick shoot' on your phone, lay two documents side by side and take one picture. Each half is read separately, so accuracy stays the same and the cost per document doesn't change.",
     "moreTitle": "Up to {max} at once",
     "moreBody": "You can now add {max} photos at once instead of 5. The AI reads them {at} at a time."
+  },
+  "dl": {
+    "pdf": "Original PDF",
+    "photo": "Photo"
   }
 }

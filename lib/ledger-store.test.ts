@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidReason, type LedgerEntry, pick, thumbPath } from "./ledger-store";
+import { isValidReason, type LedgerEntry, originalPdfPath, pick, thumbPath } from "./ledger-store";
 
 const e = (id: string, createdAt: number, deletedAt: number | null = null, status: "draft" | "final" = "final") =>
   ({ id, status, createdAt, updatedAt: createdAt, deletedAt, deletedBy: deletedAt ? "Admin" : null, deleteReason: deletedAt ? "dup" : null }) as LedgerEntry;
@@ -22,6 +22,9 @@ describe("soft delete helpers", () => {
 describe("list thumbnails", () => {
   it("sit next to the photo with a .thumb.jpg ending", () => {
     expect(thumbPath("7f3c/1790350472098.jpg")).toBe("7f3c/1790350472098.thumb.jpg");
+    // the original PDF sits next to the picture drawn from it, and never collides with the thumbnail
+    expect(originalPdfPath("7f3c/1790350472098.jpg")).toBe("7f3c/1790350472098.pdf");
+    expect(originalPdfPath("7f3c/1790350472098.jpg")).not.toBe(thumbPath("7f3c/1790350472098.jpg"));
     expect(thumbPath("sample/panfood-1790282809483.JPG")).toBe("sample/panfood-1790282809483.thumb.jpg");
     expect(thumbPath("line/abc")).toBe("line/abc.thumb.jpg");
   });

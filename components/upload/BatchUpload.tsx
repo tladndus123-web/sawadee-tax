@@ -16,6 +16,7 @@ import { baht } from "@/lib/money";
 import { joinTri } from "@/lib/form-labels";
 import {
   addPhotos,
+  getOriginal,
   getPhoto,
   readAnyway,
   MAX_PHOTOS,
@@ -109,14 +110,14 @@ export function BatchUpload() {
           isNew
           onSave={async (doc) => {
             updateDoc(current.id, doc);
-            const { movedTo } = await saveEntry(doc, getPhoto(current.id), undefined, "final", company.taxId);
+            const { movedTo } = await saveEntry(doc, getPhoto(current.id), undefined, "final", company.taxId, getOriginal(current.id));
             removePhoto(current.id);
             setReviewing(null);
             toast.success(movedTo ? t("tax.movedTo", { month: monthLabel(monthKey({ date: doc.date })), to: monthLabel(movedTo) }) : t("trash.saved"));
             void offerRule(doc);
           }}
           onDraft={async (doc) => {
-            await saveEntry(doc, getPhoto(current.id), undefined, "draft", company.taxId);
+            await saveEntry(doc, getPhoto(current.id), undefined, "draft", company.taxId, getOriginal(current.id));
             removePhoto(current.id);
             setReviewing(null);
             toast.success(t("archive.drafted"));

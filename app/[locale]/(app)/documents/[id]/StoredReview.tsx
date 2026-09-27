@@ -4,7 +4,7 @@
 
 import { ArchiveRestore, FileText, ListChecks, Loader2, Lock, SkipForward, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ActivityList } from "@/components/dashboard/ActivityList";
 import { DocumentReview } from "@/components/invoice/DocumentReview";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
 import { monthKey } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
-import { restoreEntry, saveEntry, softDelete, useLedger, usePhotoUrl } from "@/lib/ledger-store";
+import { downloadLinks, restoreEntry, saveEntry, softDelete, useLedger, usePhotoUrl } from "@/lib/ledger-store";
 import { useMonthLocks } from "@/lib/month-lock-store";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { useMe } from "@/lib/role-store";
@@ -35,6 +35,17 @@ export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: 
     [entries, id],
   );
   const photoUrl = usePhotoUrl(entry?.photoPath ?? null);
+  // Download links for the stored picture and the original PDF (when the document came as a PDF)
+  const [downloads, setDownloads] = useState<{ photo: string | null; pdf: string | null } | undefined>();
+  const docName = entry?.doc.docNo || id;
+  useEffect(() => {
+    if (!entry?.photoPath) return;
+    let live = true;
+    void downloadLinks(entry.photoPath, docName).then((d) => live && setDownloads(d));
+    return () => {
+      live = false;
+    };
+  }, [entry?.photoPath, docName]);
   const company = useCompany();
   const locks = useMonthLocks();
   const monthLabel = useMonthLabel();
@@ -129,6 +140,7 @@ export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: 
         key={entry.id}
         saveLabel={checkRun ? t("flow.next") : undefined}
         manual={!entry.photoPath}
+        downloads={downloads}
         initial={entry.doc}
         photoUrl={photoUrl}
         companyTaxId={company.taxId}
