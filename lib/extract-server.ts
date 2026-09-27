@@ -11,6 +11,8 @@ import type { LedgerDoc } from "./types";
 
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export type ImageType = (typeof IMAGE_TYPES)[number];
+/** A document can also arrive as a PDF (e-Tax Invoice); the AI reads it directly, text layer included */
+export type SourceType = ImageType | "application/pdf";
 /** base64 stays under the API's 5 MB per-image limit */
 export const MAX_IMAGE_BYTES = 4.5 * 1024 * 1024;
 
@@ -98,7 +100,7 @@ async function photoBlocks(image: Buffer, type: ImageType): Promise<Anthropic.Co
 
 export async function extractDocument(
   image: Buffer,
-  type: ImageType,
+  type: SourceType,
   opts: { signal?: AbortSignal; model?: string; effort?: Effort } = {},
 ): Promise<ExtractOutcome> {
   const model = opts.model || readingSetup().model;
@@ -121,7 +123,15 @@ export async function extractDocument(
         messages: [
           {
             role: "user",
-            content: [...(await photoBlocks(image, type)), { type: "text", text: getPrompt() }],
+            content: [
+              ...(type === "application/pdf"
+                ? [
+                    { type: "document" as const, source: { type: "base64" as const, media_type: "application/pdf" as const, data: image.toString("base64") } },
+                    { type: "text" as const, text: "The document is attached as a PDF (often an e-Tax Invoice / e-Receipt) instead of a photo: read it the same way." },
+                  ]
+                : await photoBlocks(image, type)),
+              { type: "text", text: getPrompt() },
+            ],
           },
         ],
       },

@@ -4,7 +4,7 @@
 
 import { endIfExpired } from "@/lib/auth/session-guard";
 import type { ExtractErrorCode } from "@/lib/extract-schema";
-import { extractDocument, IMAGE_TYPES, type ImageType, loadSharp, MAX_IMAGE_BYTES, readingSetup } from "@/lib/extract-server";
+import { extractDocument, IMAGE_TYPES, type ImageType, loadSharp, MAX_IMAGE_BYTES, readingSetup, type SourceType } from "@/lib/extract-server";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -46,13 +46,16 @@ export async function POST(req: Request) {
   if (!member) return Response.json({ error: "signin" }, { status: 403 });
   if (limited(user.id)) return fail("rate", 429);
 
+  // A photo, or the original PDF (the app keeps its own picture of the pages for the preview)
   const form = await req.formData().catch(() => null);
+  const pdf = form?.get("pdf");
   const photo = form?.get("photo");
-  if (!(photo instanceof File) || !IMAGE_TYPES.includes(photo.type as ImageType) || photo.size > MAX_IMAGE_BYTES) {
-    return fail("badImage", 400);
-  }
+  const file = pdf instanceof File ? pdf : photo;
+  const type = pdf instanceof File ? "application/pdf" : (file as File | null)?.type;
+  const allowed = pdf instanceof File ? pdf.type === "application/pdf" || /\.pdf$/i.test(pdf.name) : IMAGE_TYPES.includes(type as ImageType);
+  if (!(file instanceof File) || !allowed || file.size > MAX_IMAGE_BYTES) return fail("badImage", 400);
 
-  const result = await extractDocument(Buffer.from(await photo.arrayBuffer()), photo.type as ImageType, { signal: req.signal });
+  const result = await extractDocument(Buffer.from(await file.arrayBuffer()), type as SourceType, { signal: req.signal });
   if (result.ok) return Response.json({ doc: result.doc });
   if (result.code === "aborted") return new Response(null, { status: 499 });
   if (result.detail) console.error(`extract: ${result.code}`, result.detail);

@@ -4,6 +4,7 @@
 import { useSyncExternalStore } from "react";
 import { type ExtractErrorCode, MAX_PHOTOS } from "./extract-schema";
 import { normalize } from "./normalize";
+import { isPdf, pdfToJpeg } from "./pdf-render";
 import { checkPhoto, type PhotoIssue } from "./photo-quality";
 import { isSlip } from "./slip-tiles";
 import { withVendor } from "./vendor-store";
@@ -35,6 +36,8 @@ export interface UploadItem {
 let items: UploadItem[] = [];
 const listeners = new Set<() => void>();
 const photos = new Map<string, File>();
+/** Original PDFs: sent to the AI instead of the picture made from them */
+const pdfs = new Map<string, File>();
 const aborts = new Map<string, AbortController>();
 
 const emit = () => listeners.forEach((l) => l());
@@ -90,7 +93,9 @@ async function read(id: string) {
   patch(id, { status: "reading", startedAt: Date.now(), finishedAt: null, error: null });
   try {
     const body = new FormData();
-    body.append("photo", photo, "photo.jpg");
+    const pdf = pdfs.get(id);
+    if (pdf) body.append("pdf", pdf, pdf.name || "document.pdf");
+    else body.append("photo", photo, "photo.jpg");
     const res = await fetch("/api/extract", { method: "POST", body, signal: ctrl.signal });
     const json = (await res.json().catch(() => ({}))) as { doc?: LedgerDoc; error?: ExtractErrorCode };
     if (res.ok && json.doc) {
@@ -115,12 +120,14 @@ export function addPhotos(files: File[]): number {
     const id = crypto.randomUUID();
     items = [...items, { id, name: file.name, status: "preparing", preview: null, startedAt: Date.now(), finishedAt: null, error: null, doc: null, vendorFixed: [], issues: [] }];
     emit();
-    preparePhoto(file)
+    const pdf = isPdf(file);
+    if (pdf) pdfs.set(id, file);
+    (pdf ? pdfToJpeg(file) : preparePhoto(file))
       .then(async (jpeg) => {
         photos.set(id, jpeg);
         patch(id, { preview: URL.createObjectURL(jpeg) });
-        // A photo the AI would likely misread waits for the person first (retake, or read anyway)
-        const issues = await checkPhoto(jpeg);
+        // A PDF is sharp by nature; a photo the AI would likely misread waits for the person first
+        const issues = pdf ? [] : await checkPhoto(jpeg);
         if (issues.length) return patch(id, { status: "check", issues, finishedAt: Date.now() });
         return read(id);
       })
@@ -142,6 +149,7 @@ export function removePhoto(id: string) {
   const it = items.find((x) => x.id === id);
   if (it?.preview) URL.revokeObjectURL(it.preview);
   photos.delete(id);
+  pdfs.delete(id);
   items = items.filter((x) => x.id !== id);
   emit();
 }

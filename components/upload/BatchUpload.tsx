@@ -9,6 +9,7 @@ import { usePathLabel } from "@/components/invoice/path-label";
 import { Button } from "@/components/ui/button";
 import { useCompany } from "@/lib/company-store";
 import { saveEntry, useLedger } from "@/lib/ledger-store";
+import { isPdf } from "@/lib/pdf-render";
 import { baht } from "@/lib/money";
 import { joinTri } from "@/lib/form-labels";
 import {
@@ -29,7 +30,7 @@ import { monthKey } from "@/lib/archive";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { MaxNotice } from "./MaxNotice";
 
-const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif";
+const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,application/pdf,.pdf";
 
 /** Pick / drop / shoot up to 5 photos; each is read by the AI at the same time, then checked one by one. */
 export function BatchUpload() {
@@ -53,7 +54,7 @@ export function BatchUpload() {
   const current = items.find((it) => it.id === reviewing && it.doc);
 
   const add = (list: FileList | null) => {
-    const files = Array.from(list ?? []).filter((f) => f.type.startsWith("image/") || /\.hei[cf]$/i.test(f.name));
+    const files = Array.from(list ?? []).filter((f) => f.type.startsWith("image/") || /\.hei[cf]$/i.test(f.name) || isPdf(f));
     if (!files.length) return;
     if (room <= 0) {
       toast.info(t("batch.full", { max: MAX_PHOTOS }));
