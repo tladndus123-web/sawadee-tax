@@ -66,7 +66,7 @@ export function useUploadQueue(): UploadItem[] {
 }
 
 /** Straighten, convert iPhone HEIC and shrink so the photo uploads fast and stays under the API limit. */
-async function preparePhoto(file: File): Promise<File> {
+export async function preparePhoto(file: File): Promise<File> {
   let source: Blob = file;
   if (/image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name)) {
     const heic2any = (await import("heic2any")).default;

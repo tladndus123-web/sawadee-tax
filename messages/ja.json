@@ -206,7 +206,8 @@
     "theme": "テーマ",
     "light": "ライト",
     "dark": "ダーク",
-    "system": "システム"
+    "system": "システム",
+    "sales": "売上"
   },
   "common": {
     "loading": "読み込み中…",
@@ -827,5 +828,58 @@
   "dl": {
     "pdf": "PDF原本",
     "photo": "写真"
+  },
+  "sales": {
+    "title": "売上",
+    "intro": "店舗POSの締めレシートとデリバリーアプリの売上を日ごとに記録します。仕入と合わせて今月の結果を表示し、売上税報告書を作成します。",
+    "addPhoto": "締めレシートをアップロード",
+    "addManual": "直接入力",
+    "reading": "読み取り中…",
+    "report": "売上税報告書",
+    "result": "今月の結果",
+    "salesValue": "売上（VAT除く）",
+    "salesSub": "VAT込み {gross}・{days}日",
+    "cost": "仕入・経費（控除できるVAT除く）",
+    "costSub": "支払額 {gross}",
+    "profit": "利益",
+    "margin": "利益率 {pct}",
+    "vatLine": "VAT：売上税 − 仕入税",
+    "vatPay": "今月納めるVAT（見込み）",
+    "vatCredit": "仕入税の方が多い・翌月へ繰越または還付",
+    "resultNote": "仕入はインボイスの日付で集計します。人件費・家賃など帳簿にない費用は含まれないため、実際の利益とは異なる場合があります。最終的な数字は会計士に確認してください。",
+    "days": "売上の日付",
+    "empty": "今月の売上はまだありません。POSの締めレシートをアップロードするか直接入力してください。",
+    "billsN": "レシート{count}枚",
+    "newTitle": "売上を入力",
+    "editTitle": "売上を修正",
+    "sheetHint": "1日・販売経路ごとに1行です。同じ日・経路を再度保存すると置き換わります。",
+    "replaces": "この日・経路の売上はすでにあります。保存すると新しい数字に置き換わります。",
+    "date": "日付",
+    "bills": "レシート数",
+    "channel": "販売経路",
+    "gross": "売上合計（VAT込み）",
+    "vat": "VAT",
+    "exempt": "非課税売上",
+    "docRange": "レシート番号（最初 – 最後）",
+    "docFrom": "最初の番号",
+    "docTo": "最後の番号",
+    "note": "メモ",
+    "vatOff": "VATが7%計算（{calc}）と異なります。締めレシートを確認してください。",
+    "save": "売上を保存",
+    "saved": "売上を保存しました",
+    "deleted": "売上を削除しました",
+    "delete": "削除",
+    "needDate": "日付を入力してください",
+    "notReport": "売上の締めレシートではないようです",
+    "readFail": "読み取れませんでした。撮り直すか直接入力してください。",
+    "ch": {
+      "store": "店舗",
+      "grab": "Grab",
+      "lineman": "LINE MAN",
+      "foodpanda": "foodpanda",
+      "shopee": "ShopeeFood",
+      "robinhood": "Robinhood",
+      "other": "その他"
+    }
   }
 }

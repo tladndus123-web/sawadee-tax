@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Building2, LayoutGrid, Settings } from "lucide-react";
+import { BookOpen, Building2, LayoutGrid, Settings, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useLayoutEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
@@ -13,6 +13,7 @@ import { UserMenu } from "./user-menu";
 const NAV = [
   { href: "/", key: "dashboard", icon: LayoutGrid },
   { href: "/ledger", key: "ledger", icon: BookOpen },
+  { href: "/sales", key: "sales", icon: TrendingUp },
   { href: "/vendors", key: "vendors", icon: Building2 },
   { href: "/settings", key: "settings", icon: Settings },
 ] as const;
@@ -92,7 +93,7 @@ export function AppHeader() {
 
       {showTabBar && (
         <nav aria-label={t("nav.menu")} className="tab-bar md:hidden">
-          <div className="mx-auto grid max-w-lg grid-cols-4">
+          <div className="mx-auto grid max-w-lg grid-cols-5">
             {NAV.map(({ href, key, icon: Icon }) => (
               <Link key={href} href={href} onClick={onTap(href)} data-active={active === href} aria-current={isActive(href) ? "page" : undefined}>
                 <Icon key={bounceKey(href)} className={cn("size-[22px]", bounceKey(href) > 0 && "sym-tap")} strokeWidth={active === href ? 2.2 : 1.8} aria-hidden />

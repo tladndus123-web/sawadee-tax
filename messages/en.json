@@ -206,7 +206,8 @@
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
-    "system": "System"
+    "system": "System",
+    "sales": "Sales"
   },
   "common": {
     "loading": "Loading…",
@@ -827,5 +828,58 @@
   "dl": {
     "pdf": "Original PDF",
     "photo": "Photo"
+  },
+  "sales": {
+    "title": "Sales",
+    "intro": "Record each day's sales from the POS closing report and the delivery apps. Together with purchases it shows the month's result and makes the sales tax report.",
+    "addPhoto": "Upload closing report",
+    "addManual": "Type it in",
+    "reading": "Reading…",
+    "report": "Sales tax report",
+    "result": "This month's result",
+    "salesValue": "Sales (without VAT)",
+    "salesSub": "{gross} with VAT · {days} days",
+    "cost": "Purchases & costs (without claimable VAT)",
+    "costSub": "{gross} paid",
+    "profit": "Profit",
+    "margin": "Margin {pct}",
+    "vatLine": "VAT: output − input",
+    "vatPay": "VAT to pay this month (estimate)",
+    "vatCredit": "More input than output · carried forward or refunded",
+    "resultNote": "Purchases count by invoice date. Costs not in the ledger (wages, rent…) are not included, so the real profit may differ. Confirm the final figures with your accountant.",
+    "days": "Days of sales",
+    "empty": "No sales this month yet. Upload a POS closing report or type it in.",
+    "billsN": "{count} bills",
+    "newTitle": "Add sales",
+    "editTitle": "Edit sales",
+    "sheetHint": "One line per day and channel. Saving the same day and channel again replaces it.",
+    "replaces": "This day and channel already has sales. Saving replaces them with these numbers.",
+    "date": "Date",
+    "bills": "Bills",
+    "channel": "Channel",
+    "gross": "Total sales (with VAT)",
+    "vat": "VAT",
+    "exempt": "VAT-exempt sales",
+    "docRange": "Receipt numbers (first – last)",
+    "docFrom": "First number",
+    "docTo": "Last number",
+    "note": "Note",
+    "vatOff": "VAT differs from 7% ({calc}). Check the closing report.",
+    "save": "Save sales",
+    "saved": "Sales saved",
+    "deleted": "Sales deleted",
+    "delete": "Delete",
+    "needDate": "Please enter the date",
+    "notReport": "This doesn't look like a sales closing report",
+    "readFail": "Couldn't read it. Shoot again or type it in.",
+    "ch": {
+      "store": "Store",
+      "grab": "Grab",
+      "lineman": "LINE MAN",
+      "foodpanda": "foodpanda",
+      "shopee": "ShopeeFood",
+      "robinhood": "Robinhood",
+      "other": "Other"
+    }
   }
 }

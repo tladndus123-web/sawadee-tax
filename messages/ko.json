@@ -206,7 +206,8 @@
     "theme": "테마",
     "light": "라이트",
     "dark": "다크",
-    "system": "시스템"
+    "system": "시스템",
+    "sales": "매출"
   },
   "common": {
     "loading": "불러오는 중…",
@@ -827,5 +828,58 @@
   "dl": {
     "pdf": "PDF 원본",
     "photo": "사진"
+  },
+  "sales": {
+    "title": "매출",
+    "intro": "매장 POS 마감 영수증과 배달 앱 매출을 하루 단위로 기록해요. 매입과 합쳐 이번 달 결과를 보여 주고, 매출세 보고서를 만들어요.",
+    "addPhoto": "마감 영수증 올리기",
+    "addManual": "직접 입력",
+    "reading": "읽는 중…",
+    "report": "매출세 보고서",
+    "result": "이번 달 결과",
+    "salesValue": "매출 (부가세 제외)",
+    "salesSub": "부가세 포함 {gross} · {days}일",
+    "cost": "매입·비용 (돌려받는 부가세 제외)",
+    "costSub": "지급 금액 {gross}",
+    "profit": "남은 돈 (이익)",
+    "margin": "이익률 {pct}",
+    "vatLine": "부가세: 매출 − 공제",
+    "vatPay": "이번 달 낼 부가세 (예상)",
+    "vatCredit": "공제가 더 많아요 · 다음 달로 넘기거나 환급",
+    "resultNote": "매입은 계산서 날짜 기준이에요. 인건비·임대료처럼 장부에 없는 비용은 빠져 있어서 실제 이익과 다를 수 있어요. 최종 숫자는 회계사와 확인하세요.",
+    "days": "매출 날짜",
+    "empty": "이 달 매출이 아직 없어요. POS 마감 영수증을 올리거나 직접 입력해 주세요.",
+    "billsN": "영수증 {count}장",
+    "newTitle": "매출 입력",
+    "editTitle": "매출 고치기",
+    "sheetHint": "하루 · 판매 경로마다 한 줄이에요. 같은 날 같은 경로를 다시 저장하면 바뀌어요.",
+    "replaces": "이 날짜 · 경로의 매출이 이미 있어요. 저장하면 새 숫자로 바뀌어요.",
+    "date": "날짜",
+    "bills": "영수증 수",
+    "channel": "판매 경로",
+    "gross": "매출 합계 (부가세 포함)",
+    "vat": "부가세",
+    "exempt": "면세 매출",
+    "docRange": "영수증 번호 (처음 – 마지막)",
+    "docFrom": "처음 번호",
+    "docTo": "마지막 번호",
+    "note": "메모",
+    "vatOff": "부가세가 7% 계산({calc})과 달라요. 마감 영수증을 확인해 주세요.",
+    "save": "매출 저장",
+    "saved": "매출을 저장했어요",
+    "deleted": "매출을 지웠어요",
+    "delete": "삭제",
+    "needDate": "날짜를 넣어 주세요",
+    "notReport": "매출 마감 영수증이 아닌 것 같아요",
+    "readFail": "읽지 못했어요. 다시 찍거나 직접 입력해 주세요.",
+    "ch": {
+      "store": "매장",
+      "grab": "Grab",
+      "lineman": "LINE MAN",
+      "foodpanda": "foodpanda",
+      "shopee": "ShopeeFood",
+      "robinhood": "Robinhood",
+      "other": "기타"
+    }
   }
 }
