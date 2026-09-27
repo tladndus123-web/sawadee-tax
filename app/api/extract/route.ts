@@ -10,8 +10,8 @@ import { supabaseServer } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-// Per-person limit (by member). Leaves room for a full batch of 5.
-const LIMIT = 10;
+// Per-person limit (by member). The app reads 5 at a time; continuous shooting can queue up to 30.
+const LIMIT = 30;
 const WINDOW_MS = 60_000;
 const hits = new Map<string, number[]>();
 function limited(key: string): boolean {

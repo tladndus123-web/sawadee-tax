@@ -65,8 +65,10 @@ export const extractSchema = z.object({
   fieldBoxes: z.array(z.object({ path: z.string(), box: z.array(z.number()) })),
 });
 
-/** Photos read in one batch; each is its own request */
+/** Photos read at the same time; each is its own request */
 export const MAX_PHOTOS = 5;
+/** Photos the upload list holds (continuous shooting); MAX_PHOTOS of them are read at the same time */
+export const MAX_QUEUE = 30;
 
 /** Error codes /api/extract returns; the upload screen turns them into friendly sentences */
 export type ExtractErrorCode = "rate" | "notDoc" | "badImage" | "aiFail" | "busy" | "noKey";

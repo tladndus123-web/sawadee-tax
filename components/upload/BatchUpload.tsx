@@ -19,6 +19,7 @@ import {
   getPhoto,
   readAnyway,
   MAX_PHOTOS,
+  MAX_QUEUE,
   removePhoto,
   retryPhoto,
   stopPhoto,
@@ -30,6 +31,7 @@ import {
 import { cn } from "@/lib/utils";
 import { monthKey } from "@/lib/archive";
 import { useMonthLabel } from "@/components/ledger/Stickers";
+import { ContinuousCamera } from "./ContinuousCamera";
 import { MaxNotice } from "./MaxNotice";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,application/pdf,.pdf";
@@ -50,9 +52,12 @@ export function BatchUpload() {
   const [dragging, setDragging] = useState(false);
   const pickRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+  // Continuous shooting inside the app; phones without camera access fall back to the phone's camera app
+  const [shooting, setShooting] = useState(false);
+  const openCamera = () => (typeof navigator.mediaDevices?.getUserMedia === "function" ? setShooting(true) : cameraRef.current?.click());
   const now = useNow(items.some((it) => it.status === "reading" || it.status === "preparing"));
 
-  const room = MAX_PHOTOS - items.length;
+  const room = MAX_QUEUE - items.length;
   const settled = items.filter((it) => it.status === "done" || it.status === "saved" || it.status === "failed" || it.status === "stopped").length;
   const current = items.find((it) => it.id === reviewing && it.doc);
 
@@ -60,11 +65,11 @@ export function BatchUpload() {
     const files = Array.from(list ?? []).filter((f) => f.type.startsWith("image/") || /\.hei[cf]$/i.test(f.name) || isPdf(f));
     if (!files.length) return;
     if (room <= 0) {
-      toast.info(t("batch.full", { max: MAX_PHOTOS }));
+      toast.info(t("batch.full", { max: MAX_QUEUE }));
       return;
     }
     const taken = addPhotos(files);
-    if (taken < files.length) toast.info(t("batch.limit", { max: MAX_PHOTOS, count: files.length - taken }));
+    if (taken < files.length) toast.info(t("batch.limit", { max: MAX_QUEUE, count: files.length - taken }));
   };
 
   const errorText = (e: UploadError | null) => {
@@ -125,7 +130,7 @@ export function BatchUpload() {
     <div className="mx-auto grid max-w-4xl gap-6 md:gap-8">
       <header className="grid gap-2">
         <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("batch.title")}</h1>
-        <p className="max-w-2xl text-[15px] leading-relaxed text-muted-foreground">{t("batch.intro", { max: MAX_PHOTOS })}</p>
+        <p className="max-w-2xl text-[15px] leading-relaxed text-muted-foreground">{t("batch.intro", { max: MAX_QUEUE, at: MAX_PHOTOS })}</p>
         <MaxNotice />
       </header>
 
@@ -157,21 +162,16 @@ export function BatchUpload() {
             <ImagePlus className="size-4" />
             {t("app.pick")}
           </Button>
-          <Button type="button" variant="secondary" className="h-11 rounded-full px-5 text-[15px] md:hidden" disabled={room <= 0} onClick={() => cameraRef.current?.click()}>
+          <Button type="button" variant="secondary" className="h-11 rounded-full px-5 text-[15px] md:hidden" disabled={room <= 0} onClick={openCamera}>
             <Camera className="size-4" />
             {t("batch.camera")}
           </Button>
         </div>
         <div className="grid justify-items-center gap-2" aria-live="polite">
-          <span className="flex gap-1.5" aria-hidden>
-            {Array.from({ length: MAX_PHOTOS }, (_, i) => (
-              <span key={i} className={cn("size-2 rounded-full transition-colors", i < items.length ? "bg-primary" : "bg-foreground/15")} />
-            ))}
-          </span>
           <p className="text-xs font-medium text-muted-foreground">
-            <span className="font-semibold text-foreground">{t("batch.count", { count: items.length, max: MAX_PHOTOS })}</span>
+            <span className="font-semibold text-foreground">{t("batch.count", { count: items.length, max: MAX_QUEUE })}</span>
             {" · "}
-            {room > 0 ? t("batch.room", { count: room }) : t("batch.full", { max: MAX_PHOTOS })}
+            {room > 0 ? t("batch.room", { count: room }) : t("batch.full", { max: MAX_QUEUE })}
           </p>
         </div>
         <Link href="/documents/new" className="press inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-primary hover:bg-primary/10 active:scale-[0.97]">
@@ -179,6 +179,15 @@ export function BatchUpload() {
           {t("manual.start")}
         </Link>
         <input ref={pickRef} type="file" accept={ACCEPT} multiple hidden onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
+        {shooting && (
+          <ContinuousCamera
+            onClose={() => setShooting(false)}
+            onFallback={() => {
+              setShooting(false);
+              cameraRef.current?.click();
+            }}
+          />
+        )}
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
       </div>
 
@@ -319,6 +328,7 @@ function Status({ it, sec }: { it: UploadItem; sec: number }) {
   const map = {
     preparing: { icon: Loader2, cls: "text-muted-foreground", text: t("preparing"), spin: true },
     check: { icon: TriangleAlert, cls: "text-warn", text: t("check"), spin: false },
+    queued: { icon: Loader2, cls: "text-muted-foreground", text: t("queued"), spin: false },
     reading: { icon: Sparkles, cls: "ai-text", text: t("reading", { sec }), spin: false },
     done: { icon: CircleCheck, cls: "text-ok", text: `${t("done")} · ${t("readIn", { sec })}`, spin: false },
     saved: { icon: CircleCheck, cls: "text-ok", text: t("autoSaved"), spin: false },

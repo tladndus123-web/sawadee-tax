@@ -517,6 +517,15 @@
   }
 }
 
+/* Continuous camera: a short white flash on every shot */
+.cam-flash {
+  animation: cam-flash 0.28s ease-out forwards;
+}
+@keyframes cam-flash {
+  from { opacity: 0.85; }
+  to { opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;

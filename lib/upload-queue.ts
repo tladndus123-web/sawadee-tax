@@ -1,8 +1,9 @@
-// Batch upload queue (step 6): up to MAX_PHOTOS photos read by the AI at the same time.
+// Batch upload queue (step 6): up to MAX_QUEUE photos waiting, MAX_PHOTOS of them read by the AI at the same
+// time (the rest wait their turn — continuous shooting can add many quickly).
 // Kept in module memory so it survives moving between screens; the database replaces it in step 5.
 
 import { useSyncExternalStore } from "react";
-import { type ExtractErrorCode, MAX_PHOTOS } from "./extract-schema";
+import { type ExtractErrorCode, MAX_PHOTOS, MAX_QUEUE } from "./extract-schema";
 import { normalize } from "./normalize";
 import { isPdf, pdfToJpeg } from "./pdf-render";
 import { checkPhoto, type PhotoIssue } from "./photo-quality";
@@ -15,11 +16,11 @@ import { withVendor } from "./vendor-store";
 import { canAutoRegister, type VendorFix } from "./vendors";
 import type { LedgerDoc } from "./types";
 
-export { MAX_PHOTOS };
+export { MAX_PHOTOS, MAX_QUEUE };
 
 /** "check" = the photo looks dark, blurry or small: waiting for the person to retake it or read it anyway.
  *  "saved" = the vendor's rule let it go straight into the ledger (every automatic check passed). */
-export type UploadStatus = "preparing" | "check" | "reading" | "done" | "saved" | "failed" | "stopped";
+export type UploadStatus = "preparing" | "check" | "queued" | "reading" | "done" | "saved" | "failed" | "stopped";
 export type UploadError = ExtractErrorCode | "network";
 
 export interface UploadItem {
@@ -92,7 +93,25 @@ async function preparePhoto(file: File): Promise<File> {
   return imageCompression(input, { maxWidthOrHeight: longSide, maxSizeMB, fileType: "image/jpeg", initialQuality: 0.88, useWebWorker: true });
 }
 
-async function read(id: string) {
+// At most MAX_PHOTOS readings run at once; the others wait in order ("queued")
+let active = 0;
+const waiting: string[] = [];
+
+function read(id: string) {
+  if (active >= MAX_PHOTOS) {
+    if (!waiting.includes(id)) waiting.push(id);
+    patch(id, { status: "queued" });
+    return;
+  }
+  active++;
+  void readNow(id).finally(() => {
+    active--;
+    const next = waiting.shift();
+    if (next) read(next);
+  });
+}
+
+async function readNow(id: string) {
   const photo = photos.get(id);
   if (!photo) return;
   const ctrl = new AbortController();
@@ -145,7 +164,7 @@ async function autoSave(doc: LedgerDoc, vendor: Parameters<typeof canAutoRegiste
 
 /** Add photos (extra ones beyond the limit are ignored) and start reading them all at once. Returns how many were accepted. */
 export function addPhotos(files: File[]): number {
-  const room = Math.max(0, MAX_PHOTOS - items.length);
+  const room = Math.max(0, MAX_QUEUE - items.length);
   const accepted = files.slice(0, room);
   for (const file of accepted) {
     const id = crypto.randomUUID();
@@ -181,6 +200,8 @@ export function removePhoto(id: string) {
   if (it?.preview) URL.revokeObjectURL(it.preview);
   photos.delete(id);
   pdfs.delete(id);
+  const w = waiting.indexOf(id);
+  if (w >= 0) waiting.splice(w, 1);
   items = items.filter((x) => x.id !== id);
   emit();
 }

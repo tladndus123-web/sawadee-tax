@@ -308,11 +308,11 @@
   },
   "batch": {
     "title": "Read documents from photos",
-    "intro": "Upload up to {max} tax invoice or receipt photos at once and the AI reads them all at the same time.",
+    "intro": "Upload up to {max} tax invoices or receipts and the AI reads them {at} at a time. Quick shoot can even take two per shot.",
     "cta": "Upload photos",
     "drop": "Drag photos or PDFs here",
     "formats": "JPG · PNG · HEIC (iPhone) · PDF · one document per photo",
-    "camera": "Take photo",
+    "camera": "Quick shoot",
     "limit": "You can upload up to {max} photos at once. {count} were left out.",
     "full": "All {max} photos are in. Remove one to add another.",
     "room": "{count} more can be added",
@@ -330,7 +330,7 @@
     "noKey": "No AI key yet. Add ANTHROPIC_API_KEY to .env.local and restart the server.",
     "network": "The connection dropped. Check your internet and tap Read again.",
     "busy": "The AI is busy right now. Wait a moment and tap Read again.",
-    "maxNotice": "Up to {max} photos at once",
+    "maxNotice": "Up to {max} · {at} read at once",
     "count": "{count} / {max} photos",
     "check": "Check the photo",
     "checkHint": "The AI may misread it. Retake it, or read it as it is.",
@@ -342,7 +342,8 @@
       "small": "The photo is too small"
     },
     "autoSaved": "Saved automatically · vendor rule",
-    "open": "Open"
+    "open": "Open",
+    "queued": "Waiting its turn"
   },
   "role": {
     "admin": "Admin",
@@ -799,5 +800,20 @@
     "taxSettings": "Tax settings (claim month · input VAT · withholding)",
     "what": "What was bought",
     "whatHint": "e.g. Frozen dough 3.5 kg × 10"
+  },
+  "cam": {
+    "title": "Quick shoot",
+    "mode": "Shooting mode",
+    "one": "1 per shot",
+    "two": "2 per shot",
+    "hintTwo": "Lay one receipt on the left ① and one on the right ②, not overlapping. Each half is read separately.",
+    "hintOne": "Fill the screen with one receipt.",
+    "same": "Same picture as the last shot, skipped (no cost)",
+    "full": "The list is full. Clear read photos to shoot more.",
+    "denied": "The camera can't be used. Allow camera access in the browser, or use the phone's camera.",
+    "fallback": "Use the phone's camera",
+    "shoot": "Shoot",
+    "done": "Done",
+    "close": "Close"
   }
 }
