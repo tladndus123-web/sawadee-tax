@@ -4,6 +4,7 @@ import { AccountCard, CompanyCard } from "@/components/settings/AccountSettings"
 import { MembersCard } from "@/components/settings/MembersCard";
 import { StickerNameSettings } from "@/components/ledger/Stickers";
 import { LineCard } from "@/components/settings/LineCard";
+import { InstallCard } from "@/components/settings/InstallCard";
 import type { Locale } from "@/i18n/routing";
 
 export default async function SettingsPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -17,6 +18,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
         <AccountCard />
         <CompanyCard />
       </div>
+      <InstallCard />
       <LineCard />
       <MembersCard />
       <StickerNameSettings />

@@ -19,12 +19,19 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale: locale as Locale, namespace: "app" });
-  return { title: t("appName"), description: t("tagline") };
+  return {
+    title: t("appName"),
+    description: t("tagline"),
+    // iPhone "Add to Home Screen": opens full screen like an app (the manifest does this on Android)
+    appleWebApp: { capable: true, title: "Sawadee TAX", statusBarStyle: "default" },
+  };
 }
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Lets the layout use env(safe-area-inset-*) so the tab bar clears the iPhone home indicator
+  viewportFit: "cover",
   // theme-color comes from <ThemeColor /> (follows the picked theme)
 };
 

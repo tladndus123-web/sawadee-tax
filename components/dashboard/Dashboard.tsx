@@ -23,6 +23,7 @@ import { useVendors } from "@/lib/vendor-store";
 import { vendorCategory } from "@/lib/vendors";
 import { monthResult } from "@/lib/sales";
 import { useSales } from "@/lib/sales-store";
+import { InstallCard } from "@/components/settings/InstallCard";
 import { ActivityList } from "./ActivityList";
 import { VatCard } from "./VatCard";
 
@@ -97,6 +98,9 @@ export function Dashboard() {
 
       {/* This month's job first: the VAT return that is due next */}
       <VatCard entries={entries} companyTaxId={company.taxId} today={today} />
+
+      {/* Phones, until installed or closed: put the app on the home screen */}
+      <InstallCard compact />
 
       {/* The four tiles of PROMPT §3 */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

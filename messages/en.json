@@ -969,5 +969,16 @@
     "span": "Period",
     "months": "{count} months",
     "note": "Purchases count by invoice date. Costs not in the ledger (wages, rent paid without a document) are missing. Delivery-app commission is included only when the app's tax invoice is recorded as a purchase. Check final figures with your accountant."
+  },
+  "install": {
+    "title": "Install on your phone",
+    "hint": "An icon appears on your home screen and opens like an app, without the address bar. Long-press it to go straight to uploading photos.",
+    "tip": "Install the app on your home screen to open it faster",
+    "button": "Install app",
+    "ios1": "Tap the Share button <icon></icon> at the bottom of Safari",
+    "ios2": "Tap 'Add to Home Screen' <icon></icon>",
+    "manual": "Open the browser menu <icon></icon> and choose 'Add to Home screen' or 'Install app'.",
+    "installed": "Installed as an app.",
+    "hide": "Close"
   }
 }
