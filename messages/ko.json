@@ -1047,7 +1047,17 @@
     "colSales": "매출",
     "colCost": "비용",
     "colProfit": "남은 돈",
-    "colVat": "낼 부가세"
+    "colVat": "낼 부가세",
+    "switch": "지점 전환",
+    "sheetHint": "고른 지점의 장부·매출·부가세·손익만 보여요. 통합을 고르면 모든 지점을 합쳐서 봐요.",
+    "sheetLine": "이번 달 매출 {sales} · 남은 돈 {profit}",
+    "sheetCost": "이번 달 비용 {cost}",
+    "current": "지금 보는 곳",
+    "combined": "통합 · 지점 {count}곳",
+    "combinedHint": "이번 달 모든 지점을 합친 숫자예요. 아래 지점 카드를 누르면 그 지점 화면으로 바뀌어요.",
+    "open": "이 지점으로 전환",
+    "color": "색",
+    "allLong": "통합 · 전체 지점"
   },
   "dep": {
     "label": "상각 기간",

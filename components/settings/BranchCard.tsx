@@ -6,12 +6,13 @@ import { Loader2, Pencil, Plus, Store, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useBranchName } from "@/components/layout/branch-switcher";
+import { BranchAvatar, useBranchName } from "@/components/layout/branch-switcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { type Branch, branchLabel, isHead } from "@/lib/branches";
+import { BRANCH_COLORS, type Branch, branchLabel, COLOR_NAMES, colorOf, isHead } from "@/lib/branches";
 import { deleteBranch, saveBranch, useBranches } from "@/lib/branch-store";
 import { useMe } from "@/lib/role-store";
+import { cn } from "@/lib/utils";
 
 export function BranchCard() {
   const t = useTranslations("branch");
@@ -27,7 +28,7 @@ export function BranchCard() {
     if (!/^\d{5}$/.test(no)) return toast.error(t("badNo"));
     setBusy(true);
     try {
-      await saveBranch({ id: editing.id, no, name: editing.name ?? "", sort: editing.sort ?? branches.length });
+      await saveBranch({ id: editing.id, no, name: editing.name ?? "", sort: editing.sort ?? branches.length, color: editing.color ?? "" });
       toast.success(t("saved"));
       setEditing(null);
     } catch (e) {
@@ -64,7 +65,8 @@ export function BranchCard() {
         <ul className="grid divide-y divide-border/60">
           {branches.map((b) => (
             <li key={b.id} className="flex items-center gap-3 py-2.5">
-              <span className="mono w-14 flex-none text-xs text-muted-foreground">{b.no}</span>
+              <BranchAvatar branch={b} branches={branches} size="size-8" className="text-sm" />
+              <span className="mono w-12 flex-none text-xs text-muted-foreground">{b.no}</span>
               <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{branchLabel(b, names)}</span>
               {isAdmin && (
                 <>
@@ -114,6 +116,26 @@ export function BranchCard() {
             </label>
           </div>
           <p className="text-[11px] leading-snug text-muted-foreground">{t("numberHint")}</p>
+          <div className="grid gap-1.5" role="radiogroup" aria-label={t("color")}>
+            <span className="text-[11px] text-muted-foreground">{t("color")}</span>
+            <div className="flex flex-wrap items-center gap-2">
+              {COLOR_NAMES.map((c) => {
+                const on = (editing.color || (editing.id ? colorOf(editing as Branch, branches) : "")) === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    aria-label={c}
+                    onClick={() => setEditing({ ...editing, color: c })}
+                    className={cn("size-8 rounded-full ring-offset-2 ring-offset-background transition-shadow", on && "ring-2 ring-foreground")}
+                    style={{ background: BRANCH_COLORS[c][0] }}
+                  />
+                );
+              })}
+            </div>
+          </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" className="rounded-full" disabled={busy} onClick={() => setEditing(null)}>
               {t("cancel")}

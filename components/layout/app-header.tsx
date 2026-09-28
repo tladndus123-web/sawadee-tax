@@ -6,7 +6,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useBranches } from "@/lib/branch-store";
 import { cn } from "@/lib/utils";
-import { BranchSwitcher } from "./branch-switcher";
+import { BranchSwitcher, useCurrentBranch } from "./branch-switcher";
 import { APP_MARK_GLOW, AppMark } from "./app-mark";
 import { LocaleSwitcher } from "./locale-switcher";
 import { ThemeToggle } from "./theme-toggle";
@@ -29,6 +29,7 @@ export function AppHeader() {
   const showTabBar = !pathname.startsWith("/documents");
   // With several branches the switcher takes the phone's top bar; the app name gives way
   const manyBranches = useBranches().branches.length > 1;
+  const branchColor = useCurrentBranch().color;
 
   // A tapped tab lights up at once, before its page has loaded (it only counts while we're still on the
   // page it was tapped from), and its icon plays a small bounce.
@@ -67,7 +68,7 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="glass-header sticky top-0 z-40">
+      <header className="glass-header sticky top-0 z-40" style={branchColor ? { boxShadow: `inset 0 -3px 0 ${branchColor[0]}` } : undefined}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-card focus:p-3 focus:text-sm">
           {t("ui.skipToContent")}
         </a>

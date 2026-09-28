@@ -176,7 +176,7 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
 
   // Its branch: the buyer's branch number on the invoice, else the head office (and the sender is asked)
   const { data: branchRows } = await admin.from("branches").select("id, no, name, sort");
-  const branches = sortBranches(((branchRows ?? []) as Branch[]).map((b) => ({ ...b, name: b.name ?? "", sort: Number(b.sort) || 0 })));
+  const branches = sortBranches(((branchRows ?? []) as Branch[]).map((b) => ({ ...b, name: b.name ?? "", sort: Number(b.sort) || 0, color: "" })));
   doc = assignBranch(doc, branches);
   const ask = branches.length > 1 && !branchFromPhoto(doc, branches);
 

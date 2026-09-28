@@ -443,3 +443,10 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - 항목에 **소모품(consumables)·수리비(repairs)·설비 구입(asset)** 추가(`lib/types.ts CATEGORIES`, 읽기 규칙 글, 아이콘, 4개 언어). 항목 목록은 코드가 기준이고 DB는 글자만 보관.
 - **품목별 항목**: `Item.category`("" = 서류와 같음, `document_items.category`). 서류 고치기의 품목 표에 항목 칸, 보기 표에는 다른 줄만 칩으로. AI는 섞인 전표일 때만 줄마다 항목을 줌. 비용은 줄 금액 비율로 나눔(`lib/cost-split.ts costByCategory`, 반올림 차이는 가장 큰 줄에).
 - **감가상각**: 항목이 "설비 구입"일 때 상각 기간 칩(0·3·5·10·20년, `documents.dep_years`, `components/invoice/DepYears.tsx`). 계산서 달부터 매달 정액(`depreciationFor`, 마지막 달이 나머지). 그 달 비용에서 설비 자체는 빠지고 감가상각비가 들어감 — "이번 달 결과"·대시보드 이익·지점별 표(`monthResult`)와 손익표("감가상각비" 줄, `plTable`) 모두 `monthCosts` 한 곳을 씀. 부가세 공제는 산 달 그대로. 마이그레이션 20260928000200.
+
+### 지점 전환 (인스타 부계정 방식) · 통합 메인보드 (2026-09-28)
+- 결정(사장님): 관리자·직원 모두 전체 지점을 봄(직원 제한은 나중에), 앱은 마지막에 보던 지점으로 시작, 지점 색은 자동 + 관리자 변경.
+- 화면 위 지점 버튼(색 동그라미 + 이름) → 아래에서 올라오는 "지점 전환" 창: "통합 · 전체 지점"과 각 지점, 이번 달 매출·남은 돈, 지금 보는 곳 ✓. 지점을 고르면 화면 위 막대 아래에 그 지점 색 줄(`components/layout/branch-switcher.tsx`).
+- 통합일 때 대시보드: "통합 · 지점 N곳" 합계 카드(매출·비용·남은 돈·낼 부가세) + 지점별 카드(누르면 그 지점으로 전환, `components/dashboard/BranchTable.tsx`, 계산 `lib/branches.ts branchSummaries` = `monthResult`와 같음; 지점 없는 옛 행은 본점으로). 이때 단독 "이번 달 남은 돈" 줄은 숨김.
+- 통합일 때 장부: 서류마다 지점 이름표(색). 설정 → 지점 관리: 색 8가지 고르기(`branches.color`, ''=자동, 마이그레이션 20260928000300).
+- 주의: 여러 행을 한 번에 insert할 때 일부 행에만 color를 넣으면 PostgREST가 나머지 행에 null을 보내 not-null 위반 — 앱은 한 행씩 저장하고 항상 color를 보냄.

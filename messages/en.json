@@ -1047,7 +1047,17 @@
     "colSales": "Sales",
     "colCost": "Costs",
     "colProfit": "Profit",
-    "colVat": "VAT to pay"
+    "colVat": "VAT to pay",
+    "switch": "Switch branch",
+    "sheetHint": "Shows only the chosen branch's books, sales, VAT and profit. \"All branches\" adds them all up.",
+    "sheetLine": "This month: sales {sales} · profit {profit}",
+    "sheetCost": "This month: costs {cost}",
+    "current": "Current",
+    "combined": "All together · {count} branches",
+    "combinedHint": "This month for every branch added up. Tap a branch card below to switch to it.",
+    "open": "Switch to this branch",
+    "color": "Colour",
+    "allLong": "Combined · all branches"
   },
   "dep": {
     "label": "Depreciation period",

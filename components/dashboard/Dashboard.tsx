@@ -26,7 +26,7 @@ import { useSales } from "@/lib/sales-store";
 import { InstallCard } from "@/components/settings/InstallCard";
 import { useMe } from "@/lib/role-store";
 import { ALL } from "@/lib/branches";
-import { useBranch } from "@/lib/branch-store";
+import { useBranch, useBranches } from "@/lib/branch-store";
 import { ActivityList } from "./ActivityList";
 import { BranchTable } from "./BranchTable";
 import { TeamCard } from "./TeamCard";
@@ -59,6 +59,9 @@ export function Dashboard() {
   const { sales } = useSales();
   const isAdmin = useMe().role === "admin";
   const allBranches = useBranch() === ALL;
+  const branchCount = useBranches().branches.length;
+  // Several branches seen together: the combined board carries the profit, so the single line steps aside
+  const combined = allBranches && branchCount > 1;
   const result = useMemo(() => monthResult(sales, docs.map((d) => d.doc), month, company.taxId), [sales, docs, month, company.taxId]);
   const hasSales = result.days > 0;
 
@@ -81,6 +84,7 @@ export function Dashboard() {
       </div>
 
       {/* The one number owners ask first: what is left this month (same figure as the sales page) */}
+      {!combined && (
       <Link href="/sales" className="workspace-panel tap-row flex items-center gap-3 px-4 py-3.5 sm:px-5">
         <span className="intelligence-mark is-soft size-10 flex-none">
           <TrendingUp className="size-4 text-brand" aria-hidden />
@@ -102,6 +106,7 @@ export function Dashboard() {
         )}
         <ChevronRight className="size-4 flex-none text-muted-foreground" aria-hidden />
       </Link>
+      )}
 
       {/* Several branches, looking at all of them: each one's month side by side */}
       {allBranches && <BranchTable month={month} companyTaxId={company.taxId} />}

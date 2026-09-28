@@ -1,5 +1,8 @@
 "use client";
 
+import { useBranchName } from "@/components/layout/branch-switcher";
+import { ALL, BRANCH_COLORS, branchLabel, byId, colorOf, headOf } from "@/lib/branches";
+import { useBranch, useBranches } from "@/lib/branch-store";
 import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, CircleCheck, FilePen, ImagePlus, Loader2, Lock, Search, Trash2, TriangleAlert, X, UserCheck, Check } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
@@ -359,6 +362,22 @@ function Thumb({ path }: { path: string | null }) {
   );
 }
 
+/** "All branches": a small tag with the document's branch (nothing when one branch is chosen, or only one exists) */
+function BranchTag({ id }: { id: string }) {
+  const names = useBranchName();
+  const { branches } = useBranches();
+  const selected = useBranch();
+  if (selected !== ALL || branches.length < 2) return null;
+  const b = byId(branches, id) ?? headOf(branches);
+  if (!b) return null;
+  const [fg, bg] = BRANCH_COLORS[colorOf(b, branches)];
+  return (
+    <span className="inline-flex max-w-[8rem] items-center truncate rounded-full px-1.5 py-px text-[11px] font-semibold" style={{ color: fg, background: bg }}>
+      {branchLabel(b, names)}
+    </span>
+  );
+}
+
 const sellerOf = (e: LedgerEntry) => joinTri(e.doc.seller.name, "en") || joinTri(e.doc.seller.name, "th") || e.doc.docNo || "—";
 
 /** One document; stickers can be changed right from the list. */
@@ -418,6 +437,7 @@ const DocRow = memo(function DocRow({
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs whitespace-nowrap text-muted-foreground">
             {e.doc.docNo && <span className="mono max-sm:hidden">{e.doc.docNo}</span>}
+            <BranchTag id={e.doc.branchId} />
             {e.doc.date && <span>{sd(e.doc.date)}</span>}
             {draft && <span className="font-medium">{monthLabel(monthKey(e.doc))}</span>}
             {isUnpaid(e.doc) && !draft && <span className="text-warn">{t("app.unpaid")}</span>}

@@ -1047,7 +1047,17 @@
     "colSales": "売上",
     "colCost": "費用",
     "colProfit": "利益",
-    "colVat": "納付VAT"
+    "colVat": "納付VAT",
+    "switch": "支店を切り替え",
+    "sheetHint": "選んだ支店の帳簿・売上・VAT・損益だけを表示します。「全支店」は全てを合計して表示します。",
+    "sheetLine": "今月の売上 {sales} · 利益 {profit}",
+    "sheetCost": "今月の費用 {cost}",
+    "current": "表示中",
+    "combined": "統合 · {count}支店",
+    "combinedHint": "今月の全支店の合計です。下の支店カードを押すとその支店に切り替わります。",
+    "open": "この支店に切り替え",
+    "color": "色",
+    "allLong": "統合 · 全支店"
   },
   "dep": {
     "label": "償却期間",
