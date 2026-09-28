@@ -34,6 +34,9 @@ export interface LedgerEntry {
   ackBy: string | null;
   ackAt: number | null;
   deleteReason: string | null;
+  /** The office (an admin) looked at it — null: saved by staff or the LINE bot and not yet checked */
+  checkedAt: number | null;
+  checkedBy: string | null;
 }
 
 /** Reasons must say something; a single character is not a reason. */
@@ -101,7 +104,7 @@ async function reload() {
   const who = new Map((members ?? []).map((m) => [m.user_id as string, (m.name as string) || (m.email as string)]));
   names = who;
   entries = (rows ?? []).map((r) => {
-    const row = r as DocumentRow & { document_items: ItemRow[]; ack_flags?: string[] | null; ack_by?: string | null; ack_at?: string | null };
+    const row = r as DocumentRow & { document_items: ItemRow[]; ack_flags?: string[] | null; ack_by?: string | null; ack_at?: string | null; checked_at?: string | null; checked_by?: string | null };
     return {
       id: row.id,
       status: row.status === "draft" ? "draft" : "final",
@@ -115,6 +118,8 @@ async function reload() {
       ackFlags: row.ack_flags ?? [],
       ackBy: row.ack_by ? (who.get(row.ack_by) ?? null) : null,
       ackAt: time(row.ack_at ?? null),
+      checkedAt: time(row.checked_at ?? null),
+      checkedBy: row.checked_by ? (who.get(row.checked_by) ?? null) : null,
     };
   });
   loaded = true;
@@ -159,6 +164,17 @@ export function useLedger(opts: { all?: boolean } = {}): { entries: LedgerEntry[
     return () => window.removeEventListener("focus", onFocus);
   }, []);
   return { entries: snap, loaded };
+}
+
+/** The office checked these documents (admins only; the database refuses anyone else). `on: false` undoes it. */
+export async function setChecked(ids: string[], on: boolean, meName: string) {
+  if (!ids.length) return;
+  const { error } = await supabaseBrowser()
+    .from("documents")
+    .update({ checked_at: on ? new Date().toISOString() : null })
+    .in("id", ids);
+  if (error) throw error;
+  patchEntries(ids, (e) => ({ ...e, checkedAt: on ? Date.now() : null, checkedBy: on ? meName : null }));
 }
 
 /** Mark a document's warnings "문제 없음" ([] undoes it). Who / when are stamped by the database. */

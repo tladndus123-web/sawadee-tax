@@ -4,6 +4,8 @@
 //   any other text / sticker … → no reply (people chat here; the bot only speaks when it has something to say)
 //   image             → linked members only: AI reading → vendor dictionary → saved to the ledger
 //                       (status "reviewed", as that member) → receipt card with the automatic checks
+//   file .xlsx / .csv → linked members only: a POS sales export, read with the columns the app remembered from an
+//                       import (company_settings.pos_columns) → one line per day and channel in public.sales
 // Only 1:1 chats are served; groups and rooms are ignored.
 
 import crypto from "node:crypto";
@@ -12,7 +14,9 @@ import { type LedgerRef, runChecks } from "./checks";
 import { docToRow } from "./db-map";
 import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
-import { imageType, lineBlobClient, lineClient, receiptCard, say, branchButtons, lineBranchLabel } from "./line";
+import { imageType, lineBlobClient, lineClient, receiptCard, say, branchButtons, lineBranchLabel, salesBranchButtons } from "./line";
+import { aggregate, applySavedColumns, findHeader, posColumnsOf } from "./pos-import";
+import { isPosFileName, readPosBuffer } from "./pos-read-server";
 import { assignBranch, type Branch, branchFromPhoto, sortBranches } from "./branches";
 import { findDuplicate } from "./photo-hash";
 import { photoHashServer } from "./photo-hash-server";
@@ -82,6 +86,7 @@ export async function handleLineEvent(event: webhook.Event): Promise<void> {
   // A 6-digit code, also as "123 456" or "123-456"
   if (message.type === "text" && /^\s*\d{3}[\s-]?\d{3}\s*$/.test(message.text ?? "")) return linkAccount(event, lineUser, digitsOnly(message.text));
   if (message.type === "image") return saveReceipt(event, lineUser, message.id);
+  if (message.type === "file" && isPosFileName(message.fileName ?? "")) return salesFile(event, lineUser, message.id, message.fileName ?? "");
   // Anything else (ordinary chat, stickers …): no automatic reply
 }
 
@@ -208,13 +213,102 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   console.log(`[line] saved ${id}: AI ${(aiMs / 1000).toFixed(1)}s, total ${((Date.now() - started) / 1000).toFixed(1)}s`);
 }
 
-/** The sender chose a branch for a document under the receipt card */
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+/** A POS sales export: with one branch it is saved at once; with several, the sender picks the branch first */
+async function salesFile(event: webhook.MessageEvent, lineUser: string, messageId: string, fileName: string) {
+  const member = await memberFor(lineUser);
+  if (!member) return send(event, lineUser, [text(say.welcome)]);
+  if (limited(`file:${member.user_id}`, 5, 60_000)) return send(event, lineUser, [text(say.rate)]);
+  const { data: branchRows } = await supabaseAdmin().from("branches").select("id, no, name, sort");
+  const branches = sortBranches(((branchRows ?? []) as Branch[]).map((b) => ({ ...b, name: b.name ?? "", sort: Number(b.sort) || 0, color: "" })));
+  if (branches.length > 1) return send(event, lineUser, [{ ...text(say.fileBranchAsk), quickReply: salesBranchButtons(messageId, fileName, branches) }]);
+  await importSales(event, lineUser, member.user_id, messageId, fileName, branches[0] ?? null);
+}
+
+async function importSales(event: { replyToken?: string }, lineUser: string, userId: string, messageId: string, fileName: string, branch: Branch | null) {
+  const admin = supabaseAdmin();
+  // Once per file, whichever branch button is tapped, and whatever LINE redelivers
+  const claim = await admin.from("line_messages").insert({ message_id: `${messageId}:xl`, user_id: userId });
+  if (claim.error) {
+    if (claim.error.code === "23505") return send(event, lineUser, [text(say.fileAlready)]);
+    throw claim.error;
+  }
+  await lineClient()
+    .showLoadingAnimation({ chatId: lineUser, loadingSeconds: 20 })
+    .catch(() => undefined);
+  const buf = await readStream(await lineBlobClient().getMessageContent(messageId));
+  if (buf.length > MAX_FILE_BYTES) return send(event, lineUser, [text(say.fileTooBig)]);
+  const rows = await readPosBuffer(buf, fileName).catch(() => null);
+  const found = rows ? findHeader(rows) : null;
+  const { data: settings } = await admin.from("company_settings").select("pos_columns").eq("id", 1).maybeSingle();
+  const map = found && rows ? applySavedColumns(rows[found.index] ?? [], found.map, posColumnsOf(settings?.pos_columns)) : {};
+  if (!rows || !found || map.date === undefined || map.gross === undefined) return send(event, lineUser, [text(say.fileNoColumns)]);
+  const { days } = aggregate(rows.slice(found.index + 1), map, "store");
+  if (!days.length) return send(event, lineUser, [text(say.fileNoRows)]);
+
+  // Same rules as the app's import: sane numbers only, closed months left alone
+  const valid = days.filter((d) => d.gross >= 0 && d.vat >= 0 && d.exempt >= 0 && d.vat + d.exempt <= d.gross);
+  const months = [...new Set(valid.map((d) => d.date.slice(0, 7)))];
+  const { data: locks } = await admin.from("month_locks").select("month").in("month", months);
+  const closed = new Set((locks ?? []).map((l) => l.month as string));
+  const open = valid.filter((d) => !closed.has(d.date.slice(0, 7)));
+  if (open.length) {
+    const { error } = await admin.from("sales").upsert(
+      open.map((d) => ({
+        ...(branch ? { branch_id: branch.id } : {}),
+        sale_date: d.date,
+        channel: d.channel,
+        doc_from: d.docFrom,
+        doc_to: d.docTo,
+        bills: Math.max(0, d.bills),
+        gross: d.gross,
+        vat: d.vat,
+        exempt: d.exempt,
+        note: "LINE",
+        source: "excel",
+      })),
+      { onConflict: "branch_id,sale_date,channel" },
+    );
+    if (error) throw error;
+  }
+  const dates = open.map((d) => d.date).sort();
+  const sum = (k: "gross" | "vat") => open.reduce((a, d) => a + Math.round(d[k] * 100), 0) / 100;
+  await send(event, lineUser, [
+    text(
+      say.salesSaved(
+        {
+          days: new Set(dates).size,
+          from: dates[0] ?? "",
+          to: dates[dates.length - 1] ?? "",
+          gross: sum("gross"),
+          vat: sum("vat"),
+          locked: valid.length - open.length,
+          invalid: days.length - valid.length,
+          branch: branch ? lineBranchLabel(branch) : "",
+        },
+        `${appUrl()}/sales`,
+      ),
+    ),
+  ]);
+  console.log(`[line] sales file ${fileName}: ${open.length} lines`);
+}
+
+/** The sender chose a branch: for a document under the receipt card, or for a sales file */
 async function pickBranch(event: webhook.PostbackEvent, lineUser: string, data: string) {
   const q = new URLSearchParams(data);
   const docId = q.get("doc");
   const branchId = q.get("branch");
-  if (!docId || !branchId || !(await memberFor(lineUser))) return;
+  const member = await memberFor(lineUser);
+  if (!branchId || !member) return;
   const admin = supabaseAdmin();
+  const xl = q.get("xl");
+  if (xl) {
+    const { data: b } = await admin.from("branches").select("id, no, name").eq("id", branchId).maybeSingle();
+    if (!b) return send(event, lineUser, [text(say.branchGone)]);
+    return importSales(event, lineUser, member.user_id, xl, decodeURIComponent(q.get("fn") ?? "sales.xlsx"), { ...(b as Branch), sort: 0, color: "" });
+  }
+  if (!docId) return;
   const { data: b } = await admin.from("branches").select("id, no, name").eq("id", branchId).maybeSingle();
   if (!b) return send(event, lineUser, [text(say.branchGone)]);
   const { error } = await admin.from("documents").update({ branch_id: branchId }).eq("id", docId);

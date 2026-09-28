@@ -423,7 +423,8 @@
     "blue": "Blue",
     "purple": "Purple",
     "gray": "Gray",
-    "search": "Search by seller, document no. or amount"
+    "search": "Search by seller, document no. or amount",
+    "unchecked": "not yet checked"
   },
   "auth": {
     "title": "Sign in",
@@ -620,7 +621,15 @@
     "upcomingCount": "{count}",
     "upcomingTotal": "Total",
     "upcomingMore": "Show {count} more",
-    "upcomingLess": "Show less"
+    "upcomingLess": "Show less",
+    "unchecked": "Waiting for the office",
+    "uncheckedHint": "Saved by staff or through LINE. They are already in the books; checking records that someone looked.",
+    "uncheckedEmpty": "Nothing to check.",
+    "checkOne": "Checked",
+    "checkAll": "Check all {count}",
+    "checkedDone": "{count} checked.",
+    "checkUndo": "Undo",
+    "checkFail": "Couldn't save."
   },
   "line": {
     "title": "LINE",
@@ -1207,7 +1216,8 @@
     "fromPayroll": "Fill in from payroll",
     "fl": "Food + labour",
     "flr": "Food + labour + rent",
-    "base": "Against sales without VAT of {sales}"
+    "base": "Against sales without VAT of {sales}",
+    "fixed": "Fixed costs"
   },
   "pay": {
     "title": "Payroll",
@@ -1308,5 +1318,41 @@
     "ssSaved": "Social security rate saved.",
     "ssAccount": "Employer SSO account no. (10 digits)",
     "ssAccountBad": "The account number has 10 digits."
+  },
+  "fixed": {
+    "title": "Fixed costs (no invoice)",
+    "hint": "Rent, internet, insurance … the same every month, with no tax invoice. Entered once, counted every month; no VAT is claimed.",
+    "empty": "No fixed costs yet. Start with the rent.",
+    "range": "{from} – {to}",
+    "since": "from {from}",
+    "perMonth": "a month",
+    "monthly": "This month {amount}",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteAsk": "Delete '{name}'? Earlier months lose it too. If it just stopped, set an end month instead.",
+    "deleted": "Deleted.",
+    "lockedEnd": "It covers a closed month, so it can't be deleted. Set an end month instead.",
+    "locked": "A closed month can't change. Use 'Change amount' from the next month on.",
+    "fail": "Couldn't save.",
+    "add": "Add a fixed cost",
+    "name": "Name",
+    "namePlaceholder": "e.g. Shop rent",
+    "category": "Category",
+    "amount": "Amount (a month)",
+    "changeAmount": "Change amount",
+    "branch": "Branch",
+    "from": "From",
+    "ends": "Has an end month",
+    "note": "Note",
+    "formHint": "The same amount counts every month from the start. An uploaded invoice counts on its own, so don't add costs you upload invoices for.",
+    "needName": "Enter a name.",
+    "needAmount": "Enter an amount.",
+    "saved": "Saved.",
+    "cancel": "Cancel",
+    "save": "Save",
+    "changeTitle": "Change the amount of {name}",
+    "newAmount": "New amount (a month)",
+    "applyFrom": "From",
+    "changeHint": "The new amount from that month; the months before keep {amount}."
   }
 }

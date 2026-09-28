@@ -15,6 +15,8 @@ import { invoiceMonth, NO_DATE } from "@/lib/archive";
 import { ALL } from "@/lib/branches";
 import { useBranch } from "@/lib/branch-store";
 import { useCompany } from "@/lib/company-store";
+import { fixedForMonth } from "@/lib/fixed-costs";
+import { useFixedCosts } from "@/lib/fixed-store";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
 import { type Channel, monthResult, type Sale, saleMonth } from "@/lib/sales";
@@ -65,7 +67,8 @@ export function SalesPage() {
     const set = new Set<string>([today.slice(0, 7), ...sales.map(saleMonth), ...purchases.map((d) => invoiceMonth(d)).filter((m) => m !== NO_DATE)]);
     return [...set].sort().reverse();
   }, [sales, purchases, today]);
-  const r = useMemo(() => monthResult(sales, purchases, month, company.taxId, monthLabor(labor, month)), [sales, purchases, month, company.taxId, labor]);
+  const { lines: fixed } = useFixedCosts();
+  const r = useMemo(() => monthResult(sales, purchases, month, company.taxId, monthLabor(labor, month), fixedForMonth(fixed, month)), [sales, purchases, month, company.taxId, labor, fixed]);
   const fees = useMemo(() => monthFees(sales, month, company.appFees), [sales, month, company.appFees]);
   const days = useMemo(() => sales.filter((s) => saleMonth(s) === month), [sales, month]);
   const existingFor = (d: SaleDraft) => sales.find((x) => x.date === d.date && x.channel === d.channel && (x.branchId || "") === (d.branchId || "") && x.id !== d.id) ?? null;
@@ -196,7 +199,7 @@ export function SalesPage() {
       </section>
 
       {/* Food cost, labour and rent against sales */}
-      <CostCard month={month} salesValue={r.salesValue} purchases={purchases} />
+      <CostCard month={month} salesValue={r.salesValue} purchases={purchases} fixed={fixed} />
 
       {/* Delivery apps: commission and payout (shown once the month has app sales) */}
       {fees.lines.length > 0 && <AppFeesCard f={fees} />}

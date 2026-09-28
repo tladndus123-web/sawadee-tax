@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(126);
+select plan(146);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -300,6 +300,41 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select is((select count(*)::int from public.employees), 0, 'staff see no employees (salaries, ID numbers)');
 select is((select count(*)::int from public.payroll_lines), 0, 'nor any payroll');
 select throws_ok($$ insert into public.employees (name) values ('x') $$, '42501', NULL, 'nor add employees');
+
+-- Office check: staff / LINE saves are unchecked until an admin looks; an admin's own saves are checked; a staff edit
+-- after the check needs a new look; checking is allowed on a closed month
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select lives_ok($$ select public.save_document('00000000-0000-0000-0000-0000000000c1', '{"doc_no":"C-1","status":"reviewed","net":107,"doc_date":"2026-07-03"}', '[]') $$, 'staff save a document');
+select is((select checked_at from public.documents where id = '00000000-0000-0000-0000-0000000000c1'), null, 'a staff save is unchecked');
+select throws_ok($$ update public.documents set checked_at = now() where id = '00000000-0000-0000-0000-0000000000c1' $$, 'only admins can check documents', 'staff cannot check');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select lives_ok($$ update public.documents set checked_at = now() where id = '00000000-0000-0000-0000-0000000000c1' $$, 'an admin checks it');
+select is((select checked_by::text from public.documents where id = '00000000-0000-0000-0000-0000000000c1'), '00000000-0000-0000-0000-00000000000a', 'the check names the admin');
+select lives_ok($$ select public.save_document('00000000-0000-0000-0000-0000000000c2', '{"doc_no":"C-2","status":"reviewed","net":107}', '[]') $$, 'an admin saves a document');
+select isnt((select checked_at from public.documents where id = '00000000-0000-0000-0000-0000000000c2'), null, 'an admin''s own save is checked');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select lives_ok($$ update public.documents set paid = true where id = '00000000-0000-0000-0000-0000000000c1' $$, 'staff mark it paid');
+select isnt((select checked_at from public.documents where id = '00000000-0000-0000-0000-0000000000c1'), null, 'marking paid keeps the check');
+select lives_ok($$ update public.documents set doc_no = 'C-1b' where id = '00000000-0000-0000-0000-0000000000c1' $$, 'staff edit the content');
+select is((select checked_at from public.documents where id = '00000000-0000-0000-0000-0000000000c1'), null, 'a content edit by staff needs a new look');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+insert into public.month_locks (month) values ('2026-07');
+select lives_ok($$ update public.documents set checked_at = now() where id = '00000000-0000-0000-0000-0000000000c1' $$, 'a closed month''s document can still be checked');
+delete from public.month_locks where month = '2026-07';
+
+-- Fixed costs: everyone reads, admins write; a line covering a closed month is frozen except for ending it later
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select lives_ok($$ insert into public.fixed_costs (id, category, name, amount, from_month) values ('00000000-0000-0000-0000-0000000000f1', 'rent', 'Shop rent', 30000, '2026-01') $$, 'an admin adds a fixed cost');
+insert into public.month_locks (month) values ('2026-06');
+select throws_like($$ update public.fixed_costs set amount = 1 where id = '00000000-0000-0000-0000-0000000000f1' $$, 'month_locked%', 'its amount cannot change while it covers a closed month');
+select throws_like($$ update public.fixed_costs set to_month = '2026-05' where id = '00000000-0000-0000-0000-0000000000f1' $$, 'month_locked%', 'nor can it end before the closed month');
+select lives_ok($$ update public.fixed_costs set to_month = '2026-06' where id = '00000000-0000-0000-0000-0000000000f1' $$, 'but it can end at or after it');
+select throws_like($$ delete from public.fixed_costs where id = '00000000-0000-0000-0000-0000000000f1' $$, 'month_locked%', 'and cannot be removed');
+select throws_like($$ insert into public.fixed_costs (category, name, amount, from_month) values ('rent', 'x', 1, '2026-06') $$, 'month_locked%', 'a new line cannot start in a closed month');
+delete from public.month_locks where month = '2026-06';
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select is((select count(*)::int from public.fixed_costs), 1, 'staff see fixed costs (they are in the cost figures)');
+select throws_ok($$ insert into public.fixed_costs (category, name, amount, from_month) values ('rent', 'x', 1, '2026-09') $$, '42501', NULL, 'but cannot add one');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

@@ -31,6 +31,16 @@ const both = (thai: string, japanese: string) => `${thai}\n\n${japanese}`;
 /** A branch as the bot names it (Thai / Japanese) */
 export const lineBranchLabel = (b: { no: string; name: string }) => b.name.trim() || (b.no === "00000" ? "สำนักงานใหญ่ / 本店" : `สาขา ${b.no}`);
 
+/** Buttons under a sales file: which branch is it for? (postback "branch=<id>&xl=<messageId>&fn=<file name>") */
+export function salesBranchButtons(messageId: string, fileName: string, branches: { id: string; no: string; name: string }[]): messagingApi.QuickReply {
+  return {
+    items: branches.slice(0, 13).map((b) => {
+      const label = lineBranchLabel(b).slice(0, 20);
+      return { type: "action", action: { type: "postback", label, data: `branch=${b.id}&xl=${messageId}&fn=${encodeURIComponent(fileName).slice(0, 120)}`, displayText: label } };
+    }),
+  };
+}
+
 /** Buttons under the receipt card: which branch is this for? (postback "branch=<id>&doc=<id>") */
 export function branchButtons(docId: string, branches: { id: string; no: string; name: string }[]): messagingApi.QuickReply {
   return {
@@ -41,7 +51,39 @@ export function branchButtons(docId: string, branches: { id: string; no: string;
   };
 }
 
+export interface SalesSavedText {
+  days: number;
+  from: string;
+  to: string;
+  gross: number;
+  vat: number;
+  locked: number;
+  invalid: number;
+  branch: string;
+}
+
 export const say = {
+  fileNoColumns: both(
+    "อ่านคอลัมน์ของไฟล์นี้ไม่ได้ กรุณานำเข้าในแอปหนึ่งครั้ง (ยอดขาย → POS Excel) เพื่อให้แอปจำคอลัมน์ แล้วครั้งต่อไปส่งไฟล์มาที่นี่ได้เลย",
+    "このファイルの列を読み取れませんでした。アプリで一度取り込むと（売上 → POS Excel）列を覚えるので、次回からはここに送るだけで済みます。",
+  ),
+  fileNoRows: both("ไม่พบแถวที่มีวันที่และยอดขาย ตรวจสอบไฟล์อีกครั้ง", "日付と売上金額のある行が見つかりません。ファイルを確認してください。"),
+  fileTooBig: both("ไฟล์ใหญ่เกินไป (เกิน 5 MB)", "ファイルが大きすぎます（5MB超）。"),
+  fileAlready: both("ไฟล์นี้บันทึกไว้แล้ว", "このファイルはすでに登録済みです。"),
+  fileBranchAsk: "ยอดขายของสาขาไหน? กดเลือกด้านล่าง / どの支店の売上ですか？下から選んでください",
+  salesSaved: (s: SalesSavedText, url: string) =>
+    [
+      ...(s.days
+        ? [`✓ บันทึกยอดขาย ${s.days} วัน (${dmy(s.from)}${s.to !== s.from ? ` – ${dmy(s.to)}` : ""})${s.branch ? ` · ${s.branch}` : ""}`, `รวม ${baht(s.gross)} · VAT ${baht(s.vat)}`]
+        : ["ไม่ได้บันทึกยอดขาย"]),
+      ...(s.locked ? [`ข้าม ${s.locked} วันของเดือนที่ปิดแล้ว`] : []),
+      ...(s.invalid ? [`ข้าม ${s.invalid} วันที่ตัวเลขผิดปกติ`] : []),
+      "",
+      ...(s.days ? [`売上 ${s.days}日分を登録しました（${dmy(s.from)}${s.to !== s.from ? `〜${dmy(s.to)}` : ""}）`, `合計 ${baht(s.gross)} · VAT ${baht(s.vat)}`] : ["売上は登録されませんでした"]),
+      ...(s.locked ? [`締めた月の${s.locked}日分はスキップ`] : []),
+      "",
+      url,
+    ].join("\n"),
   duplicate: (url: string) => `รูปนี้บันทึกไว้แล้ว จึงไม่ได้อ่านซ้ำ (ไม่มีค่าใช้จ่าย)\nこの写真は登録済みのため、読み取りを省きました（費用なし）\n${url}`,
   branchAsk: "สาขาไหน? กดเลือกด้านล่าง / どの支店ですか？下から選んでください",
   branchSet: (name: string) => `✓ บันทึกเป็น ${name} / ${name} に登録しました`,

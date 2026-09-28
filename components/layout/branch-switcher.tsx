@@ -17,6 +17,7 @@ import { useSales } from "@/lib/sales-store";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { useLabor } from "@/lib/labor-store";
+import { useFixedCosts } from "@/lib/fixed-store";
 
 export function useBranchName() {
   const t = useTranslations("branch");
@@ -89,10 +90,11 @@ function SwitchSheet({ branches, selected, names, onPick }: { branches: Branch[]
   const { entries } = useLedger({ all: true });
   const { sales } = useSales({ all: true });
   const { lines: labor } = useLabor({ all: true });
+  const { lines: fixed } = useFixedCosts({ all: true });
   const month = todayBangkok().slice(0, 7);
   const { rows, total } = useMemo(
-    () => branchSummaries(branches, pick(entries, "ledger").map((e) => e.doc), sales, month, company.taxId, labor),
-    [branches, entries, sales, month, company.taxId, labor],
+    () => branchSummaries(branches, pick(entries, "ledger").map((e) => e.doc), sales, month, company.taxId, labor, fixed),
+    [branches, entries, sales, month, company.taxId, labor, fixed],
   );
   const line = (r: (typeof rows)[number]["result"]) =>
     r.days ? t("sheetLine", { sales: baht(r.salesValue), profit: baht(r.profit) }) : t("sheetCost", { cost: baht(r.purchasesCost) });

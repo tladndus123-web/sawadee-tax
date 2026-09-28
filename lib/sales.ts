@@ -7,7 +7,7 @@ import { invoiceMonth } from "./archive";
 import { claimable } from "./checks";
 import { monthCosts } from "./cost-split";
 import { fromSatang, toSatang } from "./money";
-import type { LedgerDoc } from "./types";
+import type { Category, LedgerDoc } from "./types";
 
 export const CHANNELS = ["store", "grab", "lineman", "foodpanda", "shopee", "robinhood", "other"] as const;
 export type Channel = (typeof CHANNELS)[number];
@@ -65,7 +65,7 @@ export interface MonthResult {
 }
 
 /** `labor`: the month's labour in satang (lib/cost-control monthLabor); it lowers the profit like any cost */
-export function monthResult(sales: Sale[], purchases: LedgerDoc[], month: string, companyTaxId: string, labor = 0): MonthResult {
+export function monthResult(sales: Sale[], purchases: LedgerDoc[], month: string, companyTaxId: string, labor = 0, fixed?: ReadonlyMap<Category, number>): MonthResult {
   let sg = 0;
   let sv = 0;
   const days = new Set<string>();
@@ -90,7 +90,7 @@ export function monthResult(sales: Sale[], purchases: LedgerDoc[], month: string
     if (claimable(d, companyTaxId)) pv += toSatang(d.totals.vat);
   }
   const salesValue = sg - sv;
-  const costs = monthCosts(purchases, month, companyTaxId);
+  const costs = monthCosts(purchases, month, companyTaxId, fixed);
   const cost = costs.cost;
   const profit = salesValue - cost - labor;
   return {

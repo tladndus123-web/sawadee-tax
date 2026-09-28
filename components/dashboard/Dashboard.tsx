@@ -31,9 +31,12 @@ import { useBranch, useBranches } from "@/lib/branch-store";
 import { ActivityList } from "./ActivityList";
 import { BranchTable } from "./BranchTable";
 import { TeamCard } from "./TeamCard";
+import { UncheckedList } from "./UncheckedList";
 import { VatCard } from "./VatCard";
 import { monthLabor } from "@/lib/cost-control";
 import { useLabor } from "@/lib/labor-store";
+import { fixedForMonth } from "@/lib/fixed-costs";
+import { useFixedCosts } from "@/lib/fixed-store";
 
 // The chart library (recharts) is the heaviest part of this page: load it after the numbers are on screen
 const TrendChart = dynamic(() => import("./TrendChart").then((m) => m.TrendChart), {
@@ -61,12 +64,13 @@ export function Dashboard() {
   const points = useMemo(() => trend(docs, month), [docs, month]);
   const { sales } = useSales();
   const { lines: labor } = useLabor();
+  const { lines: fixed } = useFixedCosts();
   const isAdmin = useMe().role === "admin";
   const allBranches = useBranch() === ALL;
   const branchCount = useBranches().branches.length;
   // Several branches seen together: the combined board carries the profit, so the single line steps aside
   const combined = allBranches && branchCount > 1;
-  const result = useMemo(() => monthResult(sales, docs.map((d) => d.doc), month, company.taxId, monthLabor(labor, month)), [sales, docs, month, company.taxId, labor]);
+  const result = useMemo(() => monthResult(sales, docs.map((d) => d.doc), month, company.taxId, monthLabor(labor, month), fixedForMonth(fixed, month)), [sales, docs, month, company.taxId, labor, fixed]);
   const hasSales = result.days > 0;
   const purchases = useMemo(() => docs.map((d) => d.doc), [docs]);
 
@@ -113,8 +117,11 @@ export function Dashboard() {
       </Link>
       )}
 
+      {/* The office's in-tray: what staff and the LINE bot saved and nobody has looked at */}
+      {isAdmin && <UncheckedList />}
+
       {/* What owners watch first: food, labour and rent against sales (FL / FLR) */}
-      <CostCard month={month} salesValue={result.salesValue} purchases={purchases} />
+      <CostCard month={month} salesValue={result.salesValue} purchases={purchases} fixed={fixed} />
 
       {/* Several branches, looking at all of them: each one's month side by side */}
       {allBranches && <BranchTable month={month} companyTaxId={company.taxId} />}

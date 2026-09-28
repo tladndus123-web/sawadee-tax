@@ -10,6 +10,8 @@ import { flagsFor } from "@/lib/checks";
 import { useCompany } from "@/lib/company-store";
 import { buildMonthExport, exportLang } from "@/lib/export";
 import { monthCosts } from "@/lib/cost-split";
+import { fixedForMonth } from "@/lib/fixed-costs";
+import { useFixedCosts } from "@/lib/fixed-store";
 import { type LedgerEntry, pick, useLedger } from "@/lib/ledger-store";
 import { fromSatang } from "@/lib/money";
 import { useCategoryLabel } from "@/components/vendors/CategoryIcon";
@@ -28,6 +30,7 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
   // Depreciation needs equipment bought in earlier months too
   const { entries: all } = useLedger();
   const catLabel = useCategoryLabel();
+  const { lines: fixed } = useFixedCosts();
 
   const excel = async () => {
     setBusy(true);
@@ -42,6 +45,7 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
         pick(all, "ledger").map((e) => e.doc),
         month,
         company.taxId,
+        fixedForMonth(fixed, month),
       );
       const costRows = [
         ...[...c.byCategory.entries()].filter(([, v]) => v).map(([k, v]) => ({ label: catLabel(k), amount: fromSatang(v) })),

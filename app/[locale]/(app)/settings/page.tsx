@@ -6,6 +6,7 @@ import { StickerNameSettings } from "@/components/ledger/Stickers";
 import { LineCard } from "@/components/settings/LineCard";
 import { BranchCard } from "@/components/settings/BranchCard";
 import { CategoryCard } from "@/components/settings/CategoryCard";
+import { FixedCostCard } from "@/components/settings/FixedCostCard";
 import { InstallCard } from "@/components/settings/InstallCard";
 import { PushCard } from "@/components/settings/PushCard";
 import type { Locale } from "@/i18n/routing";
@@ -23,6 +24,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
       </div>
       <BranchCard />
       <CategoryCard />
+      <FixedCostCard />
       <InstallCard />
       <PushCard />
       <LineCard />

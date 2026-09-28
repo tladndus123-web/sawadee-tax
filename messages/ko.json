@@ -423,7 +423,8 @@
     "blue": "파랑",
     "purple": "보라",
     "gray": "회색",
-    "search": "거래처 · 문서번호 · 금액으로 검색"
+    "search": "거래처 · 문서번호 · 금액으로 검색",
+    "unchecked": "사무실 확인 전"
   },
   "auth": {
     "title": "로그인",
@@ -620,7 +621,15 @@
     "upcomingCount": "{count}건",
     "upcomingTotal": "합계",
     "upcomingMore": "{count}건 더 보기",
-    "upcomingLess": "접기"
+    "upcomingLess": "접기",
+    "unchecked": "사무실 확인 대기",
+    "uncheckedHint": "직원이나 LINE으로 들어온 전표예요. 이미 장부에 들어가 있고, 확인을 누르면 봤다는 표시만 남아요.",
+    "uncheckedEmpty": "확인할 전표가 없어요.",
+    "checkOne": "확인",
+    "checkAll": "{count}건 모두 확인",
+    "checkedDone": "{count}건을 확인했어요.",
+    "checkUndo": "되돌리기",
+    "checkFail": "저장하지 못했어요."
   },
   "line": {
     "title": "LINE 연결",
@@ -1207,7 +1216,8 @@
     "fromPayroll": "급여 계산에서 자동으로 채우기",
     "fl": "식재료 + 인건비",
     "flr": "식재료 + 인건비 + 임대료",
-    "base": "매출(부가세 제외) {sales} 기준"
+    "base": "매출(부가세 제외) {sales} 기준",
+    "fixed": "고정비"
   },
   "pay": {
     "title": "급여",
@@ -1308,5 +1318,41 @@
     "ssSaved": "사회보험 요율을 저장했어요.",
     "ssAccount": "사회보험 사업장 번호 (10자리)",
     "ssAccountBad": "사업장 번호는 10자리예요."
+  },
+  "fixed": {
+    "title": "고정비 (영수증 없는 비용)",
+    "hint": "임대료, 인터넷, 보험처럼 매달 같은 금액이 나가는데 세금계산서가 없는 비용이에요. 한 번 넣으면 매달 원가에 자동으로 잡혀요. 부가세 공제는 안 돼요.",
+    "empty": "아직 고정비가 없어요. 임대료부터 넣어 보세요.",
+    "range": "{from} ~ {to}",
+    "since": "{from}부터",
+    "perMonth": "매달",
+    "monthly": "이번 달 합계 {amount}",
+    "edit": "수정",
+    "delete": "삭제",
+    "deleteAsk": "'{name}'을(를) 지울까요? 예전 달 숫자도 같이 사라져요. 그만 나가는 비용이면 대신 '끝나는 달'을 넣으세요.",
+    "deleted": "고정비를 지웠어요.",
+    "lockedEnd": "마감한 달에 걸쳐 있어서 지울 수 없어요. 대신 끝나는 달을 넣으세요.",
+    "locked": "마감한 달의 숫자는 바꿀 수 없어요. 새 금액은 '금액 바꾸기'로 다음 달부터 넣으세요.",
+    "fail": "저장하지 못했어요.",
+    "add": "고정비 추가",
+    "name": "이름",
+    "namePlaceholder": "예: 가게 임대료",
+    "category": "분류",
+    "amount": "금액 (매달)",
+    "changeAmount": "금액 바꾸기",
+    "branch": "지점",
+    "from": "시작하는 달",
+    "ends": "끝나는 달 있음",
+    "note": "메모",
+    "formHint": "시작하는 달부터 매달 같은 금액이 잡혀요. 계산서가 있는 달은 그 계산서도 따로 잡히니, 계산서를 올리는 비용은 여기 넣지 마세요.",
+    "needName": "이름을 넣어 주세요.",
+    "needAmount": "금액을 넣어 주세요.",
+    "saved": "고정비를 저장했어요.",
+    "cancel": "취소",
+    "save": "저장",
+    "changeTitle": "{name} 금액 바꾸기",
+    "newAmount": "새 금액 (매달)",
+    "applyFrom": "적용 시작 달",
+    "changeHint": "그 달부터 새 금액이, 그 전 달까지는 지금 금액({amount})이 그대로 잡혀요."
   }
 }

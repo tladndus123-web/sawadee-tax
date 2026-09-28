@@ -181,3 +181,55 @@ export function aggregate(rows: Cell[][], map: ColumnMap, fallback: Channel = "s
   days.sort((a, b) => a.date.localeCompare(b.date) || a.channel.localeCompare(b.channel));
   return { days, skipped };
 }
+
+// --- Column memory (company_settings.pos_columns) ---------------------------------------------------------------
+// After an import in the app, the header text of each matched column is kept, so a file the POS exports the same way
+// (e.g. sent to the LINE bot) is read without anyone matching columns again.
+
+export type SavedColumns = Partial<Record<Field, string>>;
+const FIELDS: Field[] = ["date", "gross", "vat", "preVat", "exempt", "receipt", "bills", "channel"];
+const headerText = (c: Cell) => String(c ?? "").trim().toLowerCase();
+
+/** What to remember from a confirmed import: field → header text */
+export function columnsToSave(headers: Cell[], map: ColumnMap): SavedColumns {
+  const out: SavedColumns = {};
+  for (const f of FIELDS) {
+    const i = map[f];
+    const h = i === undefined ? "" : String(headers[i] ?? "").trim();
+    if (h) out[f] = h.slice(0, 80);
+  }
+  return out;
+}
+
+/** The saved columns, sane ones only */
+export function posColumnsOf(raw: unknown): SavedColumns {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const out: SavedColumns = {};
+  for (const f of FIELDS) if (typeof r[f] === "string" && r[f]) out[f] = (r[f] as string).slice(0, 80);
+  return out;
+}
+
+/** The automatic match, overridden wherever a remembered header is in this file's header row */
+export function applySavedColumns(headers: Cell[], auto: ColumnMap, saved: SavedColumns): ColumnMap {
+  const names = headers.map(headerText);
+  const map: ColumnMap = { ...auto };
+  for (const f of FIELDS) {
+    const want = saved[f];
+    if (!want) continue;
+    const i = names.indexOf(want.trim().toLowerCase());
+    if (i >= 0) map[f] = i;
+  }
+  // One column serves one field: a saved column wins over an automatic one that landed on it
+  const taken = new Map<number, Field>();
+  for (const f of FIELDS) {
+    const i = map[f];
+    if (i === undefined) continue;
+    const other = taken.get(i);
+    if (other !== undefined && !saved[f] && saved[other]) delete map[f];
+    else if (other !== undefined && saved[f] && !saved[other]) {
+      delete map[other];
+      taken.set(i, f);
+    } else taken.set(i, f);
+  }
+  return map;
+}

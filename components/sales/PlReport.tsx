@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useCategoryLabel } from "@/components/vendors/CategoryIcon";
 import { useChannelLabel } from "./channel-name";
 import { useLabor } from "@/lib/labor-store";
+import { useFixedCosts } from "@/lib/fixed-store";
 
 const SPANS = [3, 6, 12] as const;
 
@@ -43,7 +44,8 @@ export function PlReport() {
   }, [sales, purchases, today]);
   const { lines: labor } = useLabor();
   const chName = useChannelLabel();
-  const table = useMemo(() => plTable(sales, purchases, end, span, company.taxId, labor), [sales, purchases, end, span, company.taxId, labor]);
+  const { lines: fixed } = useFixedCosts();
+  const table = useMemo(() => plTable(sales, purchases, end, span, company.taxId, labor, fixed), [sales, purchases, end, span, company.taxId, labor, fixed]);
 
   const short = new Intl.DateTimeFormat(locale, { year: "2-digit", month: "short", timeZone: "UTC" });
   const long = new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", timeZone: "UTC" });

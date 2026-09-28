@@ -37,6 +37,8 @@ describe("monthly result", () => {
 
   it("VAT that cannot be claimed is a cost", () => {
     const notOurs = normalize({ ...sampleDoc(), customer: { taxId: "" } });
+    const rent = monthResult([sale("2026-09-02", "store", 107000, 7000)], [], "2026-09", CO, 0, new Map([["rent", 3000000]]));
+    expect(rent).toMatchObject({ purchasesCost: 30000, profit: 70000, claimableVat: 0 });
     const r = monthResult([sale("2026-09-02", "store", 107000, 7000)], [notOurs], "2026-09", CO);
     expect(r.purchasesCost).toBe(64200);
     expect(r.profit).toBe(35800);

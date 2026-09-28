@@ -57,6 +57,12 @@ describe("equipment written off over years", () => {
     expect(r.depreciation).toBe(100000);
     expect(r.cost).toBe(6100000);
   });
+  it("fixed costs without an invoice join their category", () => {
+    const r = monthCosts([ours()], "2026-09", CO, new Map([["rent", 3000000], ["supplies", 100]]));
+    expect(r.byCategory.get("rent")).toBe(3000000);
+    expect(r.byCategory.get("supplies")).toBe(6000100);
+    expect(r.cost).toBe(9000100);
+  });
 });
 
 describe("equipment sold or thrown away", async () => {

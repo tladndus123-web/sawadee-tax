@@ -82,3 +82,34 @@ describe("CSV", async () => {
     expect(parseCsv("a;b\n1;2", ";")).toEqual([["a", "b"], ["1", "2"]]);
   });
 });
+
+describe("column memory", async () => {
+  const { applySavedColumns, columnsToSave, posColumnsOf } = await import("./pos-import");
+  const headers = ["Business Date", "Gross Sales", "Discount", "Net Sales", "VAT 7%", "No. of Bills"];
+  it("remembers the header text of each matched column", () => {
+    expect(columnsToSave(headers, { date: 0, gross: 3, vat: 4, bills: 5 })).toEqual({ date: "Business Date", gross: "Net Sales", vat: "VAT 7%", bills: "No. of Bills" });
+    expect(posColumnsOf({ date: "Date", gross: 1, bogus: "x" })).toEqual({ date: "Date" });
+  });
+  it("a remembered header overrides the automatic match, and frees the column it takes", () => {
+    // The person had chosen "Gross Sales" as the total (their POS puts the net there)
+    const map = applySavedColumns(headers, { date: 0, gross: 3, vat: 4, bills: 5 }, { gross: "gross sales" });
+    expect(map).toEqual({ date: 0, gross: 1, vat: 4, bills: 5 });
+    // Nothing remembered for this file's headers: the automatic match stays
+    expect(applySavedColumns(headers, { date: 0, gross: 3 }, { gross: "ยอดขายสุทธิ" })).toEqual({ date: 0, gross: 3 });
+  });
+});
+
+describe("server reader", async () => {
+  const { readPosBuffer, isPosFileName } = await import("./pos-read-server");
+  it("reads an .xlsx buffer and a CSV buffer to the same rows the browser gets", { timeout: 30_000 }, async () => {
+    const ExcelJS = (await import("exceljs")).default;
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Sales");
+    ws.addRow(["Date", "Net Sales", "VAT"]);
+    ws.addRow(["26/09/2026", 1070, 70]);
+    const buf = Buffer.from(await wb.xlsx.writeBuffer());
+    expect(await readPosBuffer(buf, "wongnai.xlsx")).toEqual([["Date", "Net Sales", "VAT"], ["26/09/2026", 1070, 70]]);
+    expect(await readPosBuffer(Buffer.from("Date;Total\n26/09/2026;1,070.00\n", "utf8"), "sales.csv")).toEqual([["Date", "Total"], ["26/09/2026", "1,070.00"]]);
+    expect([isPosFileName("a.xlsx"), isPosFileName("a.CSV"), isPosFileName("a.pdf")]).toEqual([true, true, false]);
+  });
+});

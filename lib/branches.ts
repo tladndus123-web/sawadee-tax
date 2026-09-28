@@ -3,6 +3,7 @@
 
 import { type LaborLine, monthLabor } from "./cost-control";
 import { type MonthCosts, monthCosts } from "./cost-split";
+import { type FixedLine, fixedForMonth } from "./fixed-costs";
 import { type MonthResult, monthResult, type Sale } from "./sales";
 import { branchNo } from "./thai-tax";
 import type { LedgerDoc } from "./types";
@@ -93,24 +94,20 @@ export function branchSummaries(
   month: string,
   companyTaxId: string,
   labor: LaborLine[] = [],
+  fixed: FixedLine[] = [],
 ): { rows: BranchSummary[]; total: MonthResult } {
   const head = headOf(branches);
   const of = (id: string) => (id && byId(branches, id) ? id : (head?.id ?? ""));
   const rows = sortBranches(branches).map((b) => {
     const mine = purchases.filter((d) => of(d.branchId) === b.id);
     const lab = monthLabor(labor.filter((l) => of(l.branchId) === b.id), month);
+    const fix = fixedForMonth(fixed.filter((l) => of(l.branchId) === b.id), month);
     return {
       branch: b,
-      result: monthResult(
-        sales.filter((s) => of(s.branchId) === b.id),
-        mine,
-        month,
-        companyTaxId,
-        lab,
-      ),
-      costs: monthCosts(mine, month, companyTaxId),
+      result: monthResult(sales.filter((s) => of(s.branchId) === b.id), mine, month, companyTaxId, lab, fix),
+      costs: monthCosts(mine, month, companyTaxId, fix),
       labor: lab,
     };
   });
-  return { rows, total: monthResult(sales, purchases, month, companyTaxId, monthLabor(labor, month)) };
+  return { rows, total: monthResult(sales, purchases, month, companyTaxId, monthLabor(labor, month), fixedForMonth(fixed, month)) };
 }

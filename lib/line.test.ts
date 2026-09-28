@@ -129,3 +129,18 @@ describe("payroll filing reminder (LINE)", async () => {
     expect(text.endsWith("https://x")).toBe(true);
   });
 });
+
+describe("sales file reply (LINE)", async () => {
+  const { say } = await import("./line");
+  it("names the days, the totals, the branch and what was skipped", () => {
+    const text = say.salesSaved({ days: 2, from: "2026-09-26", to: "2026-09-27", gross: 3745, vat: 245, locked: 1, invalid: 0, branch: "สาขา 00001" }, "https://x/sales");
+    expect(text).toContain("2 วัน (26/09/2026 – 27/09/2026) · สาขา 00001");
+    expect(text).toContain("3,745.00");
+    expect(text).toContain("ข้าม 1 วัน");
+    expect(text).toContain("締めた月の1日分");
+    expect(text.endsWith("https://x/sales")).toBe(true);
+    const none = say.salesSaved({ days: 0, from: "", to: "", gross: 0, vat: 0, locked: 2, invalid: 0, branch: "" }, "https://x/sales");
+    expect(none).toContain("ไม่ได้บันทึกยอดขาย");
+    expect(none).toContain("ข้าม 2 วัน");
+  });
+});

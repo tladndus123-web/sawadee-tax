@@ -4,7 +4,7 @@
 // and the three together. Labour has no receipts: admins type it in per branch and month (Thai payroll lines).
 // Admins can change the targets too.
 
-import { ChefHat, Loader2, Pencil, Users } from "lucide-react";
+import { CalendarClock, ChefHat, Loader2, Pencil, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ import { useCategories } from "@/lib/category-store";
 import { saveCompany, useCompany } from "@/lib/company-store";
 import { type CostLine, costControl, type LaborLine, monthLabor, targetsOf } from "@/lib/cost-control";
 import { monthCosts } from "@/lib/cost-split";
+import { type FixedLine, fixedForMonth } from "@/lib/fixed-costs";
 import { useLabor, saveLabor } from "@/lib/labor-store";
 import { isMonthLocked } from "@/lib/month-lock-store";
 import { baht, fromSatang } from "@/lib/money";
@@ -30,7 +31,7 @@ import { cn } from "@/lib/utils";
 const TONE = { ok: "text-ok", near: "text-warn", over: "text-bad", none: "text-muted-foreground" } as const;
 const BAR = { ok: "bg-ok", near: "bg-warn", over: "bg-bad", none: "bg-muted-foreground/30" } as const;
 
-export function CostCard({ month, salesValue, purchases }: { month: string; salesValue: number; purchases: LedgerDoc[] }) {
+export function CostCard({ month, salesValue, purchases, fixed }: { month: string; salesValue: number; purchases: LedgerDoc[]; fixed: FixedLine[] }) {
   const t = useTranslations("cost");
   const company = useCompany();
   const isAdmin = useMe().role === "admin";
@@ -41,8 +42,8 @@ export function CostCard({ month, salesValue, purchases }: { month: string; sale
   const targets = targetsOf(company.costTargets);
   const foodKeys = useMemo(() => new Set(categories.filter((c) => c.foodCost).map((c) => c.key as string)), [categories]);
   const c = useMemo(
-    () => costControl(Math.round(salesValue * 100), monthCosts(purchases, month, company.taxId), foodKeys, monthLabor(lines, month), targets),
-    [salesValue, purchases, month, company.taxId, foodKeys, lines, targets],
+    () => costControl(Math.round(salesValue * 100), monthCosts(purchases, month, company.taxId, fixedForMonth(fixed, month)), foodKeys, monthLabor(lines, month), targets),
+    [salesValue, purchases, month, company.taxId, foodKeys, lines, targets, fixed],
   );
 
   return (
@@ -60,6 +61,12 @@ export function CostCard({ month, salesValue, purchases }: { month: string; sale
             <Button type="button" variant="outline" className="h-9 rounded-full px-3 text-[13px]" onClick={() => setLaborOpen(true)}>
               <Users className="size-4" />
               {t("enterLabor")}
+            </Button>
+            <Button asChild variant="outline" className="h-9 rounded-full px-3 text-[13px]">
+              <Link href="/settings#fixed-title">
+                <CalendarClock className="size-4" />
+                {t("fixed")}
+              </Link>
             </Button>
             <Button type="button" variant="ghost" size="icon" className="size-9" aria-label={t("targets")} onClick={() => setTargetsOpen(true)}>
               <Pencil className="size-4" />

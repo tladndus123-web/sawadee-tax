@@ -11,7 +11,9 @@ import { useScreenDate } from "@/components/ScreenDate";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { baht } from "@/lib/money";
-import { aggregate, type Cell, type ColumnMap, type Field, findHeader } from "@/lib/pos-import";
+import { aggregate, applySavedColumns, type Cell, type ColumnMap, columnsToSave, type Field, findHeader, posColumnsOf } from "@/lib/pos-import";
+import { saveCompany, useCompany } from "@/lib/company-store";
+import { useMe } from "@/lib/role-store";
 import { readPosFile, UnsupportedFile } from "@/lib/pos-read";
 import { CHANNELS, type Channel, type Sale } from "@/lib/sales";
 import { saveSalesBulk } from "@/lib/sales-store";
@@ -39,6 +41,9 @@ export function PosImport({ existing, onClose }: { existing: Sale[]; onClose: ()
   const working = useBranch();
   const [branch, setBranch] = useState(() => (working !== ALL ? working : (headOf(branches)?.id ?? "")));
   const [busy, setBusy] = useState<"read" | "save" | null>(null);
+  // Columns remembered from the last import (so the LINE bot can read the same file); admins refresh them on save
+  const company = useCompany();
+  const isAdmin = useMe().role === "admin";
 
   const open = async (file: File) => {
     setBusy("read");
@@ -48,7 +53,7 @@ export function PosImport({ existing, onClose }: { existing: Sale[]; onClose: ()
       setName(file.name);
       setRows(all);
       setHeaderAt(found?.index ?? 0);
-      setMap(found?.map ?? {});
+      setMap(found ? applySavedColumns(all[found.index] ?? [], found.map, posColumnsOf(company.posColumns)) : {});
       if (!found) toast.info(t("pos.noHeader"));
     } catch (e) {
       toast.error(e instanceof UnsupportedFile ? t("pos.xls") : t("pos.readFail"));
@@ -71,6 +76,7 @@ export function PosImport({ existing, onClose }: { existing: Sale[]; onClose: ()
     setBusy("save");
     try {
       const { saved, locked, invalid } = await saveSalesBulk(days, branch);
+      if (isAdmin) await saveCompany({ pos_columns: columnsToSave(headers, map) }).catch(() => undefined);
       toast.success(t("pos.saved", { count: saved }));
       if (locked) toast.warning(t("pos.locked", { count: locked }));
       if (invalid) toast.warning(t("pos.invalid", { count: invalid }));

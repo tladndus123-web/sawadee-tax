@@ -423,7 +423,8 @@
     "blue": "青",
     "purple": "紫",
     "gray": "グレー",
-    "search": "取引先・書類番号・金額で検索"
+    "search": "取引先・書類番号・金額で検索",
+    "unchecked": "事務所未確認"
   },
   "auth": {
     "title": "ログイン",
@@ -620,7 +621,15 @@
     "upcomingCount": "{count}件",
     "upcomingTotal": "合計",
     "upcomingMore": "さらに{count}件を表示",
-    "upcomingLess": "閉じる"
+    "upcomingLess": "閉じる",
+    "unchecked": "事務所の確認待ち",
+    "uncheckedHint": "スタッフやLINEから入った伝票です。すでに帳簿に入っており、確認を押すと見た記録が残ります。",
+    "uncheckedEmpty": "確認する伝票はありません。",
+    "checkOne": "確認",
+    "checkAll": "{count}件すべて確認",
+    "checkedDone": "{count}件を確認しました。",
+    "checkUndo": "元に戻す",
+    "checkFail": "保存できませんでした。"
   },
   "line": {
     "title": "LINE連携",
@@ -1207,7 +1216,8 @@
     "fromPayroll": "給与計算から自動で入れる",
     "fl": "食材 + 人件費",
     "flr": "食材 + 人件費 + 家賃",
-    "base": "売上（税抜）{sales} に対して"
+    "base": "売上（税抜）{sales} に対して",
+    "fixed": "固定費"
   },
   "pay": {
     "title": "給与",
@@ -1308,5 +1318,41 @@
     "ssSaved": "社会保険の料率を保存しました。",
     "ssAccount": "社会保険の事業所番号（10桁）",
     "ssAccountBad": "事業所番号は10桁です。"
+  },
+  "fixed": {
+    "title": "固定費（領収書のない費用）",
+    "hint": "家賃・ネット・保険など、毎月同額で税額票のない費用。一度入れれば毎月原価に入ります。仕入税額控除はされません。",
+    "empty": "まだ固定費がありません。まず家賃を入れてみてください。",
+    "range": "{from}〜{to}",
+    "since": "{from}から",
+    "perMonth": "毎月",
+    "monthly": "今月合計 {amount}",
+    "edit": "編集",
+    "delete": "削除",
+    "deleteAsk": "「{name}」を削除しますか？過去の月の数字も消えます。支払いが終わっただけなら「終了月」を入れてください。",
+    "deleted": "削除しました。",
+    "lockedEnd": "締めた月にかかっているため削除できません。終了月を入れてください。",
+    "locked": "締めた月の数字は変えられません。新しい金額は「金額を変更」で翌月から入れてください。",
+    "fail": "保存できませんでした。",
+    "add": "固定費を追加",
+    "name": "名前",
+    "namePlaceholder": "例：店舗家賃",
+    "category": "分類",
+    "amount": "金額（毎月）",
+    "changeAmount": "金額を変更",
+    "branch": "店舗",
+    "from": "開始月",
+    "ends": "終了月あり",
+    "note": "メモ",
+    "formHint": "開始月から毎月同額が計上されます。税額票を上げる費用は別に計上されるので、ここには入れないでください。",
+    "needName": "名前を入れてください。",
+    "needAmount": "金額を入れてください。",
+    "saved": "保存しました。",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "changeTitle": "{name} の金額を変更",
+    "newAmount": "新しい金額（毎月）",
+    "applyFrom": "適用開始月",
+    "changeHint": "その月から新しい金額、それより前の月は今の金額（{amount}）のままです。"
   }
 }

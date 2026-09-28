@@ -445,11 +445,14 @@ const DocRow = memo(function DocRow({
   const sd = useScreenDate();
   const locale = useLocale();
   const monthLabel = useMonthLabel();
+  const isAdmin = useMe().role === "admin";
   const setStickers = async (stickers: Sticker[]) => {
     await setQuick(e.id, { stickers });
   };
   const flagged = !!open?.length;
   const accepted = !flagged && e.ackFlags.length > 0;
+  // The office has not looked at it yet (admins see this; the dashboard lists them)
+  const unchecked = isAdmin && !draft && e.checkedAt === null;
   // "문제 없음": the open warnings join the accepted ones; undo restores what was there before
   const accept = async () => {
     const before = e.ackFlags;
@@ -484,6 +487,7 @@ const DocRow = memo(function DocRow({
             {e.doc.date && <span>{sd(e.doc.date)}</span>}
             {draft && <span className="font-medium">{monthLabel(monthKey(e.doc))}</span>}
             {isUnpaid(e.doc) && !draft && <span className="text-warn">{t("app.unpaid")}</span>}
+            {unchecked && <span className="font-medium text-primary">{t("archive.unchecked")}</span>}
             {flagged && (
               <span className="inline-flex items-center gap-1 font-medium text-bad">
                 <TriangleAlert className="size-3" aria-hidden />

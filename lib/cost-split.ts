@@ -131,8 +131,11 @@ export interface MonthCosts {
   cost: number;
 }
 
-/** The month's costs from every saved document: purchases of the month by category, plus depreciation */
-export function monthCosts(docs: LedgerDoc[], month: string, companyTaxId: string): MonthCosts {
+/**
+ * The month's costs from every saved document: purchases of the month by category, plus depreciation — and the
+ * month's fixed costs without an invoice (lib/fixed-costs fixedForMonth), by their category
+ */
+export function monthCosts(docs: LedgerDoc[], month: string, companyTaxId: string, fixed?: ReadonlyMap<Category, number>): MonthCosts {
   const byCategory = new Map<Category, number>();
   let depreciation = 0;
   let disposal = 0;
@@ -145,6 +148,7 @@ export function monthCosts(docs: LedgerDoc[], month: string, companyTaxId: strin
     if (invoiceMonth(d) !== month) continue;
     for (const [c, v] of costByCategory(d, companyTaxId)) byCategory.set(c, (byCategory.get(c) ?? 0) + v);
   }
+  for (const [c, v] of fixed ?? []) if (v) byCategory.set(c, (byCategory.get(c) ?? 0) + v);
   const cost = [...byCategory.values()].reduce((a, b) => a + b, 0) + depreciation + disposal;
   return { byCategory, depreciation, disposal, cost };
 }

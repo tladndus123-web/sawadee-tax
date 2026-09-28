@@ -4,6 +4,7 @@
 
 import { type LaborLine, monthLabor } from "./cost-control";
 import { monthCosts } from "./cost-split";
+import { type FixedLine, fixedForMonth } from "./fixed-costs";
 import { fromSatang, toSatang } from "./money";
 import { type Channel, CHANNELS, saleMonth, type Sale } from "./sales";
 import { type Category, CATEGORIES, type LedgerDoc } from "./types";
@@ -41,6 +42,7 @@ export function plTable(
   n: number,
   companyTaxId: string,
   labor: LaborLine[] = [],
+  fixed: FixedLine[] = [],
 ): PlTable {
   const months = monthsEnding(endMonth, n);
   const at = new Map(months.map((m, i) => [m, i]));
@@ -56,7 +58,7 @@ export function plTable(
     if (i !== undefined) add(byCh, s.channel, i, toSatang(s.gross) - toSatang(s.vat));
   }
   for (const [i, m] of months.entries()) {
-    const c = monthCosts(purchases, m, companyTaxId);
+    const c = monthCosts(purchases, m, companyTaxId, fixedForMonth(fixed, m));
     for (const [cat, v] of c.byCategory) add(byCat, cat, i, v);
     if (c.depreciation) add(byCat, "depreciation", i, c.depreciation);
     if (c.disposal) add(byCat, "disposal", i, c.disposal);
