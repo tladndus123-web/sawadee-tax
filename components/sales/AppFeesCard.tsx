@@ -13,6 +13,7 @@ import { APP_CHANNELS, type AppChannel, feeRate, type MonthFees } from "@/lib/ap
 import { saveCompany, useCompany } from "@/lib/company-store";
 import { baht } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
+import { useChannelLabel } from "./channel-name";
 
 export function AppFeesCard({ f }: { f: MonthFees }) {
   const t = useTranslations();
@@ -21,9 +22,12 @@ export function AppFeesCard({ f }: { f: MonthFees }) {
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [rates, setRates] = useState<Record<string, string>>({});
+  const [names, setNames] = useState<Record<string, string>>({});
+  const chName = useChannelLabel();
 
   const startEdit = () => {
     setRates(Object.fromEntries(APP_CHANNELS.map((c) => [c, String(feeRate(company.appFees, c))])));
+    setNames(Object.fromEntries(APP_CHANNELS.map((c) => [c, company.channelNames?.[c] ?? ""])));
     setEditing(true);
   };
   const save = async () => {
@@ -35,7 +39,8 @@ export function AppFeesCard({ f }: { f: MonthFees }) {
     }
     setBusy(true);
     try {
-      await saveCompany({ app_fees: next });
+      const channelNames = { ...company.channelNames, ...Object.fromEntries(APP_CHANNELS.map((c) => [c, (names[c] ?? "").trim().slice(0, 30)])) };
+      await saveCompany({ app_fees: next, channel_names: Object.fromEntries(Object.entries(channelNames).filter(([, v]) => v)) });
       toast.success(t("fees.saved"));
       setEditing(false);
     } catch {
@@ -65,14 +70,21 @@ export function AppFeesCard({ f }: { f: MonthFees }) {
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {APP_CHANNELS.map((c) => (
               <label key={c} className="grid gap-1 rounded-2xl bg-muted/60 px-3 py-2">
-                <span className="text-[11px] text-muted-foreground">{t(`sales.ch.${c}`)}</span>
+                <Input
+                  value={names[c] ?? ""}
+                  placeholder={t(`sales.ch.${c}`)}
+                  maxLength={30}
+                  onChange={(e) => setNames({ ...names, [c]: e.target.value })}
+                  className="h-8 bg-background text-xs font-medium"
+                  aria-label={t("fees.name")}
+                />
                 <span className="flex items-center gap-1">
                   <Input
                     inputMode="decimal"
                     value={rates[c] ?? ""}
                     onChange={(e) => setRates({ ...rates, [c]: e.target.value.replace(/[^\d.]/g, "") })}
                     className="h-9 bg-background text-right tabular-nums"
-                    aria-label={`${t(`sales.ch.${c}`)} %`}
+                    aria-label={`${chName(c)} %`}
                   />
                   <span className="text-sm text-muted-foreground">%</span>
                 </span>
@@ -97,7 +109,7 @@ export function AppFeesCard({ f }: { f: MonthFees }) {
             {f.lines.map((l) => (
               <li key={l.channel} className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5 border-b border-border/60 py-2.5 last:border-0">
                 <span className="text-[15px] font-semibold">
-                  {t(`sales.ch.${l.channel}`)} <span className="text-xs font-normal text-muted-foreground">GP {l.rate}%</span>
+                  {chName(l.channel)} <span className="text-xs font-normal text-muted-foreground">GP {l.rate}%</span>
                 </span>
                 <span className="text-right text-[15px] font-semibold tabular-nums">{baht(l.payout)}</span>
                 <span className="text-xs text-muted-foreground tabular-nums">

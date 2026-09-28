@@ -19,6 +19,8 @@ import { useSales } from "@/lib/sales-store";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { useCategoryLabel } from "@/components/vendors/CategoryIcon";
+import { useChannelLabel } from "./channel-name";
+import { useLabor } from "@/lib/labor-store";
 
 const SPANS = [3, 6, 12] as const;
 
@@ -39,7 +41,9 @@ export function PlReport() {
     const set = new Set<string>([today.slice(0, 7), ...sales.map(saleMonth), ...purchases.map((d) => invoiceMonth(d)).filter((m) => m !== NO_DATE)]);
     return [...set].sort().reverse();
   }, [sales, purchases, today]);
-  const table = useMemo(() => plTable(sales, purchases, end, span, company.taxId), [sales, purchases, end, span, company.taxId]);
+  const { lines: labor } = useLabor();
+  const chName = useChannelLabel();
+  const table = useMemo(() => plTable(sales, purchases, end, span, company.taxId, labor), [sales, purchases, end, span, company.taxId, labor]);
 
   const short = new Intl.DateTimeFormat(locale, { year: "2-digit", month: "short", timeZone: "UTC" });
   const long = new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", timeZone: "UTC" });
@@ -67,8 +71,8 @@ export function PlReport() {
         costTotal: t("pl.costTotal"),
         profit: t("pl.profit"),
         month: monthShort,
-        channel: (k) => t(`sales.ch.${k as "store"}`),
-        category: (k) => (k === "depreciation" || k === "disposal" ? t(`pl.${k}`) : catLabel(k)),
+        channel: (k) => chName(k),
+        category: (k) => (k === "depreciation" || k === "disposal" || k === "labor" ? t(`pl.${k}`) : catLabel(k)),
       });
       toast.success(t("pl.downloaded", { name }));
     } catch {
@@ -143,12 +147,12 @@ export function PlReport() {
             <tbody>
               <SectionRow label={t("pl.sales")} cols={cols} />
               {table.sales.map((r) => (
-                <MoneyRow key={r.key} label={t(`sales.ch.${r.key}`)} r={r} indent />
+                <MoneyRow key={r.key} label={chName(r.key)} r={r} indent />
               ))}
               <MoneyRow label={t("pl.salesTotal")} r={table.salesTotal} strong />
               <SectionRow label={t("pl.costs")} cols={cols} />
               {table.costs.map((r) => (
-                <MoneyRow key={r.key} label={r.key === "depreciation" || r.key === "disposal" ? t(`pl.${r.key}`) : catLabel(r.key)} r={r} indent />
+                <MoneyRow key={r.key} label={r.key === "depreciation" || r.key === "disposal" || r.key === "labor" ? t(`pl.${r.key}`) : catLabel(r.key)} r={r} indent />
               ))}
               <MoneyRow label={t("pl.costTotal")} r={table.costTotal} strong />
               <MoneyRow label={t("pl.profit")} r={table.profit} strong profit />

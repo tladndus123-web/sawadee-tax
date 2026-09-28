@@ -31,6 +31,8 @@ import { ActivityList } from "./ActivityList";
 import { BranchTable } from "./BranchTable";
 import { TeamCard } from "./TeamCard";
 import { VatCard } from "./VatCard";
+import { monthLabor } from "@/lib/cost-control";
+import { useLabor } from "@/lib/labor-store";
 
 // The chart library (recharts) is the heaviest part of this page: load it after the numbers are on screen
 const TrendChart = dynamic(() => import("./TrendChart").then((m) => m.TrendChart), {
@@ -57,12 +59,13 @@ export function Dashboard() {
   const due = useMemo(() => upcoming(docs, today), [docs, today]);
   const points = useMemo(() => trend(docs, month), [docs, month]);
   const { sales } = useSales();
+  const { lines: labor } = useLabor();
   const isAdmin = useMe().role === "admin";
   const allBranches = useBranch() === ALL;
   const branchCount = useBranches().branches.length;
   // Several branches seen together: the combined board carries the profit, so the single line steps aside
   const combined = allBranches && branchCount > 1;
-  const result = useMemo(() => monthResult(sales, docs.map((d) => d.doc), month, company.taxId), [sales, docs, month, company.taxId]);
+  const result = useMemo(() => monthResult(sales, docs.map((d) => d.doc), month, company.taxId, monthLabor(labor, month)), [sales, docs, month, company.taxId, labor]);
   const hasSales = result.days > 0;
 
   if (!loaded) return <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;

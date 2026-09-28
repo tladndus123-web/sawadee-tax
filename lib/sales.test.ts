@@ -66,3 +66,11 @@ describe("equipment in the month's result", async () => {
     expect(monthResult([], [oven], "2027-03", CO).purchasesCost).toBe(1000);
   });
 });
+
+describe("labour in the month's result", async () => {
+  const { monthResult } = await import("./sales");
+  it("labour typed in lowers the profit but is not a purchase", () => {
+    const r = monthResult([sale("2026-09-01", "store", 107000, 7000)], [], "2026-09", CO, 3000000);
+    expect(r).toMatchObject({ salesValue: 100000, purchasesCost: 0, labor: 30000, profit: 70000 });
+  });
+});

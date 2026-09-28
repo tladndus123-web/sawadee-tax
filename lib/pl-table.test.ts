@@ -55,3 +55,11 @@ describe("P&L with a mixed receipt and equipment", () => {
     expect(t.costTotal.total).toBe(61000);
   });
 });
+
+describe("P&L with labour", () => {
+  it("labour typed in is its own cost row and lowers the profit", () => {
+    const t = plTable([], [], month, 1, CO, [{ branchId: "", month, wages: 20000, socialSecurity: 750, other: 0, note: "" }]);
+    expect(t.costs).toEqual([{ key: "labor", values: [20750], total: 20750 }]);
+    expect(t.profit.total).toBe(-20750);
+  });
+});

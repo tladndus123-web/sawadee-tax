@@ -190,7 +190,8 @@
     "other": "Other",
     "consumables": "Consumables",
     "repairs": "Repairs",
-    "asset": "Equipment (asset)"
+    "asset": "Equipment (asset)",
+    "fees": "Fees (card / bank)"
   },
   "payment": {
     "credit": "Credit",
@@ -968,7 +969,8 @@
     "fee": "Commission (incl. VAT)",
     "payoutTotal": "Expected payout",
     "afterFee": "After app commission",
-    "note": "Commission = orders × GP rate, plus 7% VAT on the commission. Rates differ by app and contract, so this is an estimate — check the app's statement for the exact amount. Record the app's commission tax invoice as a purchase to claim that VAT."
+    "note": "Commission = orders × GP rate, plus 7% VAT on the commission. Rates differ by app and contract, so this is an estimate — check the app's statement for the exact amount. Record the app's commission tax invoice as a purchase to claim that VAT.",
+    "name": "Name"
   },
   "pl": {
     "title": "P&L by category",
@@ -988,7 +990,8 @@
     "months": "{count} months",
     "note": "Purchases count by invoice date. Costs not in the ledger (wages, rent paid without a document) are missing. Delivery-app commission is included only when the app's tax invoice is recorded as a purchase. Check final figures with your accountant.",
     "depreciation": "Depreciation",
-    "disposal": "Equipment disposed (what was left)"
+    "disposal": "Equipment disposed (what was left)",
+    "labor": "Labour"
   },
   "install": {
     "title": "Install on your phone",
@@ -1161,6 +1164,44 @@
     "save": "Save",
     "cancel": "Cancel",
     "saved": "Category saved",
-    "fail": "Could not save"
+    "fail": "Could not save",
+    "foodCost": "Counts as food cost",
+    "foodCostHint": "When on, this category's costs count in the food cost ratio.",
+    "foodTag": "Food cost"
+  },
+  "cost": {
+    "title": "Cost control (food · labour · rent)",
+    "hint": "Shares of sales without VAT. The vertical line is the target.",
+    "food": "Food cost",
+    "labor": "Labour",
+    "rent": "Rent",
+    "prime": "The three together",
+    "target": "Target {pct}% or less",
+    "near": "A little above the target",
+    "over": "Over the target",
+    "noLabor": "This month's labour is not in yet",
+    "note": "Food is the categories with 'Counts as food cost' on (food and supplies to start). Purchases count by invoice date, so stock is not taken into account.",
+    "enterLabor": "Enter labour",
+    "targets": "Change targets",
+    "targetsHint": "A common restaurant guide is food 30%, labour 30%, rent 10% (70% together).",
+    "targetsSaved": "Targets saved",
+    "badTarget": "Enter a number from 1 to 100",
+    "laborTitle": "Labour {month}",
+    "laborHint": "What the company paid for staff this month, the Thai way. No receipts needed. Leave out employees' withholding tax (ภ.ง.ด.1).",
+    "branch": "Branch",
+    "wages": "Wages (เงินเดือน ค่าจ้าง)",
+    "wagesHint": "Salaries, day wages and overtime together",
+    "social": "Social security, employer's share (ประกันสังคม)",
+    "socialHint": "Only the company's share (the employee's is inside wages)",
+    "otherLabor": "Other staff costs",
+    "otherHint": "Bonus, staff meals, uniforms …",
+    "memo": "Note",
+    "total": "Total",
+    "save": "Save",
+    "cancel": "Cancel",
+    "laborSaved": "Labour saved",
+    "locked": "That month is closed",
+    "fail": "Could not save",
+    "laborIn": "labour {labor} on top"
   }
 }

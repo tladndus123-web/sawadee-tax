@@ -27,6 +27,10 @@ import { monthFees } from "@/lib/app-fees";
 import { AppFeesCard } from "./AppFeesCard";
 import { PosImport } from "./PosImport";
 import { type SaleDraft, SaleSheet } from "./SaleSheet";
+import { useChannelLabel } from "./channel-name";
+import { CostCard } from "./CostCard";
+import { monthLabor } from "@/lib/cost-control";
+import { useLabor } from "@/lib/labor-store";
 
 type Open = { draft: SaleDraft; photo?: File | null; preview?: string | null; unclear?: string[] };
 
@@ -42,6 +46,8 @@ export function SalesPage() {
   const branchId = branch === ALL ? "" : branch;
   const { sales, loaded } = useSales();
   const { entries } = useLedger();
+  const { lines: labor } = useLabor();
+  const chName = useChannelLabel();
   const today = todayBangkok();
   const [month, setMonth] = useState(today.slice(0, 7));
   const [open, setOpen] = useState<Open | null>(null);
@@ -54,7 +60,7 @@ export function SalesPage() {
     const set = new Set<string>([today.slice(0, 7), ...sales.map(saleMonth), ...purchases.map((d) => invoiceMonth(d)).filter((m) => m !== NO_DATE)]);
     return [...set].sort().reverse();
   }, [sales, purchases, today]);
-  const r = useMemo(() => monthResult(sales, purchases, month, company.taxId), [sales, purchases, month, company.taxId]);
+  const r = useMemo(() => monthResult(sales, purchases, month, company.taxId, monthLabor(labor, month)), [sales, purchases, month, company.taxId, labor]);
   const fees = useMemo(() => monthFees(sales, month, company.appFees), [sales, month, company.appFees]);
   const days = useMemo(() => sales.filter((s) => saleMonth(s) === month), [sales, month]);
   const existingFor = (d: SaleDraft) => sales.find((x) => x.date === d.date && x.channel === d.channel && (x.branchId || "") === (d.branchId || "") && x.id !== d.id) ?? null;
@@ -153,7 +159,7 @@ export function SalesPage() {
         </p>
         <div className="grid gap-3 sm:grid-cols-3">
           <Fact label={t("sales.salesValue")} value={baht(r.salesValue)} sub={t("sales.salesSub", { gross: baht(r.salesGross), days: r.days })} />
-          <Fact label={t("sales.cost")} value={baht(r.purchasesCost)} sub={r.depreciation ? t("sales.costSubDep", { gross: baht(r.purchasesGross), dep: baht(r.depreciation) }) : t("sales.costSub", { gross: baht(r.purchasesGross) })} />
+          <Fact label={t("sales.cost")} value={baht(r.purchasesCost)} sub={[r.depreciation ? t("sales.costSubDep", { gross: baht(r.purchasesGross), dep: baht(r.depreciation) }) : t("sales.costSub", { gross: baht(r.purchasesGross) }), r.labor ? t("cost.laborIn", { labor: baht(r.labor) }) : ""].filter(Boolean).join(" · ")} />
           <Fact label={t("sales.profit")} value={baht(r.profit)} sub={r.salesValue ? t("sales.margin", { pct: pct.format(r.margin) }) : "—"} tone={r.profit < 0 ? "bad" : "brand"} />
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t pt-3 text-sm">
@@ -167,7 +173,7 @@ export function SalesPage() {
           <div className="flex flex-wrap gap-2">
             {r.byChannel.map((c) => (
               <span key={c.channel} className="rounded-full bg-muted px-3 py-1 text-xs">
-                {t(`sales.ch.${c.channel}`)} <b className="tabular-nums">{baht(c.gross)}</b>
+                {chName(c.channel)} <b className="tabular-nums">{baht(c.gross)}</b>
               </span>
             ))}
           </div>
@@ -180,6 +186,9 @@ export function SalesPage() {
         )}
         <p className="text-[11px] leading-relaxed text-muted-foreground">{t("sales.resultNote")}</p>
       </section>
+
+      {/* Food cost, labour and rent against sales */}
+      <CostCard month={month} salesValue={r.salesValue} purchases={purchases} />
 
       {/* Delivery apps: commission and payout (shown once the month has app sales) */}
       {fees.lines.length > 0 && <AppFeesCard f={fees} />}
@@ -198,7 +207,7 @@ export function SalesPage() {
               <span className="grid min-w-0 flex-1 gap-0.5">
                 <span className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">
                   {sd(s.date)}
-                  <ChannelChip channel={s.channel} label={t(`sales.ch.${s.channel}`)} />
+                  <ChannelChip channel={s.channel} label={chName(s.channel)} />
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {[s.docFrom && `${s.docFrom} – ${s.docTo}`, s.bills ? t("sales.billsN", { count: s.bills }) : ""].filter(Boolean).join(" · ") || "—"}

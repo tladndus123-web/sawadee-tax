@@ -25,7 +25,7 @@ Read every printed and handwritten field and reply with ONLY one JSON object, no
  "terms": [{"th":"","en":"","ja":""}],
  "signs": {"receiver": false, "issuer": false, "deliverer": {"th":"","en":"","ja":""} or null},
  "formCode": "e.g. FM-AC-12 Rev.:5", "formSince": "as printed",
- "category": "food" | "transport" | "fuel" | "office" | "supplies" | "consumables" | "repairs" | "utilities" | "rent" | "entertainment" | "asset" | "other",
+ "category": "food" | "transport" | "fuel" | "office" | "supplies" | "consumables" | "repairs" | "utilities" | "rent" | "fees" | "entertainment" | "asset" | "other",
  "payment": "credit" | "cash" | "transfer" | "card" | "other",
  "confidence": "high" | "medium" | "low",
  "unclear": ["field paths you are unsure about, e.g. customer.name, sales.name, items.0.desc"],
@@ -41,7 +41,7 @@ Rules:
 - Numbers: plain numbers, no commas. Read every totals line exactly as printed; do not recalculate. Use null for a totals line that is not printed on the document. wht only if printed.
 - terms: the fine print at the bottom (payment conditions, claims, returns), one entry per sentence, max 6.
 - signs: true when a signature or stamp is present in that box; give the deliverer's name if legible.
-- category: judge from the goods themselves. food = food and drink ingredients or goods; transport = delivery, courier, taxi, tolls; fuel = petrol or diesel; office = stationery and small office things; supplies = materials and goods bought to sell or cook with; consumables = packaging, cleaning products, kitchen and shop consumables; repairs = repair and maintenance work or parts; utilities = electricity, water, phone, internet; rent = rent of space or equipment; entertainment = meals or gifts for guests (รับรอง); asset = equipment meant to last years (ovens, fridges, air conditioners, computers, furniture, vehicles). "other" only when none fits.
+- category: judge from the goods themselves. food = food and drink ingredients or goods; transport = delivery, courier, taxi, tolls; fuel = petrol or diesel; office = stationery and small office things; supplies = materials and goods bought to sell or cook with; consumables = packaging, cleaning products, kitchen and shop consumables; repairs = repair and maintenance work or parts; utilities = electricity, water, phone, internet; rent = rent of space or equipment; fees = card / payment / bank / service fees (ค่าธรรมเนียม, e.g. a card acquirer's merchant-fee tax invoice); entertainment = meals or gifts for guests (รับรอง); asset = equipment meant to last years (ovens, fridges, air conditioners, computers, furniture, vehicles). "other" only when none fits.
 - items[].category: only when a line clearly belongs to a different category than the document (a mixed receipt: ingredients plus office supplies) — give that line its own category; otherwise null. The document's category is the one with the biggest share of the amount.
 - payment: "credit" when a credit term or due date is printed; "cash" for เงินสด / cash; "transfer" for bank transfer; "card" for card slips; otherwise "other".
 - Faint or handwritten text: give your best reading AND list its field path in "unclear".

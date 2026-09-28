@@ -20,6 +20,8 @@ export interface CategoryRow {
   icon: string;
   color: string;
   vatBlocked: boolean;
+  /** Counts as food cost (식재료 원가) */
+  foodCost: boolean;
   hidden: boolean;
   sort: number;
 }
@@ -33,6 +35,7 @@ const DEFAULTS: CategoryRow[] = CATEGORIES.map((key, i) => ({
   icon: "",
   color: "",
   vatBlocked: key === "entertainment",
+  foodCost: key === "food" || key === "supplies",
   hidden: false,
   sort: (i + 1) * 10,
 }));
@@ -43,7 +46,7 @@ let started = false;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
-type Raw = { key: string; builtin: boolean; name: Record<string, string> | null; hint: string; icon: string; color: string; vat_blocked: boolean; hidden: boolean; sort: number };
+type Raw = { key: string; builtin: boolean; name: Record<string, string> | null; hint: string; icon: string; color: string; vat_blocked: boolean; food_cost: boolean; hidden: boolean; sort: number };
 
 const toRow = (r: Raw): CategoryRow => ({
   key: r.key as Category,
@@ -53,12 +56,13 @@ const toRow = (r: Raw): CategoryRow => ({
   icon: r.icon ?? "",
   color: r.color ?? "",
   vatBlocked: !!r.vat_blocked,
+  foodCost: !!r.food_cost,
   hidden: !!r.hidden,
   sort: Number(r.sort) || 0,
 });
 
 async function reload() {
-  const { data, error } = await supabaseBrowser().from("categories").select("key, builtin, name, hint, icon, color, vat_blocked, hidden, sort");
+  const { data, error } = await supabaseBrowser().from("categories").select("key, builtin, name, hint, icon, color, vat_blocked, food_cost, hidden, sort");
   if (error) throw error;
   const list = (data as Raw[]).map(toRow);
   // Built-in ones missing from the table (should not happen) still exist
@@ -91,7 +95,7 @@ export const newCategoryKey = (): Category => `c_${Math.random().toString(36).sl
 
 /** Admin only (the database refuses anyone else) */
 export async function saveCategory(r: Omit<CategoryRow, "builtin"> & { isNew?: boolean }) {
-  const row = { key: r.key, name: r.name, hint: r.hint.trim().slice(0, 300), icon: r.icon, color: r.color, vat_blocked: r.vatBlocked, hidden: r.hidden, sort: r.sort };
+  const row = { key: r.key, name: r.name, hint: r.hint.trim().slice(0, 300), icon: r.icon, color: r.color, vat_blocked: r.vatBlocked, food_cost: r.foodCost, hidden: r.hidden, sort: r.sort };
   const q = r.isNew ? supabaseBrowser().from("categories").insert(row).select("key") : supabaseBrowser().from("categories").update(row).eq("key", r.key).select("key");
   const { data, error } = await q;
   if (error) throw error;

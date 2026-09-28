@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(113);
+select plan(119);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -263,7 +263,7 @@ select throws_ok($$ update public.documents set photo_hash = 'not-a-hash' where 
 
 -- Categories: admins keep the list; built-in ones and used ones are never deleted
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
-select is((select count(*)::int from public.categories where builtin), 12, 'members see the 12 built-in categories');
+select is((select count(*)::int from public.categories where builtin), 13, 'members see the 13 built-in categories');
 select throws_ok($$ insert into public.categories (key, name) values ('c_staff1', '{"ko":"x"}') $$, '42501', NULL, 'staff cannot add a category');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select lives_ok($$ insert into public.categories (key, name, builtin) values ('c_pack01', '{"ko":"포장재","th":"บรรจุภัณฑ์","en":"Packaging","ja":"包装材"}', true) $$, 'an admin adds a category');
@@ -274,6 +274,18 @@ select is((select hidden from public.categories where key = 'other'), false, '"o
 select public.save_document('00000000-0000-0000-0000-0000000000f1', '{"doc_no":"CAT-1","status":"reviewed","doc_date":"2026-09-10","net":10,"category":"c_pack01"}', '[]');
 select throws_like($$ delete from public.categories where key = 'c_pack01' $$, 'category_in_use%', 'a category in use cannot be deleted');
 select throws_ok($$ insert into public.categories (key) values ('C-BAD') $$, '23514', NULL, 'keys have one format');
+
+-- Labour costs: one line per branch and month, admins only, frozen in a closed month
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select throws_ok($$ insert into public.labor_costs (month, wages) values ('2026-09', 100) $$, '42501', NULL, 'staff cannot enter labour costs');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select lives_ok($$ insert into public.labor_costs (month, wages, social_security) values ('2026-09', 90000, 3750) $$, 'an admin enters a month of labour costs');
+select throws_ok($$ insert into public.labor_costs (month, wages) values ('2026-09', 1) $$, '23505', NULL, 'one line per branch and month');
+insert into public.month_locks (month) values ('2026-09');
+select throws_like($$ update public.labor_costs set wages = 1 where month = '2026-09' $$, 'month_locked%', 'a closed month''s labour costs cannot change');
+delete from public.month_locks where month = '2026-09';
+select is((select array_agg(key order by key) from public.categories where food_cost), array['food', 'supplies'], 'food cost starts with food and supplies');
+select is((select builtin from public.categories where key = 'fees'), true, 'the fees category is built in');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

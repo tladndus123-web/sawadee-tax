@@ -132,7 +132,7 @@ export function SalesReport({ month }: { month: string }) {
                   <td className={`${cell} text-center`}>{i + 1}</td>
                   <td className={`${cell} whitespace-nowrap tabular-nums`}>{dmy(r.date)}</td>
                   <td className={`${cell} mono`}>{r.docFrom ? (r.docTo && r.docTo !== r.docFrom ? `${r.docFrom} – ${r.docTo}` : r.docFrom) : "—"}</td>
-                  <td className={cell}>{BUYER[r.channel]}</td>
+                  <td className={cell}>{company.channelNames?.[r.channel]?.trim() && r.channel !== "store" ? `ขายผ่าน ${company.channelNames[r.channel].trim()}` : BUYER[r.channel]}</td>
                   <td className={`${cell} text-center`}>—</td>
                   <td className={`${cell} text-center`}>—</td>
                   <td className={num}>{fmt(saleValue(r))}</td>

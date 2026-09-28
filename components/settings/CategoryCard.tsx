@@ -71,7 +71,7 @@ export function CategoryCard() {
               <span className="grid min-w-0 flex-1">
                 <span className="truncate text-[15px] font-medium">{label(r.key)}</span>
                 <span className="truncate text-[11px] text-muted-foreground">
-                  {[r.hidden && t("hiddenTag"), r.vatBlocked && t("noVatTag"), !r.builtin && t("ownTag")].filter(Boolean).join(" · ")}
+                  {[r.hidden && t("hiddenTag"), r.foodCost && t("foodTag"), r.vatBlocked && t("noVatTag"), !r.builtin && t("ownTag")].filter(Boolean).join(" · ")}
                 </span>
               </span>
               {isAdmin && (
@@ -102,7 +102,7 @@ export function CategoryCard() {
           variant="secondary"
           className="h-10 w-fit rounded-full px-4"
           onClick={() =>
-            setDraft({ key: newCategoryKey(), builtin: false, name: {}, hint: "", icon: "tag", color: "blue", vatBlocked: false, hidden: false, sort: (rows.at(-1)?.sort ?? 0) + 10, isNew: true })
+            setDraft({ key: newCategoryKey(), builtin: false, name: {}, hint: "", icon: "tag", color: "blue", vatBlocked: false, foodCost: false, hidden: false, sort: (rows.at(-1)?.sort ?? 0) + 10, isNew: true })
           }
         >
           <Plus className="size-4" />
@@ -245,6 +245,14 @@ function Editor({ draft, onChange, onDone }: { draft: Draft; onChange: (d: Draft
           ))}
         </div>
       </div>
+
+      <label className="flex items-start gap-3">
+        <Switch checked={draft.foodCost} onCheckedChange={(v) => onChange({ ...draft, foodCost: v })} />
+        <span className="grid gap-0.5 text-sm">
+          {t("foodCost")}
+          <span className="text-[11px] leading-snug text-muted-foreground">{t("foodCostHint")}</span>
+        </span>
+      </label>
 
       <label className="flex items-start gap-3">
         <Switch checked={draft.vatBlocked} disabled={draft.key === "entertainment"} onCheckedChange={(v) => onChange({ ...draft, vatBlocked: v })} />

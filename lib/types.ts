@@ -20,6 +20,7 @@ export const CATEGORIES = [
   "repairs",
   "utilities",
   "rent",
+  "fees",
   "entertainment",
   "asset",
   "other",

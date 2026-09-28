@@ -11,6 +11,7 @@ import {
   Building,
   Car,
   Coffee,
+  CreditCard,
   Fuel,
   GraduationCap,
   HeartPulse,
@@ -59,6 +60,7 @@ export const CATEGORY_ICONS = {
   wifi: Wifi,
   heart: HeartPulse,
   school: GraduationCap,
+  card: CreditCard,
 } as const;
 export type CategoryIconName = keyof typeof CATEGORY_ICONS;
 
@@ -86,6 +88,7 @@ const BUILTIN_LOOK: Record<BuiltinCategory, { icon: CategoryIconName; color: Cat
   repairs: { icon: "wrench", color: "slate" },
   utilities: { icon: "zap", color: "amber" },
   rent: { icon: "building", color: "purple" },
+  fees: { icon: "card", color: "blue" },
   entertainment: { icon: "wine", color: "pink" },
   asset: { icon: "refrigerator", color: "green" },
   other: { icon: "store", color: "slate" },

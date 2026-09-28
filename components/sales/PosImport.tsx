@@ -18,6 +18,7 @@ import { saveSalesBulk } from "@/lib/sales-store";
 import { useBranchName } from "@/components/layout/branch-switcher";
 import { ALL, branchLabel, headOf } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
+import { useChannelLabel } from "./channel-name";
 
 const FIELDS: Field[] = ["date", "gross", "vat", "preVat", "exempt", "receipt", "bills", "channel"];
 const NONE = -1;
@@ -31,6 +32,7 @@ export function PosImport({ existing, onClose }: { existing: Sale[]; onClose: ()
   const [headerAt, setHeaderAt] = useState(0);
   const [map, setMap] = useState<ColumnMap>({});
   const [channel, setChannel] = useState<Channel>("store");
+  const chName = useChannelLabel();
   // The branch the days go to: the one the person works in, else the head office
   const names = useBranchName();
   const { branches } = useBranches();
@@ -158,7 +160,7 @@ export function PosImport({ existing, onClose }: { existing: Sale[]; onClose: ()
                     <select className="h-9 rounded-lg border bg-background px-2 text-xs" value={channel} onChange={(e) => setChannel(e.target.value as Channel)}>
                       {CHANNELS.map((c) => (
                         <option key={c} value={c}>
-                          {t(`sales.ch.${c}`)}
+                          {chName(c)}
                         </option>
                       ))}
                     </select>
@@ -204,7 +206,7 @@ export function PosImport({ existing, onClose }: { existing: Sale[]; onClose: ()
                         {days.map((d) => (
                           <tr key={`${d.date}-${d.channel}`} className="border-t">
                             <td className="px-2 py-1.5 whitespace-nowrap">{sd(d.date)}</td>
-                            <td className="px-2 py-1.5">{t(`sales.ch.${d.channel}`)}</td>
+                            <td className="px-2 py-1.5">{chName(d.channel)}</td>
                             <td className="px-2 py-1.5 text-right tabular-nums">{d.bills}</td>
                             <td className="px-2 py-1.5 text-right tabular-nums">{baht(d.gross)}</td>
                             <td className="px-2 py-1.5 text-right tabular-nums">{baht(d.vat)}</td>

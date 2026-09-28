@@ -15,6 +15,7 @@ import { baht } from "@/lib/money";
 import type { MonthResult } from "@/lib/sales";
 import { useSales } from "@/lib/sales-store";
 import { cn } from "@/lib/utils";
+import { useLabor } from "@/lib/labor-store";
 
 export function BranchTable({ month, companyTaxId }: { month: string; companyTaxId: string }) {
   const t = useTranslations("branch");
@@ -22,9 +23,10 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
   const { branches } = useBranches();
   const { entries } = useLedger({ all: true });
   const { sales } = useSales({ all: true });
+  const { lines: labor } = useLabor({ all: true });
   const { rows, total } = useMemo(
-    () => branchSummaries(branches, pick(entries, "ledger").map((e) => e.doc), sales, month, companyTaxId),
-    [branches, entries, sales, month, companyTaxId],
+    () => branchSummaries(branches, pick(entries, "ledger").map((e) => e.doc), sales, month, companyTaxId, labor),
+    [branches, entries, sales, month, companyTaxId, labor],
   );
   if (branches.length < 2) return null;
 

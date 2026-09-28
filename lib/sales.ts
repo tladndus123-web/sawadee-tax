@@ -51,6 +51,8 @@ export interface MonthResult {
   purchasesCost: number;
   /** Depreciation inside purchasesCost (lib/cost-split) */
   depreciation: number;
+  /** Labour typed in for the month (lib/cost-control), not part of purchasesCost */
+  labor: number;
   claimableVat: number;
   /** salesValue − purchasesCost */
   profit: number;
@@ -62,7 +64,8 @@ export interface MonthResult {
   byChannel: { channel: Channel; gross: number; value: number }[];
 }
 
-export function monthResult(sales: Sale[], purchases: LedgerDoc[], month: string, companyTaxId: string): MonthResult {
+/** `labor`: the month's labour in satang (lib/cost-control monthLabor); it lowers the profit like any cost */
+export function monthResult(sales: Sale[], purchases: LedgerDoc[], month: string, companyTaxId: string, labor = 0): MonthResult {
   let sg = 0;
   let sv = 0;
   const days = new Set<string>();
@@ -89,7 +92,7 @@ export function monthResult(sales: Sale[], purchases: LedgerDoc[], month: string
   const salesValue = sg - sv;
   const costs = monthCosts(purchases, month, companyTaxId);
   const cost = costs.cost;
-  const profit = salesValue - cost;
+  const profit = salesValue - cost - labor;
   return {
     salesGross: fromSatang(sg),
     salesVat: fromSatang(sv),
@@ -97,6 +100,7 @@ export function monthResult(sales: Sale[], purchases: LedgerDoc[], month: string
     purchasesGross: fromSatang(pg),
     purchasesCost: fromSatang(cost),
     depreciation: fromSatang(costs.depreciation),
+    labor: fromSatang(labor),
     claimableVat: fromSatang(pv),
     profit: fromSatang(profit),
     margin: salesValue ? profit / salesValue : 0,

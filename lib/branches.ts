@@ -1,6 +1,7 @@
 // Branches (สาขา) of the one company: one tax ID, several shops. Every document and day of sales belongs to one.
 // Pure part, shared by the app and the LINE bot; the client store is lib/branch-store.ts.
 
+import { type LaborLine, monthLabor } from "./cost-control";
 import { type MonthResult, monthResult, type Sale } from "./sales";
 import { branchNo } from "./thai-tax";
 import type { LedgerDoc } from "./types";
@@ -81,7 +82,14 @@ export interface BranchSummary {
  * The month for each branch and for all together (the combined board): the same arithmetic as the sales page.
  * Documents or sales without a branch (older rows) count as the head office.
  */
-export function branchSummaries(branches: Branch[], purchases: LedgerDoc[], sales: Sale[], month: string, companyTaxId: string): { rows: BranchSummary[]; total: MonthResult } {
+export function branchSummaries(
+  branches: Branch[],
+  purchases: LedgerDoc[],
+  sales: Sale[],
+  month: string,
+  companyTaxId: string,
+  labor: LaborLine[] = [],
+): { rows: BranchSummary[]; total: MonthResult } {
   const head = headOf(branches);
   const of = (id: string) => (id && byId(branches, id) ? id : (head?.id ?? ""));
   const rows = sortBranches(branches).map((b) => ({
@@ -91,7 +99,8 @@ export function branchSummaries(branches: Branch[], purchases: LedgerDoc[], sale
       purchases.filter((d) => of(d.branchId) === b.id),
       month,
       companyTaxId,
+      monthLabor(labor.filter((l) => of(l.branchId) === b.id), month),
     ),
   }));
-  return { rows, total: monthResult(sales, purchases, month, companyTaxId) };
+  return { rows, total: monthResult(sales, purchases, month, companyTaxId, monthLabor(labor, month)) };
 }

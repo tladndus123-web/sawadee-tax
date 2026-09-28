@@ -17,6 +17,7 @@ import { useMe } from "@/lib/role-store";
 import { CHANNELS, type Sale, saleVatOk, vatInsideSales } from "@/lib/sales";
 import { deleteSale, saveSale } from "@/lib/sales-store";
 import { cn } from "@/lib/utils";
+import { useChannelLabel } from "./channel-name";
 
 export type SaleDraft = Omit<Sale, "id" | "photoPath"> & { id?: string; photoPath?: string | null };
 
@@ -44,6 +45,7 @@ export function SaleSheet({
   const [busy, setBusy] = useState<"save" | "delete" | null>(null);
   const set = <K extends keyof SaleDraft>(k: K, v: SaleDraft[K]) => setS((x) => ({ ...x, [k]: v }));
   const un = new Set(unclear);
+  const chName = useChannelLabel();
   const vatOk = saleVatOk(s);
 
   const save = async () => {
@@ -128,7 +130,7 @@ export function SaleSheet({
                       s.channel === c ? "bg-primary text-primary-foreground ring-primary" : "bg-background hover:bg-muted",
                     )}
                   >
-                    {t(`sales.ch.${c}`)}
+                    {chName(c)}
                   </button>
                 ))}
               </div>
