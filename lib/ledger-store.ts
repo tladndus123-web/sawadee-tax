@@ -9,6 +9,8 @@ import { invoiceMonth } from "./archive";
 import { type DocumentRow, docToRow, type ItemRow, rowToDoc } from "./db-map";
 import { lockedMonths, openClaimMonth } from "./month-lock-store";
 import { supabaseBrowser } from "./supabase/client";
+import { ALL } from "./branches";
+import { branchNow, subscribeBranch } from "./branch-store";
 import type { LedgerDoc, Sticker } from "./types";
 
 /** "draft" = saved to finish later (not in monthly totals); "final" = in the ledger (db status "reviewed") */
@@ -104,13 +106,30 @@ async function reload() {
 const refresh = () => (loading ??= reload().finally(() => (loading = null)));
 const refreshIfStale = () => (Date.now() - loadedAt > FRESH_MS ? refresh() : undefined);
 
-export function useLedger(): { entries: LedgerEntry[]; loaded: boolean } {
+// The branch the person works in: only its documents (cached per list and choice, so React sees a stable value)
+let viewKey: { entries: LedgerEntry[]; branch: string } | null = null;
+let view: LedgerEntry[] = [];
+function forBranch(): LedgerEntry[] {
+  const branch = branchNow();
+  if (viewKey?.entries !== entries || viewKey.branch !== branch) {
+    viewKey = { entries, branch };
+    view = branch === ALL ? entries : entries.filter((e) => e.doc.branchId === branch);
+  }
+  return view;
+}
+
+/** The ledger of the branch the person works in; `all: true` = every branch (the dashboard's comparison) */
+export function useLedger(opts: { all?: boolean } = {}): { entries: LedgerEntry[]; loaded: boolean } {
   const snap = useSyncExternalStore(
     (l) => {
       listeners.add(l);
-      return () => listeners.delete(l);
+      const off = subscribeBranch(l);
+      return () => {
+        listeners.delete(l);
+        off();
+      };
     },
-    () => entries,
+    () => (opts.all ? entries : forBranch()),
     () => entries,
   );
   useEffect(() => {

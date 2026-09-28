@@ -9,9 +9,12 @@ import { lockedMonths } from "./month-lock-store";
 import type { ImportDay } from "./pos-import";
 import { CHANNELS, type Channel, type Sale } from "./sales";
 import { supabaseBrowser } from "./supabase/client";
+import { ALL } from "./branches";
+import { subscribeBranch, branchNow } from "./branch-store";
 
 interface SaleRow {
   id: string;
+  branch_id: string | null;
   sale_date: string;
   channel: string;
   doc_from: string;
@@ -27,6 +30,7 @@ interface SaleRow {
 
 const toSale = (r: SaleRow): Sale => ({
   id: r.id,
+  branchId: r.branch_id ?? "",
   date: r.sale_date,
   channel: (CHANNELS as readonly string[]).includes(r.channel) ? (r.channel as Channel) : "other",
   docFrom: r.doc_from ?? "",
@@ -54,13 +58,30 @@ async function reload() {
   emit();
 }
 
-export function useSales(): { sales: Sale[]; loaded: boolean } {
+// The branch the person works in: only that branch's days (cached per list and choice, so React sees a stable value)
+let viewKey: { sales: Sale[]; branch: string } | null = null;
+let view: Sale[] = [];
+function forBranch(): Sale[] {
+  const branch = branchNow();
+  if (viewKey?.sales !== sales || viewKey.branch !== branch) {
+    viewKey = { sales, branch };
+    view = branch === ALL ? sales : sales.filter((s) => s.branchId === branch);
+  }
+  return view;
+}
+
+/** Sales of the branch the person works in; `all: true` = every branch (the dashboard's comparison) */
+export function useSales(opts: { all?: boolean } = {}): { sales: Sale[]; loaded: boolean } {
   const snap = useSyncExternalStore(
     (l) => {
       listeners.add(l);
-      return () => listeners.delete(l);
+      const off = subscribeBranch(l);
+      return () => {
+        listeners.delete(l);
+        off();
+      };
     },
-    () => sales,
+    () => (opts.all ? sales : forBranch()),
     () => sales,
   );
   useEffect(() => {
@@ -84,6 +105,7 @@ export async function saveSale(s: Omit<Sale, "id" | "photoPath"> & { id?: string
     if (error) throw error;
   }
   const row = {
+    ...(s.branchId ? { branch_id: s.branchId } : {}),
     sale_date: s.date,
     channel: s.channel,
     doc_from: s.docFrom.trim(),
@@ -98,7 +120,7 @@ export async function saveSale(s: Omit<Sale, "id" | "photoPath"> & { id?: string
   };
   const q = s.id
     ? sb.from("sales").update(row).eq("id", s.id).select("id").single()
-    : sb.from("sales").upsert(row, { onConflict: "sale_date,channel" }).select("id").single();
+    : sb.from("sales").upsert(row, { onConflict: "branch_id,sale_date,channel" }).select("id").single();
   const { data, error } = await q;
   if (error) throw error;
   await reload();
@@ -109,13 +131,14 @@ export async function saveSale(s: Omit<Sale, "id" | "photoPath"> & { id?: string
  * Save many days at once (POS file import). Each day and channel replaces what is there; days in a closed month
  * are left out and reported back, so one closed month never blocks the rest.
  */
-export async function saveSalesBulk(days: ImportDay[]): Promise<{ saved: number; locked: number; invalid: number }> {
+export async function saveSalesBulk(days: ImportDay[], branchId = ""): Promise<{ saved: number; locked: number; invalid: number }> {
   const closed = await lockedMonths();
   // The database refuses negative days (refunds only) and VAT above the sales; they are left for a person
   const valid = days.filter((d) => d.gross >= 0 && d.vat >= 0 && d.exempt >= 0 && d.vat + d.exempt <= d.gross);
   const open = valid.filter((d) => !closed.has(d.date.slice(0, 7)));
   if (open.length) {
     const rows = open.map((d) => ({
+      ...(branchId ? { branch_id: branchId } : {}),
       sale_date: d.date,
       channel: d.channel,
       doc_from: d.docFrom,
@@ -127,7 +150,7 @@ export async function saveSalesBulk(days: ImportDay[]): Promise<{ saved: number;
       note: "",
       source: "excel" as const,
     }));
-    const { error } = await supabaseBrowser().from("sales").upsert(rows, { onConflict: "sale_date,channel" });
+    const { error } = await supabaseBrowser().from("sales").upsert(rows, { onConflict: "branch_id,sale_date,channel" });
     if (error) throw error;
   }
   await reload();

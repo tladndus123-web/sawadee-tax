@@ -5,7 +5,7 @@ import { sampleDoc } from "./sample";
 
 const CO = "0105557035035";
 const sale = (date: string, channel: Sale["channel"], gross: number, vat: number): Sale => ({
-  id: `${date}-${channel}`, date, channel, docFrom: "", docTo: "", bills: 0, gross, vat, exempt: 0, note: "", photoPath: null, source: "manual",
+  id: `${date}-${channel}`, branchId: "", date, channel, docFrom: "", docTo: "", bills: 0, gross, vat, exempt: 0, note: "", photoPath: null, source: "manual",
 });
 // the sample purchase: 60,000 + VAT 4,200 = 64,200 (claimable when addressed to us), dated in its invoice month
 const ours = { ...sampleDoc(), customer: { ...sampleDoc().customer, taxId: CO } };

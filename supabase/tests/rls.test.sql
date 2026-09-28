@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(84);
+select plan(92);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -204,6 +204,21 @@ select lives_ok($$ insert into public.push_subscriptions (endpoint, p256dh, auth
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select is((select count(*)::int from public.push_subscriptions where endpoint = 'https://push.example/staff'), 0, 'nobody else sees that device, not even an admin');
 select throws_ok($$ insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values ('00000000-0000-0000-0000-00000000000b', 'https://push.example/x', 'k', 'a') $$, '42501', NULL, 'nobody adds a device for someone else');
+
+-- Branches: admins keep the list; books belong to a branch, the head office by default
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select throws_ok($$ insert into public.branches (no, name) values ('00009', 'nope') $$, '42501', NULL, 'staff cannot add a branch');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+insert into public.branches (id, no, name) values ('00000000-0000-0000-0000-0000000000b1', '00001', 'Silom');
+select is((select count(*)::int from public.branches), 2, 'an admin adds a branch');
+select is((select branch_id from public.documents where id = '00000000-0000-0000-0000-0000000000a1'), public.head_branch(), 'a document saved without a branch is in the head office');
+select lives_ok($$ insert into public.sales (branch_id, sale_date, channel, gross, vat) values ('00000000-0000-0000-0000-0000000000b1', '2026-06-20', 'store', 107, 7) $$, 'a day of sales for the branch');
+select lives_ok($$ insert into public.sales (sale_date, channel, gross, vat) values ('2026-06-20', 'store', 214, 14) $$, 'the same day and channel in the head office is another line');
+select throws_ok($$ insert into public.sales (sale_date, channel, gross, vat) values ('2026-06-20', 'store', 1, 0) $$, '23505', NULL, 'but only one per branch, day and channel');
+delete from public.sales where sale_date = '2026-06-20';
+select throws_like($$ delete from public.branches where no = '00000' $$, 'head office%', 'the head office cannot be removed');
+update public.documents set branch_id = '00000000-0000-0000-0000-0000000000b1' where id = '00000000-0000-0000-0000-0000000000a1';
+select throws_ok($$ delete from public.branches where no = '00001' $$, '23503', NULL, 'a branch with documents cannot be removed');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

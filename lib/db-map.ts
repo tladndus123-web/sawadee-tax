@@ -57,6 +57,7 @@ export interface DocumentRow {
   field_boxes: unknown;
   photo_path: string | null;
   tax_month: string | null;
+  branch_id?: string | null;
   no_claim: boolean | null;
   wht_rate: number | string;
   wht_type: string;
@@ -126,6 +127,8 @@ export function docToRow(doc: LedgerDoc, status: DbStatus, companyTaxId?: string
       stickers: doc.stickers,
       field_boxes: doc.fieldBoxes,
       tax_month: doc.taxMonth || null,
+      // Left out when unset: the database then puts it in the head office
+      ...(doc.branchId ? { branch_id: doc.branchId } : {}),
       no_claim: doc.noClaim,
       wht_rate: doc.whtRate,
       wht_type: doc.whtType,
@@ -181,6 +184,7 @@ export function rowToDoc(row: DocumentRow, items: ItemRow[]): LedgerDoc {
     stickers: row.stickers,
     fieldBoxes: row.field_boxes,
     taxMonth: row.tax_month ?? "",
+    branchId: row.branch_id ?? "",
     noClaim: row.no_claim,
     whtRate: row.wht_rate,
     whtType: row.wht_type,

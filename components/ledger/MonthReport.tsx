@@ -13,6 +13,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { monthKey } from "@/lib/archive";
+import { ALL, byId } from "@/lib/branches";
+import { useBranch, useBranches } from "@/lib/branch-store";
 import { useCompany } from "@/lib/company-store";
 import { buildMonthExport, type ExportRow, exportLang } from "@/lib/export";
 import { pick, useLedger } from "@/lib/ledger-store";
@@ -58,14 +60,18 @@ export function MonthReport({ month }: { month: string }) {
   const allSum = sumOf(data.rows);
 
   // Our company as printed on the invoices addressed to it (the buyer block), latest first
+  // A chosen branch: its number goes on the report, whatever the invoices printed
+  const working = useBranch();
+  const { branches } = useBranches();
+  const workingNo = working !== ALL ? byId(branches, working)?.no : undefined;
   const us = useMemo(() => {
     const id = digitsOnly(company.taxId);
     if (!id) return null;
     const d = [...docs].reverse().find((x: LedgerDoc) => digitsOnly(x.customer.taxId) === id);
     const c = d?.customer;
     const in_ = (v?: { th: string; en: string; ja: string }) => (v ? v[lang] || v.en || v.th : "");
-    return { taxId: id, name: in_(c?.name), nameTh: c?.name.th ?? "", branchNo: branchNo(c?.branch), branch: in_(c?.branch), address: in_(c?.address) };
-  }, [docs, company.taxId, lang]);
+    return { taxId: id, name: in_(c?.name), nameTh: c?.name.th ?? "", branchNo: workingNo ?? branchNo(c?.branch), branch: in_(c?.branch), address: in_(c?.address) };
+  }, [docs, company.taxId, lang, workingNo]);
 
   const title = t("report.title");
   const period = monthLabel(month);

@@ -12,6 +12,8 @@ import { useMonthLabel } from "@/components/ledger/Stickers";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { invoiceMonth, NO_DATE } from "@/lib/archive";
+import { ALL } from "@/lib/branches";
+import { useBranch } from "@/lib/branch-store";
 import { useCompany } from "@/lib/company-store";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
@@ -28,7 +30,7 @@ import { type SaleDraft, SaleSheet } from "./SaleSheet";
 
 type Open = { draft: SaleDraft; photo?: File | null; preview?: string | null; unclear?: string[] };
 
-const blank = (date: string): SaleDraft => ({ date, channel: "store", docFrom: "", docTo: "", bills: 0, gross: 0, vat: 0, exempt: 0, note: "", source: "manual" });
+const blank = (date: string, branchId = ""): SaleDraft => ({ branchId, date, channel: "store", docFrom: "", docTo: "", bills: 0, gross: 0, vat: 0, exempt: 0, note: "", source: "manual" });
 
 export function SalesPage() {
   const t = useTranslations();
@@ -36,6 +38,8 @@ export function SalesPage() {
   const sd = useScreenDate();
   const monthLabel = useMonthLabel();
   const company = useCompany();
+  const branch = useBranch();
+  const branchId = branch === ALL ? "" : branch;
   const { sales, loaded } = useSales();
   const { entries } = useLedger();
   const today = todayBangkok();
@@ -53,7 +57,7 @@ export function SalesPage() {
   const r = useMemo(() => monthResult(sales, purchases, month, company.taxId), [sales, purchases, month, company.taxId]);
   const fees = useMemo(() => monthFees(sales, month, company.appFees), [sales, month, company.appFees]);
   const days = useMemo(() => sales.filter((s) => saleMonth(s) === month), [sales, month]);
-  const existingFor = (d: SaleDraft) => sales.find((x) => x.date === d.date && x.channel === d.channel && x.id !== d.id) ?? null;
+  const existingFor = (d: SaleDraft) => sales.find((x) => x.date === d.date && x.channel === d.channel && (x.branchId || "") === (d.branchId || "") && x.id !== d.id) ?? null;
 
   // A closing report: prepare the picture, let the AI read it, then open the sheet to check and save
   const readReport = async (file: File) => {
@@ -70,7 +74,7 @@ export function SalesPage() {
         return;
       }
       const { unclear, ...rest } = json.reading;
-      const draft: SaleDraft = { ...blank(rest.date || today), ...rest, source: "photo" };
+      const draft: SaleDraft = { ...blank(rest.date || today, branchId), ...rest, source: "photo" };
       setOpen({ draft, photo: prepared, preview: URL.createObjectURL(prepared), unclear });
     } catch {
       toast.error(t("sales.readFail"));
@@ -102,7 +106,7 @@ export function SalesPage() {
             <FileSpreadsheet className="size-4" />
             {t("pos.button")}
           </Button>
-          <Button type="button" variant="secondary" className="h-11 rounded-full px-4" onClick={() => setOpen({ draft: blank(today) })}>
+          <Button type="button" variant="secondary" className="h-11 rounded-full px-4" onClick={() => setOpen({ draft: blank(today, branchId) })}>
             <Keyboard className="size-4" />
             {t("sales.addManual")}
           </Button>

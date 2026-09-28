@@ -13,6 +13,8 @@ export type Channel = (typeof CHANNELS)[number];
 
 export interface Sale {
   id: string;
+  /** Branch (สาขา) the day belongs to (public.branches id); "" = head office */
+  branchId: string;
   date: string;
   channel: Channel;
   docFrom: string;

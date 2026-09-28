@@ -28,7 +28,23 @@ export const lineBlobClient = () =>
 
 const both = (thai: string, japanese: string) => `${thai}\n\n${japanese}`;
 
+/** A branch as the bot names it (Thai / Japanese) */
+export const lineBranchLabel = (b: { no: string; name: string }) => b.name.trim() || (b.no === "00000" ? "สำนักงานใหญ่ / 本店" : `สาขา ${b.no}`);
+
+/** Buttons under the receipt card: which branch is this for? (postback "branch=<id>&doc=<id>") */
+export function branchButtons(docId: string, branches: { id: string; no: string; name: string }[]): messagingApi.QuickReply {
+  return {
+    items: branches.slice(0, 13).map((b) => {
+      const label = lineBranchLabel(b).slice(0, 20);
+      return { type: "action", action: { type: "postback", label, data: `branch=${b.id}&doc=${docId}`, displayText: label } };
+    }),
+  };
+}
+
 export const say = {
+  branchAsk: "สาขาไหน? กดเลือกด้านล่าง / どの支店ですか？下から選んでください",
+  branchSet: (name: string) => `✓ บันทึกเป็น ${name} / ${name} に登録しました`,
+  branchGone: "ไม่พบสาขานั้นแล้ว เปิดแอปเพื่อเลือก / その支店は見つかりません。アプリで選んでください",
   welcome: both(
     "สวัสดี นี่คือบอท Sawadee TAX\nเปิดแอป → ตั้งค่า → เชื่อม LINE แล้วส่งรหัส 6 หลักมาที่แชทนี้",
     "こんにちは。Sawadee TAXのボットです。\nアプリの「設定 → LINE連携」で6桁のコードを取得し、このトークに送ってください。",

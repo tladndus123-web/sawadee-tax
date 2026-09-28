@@ -430,3 +430,11 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **직원별 작업**(대시보드, 관리자만): 이 달 사람별 올림·고친 서류 수·문제 없음·삭제/복구(`lib/team-summary.ts`, document_events + ack 도장).
 - **한 장에 여러 영수증**(연속 촬영 "여러 장", 최대 6장): 작은 사본(1024px)으로 위치만 찾고(`/api/split`, `lib/split-server.ts`, 읽기 모델을 effort low로 — Haiku 4.5는 3장 중 2장·칸 틀림, Sonnet 5는 느슨, Opus가 정확, 2026-09-28 시험), 휴대폰이 원본 해상도로 잘라 평소처럼 읽음(`cutOut` 표시 → 옆 영수증 무시 안내). 시험: 3장 모두 정확, 영수증 1장당 입력 토큰 −26%, 위치 찾기(사진당 ~960/80 토큰) 포함해도 장당 약 9% 저렴. 읽기 규칙 글(~2천 토큰)은 Opus 캐시 최소 길이보다 짧아 캐시 효과 없음.
 - **휴대폰 알림(웹 푸시)**: 설정 → "휴대폰 알림"(관리자). `public/sw.js`(알림만, 캐시 없음), `push_subscriptions`(본인 기기만, 마이그레이션 20260928000000), 매일 크론이 LINE과 같은 내용을 관리자 기기로도 보냄, 시험 버튼 `/api/push/test`. 키: Vercel env `NEXT_PUBLIC_VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`(로컬 `.env.local`에도). 아이폰은 홈 화면 앱에서만. 로컬 PC에서 Node가 WNS 연결 시간 초과(자동 IPv4/6 선택 250ms) — Vercel에서는 문제 없음, 로컬 시험은 `net.setDefaultAutoSelectFamilyAttemptTimeout(3000)`.
+
+### 지점(สาขา)별 장부 (2026-09-28)
+- 한 회사(세금번호 하나)에 가게 6곳: `public.branches`(번호 5자리 `no`, 이름, 관리자만 변경, 본점 `00000`은 삭제 불가), `documents.branch_id`·`sales.branch_id`(기본 본점 `head_branch()`, 매출은 지점·날짜·경로별 1줄). 마이그레이션 20260928000100. 기존 데이터는 모두 본점.
+- 서류의 지점 결정 순서(`lib/branches.ts assignBranch`): 이미 있는 지점 → 사진의 구매자 지점 번호(สาขาที่ 0000x)가 등록된 지점과 맞으면 그 지점 → 화면 위에서 고른 지점 → 본점. 업로드·직접 입력·LINE 모두 같음.
+- 화면 위 지점 선택(`components/layout/branch-switcher.tsx`, 지점이 2개 이상일 때만): 장부·매출·부가세 카드·보고서·손익표가 고른 지점만(`useLedger()`/`useSales()`가 걸러 줌; `{all:true}`는 전체). 선택은 기기에 저장(`trl.branch`). 보고서 머리글의 사업장은 고른 지점 번호.
+- 대시보드 "지점별 이번 달"(전체 지점 볼 때): 지점마다 매출·비용·남은 돈·낼 부가세 + 합계.
+- 설정 → "지점 관리"(관리자): 번호·이름 추가·수정·삭제(서류 있는 지점은 DB가 거부). 서류 화면·매출 입력·POS 엑셀에 지점 고르기.
+- LINE: 사진에 지점 번호가 없고 지점이 2개 이상이면 영수증 카드 아래 지점 버튼(quick reply postback `branch=<id>&doc=<id>`) → `pickBranch`가 `branch_id` 갱신. 달 마감은 회사 전체 기준 그대로.

@@ -7,6 +7,7 @@ import { Calculator, FileText, Loader2, Save, Trash2, TriangleAlert } from "luci
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
+import { BranchPicker } from "@/components/invoice/BranchPicker";
 import { MoneyInput } from "@/components/invoice/fields";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -110,6 +111,8 @@ export function SaleSheet({
                 <Input type="number" inputMode="numeric" min={0} className="h-10" value={s.bills || ""} onChange={(e) => set("bills", Number(e.target.value) || 0)} />
               </Field>
             </div>
+
+            <BranchPicker value={s.branchId} onChange={(id) => set("branchId", id)} />
 
             <div className="grid gap-2" role="group" aria-label={t("sales.channel")}>
               <span className="text-xs text-muted-foreground">{t("sales.channel")}</span>

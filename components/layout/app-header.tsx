@@ -4,7 +4,9 @@ import { BookOpen, Building2, LayoutGrid, Settings, TrendingUp } from "lucide-re
 import { useTranslations } from "next-intl";
 import { useLayoutEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
+import { useBranches } from "@/lib/branch-store";
 import { cn } from "@/lib/utils";
+import { BranchSwitcher } from "./branch-switcher";
 import { APP_MARK_GLOW, AppMark } from "./app-mark";
 import { LocaleSwitcher } from "./locale-switcher";
 import { ThemeToggle } from "./theme-toggle";
@@ -25,6 +27,8 @@ export function AppHeader() {
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   // Detail screens hide the tab bar, like a pushed view on iOS, so their own action bar owns the bottom edge.
   const showTabBar = !pathname.startsWith("/documents");
+  // With several branches the switcher takes the phone's top bar; the app name gives way
+  const manyBranches = useBranches().branches.length > 1;
 
   // A tapped tab lights up at once, before its page has loaded (it only counts while we're still on the
   // page it was tapped from), and its icon plays a small bounce.
@@ -68,10 +72,13 @@ export function AppHeader() {
           {t("ui.skipToContent")}
         </a>
         <div className="mx-auto grid h-14 max-w-[1440px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 md:grid-cols-[1fr_auto_1fr] px-4 sm:px-6 md:h-16 lg:px-8">
-          <Link href="/" className="press flex min-w-0 items-center gap-2.5 text-[15px] font-semibold tracking-tight active:scale-[0.97]">
-            <AppMark className={`size-8 flex-none rounded-[9px] ${APP_MARK_GLOW}`} />
-            <span className="truncate">{t("app.appName")}</span>
-          </Link>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Link href="/" className="press flex min-w-0 items-center gap-2.5 text-[15px] font-semibold tracking-tight active:scale-[0.97]">
+              <AppMark className={`size-8 flex-none rounded-[9px] ${APP_MARK_GLOW}`} />
+              <span className={cn("truncate", manyBranches && "max-sm:hidden")}>{t("app.appName")}</span>
+            </Link>
+            <BranchSwitcher />
+          </div>
 
           <nav ref={navRef} aria-label={t("nav.menu")} className="nav-pill relative hidden md:flex">
             <span ref={gliderRef} className="nav-glider" aria-hidden />

@@ -152,6 +152,8 @@ export interface LedgerDoc {
   fieldBoxes: Record<string, Box>;
   /** Tax month the input VAT is claimed in ("YYYY-MM"); "" = the invoice's own month */
   taxMonth: string;
+  /** Branch (สาขา) the document belongs to (public.branches id); "" = not set yet → head office */
+  branchId: string;
   /** Input VAT may not be claimed (§82/5); null = decided by the category (entertainment → not claimable) */
   noClaim: boolean | null;
   /** Withholding tax rate in % (0 = no withholding) and the kind of income */

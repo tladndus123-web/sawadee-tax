@@ -11,6 +11,8 @@ import { useMemo } from "react";
 import { toast } from "sonner";
 import { DocumentReview } from "@/components/invoice/DocumentReview";
 import { useRouter } from "@/i18n/navigation";
+import { assignBranch } from "@/lib/branches";
+import { useBranch, useBranches } from "@/lib/branch-store";
 import { useCompany } from "@/lib/company-store";
 import { pick, saveEntry, useLedger } from "@/lib/ledger-store";
 import { manualStart } from "@/lib/manual-doc";
@@ -21,10 +23,12 @@ export function ManualReview() {
   const router = useRouter();
   const company = useCompany();
   const { entries, loaded } = useLedger();
-  const ready = company.loaded && loaded;
+  const { branches, loaded: branchesLoaded } = useBranches();
+  const working = useBranch();
+  const ready = company.loaded && loaded && branchesLoaded;
   // Built once both are loaded, so the form starts with the buyer filled in
   const initial = useMemo(
-    () => (ready ? manualStart(pick(entries, "ledger").map((e) => e.doc), company.taxId, todayBangkok()) : null),
+    () => (ready ? assignBranch(manualStart(pick(entries, "ledger").map((e) => e.doc), company.taxId, todayBangkok()), branches, working) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- a later ledger refresh must not reset the form
     [ready],
   );

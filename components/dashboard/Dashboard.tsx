@@ -25,7 +25,10 @@ import { monthResult } from "@/lib/sales";
 import { useSales } from "@/lib/sales-store";
 import { InstallCard } from "@/components/settings/InstallCard";
 import { useMe } from "@/lib/role-store";
+import { ALL } from "@/lib/branches";
+import { useBranch } from "@/lib/branch-store";
 import { ActivityList } from "./ActivityList";
+import { BranchTable } from "./BranchTable";
 import { TeamCard } from "./TeamCard";
 import { VatCard } from "./VatCard";
 
@@ -55,6 +58,7 @@ export function Dashboard() {
   const points = useMemo(() => trend(docs, month), [docs, month]);
   const { sales } = useSales();
   const isAdmin = useMe().role === "admin";
+  const allBranches = useBranch() === ALL;
   const result = useMemo(() => monthResult(sales, docs.map((d) => d.doc), month, company.taxId), [sales, docs, month, company.taxId]);
   const hasSales = result.days > 0;
 
@@ -98,6 +102,9 @@ export function Dashboard() {
         )}
         <ChevronRight className="size-4 flex-none text-muted-foreground" aria-hidden />
       </Link>
+
+      {/* Several branches, looking at all of them: each one's month side by side */}
+      {allBranches && <BranchTable month={month} companyTaxId={company.taxId} />}
 
       {/* This month's job first: the VAT return that is due next */}
       <VatCard entries={entries} companyTaxId={company.taxId} today={today} />

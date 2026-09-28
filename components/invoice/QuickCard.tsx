@@ -15,6 +15,7 @@ import { todayBangkok } from "@/lib/thai-tax";
 import { CATEGORIES, type LedgerDoc, PAYMENTS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { MoneyInput } from "./fields";
+import { BranchPicker } from "./BranchPicker";
 import { TaxFields } from "./TaxFields";
 import { OtherLangs, TranslateBadge } from "./TranslateBadge";
 
@@ -123,6 +124,7 @@ export function QuickCard({ onJump, manual = false }: { onJump: (path: string) =
           <Chips label={t("app.payment")} value={field.value} options={PAYMENTS.map((k) => [k, t(`payment.${k}`)])} onPick={field.onChange} />
         )}
       />
+      <Controller control={control} name="branchId" render={({ field }) => <BranchPicker value={field.value} onChange={field.onChange} />} />
 
       <div className="flex flex-wrap items-center gap-3">
         <Controller

@@ -92,6 +92,7 @@ export const docSchema = z.object({
   note: triSchema,
   fieldBoxes: z.record(z.string(), z.tuple([z.number(), z.number(), z.number(), z.number()])),
   taxMonth: z.string().regex(/^(\d{4}-(0[1-9]|1[0-2]))?$/, "yyyy-mm"),
+  branchId: z.string(),
   noClaim: z.boolean().nullable(),
   whtRate: z.number().min(0).max(100),
   whtType: z.enum(["", ...WHT_TYPES]),

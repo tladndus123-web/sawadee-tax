@@ -10,6 +10,8 @@ import { useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { monthDate } from "@/lib/archive";
+import { ALL, byId } from "@/lib/branches";
+import { useBranch, useBranches } from "@/lib/branch-store";
 import { useCompany } from "@/lib/company-store";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { fmt, fromSatang, toSatang } from "@/lib/money";
@@ -35,6 +37,10 @@ export function SalesReport({ month }: { month: string }) {
   const rows = useMemo(() => salesReportRows(sales, month), [sales, month]);
 
   // Our company as printed on the invoices addressed to it (newest first)
+  // A chosen branch: its number goes on the report, whatever the invoices printed
+  const working = useBranch();
+  const { branches } = useBranches();
+  const workingNo = working !== ALL ? byId(branches, working)?.no : undefined;
   const us = useMemo(() => {
     const id = digitsOnly(company.taxId);
     if (!id) return null;
@@ -42,8 +48,8 @@ export function SalesReport({ month }: { month: string }) {
       .map((e) => e.doc)
       .filter((x) => digitsOnly(x.customer.taxId) === id)
       .sort((a, b) => b.date.localeCompare(a.date))[0];
-    return { taxId: id, name: d?.customer.name.th || d?.customer.name.en || "", branchNo: branchNo(d?.customer.branch) };
-  }, [entries, company.taxId]);
+    return { taxId: id, name: d?.customer.name.th || d?.customer.name.en || "", branchNo: workingNo ?? branchNo(d?.customer.branch) };
+  }, [entries, company.taxId, workingNo]);
 
   const sum = rows.reduce((a, r) => ({ value: a.value + toSatang(saleValue(r)), vat: a.vat + toSatang(r.vat), gross: a.gross + toSatang(r.gross) }), { value: 0, vat: 0, gross: 0 });
   // The form is Thai: Thai month name and Buddhist Era year (e.g. กันยายน 2569)

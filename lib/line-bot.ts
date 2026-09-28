@@ -12,7 +12,8 @@ import { type LedgerRef, runChecks } from "./checks";
 import { docToRow } from "./db-map";
 import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
-import { imageType, lineBlobClient, lineClient, receiptCard, say } from "./line";
+import { imageType, lineBlobClient, lineClient, receiptCard, say, branchButtons, lineBranchLabel } from "./line";
+import { assignBranch, type Branch, branchFromPhoto, sortBranches } from "./branches";
 import { supabaseAdmin } from "./supabase/admin";
 import { digitsOnly } from "./thai-tax";
 import { applyHistory, applyRule, applyVendor, toVendor, type VendorHistory, type VendorRow, VENDOR_COLUMNS, vendorKey } from "./vendors";
@@ -72,6 +73,7 @@ export async function handleLineEvent(event: webhook.Event): Promise<void> {
     await send(event, lineUser, [text(m ? say.linked(m.name || m.email) : say.welcome)]);
     return;
   }
+  if (event.type === "postback") return pickBranch(event, lineUser, event.postback.data);
   if (event.type !== "message") return;
   const message = event.message;
 
@@ -172,6 +174,12 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   const up = await admin.storage.from("documents").upload(photoPath, photo, { contentType: type });
   if (up.error) throw up.error;
 
+  // Its branch: the buyer's branch number on the invoice, else the head office (and the sender is asked)
+  const { data: branchRows } = await admin.from("branches").select("id, no, name, sort");
+  const branches = sortBranches(((branchRows ?? []) as Branch[]).map((b) => ({ ...b, name: b.name ?? "", sort: Number(b.sort) || 0 })));
+  doc = assignBranch(doc, branches);
+  const ask = branches.length > 1 && !branchFromPhoto(doc, branches);
+
   const { row, items } = docToRow({ ...doc, id }, "reviewed", companyTaxId);
   const checks = runChecks(doc, { companyTaxId, others });
   row.flags = checks.filter((c) => !c.na && !c.ok).map((c) => c.key);
@@ -185,8 +193,23 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   if (saved.error) throw saved.error;
 
   // No locale in the link: the app picks the reader's language
-  await send(later, lineUser, [receiptCard(doc, checks, `${appUrl()}/documents/${id}`)]);
+  const card = receiptCard(doc, checks, `${appUrl()}/documents/${id}`);
+  await send(later, lineUser, ask ? [card, { ...text(say.branchAsk), quickReply: branchButtons(id, branches) }] : [card]);
   console.log(`[line] saved ${id}: AI ${(aiMs / 1000).toFixed(1)}s, total ${((Date.now() - started) / 1000).toFixed(1)}s`);
+}
+
+/** The sender chose a branch for a document under the receipt card */
+async function pickBranch(event: webhook.PostbackEvent, lineUser: string, data: string) {
+  const q = new URLSearchParams(data);
+  const docId = q.get("doc");
+  const branchId = q.get("branch");
+  if (!docId || !branchId || !(await memberFor(lineUser))) return;
+  const admin = supabaseAdmin();
+  const { data: b } = await admin.from("branches").select("id, no, name").eq("id", branchId).maybeSingle();
+  if (!b) return send(event, lineUser, [text(say.branchGone)]);
+  const { error } = await admin.from("documents").update({ branch_id: branchId }).eq("id", docId);
+  if (error) throw error;
+  await send(event, lineUser, [text(say.branchSet(lineBranchLabel(b as { no: string; name: string })))]);
 }
 
 async function readStream(stream: NodeJS.ReadableStream): Promise<Buffer> {

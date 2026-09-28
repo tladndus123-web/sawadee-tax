@@ -15,6 +15,9 @@ import { aggregate, type Cell, type ColumnMap, type Field, findHeader } from "@/
 import { readPosFile, UnsupportedFile } from "@/lib/pos-read";
 import { CHANNELS, type Channel, type Sale } from "@/lib/sales";
 import { saveSalesBulk } from "@/lib/sales-store";
+import { useBranchName } from "@/components/layout/branch-switcher";
+import { ALL, branchLabel, headOf } from "@/lib/branches";
+import { useBranch, useBranches } from "@/lib/branch-store";
 
 const FIELDS: Field[] = ["date", "gross", "vat", "preVat", "exempt", "receipt", "bills", "channel"];
 const NONE = -1;
@@ -28,6 +31,11 @@ export function PosImport({ existing, onClose }: { existing: Sale[]; onClose: ()
   const [headerAt, setHeaderAt] = useState(0);
   const [map, setMap] = useState<ColumnMap>({});
   const [channel, setChannel] = useState<Channel>("store");
+  // The branch the days go to: the one the person works in, else the head office
+  const names = useBranchName();
+  const { branches } = useBranches();
+  const working = useBranch();
+  const [branch, setBranch] = useState(() => (working !== ALL ? working : (headOf(branches)?.id ?? "")));
   const [busy, setBusy] = useState<"read" | "save" | null>(null);
 
   const open = async (file: File) => {
@@ -60,7 +68,7 @@ export function PosImport({ existing, onClose }: { existing: Sale[]; onClose: ()
   const save = async () => {
     setBusy("save");
     try {
-      const { saved, locked, invalid } = await saveSalesBulk(days);
+      const { saved, locked, invalid } = await saveSalesBulk(days, branch);
       toast.success(t("pos.saved", { count: saved }));
       if (locked) toast.warning(t("pos.locked", { count: locked }));
       if (invalid) toast.warning(t("pos.invalid", { count: invalid }));
@@ -133,6 +141,18 @@ export function PosImport({ existing, onClose }: { existing: Sale[]; onClose: ()
                       </select>
                     </label>
                   ))}
+                  {branches.length > 1 && (
+                    <label className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-2">
+                      <span className="text-xs">{t("branch.label")}</span>
+                      <select className="h-9 rounded-lg border bg-background px-2 text-xs" value={branch} onChange={(e) => setBranch(e.target.value)}>
+                        {branches.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {branchLabel(b, names)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                   <label className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-2">
                     <span className="text-xs">{t("pos.defaultChannel")}</span>
                     <select className="h-9 rounded-lg border bg-background px-2 text-xs" value={channel} onChange={(e) => setChannel(e.target.value as Channel)}>
