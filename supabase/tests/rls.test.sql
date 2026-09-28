@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(81);
+select plan(84);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -197,6 +197,13 @@ update public.company_settings set app_fees = '{"grab": 99}' where id = 1;
 select is((select app_fees ->> 'grab' from public.company_settings where id = 1), null, 'staff cannot change the app commission rates');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select throws_ok($$ update public.company_settings set app_fees = '[30]' where id = 1 $$, '23514', NULL, 'rates are kept per channel (an object)');
+
+-- Phone notifications: each member keeps only their own devices
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select lives_ok($$ insert into public.push_subscriptions (endpoint, p256dh, auth) values ('https://push.example/staff', 'k', 'a') $$, 'a member turns on notifications for a device');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select is((select count(*)::int from public.push_subscriptions where endpoint = 'https://push.example/staff'), 0, 'nobody else sees that device, not even an admin');
+select throws_ok($$ insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values ('00000000-0000-0000-0000-00000000000b', 'https://push.example/x', 'k', 'a') $$, '42501', NULL, 'nobody adds a device for someone else');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

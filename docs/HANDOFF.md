@@ -424,3 +424,9 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 ### 홈 화면 앱 설치 (2026-09-28)
 - `app/manifest.ts`(standalone, 아이콘 `public/icons/*` ← `node scripts/make-app-icons.mjs`, 길게 누르면 "사진 올리기" 바로가기), iPhone용 `appleWebApp` 메타, `viewportFit: cover`(아래 탭 막대가 홈 표시줄 위로).
 - 설치 안내: 설정 → "휴대폰에 앱으로 설치"(안드로이드 Chrome은 설치 버튼, iPhone은 공유 → 홈 화면에 추가 2단계, 그 외 브라우저 메뉴 안내). 대시보드에 휴대폰에서만 닫을 수 있는 안내 줄(설치됐거나 닫으면 안 보임, `lib/install-app.ts`).
+
+### 공휴일 · 직원별 작업 · 여러 영수증 · 휴대폰 알림 (2026-09-28)
+- **신고 마감일 공휴일 반영**: 15일·23일이 주말·태국 공휴일이면 다음 영업일(`lib/thai-holidays.ts`, 2026·2027 목록). 예: 9월분 인터넷 신고 23/10/2026(쭐랄롱꼰 기념일) → 26/10. ⚠ **매년 가을 다음 해 공휴일을 추가**해야 함(목록이 끝난 해는 주말만 건너뜀).
+- **직원별 작업**(대시보드, 관리자만): 이 달 사람별 올림·고친 서류 수·문제 없음·삭제/복구(`lib/team-summary.ts`, document_events + ack 도장).
+- **한 장에 여러 영수증**(연속 촬영 "여러 장", 최대 6장): 작은 사본(1024px)으로 위치만 찾고(`/api/split`, `lib/split-server.ts`, 읽기 모델을 effort low로 — Haiku 4.5는 3장 중 2장·칸 틀림, Sonnet 5는 느슨, Opus가 정확, 2026-09-28 시험), 휴대폰이 원본 해상도로 잘라 평소처럼 읽음(`cutOut` 표시 → 옆 영수증 무시 안내). 시험: 3장 모두 정확, 영수증 1장당 입력 토큰 −26%, 위치 찾기(사진당 ~960/80 토큰) 포함해도 장당 약 9% 저렴. 읽기 규칙 글(~2천 토큰)은 Opus 캐시 최소 길이보다 짧아 캐시 효과 없음.
+- **휴대폰 알림(웹 푸시)**: 설정 → "휴대폰 알림"(관리자). `public/sw.js`(알림만, 캐시 없음), `push_subscriptions`(본인 기기만, 마이그레이션 20260928000000), 매일 크론이 LINE과 같은 내용을 관리자 기기로도 보냄, 시험 버튼 `/api/push/test`. 키: Vercel env `NEXT_PUBLIC_VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`(로컬 `.env.local`에도). 아이폰은 홈 화면 앱에서만. 로컬 PC에서 Node가 WNS 연결 시간 초과(자동 IPv4/6 선택 250ms) — Vercel에서는 문제 없음, 로컬 시험은 `net.setDefaultAutoSelectFamilyAttemptTimeout(3000)`.

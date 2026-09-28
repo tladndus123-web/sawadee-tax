@@ -24,7 +24,9 @@ import { vendorCategory } from "@/lib/vendors";
 import { monthResult } from "@/lib/sales";
 import { useSales } from "@/lib/sales-store";
 import { InstallCard } from "@/components/settings/InstallCard";
+import { useMe } from "@/lib/role-store";
 import { ActivityList } from "./ActivityList";
+import { TeamCard } from "./TeamCard";
 import { VatCard } from "./VatCard";
 
 // The chart library (recharts) is the heaviest part of this page: load it after the numbers are on screen
@@ -52,6 +54,7 @@ export function Dashboard() {
   const due = useMemo(() => upcoming(docs, today), [docs, today]);
   const points = useMemo(() => trend(docs, month), [docs, month]);
   const { sales } = useSales();
+  const isAdmin = useMe().role === "admin";
   const result = useMemo(() => monthResult(sales, docs.map((d) => d.doc), month, company.taxId), [sales, docs, month, company.taxId]);
   const hasSales = result.days > 0;
 
@@ -139,6 +142,9 @@ export function Dashboard() {
         <DueList items={due} docs={docs} />
         <TrendChart data={points} active={month} />
       </div>
+
+      {/* Admins: who did what this month */}
+      {isAdmin && <TeamCard month={month} />}
 
       <ActivityList limit={5} />
     </div>

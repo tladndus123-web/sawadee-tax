@@ -23,7 +23,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (228) · `npm run db:test` (pgTAP 81) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (238) · `npm run db:test` (pgTAP 84) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -31,7 +31,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 
 ## Production
 - https://thai-receipt-ledger.vercel.app — Vercel team `tladndus123-webs-projects`, project `thai-receipt-ledger`,
-  region sin1. Env vars live in Vercel (9). Daily cron 02:00 UTC → `/api/cron/due-reminders`.
+  region sin1. Env vars live in Vercel (12: + VAPID keys for phone notifications). Daily cron 02:00 UTC → `/api/cron/due-reminders`.
 - Supabase project **INC** (Singapore). Sign-up disabled (invite only), Gmail SMTP, 4-language auth emails.
 - LINE bot **TDB** (`@136udmem`), webhook `/api/line/webhook`. Replies in Thai + Japanese.
 - Admin: suhojayu4@gmail.com (pppyu).

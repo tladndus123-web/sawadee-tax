@@ -2,6 +2,7 @@
 // Like the prototype's renderSummary: "unpaid" means credit purchases not marked paid —
 // cash / card / transfer receipts are paid at the till.
 
+import { nextWorkingDay } from "./thai-holidays";
 import { isUnpaid, monthKey } from "./archive";
 import { claimable, flagsFor } from "./checks";
 import { fromSatang, toSatang } from "./money";
@@ -142,13 +143,17 @@ const shiftMonth = (ym: string, by: number) => {
   return d.toISOString().slice(0, 7);
 };
 
+/** Both deadlines of a tax month's return; a date on a weekend or Thai holiday moves to the next working day */
+const deadlines = (month: string) => {
+  const next = shiftMonth(month, 1);
+  return { due: nextWorkingDay(`${next}-15`), dueOnline: nextWorkingDay(`${next}-23`) };
+};
+
 /** Which VAT return to prepare today: last month's until its e-filing date has passed, then this month's */
 export function vatFiling(today: string): VatFiling {
-  const thisMonth = today.slice(0, 7);
-  const month = Number(today.slice(8, 10)) <= 23 ? shiftMonth(thisMonth, -1) : thisMonth;
-  const next = shiftMonth(month, 1);
-  const due = `${next}-15`;
-  const dueOnline = `${next}-23`;
+  const last = shiftMonth(today.slice(0, 7), -1);
+  const month = today <= deadlines(last).dueOnline ? last : today.slice(0, 7);
+  const { due, dueOnline } = deadlines(month);
   const onlineOnly = today > due;
   return { month, due, dueOnline, daysLeft: daysUntil(onlineOnly ? dueOnline : due, today), onlineOnly };
 }

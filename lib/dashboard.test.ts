@@ -72,8 +72,11 @@ describe("6-month trend", () => {
 
 describe("VAT return to prepare", () => {
   it("is last month's until its e-filing date has passed", () => {
-    expect(vatFiling("2026-10-05")).toEqual({ month: "2026-09", due: "2026-10-15", dueOnline: "2026-10-23", daysLeft: 10, onlineOnly: false });
-    expect(vatFiling("2026-10-20")).toMatchObject({ month: "2026-09", daysLeft: 3, onlineOnly: true });
+    // 23/10/2026 is Chulalongkorn Day (Friday): the e-filing date moves to Monday 26/10
+    expect(vatFiling("2026-10-05")).toEqual({ month: "2026-09", due: "2026-10-15", dueOnline: "2026-10-26", daysLeft: 10, onlineOnly: false });
+    expect(vatFiling("2026-10-20")).toMatchObject({ month: "2026-09", daysLeft: 6, onlineOnly: true });
+    expect(vatFiling("2026-10-25")).toMatchObject({ month: "2026-09", daysLeft: 1 });
+    expect(vatFiling("2026-10-27")).toMatchObject({ month: "2026-10", due: "2026-11-16" });
   });
   it("moves to this month after the 23rd", () => {
     expect(vatFiling("2026-09-26")).toMatchObject({ month: "2026-09", due: "2026-10-15", daysLeft: 19 });
@@ -81,6 +84,16 @@ describe("VAT return to prepare", () => {
   it("crosses the year", () => {
     expect(vatFiling("2027-01-10")).toMatchObject({ month: "2026-12", due: "2027-01-15" });
     expect(vatFiling("2026-12-28")).toMatchObject({ month: "2026-12", due: "2027-01-15" });
+  });
+});
+
+describe("Thai working days for deadlines", async () => {
+  const { nextWorkingDay } = await import("./thai-holidays");
+  it("weekends and official holidays move to the next working day", () => {
+    expect(nextWorkingDay("2026-11-15")).toBe("2026-11-16"); // Sunday
+    expect(nextWorkingDay("2027-04-15")).toBe("2027-04-16"); // Songkran
+    expect(nextWorkingDay("2027-10-23")).toBe("2027-10-26"); // Saturday, then Monday's substitution day
+    expect(nextWorkingDay("2026-10-15")).toBe("2026-10-15"); // an ordinary Thursday
   });
 });
 

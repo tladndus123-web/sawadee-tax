@@ -8,6 +8,7 @@ import { normalize } from "./normalize";
 import { isPdf, pdfToJpeg } from "./pdf-render";
 import { checkPhoto, type PhotoIssue } from "./photo-quality";
 import { isSlip } from "./slip-tiles";
+import { type Box, toPixels } from "./split-boxes";
 import { paidAtTill } from "./archive";
 import { runChecks } from "./checks";
 import { companyTaxId } from "./company-store";
@@ -48,6 +49,8 @@ const photos = new Map<string, File>();
 /** Original PDFs: sent to the AI instead of the picture made from them */
 const pdfs = new Map<string, File>();
 const aborts = new Map<string, AbortController>();
+/** Pieces cut from a photo of several receipts: the reader is told to ignore the neighbours' edges */
+const cutOuts = new Set<string>();
 
 const emit = () => listeners.forEach((l) => l());
 const patch = (id: string, change: Partial<UploadItem>) => {
@@ -123,6 +126,7 @@ async function readNow(id: string) {
     const pdf = pdfs.get(id);
     if (pdf) body.append("pdf", pdf, pdf.name || "document.pdf");
     else body.append("photo", photo, "photo.jpg");
+    if (cutOuts.has(id)) body.append("cutOut", "1");
     const res = await fetch("/api/extract", { method: "POST", body, signal: ctrl.signal });
     const json = (await res.json().catch(() => ({}))) as { doc?: LedgerDoc; error?: ExtractErrorCode };
     if (res.ok && json.doc) {
@@ -166,11 +170,12 @@ async function autoSave(doc: LedgerDoc, vendor: Parameters<typeof canAutoRegiste
 }
 
 /** Add photos (extra ones beyond the limit are ignored) and start reading them all at once. Returns how many were accepted. */
-export function addPhotos(files: File[]): number {
+export function addPhotos(files: File[], opts: { cutOut?: boolean } = {}): number {
   const room = Math.max(0, MAX_QUEUE - items.length);
   const accepted = files.slice(0, room);
   for (const file of accepted) {
     const id = crypto.randomUUID();
+    if (opts.cutOut) cutOuts.add(id);
     items = [...items, { id, name: file.name, status: "preparing", preview: null, startedAt: Date.now(), finishedAt: null, error: null, doc: null, vendorFixed: [], issues: [] }];
     emit();
     const pdf = isPdf(file);
@@ -187,6 +192,46 @@ export function addPhotos(files: File[]): number {
       .catch(() => patch(id, { status: "failed", error: "badImage", finishedAt: Date.now() }));
   }
   return accepted.length;
+}
+
+const jpegOf = (canvas: HTMLCanvasElement, name: string, quality = 0.92) =>
+  new Promise<File>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(new File([b], name, { type: "image/jpeg" })) : reject(new Error("no jpeg"))), "image/jpeg", quality),
+  );
+
+/**
+ * One photo of several receipts ("several" mode): a small copy goes to the finder (/api/split, a cheap model),
+ * then each receipt is cut out of the full-size photo here and read like any other photo. When the finder sees
+ * one receipt or none, or fails, the whole photo is read as usual.
+ */
+export async function addSeveral(shot: File): Promise<{ found: number; accepted: number; more: boolean }> {
+  const bmp = await createImageBitmap(shot);
+  try {
+    const scale = Math.min(1, 1024 / Math.max(bmp.width, bmp.height));
+    const small = document.createElement("canvas");
+    small.width = Math.round(bmp.width * scale);
+    small.height = Math.round(bmp.height * scale);
+    small.getContext("2d")?.drawImage(bmp, 0, 0, small.width, small.height);
+    const body = new FormData();
+    body.append("photo", await jpegOf(small, "find.jpg", 0.8));
+    const res = await fetch("/api/split", { method: "POST", body }).catch(() => null);
+    const json = res?.ok ? ((await res.json().catch(() => ({}))) as { boxes?: Box[]; more?: boolean }) : {};
+    const boxes = json.boxes ?? [];
+    if (boxes.length <= 1) return { found: boxes.length, accepted: addPhotos([shot]), more: false };
+    const stamp = Date.now();
+    const pieces: File[] = [];
+    for (const [i, box] of boxes.entries()) {
+      const r = toPixels(box, bmp.width, bmp.height);
+      const c = document.createElement("canvas");
+      c.width = r.width;
+      c.height = r.height;
+      c.getContext("2d")?.drawImage(bmp, r.left, r.top, r.width, r.height, 0, 0, r.width, r.height);
+      pieces.push(await jpegOf(c, `shot-${stamp}-${i + 1}.jpg`));
+    }
+    return { found: boxes.length, accepted: addPhotos(pieces, { cutOut: true }), more: !!json.more };
+  } finally {
+    bmp.close();
+  }
 }
 
 /** The original PDF a photo was drawn from (null for photos), stored with the document too */
@@ -206,6 +251,7 @@ export function removePhoto(id: string) {
   if (it?.preview) URL.revokeObjectURL(it.preview);
   photos.delete(id);
   pdfs.delete(id);
+  cutOuts.delete(id);
   const w = waiting.indexOf(id);
   if (w >= 0) waiting.splice(w, 1);
   items = items.filter((x) => x.id !== id);

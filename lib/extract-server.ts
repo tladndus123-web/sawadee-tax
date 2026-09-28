@@ -38,6 +38,10 @@ const getPrompt = () =>
 
 let client: Anthropic | null = null;
 
+/** A piece cut from a photo of several receipts (lib/split-boxes.ts): its edges may show the neighbours */
+const CUT_OUT_NOTE =
+  "This image was cut from a photo of several receipts laid out together. Its edges may show parts of neighbouring receipts: read only the one document that fills most of the image and ignore the others.";
+
 /** Model and effort the app reads with (Vercel env; defaults below). Low was chosen 2026-09-26: same tax fields as medium, ~40% cheaper, ~2× faster. */
 export const readingSetup = () => ({
   model: process.env.ANTHROPIC_MODEL || "claude-opus-5-5",
@@ -101,7 +105,7 @@ async function photoBlocks(image: Buffer, type: ImageType): Promise<Anthropic.Co
 export async function extractDocument(
   image: Buffer,
   type: SourceType,
-  opts: { signal?: AbortSignal; model?: string; effort?: Effort } = {},
+  opts: { signal?: AbortSignal; model?: string; effort?: Effort; cutOut?: boolean } = {},
 ): Promise<ExtractOutcome> {
   const model = opts.model || readingSetup().model;
   const effort = opts.effort || readingSetup().effort;
@@ -130,6 +134,7 @@ export async function extractDocument(
                     { type: "text" as const, text: "The document is attached as a PDF (often an e-Tax Invoice / e-Receipt) instead of a photo: read it the same way." },
                   ]
                 : await photoBlocks(image, type)),
+              ...(opts.cutOut ? [{ type: "text" as const, text: CUT_OUT_NOTE }] : []),
               { type: "text", text: getPrompt() },
             ],
           },

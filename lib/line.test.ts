@@ -90,3 +90,11 @@ describe("payment reminder covers every unpaid bill, not only credit (same rule 
     expect(dueReminder(upcoming([{ id: "t1", doc }], "2026-09-28"), "https://x")).toBeNull();
   });
 });
+
+describe("phone notification made from a reminder", async () => {
+  const { toPush } = await import("./push-server");
+  it("first line is the title, the next two the body; the link line is dropped", () => {
+    const m = toPush("Title · タイトル\nline one\nline two\n\n• item\n\nhttps://x/", "https://x/");
+    expect(m).toEqual({ title: "Title · タイトル", body: "line one\nline two", url: "https://x/" });
+  });
+});

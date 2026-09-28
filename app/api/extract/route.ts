@@ -55,7 +55,8 @@ export async function POST(req: Request) {
   const allowed = pdf instanceof File ? pdf.type === "application/pdf" || /\.pdf$/i.test(pdf.name) : IMAGE_TYPES.includes(type as ImageType);
   if (!(file instanceof File) || !allowed || file.size > MAX_IMAGE_BYTES) return fail("badImage", 400);
 
-  const result = await extractDocument(Buffer.from(await file.arrayBuffer()), type as SourceType, { signal: req.signal });
+  const cutOut = form?.get("cutOut") === "1";
+  const result = await extractDocument(Buffer.from(await file.arrayBuffer()), type as SourceType, { signal: req.signal, cutOut });
   if (result.ok) return Response.json({ doc: result.doc });
   if (result.code === "aborted") return new Response(null, { status: 499 });
   if (result.detail) console.error(`extract: ${result.code}`, result.detail);
