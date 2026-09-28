@@ -3,7 +3,7 @@
 // Employees (admins): who is paid, how (monthly / daily), from which branch; social security enrolment; the ID number
 // and address the filing lists need (shown masked in the list); other tax allowances or a fixed monthly withholding.
 
-import { Loader2, Pencil, Plus, Trash2, UserRound } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2, UserRound, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -15,7 +15,9 @@ import { Switch } from "@/components/ui/switch";
 import { branchLabel, byId, headOf } from "@/lib/branches";
 import { useBranches } from "@/lib/branch-store";
 import { baht } from "@/lib/money";
+import { expiringDocuments } from "@/lib/attendance";
 import { type Employee, maskId } from "@/lib/payroll";
+import { todayBangkok } from "@/lib/thai-tax";
 import { deleteEmployee, saveEmployee, useEmployees } from "@/lib/payroll-store";
 import { taxIdOk } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
@@ -36,6 +38,7 @@ const blank = (branchId: string): Employee & { isNew: boolean } => ({
   extraAllowance: 0,
   whtFixed: null,
   note: "",
+  documents: [],
   isNew: true,
 });
 
@@ -45,9 +48,23 @@ export function EmployeesTab() {
   const { branches } = useBranches();
   const { employees, loaded } = useEmployees();
   const [draft, setDraft] = useState<(Employee & { isNew?: boolean }) | null>(null);
+  // Work permits, visas … running out within 30 days (or already out)
+  const expiring = expiringDocuments(employees, todayBangkok());
 
   return (
     <div className="grid gap-3">
+      {expiring.length > 0 && (
+        <ul className="grid gap-1 rounded-2xl bg-warn/10 px-4 py-3 text-sm">
+          {expiring.map((x) => (
+            <li key={`${x.employee.id}|${x.doc.name}`} className={cn("flex flex-wrap justify-between gap-x-3", x.daysLeft < 0 && "text-bad")}>
+              <span className="font-medium">
+                {x.employee.name} · {x.doc.name}
+              </span>
+              <span className="tabular-nums">{x.daysLeft < 0 ? t("expired", { days: -x.daysLeft }) : x.daysLeft === 0 ? t("expiresToday") : t("expiresIn", { days: x.daysLeft })}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       {!loaded ? (
         <Loader2 className="mx-auto my-8 size-5 animate-spin text-muted-foreground" aria-hidden />
       ) : employees.length === 0 && !draft ? (
@@ -105,9 +122,10 @@ function EmployeeForm({ draft, onChange, onDone }: { draft: Employee & { isNew?:
   const save = async () => {
     if (!draft.name.trim()) return toast.error(t("needName"));
     if (idBad) return toast.error(t("badId"));
+    if (draft.documents.some((d) => d.name.trim() && !/^\d{4}-\d{2}-\d{2}$/.test(d.expires))) return toast.error(t("documentNeedsDate"));
     setBusy(true);
     try {
-      await saveEmployee(draft);
+      await saveEmployee({ ...draft, documents: draft.documents.filter((d) => d.name.trim() && d.expires) });
       toast.success(t("employeeSaved"));
       onDone();
     } catch {
@@ -235,6 +253,24 @@ function EmployeeForm({ draft, onChange, onDone }: { draft: Employee & { isNew?:
         </label>
       </div>
       {text("note", t("note"), 300)}
+
+      <div className="grid gap-2 rounded-2xl bg-muted/50 p-3">
+        <p className="text-xs font-medium">{t("documents")}</p>
+        <p className="text-[11px] leading-snug text-muted-foreground">{t("documentsHint")}</p>
+        {draft.documents.map((d, i) => (
+          <div key={i} className="grid grid-cols-[minmax(0,1fr)_9.5rem_auto] items-center gap-2">
+            <Input value={d.name} maxLength={60} placeholder={t("documentName")} onChange={(e) => set("documents", draft.documents.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} className="h-10 bg-background" />
+            <Input type="date" value={d.expires} onChange={(e) => set("documents", draft.documents.map((x, j) => (j === i ? { ...x, expires: e.target.value } : x)))} className="h-10 bg-background" />
+            <Button type="button" variant="ghost" size="icon" className="size-9" aria-label={t("delete")} onClick={() => set("documents", draft.documents.filter((_, j) => j !== i))}>
+              <X className="size-4" />
+            </Button>
+          </div>
+        ))}
+        <Button type="button" variant="ghost" className="h-9 w-fit rounded-full px-3 text-[13px]" onClick={() => set("documents", [...draft.documents, { name: "", expires: "" }])}>
+          <Plus className="size-4" />
+          {t("addDocument")}
+        </Button>
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         {!draft.isNew ? (

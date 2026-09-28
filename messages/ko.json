@@ -1227,7 +1227,8 @@
     "tab": {
       "run": "급여 계산",
       "employees": "직원",
-      "filing": "신고 서류"
+      "filing": "신고 서류",
+      "attendance": "근태"
     },
     "noEmployees": "아직 직원이 없어요. 아래에서 추가하세요.",
     "left": "{date} 퇴사",
@@ -1317,7 +1318,45 @@
     "ssRangeBad": "최저 기준이 최고 기준보다 커요.",
     "ssSaved": "사회보험 요율을 저장했어요.",
     "ssAccount": "사회보험 사업장 번호 (10자리)",
-    "ssAccountBad": "사업장 번호는 10자리예요."
+    "ssAccountBad": "사업장 번호는 10자리예요.",
+    "employee": "직원",
+    "kind": {
+      "work": "출근",
+      "off": "휴무",
+      "absent": "무급 결근",
+      "annual": "연차",
+      "sick": "병가"
+    },
+    "kindShort": {
+      "work": "출",
+      "off": "휴",
+      "absent": "결",
+      "annual": "연",
+      "sick": "병"
+    },
+    "legendHint": "표시 없는 날: 월급 직원은 출근, 일당 직원은 근무 없음으로 계산해요. 빨간 날짜는 태국 공휴일이에요.",
+    "fillWorked": "모두 출근",
+    "filled": "{count}일을 출근으로 채웠어요. 휴무일만 눌러서 바꾸세요.",
+    "publicHoliday": "공휴일",
+    "otHoursDay": "연장근무 (시간, 1.5배)",
+    "otHoursHoliday": "휴일 연장근무 (시간, 3배) — 8시간 휴일근무는 자동",
+    "clearDay": "표시 지우기",
+    "leaveTitle": "{year}년 휴가",
+    "annualLeft": "연차 {used}일 사용 · {left}일 남음",
+    "annualNotYet": "연차는 입사 1년 후부터",
+    "sickUsed": "병가 {used}/{max}일",
+    "leaveHint": "태국 노동법 기준: 1년 근무 후 연차 6일, 유급 병가 연 30일. 연차·병가는 급여에서 빠지지 않아요.",
+    "fromAttendance": "근태에서 가져오기",
+    "pulled": "근태 달력의 출근·결근·연장근무를 채웠어요. 보너스·공제는 그대로예요.",
+    "noAttendance": "이 달 근태가 아직 없어요. 근태 탭에서 먼저 찍어 주세요.",
+    "documents": "만료일이 있는 서류",
+    "documentsHint": "워크퍼밋, 비자, 건강증명서 등. 30일·7일·1일 전과 만료 뒤에 관리자에게 알림이 가요.",
+    "documentName": "서류 이름 (예: 워크퍼밋)",
+    "addDocument": "서류 추가",
+    "documentNeedsDate": "서류의 만료일을 넣어 주세요.",
+    "expired": "{days}일 지남",
+    "expiresToday": "오늘 만료",
+    "expiresIn": "D-{days}"
   },
   "fixed": {
     "title": "고정비 (영수증 없는 비용)",

@@ -13,6 +13,7 @@
 //   holiday moves the date to the next working day.
 // Satang integers inside; baht (2 decimals) out.
 
+import type { EmployeeDocument } from "./attendance";
 import { nextWorkingDay } from "./thai-holidays";
 
 export type PayType = "monthly" | "daily";
@@ -36,6 +37,8 @@ export interface Employee {
   /** A monthly withholding amount set by hand (replaces the app's); null = worked out */
   whtFixed: number | null;
   note: string;
+  /** Work permit, visa, health certificate … with their expiry dates (lib/attendance) */
+  documents: EmployeeDocument[];
 }
 
 export interface PeriodInput {

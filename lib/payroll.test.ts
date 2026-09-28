@@ -17,6 +17,7 @@ const emp = (p: Partial<Employee> = {}): Employee => ({
   extraAllowance: 0,
   whtFixed: null,
   note: "",
+  documents: [],
   ...p,
 });
 const period = (p: Partial<typeof EMPTY_PERIOD> = {}) => ({ ...EMPTY_PERIOD, ...p });

@@ -51,6 +51,17 @@ export function branchButtons(docId: string, branches: { id: string; no: string;
   };
 }
 
+/** Days before a document expires on which the admins are reminded */
+export const DOC_REMIND_DAYS = [30, 7, 1, 0];
+
+/** Work permits, visas … about to run out (Thai + Japanese), on the reminder days only */
+export function documentReminder(items: { name: string; doc: string; daysLeft: number }[], url: string, opts: { force?: boolean } = {}): string | null {
+  const due = items.filter((i) => opts.force || DOC_REMIND_DAYS.includes(i.daysLeft) || i.daysLeft < 0);
+  if (!due.length) return null;
+  const when = (d: number) => (d < 0 ? `หมดอายุแล้ว ${-d} วัน / ${-d}日超過` : d === 0 ? "หมดอายุวันนี้ / 本日期限" : `อีก ${d} วัน / あと${d}日`);
+  return ["แจ้งเตือนเอกสารพนักงานใกล้หมดอายุ · 従業員書類の期限のお知らせ", "", ...due.map((i) => `• ${i.name} — ${i.doc}: ${when(i.daysLeft)}`), "", url].join("\n");
+}
+
 export interface SalesSavedText {
   days: number;
   from: string;

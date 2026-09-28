@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(146);
+select plan(151);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -335,6 +335,17 @@ delete from public.month_locks where month = '2026-06';
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select is((select count(*)::int from public.fixed_costs), 1, 'staff see fixed costs (they are in the cost figures)');
 select throws_ok($$ insert into public.fixed_costs (category, name, amount, from_month) values ('rent', 'x', 1, '2026-09') $$, '42501', NULL, 'but cannot add one');
+
+-- Attendance: admins only, one row per employee and day, frozen in a closed month; employee documents are a list
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select lives_ok($$ insert into public.attendance (employee_id, day, kind, ot_hours) values ('00000000-0000-0000-0000-0000000000e9', '2026-08-03', 'work', 2) $$, 'an admin marks a day');
+select throws_ok($$ insert into public.attendance (employee_id, day, kind) values ('00000000-0000-0000-0000-0000000000e9', '2026-08-03', 'off') $$, '23505', NULL, 'one row per employee and day');
+insert into public.month_locks (month) values ('2026-08');
+select throws_like($$ update public.attendance set kind = 'absent' where day = '2026-08-03' $$, 'month_locked%', 'a closed month''s attendance cannot change');
+delete from public.month_locks where month = '2026-08';
+select lives_ok($$ update public.employees set documents = '[{"name":"Work permit","expires":"2027-03-31"}]' where id = '00000000-0000-0000-0000-0000000000e9' $$, 'documents with expiry dates are kept on the employee');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select is((select count(*)::int from public.attendance), 0, 'staff see no attendance');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

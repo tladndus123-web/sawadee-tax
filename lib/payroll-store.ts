@@ -5,6 +5,7 @@
 // into the cost control (public.labor_costs: pay and the company's social security share; "other" is left as typed).
 
 import { useEffect, useSyncExternalStore } from "react";
+import { parseDocuments } from "./attendance";
 import { type Employee, EMPTY_PERIOD, monthPay, type PayrollSettings, type PeriodInput } from "./payroll";
 import { supabaseBrowser } from "./supabase/client";
 
@@ -24,6 +25,7 @@ type EmpRow = {
   extra_allowance: number | string;
   wht_fixed: number | string | null;
   note: string;
+  documents?: unknown;
 };
 
 const toEmployee = (r: EmpRow): Employee => ({
@@ -42,6 +44,7 @@ const toEmployee = (r: EmpRow): Employee => ({
   extraAllowance: Number(r.extra_allowance) || 0,
   whtFixed: r.wht_fixed === null || r.wht_fixed === undefined ? null : Number(r.wht_fixed),
   note: r.note ?? "",
+  documents: parseDocuments(r.documents),
 });
 
 let employees: Employee[] = [];
@@ -91,6 +94,7 @@ export async function saveEmployee(e: Employee & { isNew?: boolean }) {
     extra_allowance: Math.max(0, e.extraAllowance || 0),
     wht_fixed: e.whtFixed,
     note: e.note.trim(),
+    documents: parseDocuments(e.documents),
     updated_at: new Date().toISOString(),
   };
   const q = e.isNew ? supabaseBrowser().from("employees").insert(row).select("id") : supabaseBrowser().from("employees").update(row).eq("id", e.id).select("id");

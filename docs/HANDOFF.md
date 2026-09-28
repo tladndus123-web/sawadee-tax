@@ -492,3 +492,10 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **사무실 확인(검수)**: `documents.checked_at / checked_by`. 직원·LINE 봇(서비스 롤)이 저장한 전표는 바로 장부에 들어가되 미확인; 관리자가 저장·수정하면 자동 확인; 직원이 내용을 고치면 다시 미확인(지급 표시·스티커·경고 수락은 무관) — `documents_check_stamp` 트리거. 마감 달에도 확인 가능(`free` 목록). 대시보드 "사무실 확인 대기"(관리자, `UncheckedList`: 5건 + 더보기, 개별/모두 확인, 되돌리기), 장부 행에 "사무실 확인 전" 칩. 기존 전표는 마이그레이션에서 전부 확인 처리.
 - **고정비** `public.fixed_costs`(지점·분류·이름·월 금액·시작/끝 달; 모두 읽기, 관리자 쓰기). `lib/fixed-costs.ts fixedForMonth` → `monthCosts(…, fixed)` → 대시보드·매출·손익표·지점 보드·엑셀 원가 시트 모두 반영, 부가세 공제 없음. 마감 달을 덮는 줄은 금액·분류 변경/삭제 불가, 끝 달만 뒤로(`fixed_costs_guard`); 금액 변경은 "금액 바꾸기"로 옛 줄을 전달에 끝내고 새 줄 시작(`changeAmount`). 설정 → 고정비 카드(`FixedCostCard`), 원가 관리 카드에 "고정비" 링크.
 - **LINE으로 POS 엑셀 보내기**: 봇에 .xlsx/.csv 파일을 보내면 `lib/pos-read-server` → `findHeader` + 앱에서 마지막 가져오기 때 기억한 열(`company_settings.pos_columns`, `columnsToSave/applySavedColumns`) → `aggregate` → `sales` upsert(note "LINE"). 지점이 여러 개면 지점 버튼(postback `branch=&xl=<messageId>&fn=`) 뒤 가져오기. 같은 파일 두 번은 `line_messages` `<id>:xl`로 막음, 마감 달은 건너뜀, 5MB·분당 5개 제한. 열을 못 찾으면 "앱에서 한 번 가져오세요" 안내. 검증: scratchpad `check-line-xl.ts`(가짜 LINE 서버 3199, 개발 서버 불필요).
+
+### 근태 · 휴가 · 직원 서류 만료 (2026-09-29)
+- **근태** `public.attendance`(직원·날짜 1줄: work/off/absent/annual/sick + 연장시간; 관리자만, 마감 달 동결). 급여 → **근태** 탭: 직원×날짜 달력(휴대폰은 옆으로 스크롤, 이름 고정), 칸을 누르면 종류·연장시간 시트, "모두 출근"으로 빈 날 채우기. 표시 없는 날 = 월급은 출근 / 일당은 근무 없음. 태국 공휴일에 출근 = 휴일근무 8h(+연장은 휴일연장) — `lib/attendance.ts periodFromAttendance`(테스트).
+- **급여 계산 → "근태에서 가져오기"**: 일한 날·결근·연장·휴일 칸만 채우고 보너스·수당·공제는 그대로. 자동으로 채우지는 않음(버튼).
+- **휴가**: 근태 탭 아래 연도별 연차(1년 근무 후 6일)·병가(30일) 사용/남음 — `leaveBalance`. 연차·병가는 유급(일당 직원은 근무일로 계산).
+- **직원 서류 만료**: `employees.documents` jsonb `[{name, expires}]`(직원 정보 폼에서 추가). 직원 탭 위에 30일 이내/지난 것 알림 띠, 아침 알림(LINE·푸시)에 30/7/1/0일 전과 만료 뒤 매일 — `documentReminder`, `expiringDocuments`.
+- 로컬 `db reset` 뒤 storage 업로드 42P10 → CLAUDE.md 메모.

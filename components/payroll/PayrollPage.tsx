@@ -10,12 +10,13 @@ import { useEmployees } from "@/lib/payroll-store";
 import { useMe } from "@/lib/role-store";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
+import { AttendanceTab } from "./AttendanceTab";
 import { EmployeesTab } from "./EmployeesTab";
 import { FilingTab } from "./FilingTab";
 import { PayRunTab } from "./PayRunTab";
 
-type Tab = "run" | "employees" | "filing";
-const TABS: Tab[] = ["run", "employees", "filing"];
+type Tab = "attendance" | "run" | "employees" | "filing";
+const TABS: Tab[] = ["attendance", "run", "employees", "filing"];
 
 export function PayrollPage() {
   const t = useTranslations("pay");
@@ -36,7 +37,7 @@ export function PayrollPage() {
   const shown: Tab = tab ?? (loaded && employees.length === 0 ? "employees" : "run");
 
   return (
-    <div className="mx-auto grid w-full max-w-3xl gap-5">
+    <div className={cn("mx-auto grid w-full gap-5", shown === "attendance" ? "max-w-6xl" : "max-w-3xl")}>
       <header className="grid gap-1">
         <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("title")}</h1>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("intro")}</p>
@@ -68,6 +69,7 @@ export function PayrollPage() {
         )}
       </div>
 
+      {shown === "attendance" && <AttendanceTab month={month} />}
       {shown === "run" && <PayRunTab month={month} />}
       {shown === "employees" && <EmployeesTab />}
       {shown === "filing" && <FilingTab month={month} />}

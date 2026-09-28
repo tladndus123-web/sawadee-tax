@@ -3,14 +3,16 @@
 //   overdue or due within 7 days;
 // - the VAT return (ภ.พ.30): what is left to check and the input VAT that can be claimed, on its reminder days
 //   while the month is open (or always, for a test);
-// - payroll filings (ภ.ง.ด.1, สปส.1-10): withholding and social security of last month's saved payroll, likewise.
+// - payroll filings (ภ.ง.ด.1, สปส.1-10): withholding and social security of last month's saved payroll, likewise;
+// - employee documents (work permit, visa …) that expire within 30 days.
 
 import { monthKey } from "./archive";
 import { type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
 import { summarize, upcoming, vatFiling } from "./dashboard";
-import { dueReminder, payrollReminder, vatReminder } from "./line";
+import { documentReminder, dueReminder, payrollReminder, vatReminder } from "./line";
 import { appUrl } from "./line-bot";
 import { serverCategories } from "./categories-server";
+import { expiringDocuments, parseDocuments } from "./attendance";
 import { payrollFiling } from "./payroll";
 import type { supabaseAdmin } from "./supabase/admin";
 
@@ -56,5 +58,16 @@ export async function reminderTexts(admin: Admin, today: string, opts: { test?: 
     const sum = (k: "wht" | "ss_employee" | "ss_employer") => lines.data.reduce((a, r) => a + Math.round(Number(r[k]) * 100), 0) / 100;
     pay = payrollReminder({ ...pf, wht: sum("wht"), ss: sum("ss_employee") + sum("ss_employer") }, `${url}payroll`, { force: opts.test });
   }
-  return [due, vat, pay].filter((x): x is string => !!x);
+  // Employee documents (work permit, visa …) running out: 30 / 7 / 1 / 0 days before, and every day once expired
+  const { data: staff } = await admin.from("employees").select("id, name, nickname, end_date, documents");
+  const expiring = expiringDocuments(
+    (staff ?? []).map((e) => ({ id: e.id as string, name: e.name as string, nickname: (e.nickname as string) ?? "", endDate: (e.end_date as string | null) ?? "", documents: parseDocuments(e.documents) })),
+    today,
+  );
+  const docTexts = documentReminder(
+    expiring.map((x) => ({ name: x.employee.name, doc: x.doc.name, daysLeft: x.daysLeft })),
+    `${url}payroll`,
+    { force: opts.test },
+  );
+  return [due, vat, pay, docTexts].filter((x): x is string => !!x);
 }

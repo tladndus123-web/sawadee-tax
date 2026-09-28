@@ -5,13 +5,15 @@
 // from the month-end payment). Saving keeps the lines (payslips, filing lists) and puts each branch's labour cost into
 // the cost control.
 
-import { ChevronDown, Loader2, Lock, Printer } from "lucide-react";
+import { CalendarCheck, ChevronDown, Loader2, Lock, Printer } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { MoneyInput } from "@/components/invoice/fields";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { periodFromAttendance } from "@/lib/attendance";
+import { loadAttendance } from "@/lib/attendance-store";
 import { useCompany } from "@/lib/company-store";
 import { refreshLabor } from "@/lib/labor-store";
 import { fmt } from "@/lib/money";
@@ -81,6 +83,34 @@ export function PayRunTab({ month }: { month: string }) {
   const set = (id: string, half: "first" | "second", k: keyof PeriodInput, v: number) => {
     setInputs((all) => ({ ...all, [id]: { ...rowOf(id), [half]: { ...rowOf(id)[half], [k]: Math.max(0, v || 0) } } }));
     setDirty(true);
+  };
+
+  // Days, absences and overtime from the attendance calendar; bonus, allowance and deductions stay as typed
+  const [pulling, setPulling] = useState(false);
+  const fromAttendance = async () => {
+    setPulling(true);
+    try {
+      const rows = await loadAttendance({ month });
+      if (!rows.length) return toast.info(t("noAttendance"));
+      setInputs((all) => {
+        const next = { ...all };
+        for (const e of staff) {
+          const p = periodFromAttendance(e, rows.filter((r) => r.employeeId === e.id), month);
+          const cur = all[e.id] ?? { first: EMPTY_PERIOD, second: EMPTY_PERIOD };
+          next[e.id] = {
+            first: { ...cur.first, daysWorked: p.first.daysWorked, absentDays: p.first.absentDays, otHours: p.first.otHours, holidayHours: p.first.holidayHours, holidayOtHours: p.first.holidayOtHours },
+            second: { ...cur.second, daysWorked: p.second.daysWorked, absentDays: p.second.absentDays, otHours: p.second.otHours, holidayHours: p.second.holidayHours, holidayOtHours: p.second.holidayOtHours },
+          };
+        }
+        return next;
+      });
+      setDirty(true);
+      toast.success(t("pulled"));
+    } catch {
+      toast.error(t("fail"));
+    } finally {
+      setPulling(false);
+    }
   };
 
   const save = async () => {
@@ -159,6 +189,12 @@ export function PayRunTab({ month }: { month: string }) {
       <p className="text-xs leading-relaxed text-muted-foreground">{t("runHint")}</p>
 
       <div className="flex flex-wrap items-center justify-end gap-2">
+        {!locked && (
+          <Button type="button" variant="secondary" className="rounded-full px-4" disabled={pulling} onClick={() => void fromAttendance()}>
+            {pulling ? <Loader2 className="size-4 animate-spin" /> : <CalendarCheck className="size-4" />}
+            {t("fromAttendance")}
+          </Button>
+        )}
         {saved.size > 0 && !dirty && (
           <Button asChild variant="secondary" className="rounded-full px-4">
             <Link href={`/payroll/print/slip/${month}`}>

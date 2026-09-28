@@ -1227,7 +1227,8 @@
     "tab": {
       "run": "Pay run",
       "employees": "Employees",
-      "filing": "Filings"
+      "filing": "Filings",
+      "attendance": "Attendance"
     },
     "noEmployees": "No employees yet. Add one below.",
     "left": "Left {date}",
@@ -1317,7 +1318,45 @@
     "ssRangeBad": "The floor is above the ceiling.",
     "ssSaved": "Social security rate saved.",
     "ssAccount": "Employer SSO account no. (10 digits)",
-    "ssAccountBad": "The account number has 10 digits."
+    "ssAccountBad": "The account number has 10 digits.",
+    "employee": "Employee",
+    "kind": {
+      "work": "Worked",
+      "off": "Day off",
+      "absent": "Unpaid absence",
+      "annual": "Annual leave",
+      "sick": "Sick leave"
+    },
+    "kindShort": {
+      "work": "W",
+      "off": "O",
+      "absent": "A",
+      "annual": "L",
+      "sick": "S"
+    },
+    "legendHint": "Unmarked days: monthly staff count as worked, daily staff as not worked. Red dates are Thai public holidays.",
+    "fillWorked": "All worked",
+    "filled": "{count} days marked as worked. Tap the days off to change them.",
+    "publicHoliday": "Public holiday",
+    "otHoursDay": "Overtime (hours, ×1.5)",
+    "otHoursHoliday": "Holiday overtime (hours, ×3) — 8 h holiday work is counted automatically",
+    "clearDay": "Clear",
+    "leaveTitle": "Leave in {year}",
+    "annualLeft": "Annual {used} used · {left} left",
+    "annualNotYet": "Annual leave after a year",
+    "sickUsed": "Sick {used}/{max}",
+    "leaveHint": "Thai labour law: 6 days annual leave after a year, 30 days paid sick leave. Neither is deducted from pay.",
+    "fromAttendance": "From attendance",
+    "pulled": "Days, absences and overtime filled from the calendar; bonus and deductions unchanged.",
+    "noAttendance": "No attendance for this month yet. Mark it in the Attendance tab first.",
+    "documents": "Documents with an expiry date",
+    "documentsHint": "Work permit, visa, health certificate … Admins are reminded 30, 7 and 1 day before, and once expired.",
+    "documentName": "Document (e.g. Work permit)",
+    "addDocument": "Add a document",
+    "documentNeedsDate": "Enter the document's expiry date.",
+    "expired": "expired {days} days ago",
+    "expiresToday": "expires today",
+    "expiresIn": "in {days} days"
   },
   "fixed": {
     "title": "Fixed costs (no invoice)",

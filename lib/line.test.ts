@@ -144,3 +144,14 @@ describe("sales file reply (LINE)", async () => {
     expect(none).toContain("ข้าม 2 วัน");
   });
 });
+
+describe("employee document reminder (LINE)", async () => {
+  const { documentReminder } = await import("./line");
+  it("is sent 30 / 7 / 1 / 0 days before and daily once expired, naming person and document", () => {
+    expect(documentReminder([{ name: "Somchai", doc: "Work permit", daysLeft: 12 }], "https://x")).toBeNull();
+    const text = documentReminder([{ name: "Somchai", doc: "Work permit", daysLeft: 7 }, { name: "Mai", doc: "Visa", daysLeft: -3 }], "https://x")!;
+    expect(text).toContain("Somchai — Work permit: อีก 7 วัน / あと7日");
+    expect(text).toContain("Mai — Visa: หมดอายุแล้ว 3 วัน");
+    expect(text.endsWith("https://x")).toBe(true);
+  });
+});

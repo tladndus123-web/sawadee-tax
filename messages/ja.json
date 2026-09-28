@@ -1227,7 +1227,8 @@
     "tab": {
       "run": "給与計算",
       "employees": "従業員",
-      "filing": "申告書類"
+      "filing": "申告書類",
+      "attendance": "勤怠"
     },
     "noEmployees": "まだ従業員がいません。下から追加してください。",
     "left": "{date} 退職",
@@ -1317,7 +1318,45 @@
     "ssRangeBad": "下限が上限より大きいです。",
     "ssSaved": "社会保険の料率を保存しました。",
     "ssAccount": "社会保険の事業所番号（10桁）",
-    "ssAccountBad": "事業所番号は10桁です。"
+    "ssAccountBad": "事業所番号は10桁です。",
+    "employee": "従業員",
+    "kind": {
+      "work": "出勤",
+      "off": "休み",
+      "absent": "無給欠勤",
+      "annual": "年休",
+      "sick": "病欠"
+    },
+    "kindShort": {
+      "work": "出",
+      "off": "休",
+      "absent": "欠",
+      "annual": "年",
+      "sick": "病"
+    },
+    "legendHint": "印のない日：月給は出勤、日給は勤務なしとして計算します。赤い日付はタイの祝日です。",
+    "fillWorked": "全日出勤",
+    "filled": "{count}日を出勤にしました。休みの日だけタップして変えてください。",
+    "publicHoliday": "祝日",
+    "otHoursDay": "残業（時間・1.5倍）",
+    "otHoursHoliday": "休日残業（時間・3倍）— 休日出勤8時間は自動で計算",
+    "clearDay": "印を消す",
+    "leaveTitle": "{year}年の休暇",
+    "annualLeft": "年休 {used}日使用・残り{left}日",
+    "annualNotYet": "年休は入社1年後から",
+    "sickUsed": "病欠 {used}/{max}日",
+    "leaveHint": "タイ労働法：入社1年後に年休6日、有給病欠は年30日。どちらも給与から引かれません。",
+    "fromAttendance": "勤怠から取り込む",
+    "pulled": "勤怠カレンダーから出勤・欠勤・残業を取り込みました。ボーナス・控除はそのままです。",
+    "noAttendance": "この月の勤怠がまだありません。先に勤怠タブで入力してください。",
+    "documents": "期限のある書類",
+    "documentsHint": "ワークパーミット、ビザ、健康診断書など。30日・7日・1日前と期限切れ後に管理者へ通知します。",
+    "documentName": "書類名（例：ワークパーミット）",
+    "addDocument": "書類を追加",
+    "documentNeedsDate": "書類の期限日を入れてください。",
+    "expired": "{days}日超過",
+    "expiresToday": "本日期限",
+    "expiresIn": "あと{days}日"
   },
   "fixed": {
     "title": "固定費（領収書のない費用）",
