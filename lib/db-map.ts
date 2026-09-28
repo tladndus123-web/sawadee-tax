@@ -59,6 +59,7 @@ export interface DocumentRow {
   tax_month: string | null;
   branch_id?: string | null;
   dep_years?: number | null;
+  disposed_on?: string | null;
   no_claim: boolean | null;
   wht_rate: number | string;
   wht_type: string;
@@ -189,6 +190,7 @@ export function rowToDoc(row: DocumentRow, items: ItemRow[]): LedgerDoc {
     taxMonth: row.tax_month ?? "",
     branchId: row.branch_id ?? "",
     depYears: row.dep_years ?? 0,
+    disposedOn: row.disposed_on ?? "",
     noClaim: row.no_claim,
     whtRate: row.wht_rate,
     whtType: row.wht_type,

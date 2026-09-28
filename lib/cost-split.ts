@@ -5,6 +5,8 @@
 // - equipment ("asset") with a depreciation period is not a cost in the month it is bought: its cost is spread
 //   evenly over that many years from the invoice month (straight line, as the Revenue Department allows: 5 years
 //   for machines, furniture and vehicles, 3 for computers, 20 for buildings). Its VAT still comes back at once.
+// - equipment sold or thrown away (disposedOn): depreciation stops, and what was not yet written off is a cost of
+//   the month it went (the usual write-off of the remaining book value).
 // Satang integers throughout.
 
 import { invoiceMonth, NO_DATE } from "./archive";
@@ -54,17 +56,68 @@ export function costByCategory(doc: LedgerDoc, companyTaxId: string): Map<Catego
 
 const monthIndex = (ym: string) => Number(ym.slice(0, 4)) * 12 + Number(ym.slice(5, 7)) - 1;
 
-/** This month's depreciation of one asset in satang (0 outside its period); the last month takes the remainder */
+/** Written off after `k` months of an asset's period (the last month takes the remainder, so n months = the cost) */
+const writtenOff = (cost: number, n: number, k: number) => (k <= 0 ? 0 : k >= n ? cost : Math.floor(cost / n) * k);
+
+/** This month's depreciation of one asset in satang (0 outside its period, and from the month it was disposed of) */
 export function depreciationFor(doc: LedgerDoc, month: string, companyTaxId: string): number {
   if (!isDepreciated(doc)) return 0;
   const start = invoiceMonth(doc);
   if (start === NO_DATE) return 0;
+  if (doc.disposedOn && month >= doc.disposedOn.slice(0, 7)) return 0;
   const n = doc.depYears * 12;
   const k = monthIndex(month) - monthIndex(start);
   if (k < 0 || k >= n) return 0;
   const cost = docCost(doc, companyTaxId);
-  const each = Math.floor(cost / n);
-  return k === n - 1 ? cost - each * (n - 1) : each;
+  return writtenOff(cost, n, k + 1) - writtenOff(cost, n, k);
+}
+
+/** Disposed of this month: what was not yet written off, as a cost of this month (0 otherwise) */
+export function disposalFor(doc: LedgerDoc, month: string, companyTaxId: string): number {
+  if (!isDepreciated(doc) || !doc.disposedOn || doc.disposedOn.slice(0, 7) !== month) return 0;
+  const start = invoiceMonth(doc);
+  if (start === NO_DATE) return 0;
+  const cost = docCost(doc, companyTaxId);
+  return cost - writtenOff(cost, doc.depYears * 12, monthIndex(month) - monthIndex(start));
+}
+
+export interface AssetRow {
+  doc: LedgerDoc;
+  /** Satang */
+  cost: number;
+  /** Written off up to and including `month` (all of it once disposed of) */
+  writtenOff: number;
+  /** cost minus writtenOff */
+  bookValue: number;
+  monthly: number;
+  /** Last month of the period (YYYY-MM) */
+  endsIn: string;
+  state: "active" | "done" | "disposed";
+}
+
+/** Every piece of equipment being written off, as of `month`: cost, written off so far, what is left */
+export function assetRegister(docs: LedgerDoc[], month: string, companyTaxId: string): AssetRow[] {
+  return docs
+    .filter((d) => isDepreciated(d) && invoiceMonth(d) !== NO_DATE && invoiceMonth(d) <= month)
+    .map((doc) => {
+      const cost = docCost(doc, companyTaxId);
+      const n = doc.depYears * 12;
+      const start = monthIndex(invoiceMonth(doc));
+      const end = start + n - 1;
+      const disposed = !!doc.disposedOn && doc.disposedOn.slice(0, 7) <= month;
+      const off = disposed ? cost : writtenOff(cost, n, monthIndex(month) - start + 1);
+      const state: AssetRow["state"] = disposed ? "disposed" : off >= cost ? "done" : "active";
+      return {
+        doc,
+        cost,
+        writtenOff: off,
+        bookValue: cost - off,
+        monthly: Math.floor(cost / n),
+        endsIn: `${Math.floor(end / 12)}-${String((end % 12) + 1).padStart(2, "0")}`,
+        state,
+      };
+    })
+    .sort((a, b) => a.doc.date.localeCompare(b.doc.date));
 }
 
 export interface MonthCosts {
@@ -72,6 +125,8 @@ export interface MonthCosts {
   byCategory: Map<Category, number>;
   /** Depreciation of every asset that is in its period this month */
   depreciation: number;
+  /** Equipment disposed of this month: the part not yet written off */
+  disposal: number;
   /** Sum of both: what the month cost */
   cost: number;
 }
@@ -80,14 +135,16 @@ export interface MonthCosts {
 export function monthCosts(docs: LedgerDoc[], month: string, companyTaxId: string): MonthCosts {
   const byCategory = new Map<Category, number>();
   let depreciation = 0;
+  let disposal = 0;
   for (const d of docs) {
     if (isDepreciated(d)) {
       depreciation += depreciationFor(d, month, companyTaxId);
+      disposal += disposalFor(d, month, companyTaxId);
       continue;
     }
     if (invoiceMonth(d) !== month) continue;
     for (const [c, v] of costByCategory(d, companyTaxId)) byCategory.set(c, (byCategory.get(c) ?? 0) + v);
   }
-  const cost = [...byCategory.values()].reduce((a, b) => a + b, 0) + depreciation;
-  return { byCategory, depreciation, cost };
+  const cost = [...byCategory.values()].reduce((a, b) => a + b, 0) + depreciation + disposal;
+  return { byCategory, depreciation, disposal, cost };
 }

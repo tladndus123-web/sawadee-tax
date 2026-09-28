@@ -42,6 +42,7 @@ export function branchButtons(docId: string, branches: { id: string; no: string;
 }
 
 export const say = {
+  duplicate: (url: string) => `รูปนี้บันทึกไว้แล้ว จึงไม่ได้อ่านซ้ำ (ไม่มีค่าใช้จ่าย)\nこの写真は登録済みのため、読み取りを省きました（費用なし）\n${url}`,
   branchAsk: "สาขาไหน? กดเลือกด้านล่าง / どの支店ですか？下から選んでください",
   branchSet: (name: string) => `✓ บันทึกเป็น ${name} / ${name} に登録しました`,
   branchGone: "ไม่พบสาขานั้นแล้ว เปิดแอปเพื่อเลือก / その支店は見つかりません。アプリで選んでください",

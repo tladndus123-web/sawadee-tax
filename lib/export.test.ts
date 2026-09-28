@@ -58,3 +58,12 @@ describe("monthly export", () => {
     ]);
   });
 });
+
+describe("a mixed receipt in the accountant's file", () => {
+  it("each item line carries its own category, else the document's", () => {
+    const d = sampleDoc();
+    const mixed = { ...d, category: "supplies" as const, items: [{ ...d.items[0], category: "" as const }, { ...d.items[0], category: "office" as const }] };
+    const out = buildMonthExport([{ doc: mixed }], "en", "");
+    expect(out.items.map((i) => i.category)).toEqual(["supplies", "office"]);
+  });
+});

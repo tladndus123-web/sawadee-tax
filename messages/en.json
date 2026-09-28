@@ -344,12 +344,17 @@
     "issue": {
       "dark": "The photo is dark",
       "blurry": "The text is blurry",
-      "small": "The photo is too small"
+      "small": "The photo is too small",
+      "duplicate": "Looks like a photo already uploaded"
     },
     "autoSaved": "Saved automatically · vendor rule",
     "open": "Open",
     "queued": "Waiting its turn",
-    "dropPhone": "Pick or take photos of documents"
+    "dropPhone": "Pick or take photos of documents",
+    "dupLedger": "Same photo as a document in the ledger ({no}). Stopped before the AI read it (no cost).",
+    "dupDraft": "Same photo as a draft ({no}). Stopped before the AI read it (no cost).",
+    "dupQueue": "The same photo is already in this list. Stopped before the AI read it (no cost).",
+    "dupRemove": "Remove"
   },
   "role": {
     "admin": "Admin",
@@ -536,7 +541,9 @@
     "unpaid": "Unpaid total",
     "yes": "Yes",
     "no": "No",
-    "empty": "No documents to export for this month."
+    "empty": "No documents to export for this month.",
+    "sheetCosts": "Costs by category",
+    "cost": "Cost (excl. claimable VAT)"
   },
   "vendors": {
     "title": "Vendors",
@@ -980,7 +987,8 @@
     "span": "Period",
     "months": "{count} months",
     "note": "Purchases count by invoice date. Costs not in the ledger (wages, rent paid without a document) are missing. Delivery-app commission is included only when the app's tax invoice is recorded as a purchase. Check final figures with your accountant.",
-    "depreciation": "Depreciation"
+    "depreciation": "Depreciation",
+    "disposal": "Equipment disposed (what was left)"
   },
   "install": {
     "title": "Install on your phone",
@@ -1064,5 +1072,44 @@
     "none": "Expense at once",
     "years": "{count} years",
     "hint": "Equipment is not a cost all at once in the month it is bought: its cost is spread evenly over the period each month (depreciation). Thai practice: computers 3 years, machines, equipment, furniture and vehicles 5, buildings 20. Its VAT is still claimed in the month of purchase."
+  },
+  "bulkCat": {
+    "start": "Change category",
+    "hint": "Tick the documents to re-categorise. Documents of a closed month cannot change. Categories set per line stay as they are.",
+    "pick": "New category",
+    "apply": "Change",
+    "done": "{count} documents changed to {category}.",
+    "fail": "Could not change them. A closed month's document may be among them, or the connection dropped."
+  },
+  "assets": {
+    "link": "Equipment {count}",
+    "back": "Ledger",
+    "title": "Equipment",
+    "intro": "Equipment whose cost is spread over years: what it cost, what has been written off so far, and what is left (book value). Mark equipment you sold or threw away as disposed: what is left becomes that month's cost and depreciation stops.",
+    "empty": "No equipment yet. Give a document the category 'Equipment (asset)' and a depreciation period and it shows here.",
+    "cost": "Cost",
+    "writtenOff": "Written off",
+    "bookValue": "Left",
+    "monthly": "Monthly",
+    "years": "{count} years",
+    "endsIn": "Ends {month}",
+    "doneOn": "Ended {month}",
+    "disposedOn": "Disposed of on {date}",
+    "dispose": "Mark disposed (sold / thrown away)",
+    "askHint": "Pick the date it went. What is left, {value}, becomes that month's cost. Closed months cannot be picked.",
+    "date": "Disposal date",
+    "confirm": "Mark disposed",
+    "cancel": "Cancel",
+    "undo": "Undo disposal",
+    "disposed": "Marked as disposed",
+    "undone": "Disposal undone",
+    "locked": "That month is closed. Pick a date in a month that is still open.",
+    "fail": "Could not save",
+    "note": "The cost is spread evenly each month from the invoice month (straight line). VAT is claimed in the month of purchase. Money from selling equipment goes in as sales separately. Check the final treatment with your accountant.",
+    "state": {
+      "active": "Depreciating",
+      "done": "Fully written off",
+      "disposed": "Disposed"
+    }
   }
 }

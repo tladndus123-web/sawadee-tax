@@ -14,6 +14,8 @@ import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
 import { imageType, lineBlobClient, lineClient, receiptCard, say, branchButtons, lineBranchLabel } from "./line";
 import { assignBranch, type Branch, branchFromPhoto, sortBranches } from "./branches";
+import { findDuplicate } from "./photo-hash";
+import { photoHashServer } from "./photo-hash-server";
 import { supabaseAdmin } from "./supabase/admin";
 import { digitsOnly } from "./thai-tax";
 import { applyHistory, applyRule, applyVendor, toVendor, type VendorHistory, type VendorRow, VENDOR_COLUMNS, vendorKey } from "./vendors";
@@ -131,6 +133,14 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   if (!type) return send(later, lineUser, [text(say.unreadable)]);
   if (photo.length > MAX_IMAGE_BYTES) return send(later, lineUser, [text(say.tooBig)]);
 
+  // The same photo again? Point to the saved one instead of reading (and paying for) it twice
+  const hash = await photoHashServer(photo);
+  if (hash) {
+    const { data: seen } = await admin.from("documents").select("id, photo_hash").not("photo_hash", "is", null).is("deleted_at", null);
+    const dup = findDuplicate(hash, (seen ?? []).map((d) => ({ id: d.id as string, hash: d.photo_hash as string })));
+    if (dup) return send(later, lineUser, [text(say.duplicate(`${appUrl()}/documents/${dup.id}`))]);
+  }
+
   const read = await extractDocument(photo, type);
   const aiMs = Date.now() - started;
   if (!read.ok) {
@@ -187,7 +197,7 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
     p_user: member.user_id,
     p_message: messageId,
     p_id: id,
-    p_row: { ...row, photo_path: photoPath },
+    p_row: { ...row, photo_path: photoPath, ...(hash ? { photo_hash: hash } : {}) },
     p_items: items,
   });
   if (saved.error) throw saved.error;

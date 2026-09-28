@@ -95,6 +95,7 @@ export const docSchema = z.object({
   taxMonth: z.string().regex(/^(\d{4}-(0[1-9]|1[0-2]))?$/, "yyyy-mm"),
   branchId: z.string(),
   depYears: z.number().int().min(0).max(50),
+  disposedOn: z.string(),
   noClaim: z.boolean().nullable(),
   whtRate: z.number().min(0).max(100),
   whtType: z.enum(["", ...WHT_TYPES]),

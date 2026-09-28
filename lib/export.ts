@@ -40,6 +40,8 @@ export interface ExportRow {
 }
 
 export interface ExportItemRow {
+  /** The line's own category, else the document's (a mixed receipt is split this way in the P&L too) */
+  category: LedgerDoc["category"];
   date: string;
   docNo: string;
   vendor: string;
@@ -109,6 +111,7 @@ export function buildMonthExport(
     });
     doc.items.forEach((i, n) =>
       items.push({
+        category: i.category || doc.category,
         date: doc.date,
         docNo: doc.docNo,
         vendor,

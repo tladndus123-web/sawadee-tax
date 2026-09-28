@@ -9,7 +9,10 @@ import { Link } from "@/i18n/navigation";
 import { flagsFor } from "@/lib/checks";
 import { useCompany } from "@/lib/company-store";
 import { buildMonthExport, exportLang } from "@/lib/export";
-import type { LedgerEntry } from "@/lib/ledger-store";
+import { monthCosts } from "@/lib/cost-split";
+import { type LedgerEntry, pick, useLedger } from "@/lib/ledger-store";
+import { fromSatang } from "@/lib/money";
+import { CATEGORIES } from "@/lib/types";
 
 export const EXPORT_COLS = [
   "date", "docNo", "vendor", "vendorTh", "taxId", "branch", "docType", "category", "items", "taxable", "exempt",
@@ -22,6 +25,8 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
   const locale = useLocale();
   const company = useCompany();
   const [busy, setBusy] = useState(false);
+  // Depreciation needs equipment bought in earlier months too
+  const { entries: all } = useLedger();
 
   const excel = async () => {
     setBusy(true);
@@ -32,6 +37,16 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
         company.taxId,
       );
       const { downloadMonthXlsx } = await import("@/lib/export-xlsx");
+      const c = monthCosts(
+        pick(all, "ledger").map((e) => e.doc),
+        month,
+        company.taxId,
+      );
+      const costRows = [
+        ...CATEGORIES.filter((k) => c.byCategory.get(k)).map((k) => ({ label: t(`category.${k}`), amount: fromSatang(c.byCategory.get(k)!) })),
+        ...(c.depreciation ? [{ label: t("pl.depreciation"), amount: fromSatang(c.depreciation) }] : []),
+        ...(c.disposal ? [{ label: t("pl.disposal"), amount: fromSatang(c.disposal) }] : []),
+      ];
       const file = await downloadMonthXlsx(data, month, exportLang(locale) !== "th", {
         sheetLedger: t("export.sheetLedger"),
         sheetItems: t("export.sheetItems"),
@@ -41,7 +56,9 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
         no: t("export.no"),
         docType: (k) => t(`docType.${k as "full"}`),
         category: (k) => t(`category.${k as "other"}`),
-      });
+        sheetCosts: t("export.sheetCosts"),
+        cost: t("export.cost"),
+      }, { rows: costRows, total: fromSatang(c.cost) });
       toast.success(t("export.done", { file }));
     } catch {
       toast.error(t("app.exportFail"));

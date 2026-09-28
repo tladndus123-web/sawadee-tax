@@ -6,6 +6,12 @@
 
 import type { MonthExport } from "./export";
 
+/** The month's costs by category (lib/cost-split monthCosts): the same figures as the P&L */
+export interface CostSheet {
+  rows: { label: string; amount: number }[];
+  total: number;
+}
+
 export interface XlsxLabels {
   sheetLedger: string;
   sheetItems: string;
@@ -15,11 +21,13 @@ export interface XlsxLabels {
   no: string;
   docType: (k: string) => string;
   category: (k: string) => string;
+  sheetCosts: string;
+  cost: string;
 }
 
 const MONEY = "#,##0.00";
 
-export async function downloadMonthXlsx(data: MonthExport, month: string, thaiColumn: boolean, L: XlsxLabels): Promise<string> {
+export async function downloadMonthXlsx(data: MonthExport, month: string, thaiColumn: boolean, L: XlsxLabels, costs?: CostSheet): Promise<string> {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
   wb.created = new Date();
@@ -84,9 +92,24 @@ export async function downloadMonthXlsx(data: MonthExport, month: string, thaiCo
     { header: L.cols.unit, key: "unit", width: 10 },
     { header: L.cols.price, key: "price", width: 13, style: { numFmt: MONEY } },
     { header: L.cols.amount, key: "amount", width: 14, style: { numFmt: MONEY } },
+    { header: L.cols.category, key: "category", width: 18 },
   ];
-  for (const i of data.items) items.addRow(i);
+  for (const i of data.items) items.addRow({ ...i, category: L.category(i.category) });
   items.getRow(1).font = { bold: true };
+
+  // Sheet 3: the month's costs by category — mixed receipts split by line, equipment as depreciation
+  if (costs) {
+    const sheet = wb.addWorksheet(L.sheetCosts, { views: [{ state: "frozen", ySplit: 1 }] });
+    sheet.columns = [
+      { header: L.cols.category, key: "label", width: 30 },
+      { header: L.cost, key: "amount", width: 16, style: { numFmt: MONEY } },
+    ];
+    for (const r of costs.rows) sheet.addRow(r);
+    const sum = sheet.addRow({ label: L.total, amount: costs.total });
+    sum.font = { bold: true };
+    sum.eachCell((c) => (c.border = { top: { style: "thin" } }));
+    sheet.getRow(1).font = { bold: true };
+  }
 
   const buf = await wb.xlsx.writeBuffer();
   const file = `purchase-ledger-${month}.xlsx`;

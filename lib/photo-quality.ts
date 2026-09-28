@@ -5,7 +5,7 @@
 
 import { isSlip } from "./slip-tiles";
 
-export type PhotoIssue = "dark" | "blurry" | "small";
+export type PhotoIssue = "dark" | "blurry" | "small" | "duplicate";
 
 /** Width the photo is measured at (text strokes are a few pixels wide here) */
 export const MEASURE_W = 1000;

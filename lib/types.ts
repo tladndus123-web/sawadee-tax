@@ -161,6 +161,8 @@ export interface LedgerDoc {
   branchId: string;
   /** Equipment: years its cost is written off over (lib/cost-split); 0 = an ordinary cost when bought */
   depYears: number;
+  /** Equipment sold or thrown away on this date (YYYY-MM-DD); "" = still in use */
+  disposedOn: string;
   /** Input VAT may not be claimed (§82/5); null = decided by the category (entertainment → not claimable) */
   noClaim: boolean | null;
   /** Withholding tax rate in % (0 = no withholding) and the kind of income */

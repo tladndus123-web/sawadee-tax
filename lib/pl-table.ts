@@ -19,7 +19,7 @@ export interface PlTable {
   sales: PlRow<Channel>[];
   salesTotal: PlRow<"total">;
   /** By category, biggest first; "depreciation" = equipment written off this month (lib/cost-split) */
-  costs: PlRow<Category | "depreciation">[];
+  costs: PlRow<Category | "depreciation" | "disposal">[];
   costTotal: PlRow<"total">;
   profit: PlRow<"total">;
 }
@@ -37,7 +37,7 @@ export function plTable(sales: Pick<Sale, "date" | "channel" | "gross" | "vat">[
   const months = monthsEnding(endMonth, n);
   const at = new Map(months.map((m, i) => [m, i]));
   const byCh = new Map<Channel, number[]>();
-  const byCat = new Map<Category | "depreciation", number[]>();
+  const byCat = new Map<Category | "depreciation" | "disposal", number[]>();
   const add = <K>(map: Map<K, number[]>, k: K, i: number, v: number) => {
     const row = map.get(k) ?? months.map(() => 0);
     row[i] += v;
@@ -51,6 +51,7 @@ export function plTable(sales: Pick<Sale, "date" | "channel" | "gross" | "vat">[
     const c = monthCosts(purchases, m, companyTaxId);
     for (const [cat, v] of c.byCategory) add(byCat, cat, i, v);
     if (c.depreciation) add(byCat, "depreciation", i, c.depreciation);
+    if (c.disposal) add(byCat, "disposal", i, c.disposal);
   }
   const row = <K>(key: K, sat: number[]): PlRow<K> => ({ key, values: sat.map(fromSatang), total: fromSatang(sat.reduce((a, b) => a + b, 0)) });
   const sum = (rows: number[][]) => months.map((_, i) => rows.reduce((a, r) => a + r[i], 0));
@@ -61,7 +62,7 @@ export function plTable(sales: Pick<Sale, "date" | "channel" | "gross" | "vat">[
     sales: CHANNELS.filter((c) => byCh.has(c)).map((c) => row(c, byCh.get(c)!)),
     salesTotal: row("total", salesSat),
     // Biggest cost first (over the whole period), so the table reads top-down by weight
-    costs: [...CATEGORIES, "depreciation" as const]
+    costs: [...CATEGORIES, "depreciation" as const, "disposal" as const]
       .filter((c) => byCat.has(c))
       .map((c) => row(c, byCat.get(c)!))
       .sort((a, b) => b.total - a.total),

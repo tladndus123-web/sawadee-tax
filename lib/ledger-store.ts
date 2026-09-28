@@ -9,6 +9,7 @@ import { invoiceMonth } from "./archive";
 import { type DocumentRow, docToRow, type ItemRow, rowToDoc } from "./db-map";
 import { lockedMonths, openClaimMonth } from "./month-lock-store";
 import { supabaseBrowser } from "./supabase/client";
+import { photoHash } from "./photo-hash";
 import { ALL } from "./branches";
 import { branchNow, subscribeBranch } from "./branch-store";
 import type { LedgerDoc, Sticker } from "./types";
@@ -67,6 +68,24 @@ function patchEntries(ids: string[], change: (e: LedgerEntry) => LedgerEntry) {
   const set = new Set(ids);
   entries = entries.map((e) => (set.has(e.id) ? change(e) : e));
   listeners.forEach((l) => l());
+}
+
+/** Fingerprints of the photos already in the books (drafts too; not the trash), for the duplicate check */
+export interface KnownPhoto {
+  id: string;
+  hash: string;
+  docNo: string;
+  status: EntryStatus;
+}
+let known: KnownPhoto[] = [];
+let knownAt = 0;
+export async function knownPhotos(): Promise<KnownPhoto[]> {
+  if (Date.now() - knownAt < 30_000) return known;
+  const { data, error } = await supabaseBrowser().from("documents").select("id, photo_hash, doc_no, status").not("photo_hash", "is", null).is("deleted_at", null);
+  if (error) return known;
+  known = (data ?? []).map((r) => ({ id: r.id as string, hash: r.photo_hash as string, docNo: (r.doc_no as string) ?? "", status: r.status === "draft" ? "draft" : "final" }));
+  knownAt = Date.now();
+  return known;
 }
 
 /** Screens opened within this time reuse the copy in memory instead of downloading the whole ledger again */
@@ -189,12 +208,15 @@ export async function saveEntry(
     }
   }
   const { row, items } = docToRow({ ...doc, id }, status === "final" ? "reviewed" : "draft", companyTaxId);
+  // The photo's fingerprint, so the same photo is caught next time (lib/photo-hash)
+  const hash = photo ? await photoHash(photo) : null;
   const { error } = await supabase.rpc("save_document", {
     p_id: id,
-    p_row: photoPath ? { ...row, photo_path: photoPath } : row,
+    p_row: photoPath ? { ...row, photo_path: photoPath, ...(hash ? { photo_hash: hash } : {}) } : row,
     p_items: items,
   });
   if (error) throw error;
+  knownAt = 0;
   await reload();
   return { id, movedTo };
 }
@@ -231,6 +253,21 @@ export async function setPaidMany(ids: string[], paid: boolean, paidDate: string
     .in("id", ids);
   if (error) throw error;
   patchEntries(ids, (e) => ({ ...e, doc: { ...e.doc, paid, paidDate: paid ? paidDate : "" }, updatedAt: Date.now() }));
+}
+
+/** One category for several documents at once (their lines keep their own); closed months are refused by the database */
+export async function setCategoryMany(ids: string[], category: LedgerDoc["category"]) {
+  if (!ids.length) return;
+  const { error } = await supabaseBrowser().from("documents").update({ category }).in("id", ids);
+  if (error) throw error;
+  patchEntries(ids, (e) => ({ ...e, doc: { ...e.doc, category }, updatedAt: Date.now() }));
+}
+
+/** Equipment sold or thrown away on `date` ("" = still in use). Only into and out of open months (the database checks). */
+export async function setDisposed(id: string, date: string) {
+  const { error } = await supabaseBrowser().from("documents").update({ disposed_on: date || null }).eq("id", id);
+  if (error) throw error;
+  patchEntries([id], (e) => ({ ...e, doc: { ...e.doc, disposedOn: date }, updatedAt: Date.now() }));
 }
 
 /** Admin only. The database stamps who and when and refuses anyone else. */

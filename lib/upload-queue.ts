@@ -14,7 +14,8 @@ import { assignBranch } from "./branches";
 import { branchesNow, branchNow } from "./branch-store";
 import { runChecks } from "./checks";
 import { companyTaxId } from "./company-store";
-import { saveEntry } from "./ledger-store";
+import { knownPhotos, saveEntry } from "./ledger-store";
+import { findDuplicate, photoHash } from "./photo-hash";
 import { supabaseBrowser } from "./supabase/client";
 import { withVendor } from "./vendor-store";
 import { canAutoRegister, type VendorFix } from "./vendors";
@@ -43,6 +44,10 @@ export interface UploadItem {
   issues: PhotoIssue[];
   /** Ledger id when it was saved automatically (status "saved") */
   savedId?: string;
+  /** The photo's fingerprint (lib/photo-hash) */
+  hash?: string | null;
+  /** Looks like a photo already uploaded: a saved document, or another photo in this list */
+  dupOf?: { kind: "ledger"; id: string; docNo: string; draft: boolean } | { kind: "queue"; name: string };
 }
 
 let items: UploadItem[] = [];
@@ -186,9 +191,13 @@ export function addPhotos(files: File[], opts: { cutOut?: boolean } = {}): numbe
       .then(async (jpeg) => {
         photos.set(id, jpeg);
         patch(id, { preview: URL.createObjectURL(jpeg) });
+        // The same photo again (already in the books, or twice in this list)? Caught before any reading cost
+        const hash = pdf ? null : await photoHash(jpeg);
+        const dupOf = hash ? await duplicateOf(id, hash) : undefined;
         // A PDF is sharp by nature; a photo the AI would likely misread waits for the person first
-        const issues = pdf ? [] : await checkPhoto(jpeg);
-        if (issues.length) return patch(id, { status: "check", issues, finishedAt: Date.now() });
+        const issues = [...(dupOf ? (["duplicate"] as const) : []), ...(pdf ? [] : await checkPhoto(jpeg))];
+        if (issues.length) return patch(id, { status: "check", issues, hash, dupOf, finishedAt: Date.now() });
+        patch(id, { hash });
         return read(id);
       })
       .catch(() => patch(id, { status: "failed", error: "badImage", finishedAt: Date.now() }));
@@ -234,6 +243,17 @@ export async function addSeveral(shot: File): Promise<{ found: number; accepted:
   } finally {
     bmp.close();
   }
+}
+
+/** An earlier photo this one repeats: in the books first, else earlier in this list (not removed) */
+async function duplicateOf(id: string, hash: string): Promise<UploadItem["dupOf"]> {
+  const saved = findDuplicate(hash, await knownPhotos());
+  if (saved) return { kind: "ledger", id: saved.id, docNo: saved.docNo, draft: saved.status === "draft" };
+  const earlier = findDuplicate(
+    hash,
+    items.filter((it) => it.id !== id && it.hash).map((it) => ({ hash: it.hash as string, name: it.name })),
+  );
+  return earlier ? { kind: "queue", name: earlier.name } : undefined;
 }
 
 /** The original PDF a photo was drawn from (null for photos), stored with the document too */

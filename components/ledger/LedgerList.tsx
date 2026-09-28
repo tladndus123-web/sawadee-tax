@@ -3,7 +3,8 @@
 import { useBranchName } from "@/components/layout/branch-switcher";
 import { ALL, BRANCH_COLORS, branchLabel, byId, colorOf, headOf } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
-import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, CircleCheck, FilePen, ImagePlus, Loader2, Lock, Search, Trash2, TriangleAlert, X, UserCheck, Check } from "lucide-react";
+import { isDepreciated } from "@/lib/cost-split";
+import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, CircleCheck, FilePen, ImagePlus, Loader2, Lock, Search, Trash2, TriangleAlert, X, UserCheck, Check, Tags, Refrigerator } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
@@ -24,6 +25,7 @@ import { useMe } from "@/lib/role-store";
 import { todayBangkok } from "@/lib/thai-tax";
 import { STICKERS, type Sticker } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { BulkCategoryBar } from "./BulkCategoryBar";
 import { BulkPayBar } from "./BulkPayBar";
 import { ExportButtons } from "./ExportButtons";
 import { MonthLockButton } from "./MonthLockButton";
@@ -41,6 +43,8 @@ export function LedgerList() {
   const locks = useMonthLocks();
   // Payment run: tick unpaid documents, then mark them all paid at once (BulkPayBar)
   const [selecting, setSelecting] = useState(false);
+  // What the ticks are for: a payment run, or giving several documents one category
+  const [mode, setMode] = useState<"pay" | "category">("pay");
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const toggle = useCallback((id: string) => {
     setSelected((prev) => {
@@ -60,6 +64,7 @@ export function LedgerList() {
     [entries],
   );
   const list = useMemo(() => pick(entries, view), [entries, view]);
+  const assetCount = useMemo(() => pick(entries, "ledger").filter((e) => isDepreciated(e.doc)).length, [entries]);
   const [query, setQuery] = useState("");
   // The box shows every key at once; the list follows a moment later, so typing never waits for it
   // (the list parts below are memoized, so a keystroke itself only redraws the search box)
@@ -86,7 +91,15 @@ export function LedgerList() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="grid gap-3">
             <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("nav.ledger")}</h1>
-            <AddDocButtons size="sm" />
+            <div className="flex flex-wrap items-center gap-2">
+              <AddDocButtons size="sm" />
+              {assetCount > 0 && (
+                <Link href="/ledger/assets" className="press inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-primary hover:bg-primary/10">
+                  <Refrigerator className="size-4" aria-hidden />
+                  {t("assets.link", { count: assetCount })}
+                </Link>
+              )}
+            </div>
           </div>
           <ToggleGroup type="single" className="segmented-control" value={view} onValueChange={(v) => {
               if (!v) return;
@@ -124,22 +137,43 @@ export function LedgerList() {
         {view === "ledger" && counts.ledger > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <FilterBar filter={filter} onChange={setFilter} entries={list} />
-            <Button
-              type="button"
-              variant={selecting ? "secondary" : "ghost"}
-              className="h-9 rounded-full px-3.5 text-[13px]"
-              onClick={() => {
-                if (selecting) return stopSelecting();
-                setSelecting(true);
-                setFilter((f) => ({ ...f, unpaidOnly: true }));
-              }}
-            >
-              {selecting ? <X className="size-4" /> : <CircleCheck className="size-4" />}
-              {selecting ? t("bulk.stop") : t("bulk.start")}
-            </Button>
+            {selecting ? (
+              <Button type="button" variant="secondary" className="h-9 rounded-full px-3.5 text-[13px]" onClick={stopSelecting}>
+                <X className="size-4" />
+                {t("bulk.stop")}
+              </Button>
+            ) : (
+              <div className="flex flex-wrap gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-9 rounded-full px-3 text-[13px]"
+                  onClick={() => {
+                    setMode("pay");
+                    setSelecting(true);
+                    setFilter((f) => ({ ...f, unpaidOnly: true }));
+                  }}
+                >
+                  <CircleCheck className="size-4" />
+                  {t("bulk.start")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-9 rounded-full px-3 text-[13px]"
+                  onClick={() => {
+                    setMode("category");
+                    setSelecting(true);
+                  }}
+                >
+                  <Tags className="size-4" />
+                  {t("bulkCat.start")}
+                </Button>
+              </div>
+            )}
           </div>
         )}
-        {selecting && view === "ledger" && <p className="text-xs text-muted-foreground">{t("bulk.hint")}</p>}
+        {selecting && view === "ledger" && <p className="text-xs text-muted-foreground">{mode === "pay" ? t("bulk.hint") : t("bulkCat.hint")}</p>}
         {view === "trash" && counts.trash > 0 && (
           <div className="flex justify-end">
             <Button type="button" variant={selecting ? "secondary" : "ghost"} className="h-9 rounded-full px-3.5 text-[13px]" onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
@@ -196,12 +230,13 @@ export function LedgerList() {
               check={check}
               locked={locks.has(group.key)}
               isAdmin={isAdmin}
-              selecting={selecting}
+              selecting={selecting ? mode : null}
               selected={selected}
               onToggle={toggle}
             />
           ))}
-          {selecting && <BulkPayBar chosen={list.filter((e) => selected.has(e.id) && isUnpaid(e.doc))} onDone={stopSelecting} />}
+          {selecting && mode === "pay" && <BulkPayBar chosen={list.filter((e) => selected.has(e.id) && isUnpaid(e.doc))} onDone={stopSelecting} />}
+          {selecting && mode === "category" && <BulkCategoryBar chosen={list.filter((e) => selected.has(e.id))} onDone={stopSelecting} />}
         </div>
       )}
     </div>
@@ -257,7 +292,8 @@ const MonthSection = memo(function MonthSection({
   /** Tax month closed (month_locks): its saved documents can't change */
   locked: boolean;
   isAdmin: boolean;
-  selecting: boolean;
+  /** Ticking for a payment run ("pay": unpaid only) or for a category ("category": any, closed months excepted) */
+  selecting: "pay" | "category" | null;
   selected: ReadonlySet<string>;
   onToggle: (id: string) => void;
 }) {
@@ -309,7 +345,14 @@ const MonthSection = memo(function MonthSection({
           )}
           <ul className="grid gap-2">
             {group.items.map((e) => (
-              <DocRow key={e.id} e={e} open={check.get(e.id)} selectable={selecting && isUnpaid(e.doc)} checked={selected.has(e.id)} onToggle={onToggle} />
+              <DocRow
+                key={e.id}
+                e={e}
+                open={check.get(e.id)}
+                selectable={selecting === "pay" ? isUnpaid(e.doc) : selecting === "category" && !locked}
+                checked={selected.has(e.id)}
+                onToggle={onToggle}
+              />
             ))}
           </ul>
         </div>

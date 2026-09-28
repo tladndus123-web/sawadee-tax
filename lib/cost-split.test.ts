@@ -58,3 +58,34 @@ describe("equipment written off over years", () => {
     expect(r.cost).toBe(6100000);
   });
 });
+
+describe("equipment sold or thrown away", async () => {
+  const { assetRegister, disposalFor } = await import("./cost-split");
+  const oven = (disposedOn = ""): LedgerDoc => ({ ...ours(), category: "asset", depYears: 5, date: "2026-09-10", disposedOn });
+  it("depreciation stops from the disposal month; what is left is that month's cost", () => {
+    const d = oven("2027-03-20"); // 6 months written off (Sep to Feb) = 6,000
+    expect(depreciationFor(d, "2027-02", CO)).toBe(100000);
+    expect(depreciationFor(d, "2027-03", CO)).toBe(0);
+    expect(disposalFor(d, "2027-03", CO)).toBe(6000000 - 600000);
+    expect(disposalFor(d, "2027-04", CO)).toBe(0);
+    expect(monthCosts([d], "2027-03", CO)).toMatchObject({ depreciation: 0, disposal: 5400000, cost: 5400000 });
+  });
+  it("over the whole life the costs add up to the price, disposed of or not", () => {
+    for (const d of [oven(), oven("2028-01-05")]) {
+      let sum = 0;
+      for (let i = 0; i < 80; i++) {
+        const y = 2026 + Math.floor((8 + i) / 12);
+        const m = `${y}-${String(((8 + i) % 12) + 1).padStart(2, "0")}`;
+        sum += monthCosts([d], m, CO).cost;
+      }
+      expect(sum).toBe(6000000);
+    }
+  });
+  it("the register: cost, written off so far, what is left, state", () => {
+    const [a] = assetRegister([oven()], "2026-11", CO);
+    expect(a).toMatchObject({ cost: 6000000, writtenOff: 300000, bookValue: 5700000, monthly: 100000, endsIn: "2031-08", state: "active" });
+    expect(assetRegister([oven("2026-12-01")], "2026-12", CO)[0]).toMatchObject({ state: "disposed", bookValue: 0 });
+    expect(assetRegister([oven()], "2031-08", CO)[0]).toMatchObject({ state: "done", bookValue: 0 });
+    expect(assetRegister([oven()], "2026-08", CO)).toHaveLength(0);
+  });
+});

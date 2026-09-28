@@ -260,7 +260,7 @@ function Row({
   const title = it.doc ? joinTri(it.doc.seller.name, "en") || it.doc.docNo || it.name : it.name;
 
   return (
-    <li className="workspace-panel flex min-w-0 items-center gap-3 p-3 sm:gap-4 sm:p-4">
+    <li className="workspace-panel flex min-w-0 flex-wrap items-center gap-3 p-3 sm:flex-nowrap sm:gap-4 sm:p-4">
       <div className="relative size-16 flex-none overflow-hidden rounded-xl bg-muted sm:size-20">
         {it.preview && (
           // eslint-disable-next-line @next/next/no-img-element -- blob URL
@@ -278,7 +278,19 @@ function Row({
           </p>
         ) : it.status === "check" ? (
           <p className="mt-0.5 text-xs leading-relaxed text-warn">
-            {it.issues.map((i) => t(`batch.issue.${i}`)).join(" · ")}. {t("batch.checkHint")}
+            {it.issues.map((i) => t(`batch.issue.${i}`)).join(" · ")}.{" "}
+            {it.dupOf?.kind === "ledger" ? (
+              <>
+                {t(it.dupOf.draft ? "batch.dupDraft" : "batch.dupLedger", { no: it.dupOf.docNo || "—" })}{" "}
+                <Link href={`/documents/${it.dupOf.id}`} className="font-semibold underline">
+                  {t("batch.open")}
+                </Link>
+              </>
+            ) : it.dupOf?.kind === "queue" ? (
+              t("batch.dupQueue")
+            ) : (
+              t("batch.checkHint")
+            )}
           </p>
         ) : (
           it.error && <p className="mt-0.5 text-xs leading-relaxed text-bad">{errorText(it.error)}</p>
@@ -287,13 +299,21 @@ function Row({
         {it.vendorFixed.length > 0 && <VendorNotice fixed={it.vendorFixed} />}
       </div>
 
-      <div className="flex flex-none items-center gap-1">
+      {/* Phones: when there are several choices they get their own line, so the message keeps the width */}
+      <div className={cn("flex flex-none items-center gap-1", it.status === "check" && "max-sm:basis-full max-sm:justify-end")}>
         {it.status === "check" && (
           <>
-            <Button type="button" className="h-10 rounded-full px-4" onClick={onRetake}>
-              <Camera className="size-4" />
-              <span className="max-sm:sr-only">{t("batch.retake")}</span>
-            </Button>
+            {it.dupOf ? (
+              <Button type="button" className="h-10 rounded-full px-4" onClick={() => removePhoto(it.id)}>
+                <X className="size-4" />
+                {t("batch.dupRemove")}
+              </Button>
+            ) : (
+              <Button type="button" className="h-10 rounded-full px-4" onClick={onRetake}>
+                <Camera className="size-4" />
+                {t("batch.retake")}
+              </Button>
+            )}
             <Button type="button" variant="secondary" className="h-10 rounded-full px-4" onClick={() => readAnyway(it.id)}>
               {t("batch.readAnyway")}
             </Button>

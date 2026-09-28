@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(96);
+select plan(103);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -209,8 +209,8 @@ select throws_ok($$ insert into public.push_subscriptions (user_id, endpoint, p2
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select throws_ok($$ insert into public.branches (no, name) values ('00009', 'nope') $$, '42501', NULL, 'staff cannot add a branch');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
-insert into public.branches (id, no, name) values ('00000000-0000-0000-0000-0000000000b1', '00001', 'Silom');
-select is((select count(*)::int from public.branches), 2, 'an admin adds a branch');
+insert into public.branches (id, no, name, color) values ('00000000-0000-0000-0000-0000000000b1', '09991', 'Test branch', '');
+select is((select count(*)::int from public.branches where no = '09991'), 1, 'an admin adds a branch');
 select is((select branch_id from public.documents where id = '00000000-0000-0000-0000-0000000000a1'), public.head_branch(), 'a document saved without a branch is in the head office');
 select lives_ok($$ insert into public.sales (branch_id, sale_date, channel, gross, vat) values ('00000000-0000-0000-0000-0000000000b1', '2026-06-20', 'store', 107, 7) $$, 'a day of sales for the branch');
 select lives_ok($$ insert into public.sales (sale_date, channel, gross, vat) values ('2026-06-20', 'store', 214, 14) $$, 'the same day and channel in the head office is another line');
@@ -218,7 +218,7 @@ select throws_ok($$ insert into public.sales (sale_date, channel, gross, vat) va
 delete from public.sales where sale_date = '2026-06-20';
 select throws_like($$ delete from public.branches where no = '00000' $$, 'head office%', 'the head office cannot be removed');
 update public.documents set branch_id = '00000000-0000-0000-0000-0000000000b1' where id = '00000000-0000-0000-0000-0000000000a1';
-select throws_ok($$ delete from public.branches where no = '00001' $$, '23503', NULL, 'a branch with documents cannot be removed');
+select throws_ok($$ delete from public.branches where no = '09991' $$, '23503', NULL, 'a branch with documents cannot be removed');
 
 -- Branch colour: admins pick from the palette only
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
@@ -230,6 +230,26 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select public.save_document('00000000-0000-0000-0000-0000000000c1', '{"doc_no":"MIX-1","status":"reviewed","doc_date":"2026-09-10","net":100,"category":"asset","dep_years":5}', '[{"line_no":1,"amount":60,"category":"office"},{"line_no":2,"amount":40}]');
 select is((select array_agg(category order by line_no) from public.document_items where document_id = '00000000-0000-0000-0000-0000000000c1'), array['office', ''], 'each line keeps its own category ("" = the document''s)');
 select is((select dep_years from public.documents where id = '00000000-0000-0000-0000-0000000000c1'), 5, 'the depreciation period is kept');
+
+-- Equipment disposal: allowed on a closed month's purchase, never into or out of a closed month
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select public.save_document('00000000-0000-0000-0000-0000000000d1', '{"doc_no":"OVEN-1","status":"reviewed","doc_date":"2026-04-10","net":64200,"category":"asset","dep_years":5}', '[]');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+insert into public.month_locks (month) values ('2026-04'), ('2026-05');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select lives_ok($$ update public.documents set disposed_on = '2026-07-15' where id = '00000000-0000-0000-0000-0000000000d1' $$, 'equipment bought in a closed month can be marked disposed of in an open month');
+select throws_like($$ update public.documents set disposed_on = '2026-05-20' where id = '00000000-0000-0000-0000-0000000000d1' $$, 'month_locked%', 'but not into a closed month');
+select throws_like($$ update public.documents set dep_years = 3 where id = '00000000-0000-0000-0000-0000000000d1' $$, 'month_locked%', 'its depreciation period stays as filed');
+select throws_ok($$ update public.documents set disposed_on = '2026-03-01' where id = '00000000-0000-0000-0000-0000000000d1' $$, '23514', NULL, 'not before it was bought');
+select lives_ok($$ update public.documents set disposed_on = null where id = '00000000-0000-0000-0000-0000000000d1' $$, 'an open-month disposal can be undone');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+delete from public.month_locks where month in ('2026-04', '2026-05');
+
+-- Photo fingerprints: kept with the document, only in their own format
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select public.save_document('00000000-0000-0000-0000-0000000000e1', '{"doc_no":"HASH-1","status":"reviewed","doc_date":"2026-09-10","net":10,"photo_hash":"0f0f0f0f0f0f0f0f"}', '[]');
+select is((select photo_hash from public.documents where id = '00000000-0000-0000-0000-0000000000e1'), '0f0f0f0f0f0f0f0f', 'a photo fingerprint is kept with the document');
+select throws_ok($$ update public.documents set photo_hash = 'not-a-hash' where id = '00000000-0000-0000-0000-0000000000e1' $$, '23514', NULL, 'fingerprints have one format');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');
