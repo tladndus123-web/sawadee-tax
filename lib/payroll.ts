@@ -222,3 +222,10 @@ export function payrollFiling(today: string): { month: string; pnd1Paper: string
   const d = payrollDeadlines(month);
   return { month, ...d, daysLeft: daysBetween(today, d.due) };
 }
+
+/** The year's filings, due the February after: 50 ทวิ to employees by the 15th, ภ.ง.ด.1ก by the end of the month */
+export function annualDeadlines(year: number): { cert50: string; pnd1a: string } {
+  const feb = `${year + 1}-02`;
+  const last = new Date(Date.UTC(year + 1, 2, 0)).getUTCDate();
+  return { cert50: nextWorkingDay(`${feb}-15`), pnd1a: nextWorkingDay(`${feb}-${last}`) };
+}

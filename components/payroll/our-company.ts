@@ -10,7 +10,7 @@ import { useCompany } from "@/lib/company-store";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { branchNo, digitsOnly } from "@/lib/thai-tax";
 
-export function useOurCompany(): { loaded: boolean; taxId: string; name: string; branchNo: string } {
+export function useOurCompany(): { loaded: boolean; taxId: string; name: string; branchNo: string; address: string } {
   const company = useCompany();
   const { entries } = useLedger();
   const working = useBranch();
@@ -28,6 +28,7 @@ export function useOurCompany(): { loaded: boolean; taxId: string; name: string;
       loaded: company.loaded,
       taxId: id,
       name: d?.customer.name.th || d?.customer.name.en || "",
+      address: d?.customer.address.th || d?.customer.address.en || "",
       branchNo: workingNo ?? branchNo(d?.customer.branch) ?? "",
     };
   }, [company.loaded, company.taxId, entries, workingNo]);

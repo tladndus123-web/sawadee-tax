@@ -1356,7 +1356,12 @@
     "documentNeedsDate": "서류의 만료일을 넣어 주세요.",
     "expired": "{days}일 지남",
     "expiresToday": "오늘 만료",
-    "expiresIn": "D-{days}"
+    "expiresIn": "D-{days}",
+    "yearDocs": "{year}년 연간 서류",
+    "yearDocsHint": "50 ทวิ(원천징수 증명서)는 직원에게 {cert50}까지 주고, ภ.ง.ด.1ก(연간 요약)은 {pnd1a}까지 국세청에 내요. 저장된 급여로 만들어져요.",
+    "printCert50": "50 ทวิ 인쇄 (직원용)",
+    "printPnd1a": "ภ.ง.ด.1ก 목록 인쇄",
+    "nothingSavedYear": "{year}년에 저장된 급여가 없어요."
   },
   "fixed": {
     "title": "고정비 (영수증 없는 비용)",

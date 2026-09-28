@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PAYROLL, type Employee, EMPTY_PERIOD, incomeTax, monthlyWithholding, daysNotEmployed, maskId, monthPay, payrollFiling, payrollSettingsOf, periodPay, socialSecurity, taxableIncome } from "./payroll";
+import { annualDeadlines, DEFAULT_PAYROLL, type Employee, EMPTY_PERIOD, incomeTax, monthlyWithholding, daysNotEmployed, maskId, monthPay, payrollFiling, payrollSettingsOf, periodPay, socialSecurity, taxableIncome } from "./payroll";
 
 const emp = (p: Partial<Employee> = {}): Employee => ({
   id: "e",
@@ -97,6 +97,9 @@ describe("filing deadlines (the month after pay)", () => {
   it("ภ.ง.ด.1 on paper by the 7th, online and สปส.1-10 by the 15th — moved past weekends and holidays", () => {
     expect(payrollFiling("2026-10-02")).toEqual({ month: "2026-09", pnd1Paper: "2026-10-07", due: "2026-10-15", daysLeft: 13 });
     expect(payrollFiling("2026-11-10")).toMatchObject({ month: "2026-10", pnd1Paper: "2026-11-09", due: "2026-11-16" }); // 7th Sat, 15th Sun
+  });
+  it("the year's papers: 50 ทวิ by 15 February, ภ.ง.ด.1ก by the end of February (working days)", () => {
+    expect(annualDeadlines(2026)).toEqual({ cert50: "2027-02-15", pnd1a: "2027-03-01" }); // 28 Feb 2027 is a Sunday
   });
   it("after the deadline, the current month", () => {
     expect(payrollFiling("2026-10-16")).toMatchObject({ month: "2026-10", due: "2026-11-16" });

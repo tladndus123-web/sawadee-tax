@@ -3,7 +3,7 @@
 // The month's filings (admins): deadlines (moved past weekends and Thai holidays), what to pay, the printable lists
 // for ภ.ง.ด.1 and สปส.1-10, payslips; and the social security rate / wage range, which the government is raising.
 
-import { FileText, Loader2, Printer, ShieldCheck } from "lucide-react";
+import { FileBadge, FileText, Loader2, Printer, ShieldCheck } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Link } from "@/i18n/navigation";
 import { saveCompany, useCompany } from "@/lib/company-store";
 import { fmt } from "@/lib/money";
-import { payrollDeadlines, payrollSettingsOf, type PayrollSettings } from "@/lib/payroll";
+import { annualDeadlines, payrollDeadlines, payrollSettingsOf, type PayrollSettings } from "@/lib/payroll";
 import { loadPayroll, type PayrollLineRow } from "@/lib/payroll-store";
 
 export function FilingTab({ month }: { month: string }) {
@@ -89,7 +89,43 @@ export function FilingTab({ month }: { month: string }) {
           <p className="text-xs leading-relaxed text-muted-foreground">{t("filingHint")}</p>
         </>
       )}
+      <YearDocs year={Number(month.slice(0, 4))} />
       <SsSettings />
+    </div>
+  );
+}
+
+/** The year's papers: ภ.ง.ด.1ก and the employees' 50 ทวิ, due the February after */
+function YearDocs({ year }: { year: number }) {
+  const t = useTranslations("pay");
+  const locale = useLocale();
+  const due = annualDeadlines(year);
+  const day = (d: string) => new Intl.DateTimeFormat(locale, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
+  return (
+    <div className="workspace-panel mt-2 grid gap-3 p-4">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 flex-none place-items-center rounded-2xl bg-muted" aria-hidden>
+          <FileBadge className="size-5 text-primary" />
+        </span>
+        <div className="grid min-w-0 flex-1 gap-0.5">
+          <p className="text-[15px] font-semibold">{t("yearDocs", { year })}</p>
+          <p className="text-xs leading-snug text-muted-foreground">{t("yearDocsHint", { cert50: day(due.cert50), pnd1a: day(due.pnd1a) })}</p>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button asChild variant="secondary" className="h-10 rounded-full px-4">
+          <Link href={`/payroll/print/cert50/${year}`}>
+            <Printer className="size-4" />
+            {t("printCert50")}
+          </Link>
+        </Button>
+        <Button asChild variant="secondary" className="h-10 rounded-full px-4">
+          <Link href={`/payroll/print/pnd1a/${year}`}>
+            <Printer className="size-4" />
+            {t("printPnd1a")}
+          </Link>
+        </Button>
+      </div>
     </div>
   );
 }

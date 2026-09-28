@@ -499,3 +499,4 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **휴가**: 근태 탭 아래 연도별 연차(1년 근무 후 6일)·병가(30일) 사용/남음 — `leaveBalance`. 연차·병가는 유급(일당 직원은 근무일로 계산).
 - **직원 서류 만료**: `employees.documents` jsonb `[{name, expires}]`(직원 정보 폼에서 추가). 직원 탭 위에 30일 이내/지난 것 알림 띠, 아침 알림(LINE·푸시)에 30/7/1/0일 전과 만료 뒤 매일 — `documentReminder`, `expiringDocuments`.
 - 로컬 `db reset` 뒤 storage 업로드 42P10 → CLAUDE.md 메모.
+- **연간 서류** (2026-09-29): 신고 서류 탭 아래 "{연도} 연간 서류" 카드 → `/payroll/print/cert50/{YYYY}`(직원별 50 ทวิ, 1인 1장, 지급자 이름·주소는 우리 회사 앞 최근 청구서에서, 사회보험 납부액 포함, 세액 태국어 문자 `bahtText`) · `/payroll/print/pnd1a/{YYYY}`(ภ.ง.ด.1ก 목록: 개월 수·연 소득·세액). 마감 `annualDeadlines`: 50 ทวิ 다음 해 2월 15일, ภ.ง.ด.1ก 2월 말(영업일). `components/payroll/YearPrint.tsx`; 라우트 `[form]/[month]`가 연도(YYYY)도 받음.

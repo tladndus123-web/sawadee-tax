@@ -1356,7 +1356,12 @@
     "documentNeedsDate": "Enter the document's expiry date.",
     "expired": "expired {days} days ago",
     "expiresToday": "expires today",
-    "expiresIn": "in {days} days"
+    "expiresIn": "in {days} days",
+    "yearDocs": "Papers for {year}",
+    "yearDocsHint": "Give employees their 50 ทวิ certificate by {cert50} and file ภ.ง.ด.1ก (the year's summary) by {pnd1a}. Made from the saved payroll.",
+    "printCert50": "Print 50 ทวิ",
+    "printPnd1a": "Print the ภ.ง.ด.1ก list",
+    "nothingSavedYear": "No payroll saved for {year}."
   },
   "fixed": {
     "title": "Fixed costs (no invoice)",
