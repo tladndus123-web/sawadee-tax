@@ -617,7 +617,11 @@
     "activityMore": "さらに{count}件を表示",
     "profitTitle": "今月の利益",
     "profitLine": "売上 {sales} − 費用 {cost}",
-    "profitEmpty": "今月の売上を入れると利益が表示されます →"
+    "profitEmpty": "今月の売上を入れると利益が表示されます →",
+    "upcomingCount": "{count}件",
+    "upcomingTotal": "合計",
+    "upcomingMore": "さらに{count}件を表示",
+    "upcomingLess": "閉じる"
   },
   "line": {
     "title": "LINE連携",

@@ -617,7 +617,11 @@
     "activityMore": "ดูเพิ่มอีก {count} รายการ",
     "profitTitle": "กำไรเดือนนี้",
     "profitLine": "รายได้ {sales} − ค่าใช้จ่าย {cost}",
-    "profitEmpty": "ใส่ยอดขายของเดือนนี้เพื่อดูกำไร →"
+    "profitEmpty": "ใส่ยอดขายของเดือนนี้เพื่อดูกำไร →",
+    "upcomingCount": "{count} รายการ",
+    "upcomingTotal": "รวม",
+    "upcomingMore": "ดูเพิ่มอีก {count} รายการ",
+    "upcomingLess": "ย่อ"
   },
   "line": {
     "title": "เชื่อม LINE",

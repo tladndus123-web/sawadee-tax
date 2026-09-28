@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ChevronRight, CircleCheck, Clock, Loader2, Receipt, TrendingUp, Undo2, Wallet, Check } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight, CircleCheck, Clock, Loader2, Receipt, TrendingUp, Undo2, Wallet, Check } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
 import dynamic from "next/dynamic";
@@ -225,6 +225,10 @@ function DueList({ items, docs }: { items: DueItem[]; docs: Doc[] }) {
   const locale = useLocale();
   const lang = exportLang(locale);
   const [busy, setBusy] = useState<string | null>(null);
+  // Five at first; the rest one tap away
+  const [all, setAll] = useState(false);
+  const SHOWN = 5;
+  const total = items.reduce((a, it) => a + Math.round(it.doc.totals.net * 100), 0) / 100;
 
   const setPaid = async (it: DueItem, paid: boolean) => {
     setBusy(it.id);
@@ -252,11 +256,22 @@ function DueList({ items, docs }: { items: DueItem[]; docs: Doc[] }) {
 
   return (
     <section aria-labelledby="due-title" className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-5 sm:p-6">
-      <div>
-        <h2 id="due-title" className="text-lg font-semibold tracking-tight">
-          {t("dash.upcoming")}
-        </h2>
-        <p className="text-xs text-muted-foreground">{t("dash.upcomingHint")}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="grid gap-0.5">
+          <h2 id="due-title" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+            {t("dash.upcoming")}
+            {items.length > 0 && (
+              <span className="rounded-full bg-warn-soft px-2 py-0.5 text-xs font-semibold text-warn tabular-nums">{t("dash.upcomingCount", { count: items.length })}</span>
+            )}
+          </h2>
+          <p className="text-xs text-muted-foreground">{t("dash.upcomingHint")}</p>
+        </div>
+        {items.length > 0 && (
+          <span className="grid flex-none text-right">
+            <span className="text-[11px] text-muted-foreground">{t("dash.upcomingTotal")}</span>
+            <span className="text-[15px] font-semibold tabular-nums">{baht(total)}</span>
+          </span>
+        )}
       </div>
       {items.length === 0 ? (
         <p className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
@@ -265,7 +280,7 @@ function DueList({ items, docs }: { items: DueItem[]; docs: Doc[] }) {
         </p>
       ) : (
         <ul className="grid">
-          {items.slice(0, 8).map((it) => {
+          {(all ? items : items.slice(0, SHOWN)).map((it) => {
             const b = badge(it);
             const name = it.doc.seller.name[lang] || it.doc.seller.name.en || it.doc.seller.name.th || it.doc.docNo;
             return (
@@ -287,6 +302,17 @@ function DueList({ items, docs }: { items: DueItem[]; docs: Doc[] }) {
             );
           })}
         </ul>
+      )}
+      {items.length > SHOWN && (
+        <button
+          type="button"
+          onClick={() => setAll((v) => !v)}
+          aria-expanded={all}
+          className="press flex h-10 items-center justify-center gap-1 rounded-full text-sm font-medium text-primary hover:bg-primary/10"
+        >
+          {all ? t("dash.upcomingLess") : t("dash.upcomingMore", { count: items.length - SHOWN })}
+          <ChevronDown className={cn("size-4 transition-transform", all && "rotate-180")} aria-hidden />
+        </button>
       )}
     </section>
   );

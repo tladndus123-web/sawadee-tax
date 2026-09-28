@@ -617,7 +617,11 @@
     "activityMore": "Show {count} more",
     "profitTitle": "Profit this month",
     "profitLine": "Sales {sales} − costs {cost}",
-    "profitEmpty": "Add this month's sales to see the profit →"
+    "profitEmpty": "Add this month's sales to see the profit →",
+    "upcomingCount": "{count}",
+    "upcomingTotal": "Total",
+    "upcomingMore": "Show {count} more",
+    "upcomingLess": "Show less"
   },
   "line": {
     "title": "LINE",

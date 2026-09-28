@@ -617,7 +617,11 @@
     "activityMore": "{count}개 더 보기",
     "profitTitle": "이번 달 남은 돈 (이익)",
     "profitLine": "매출 {sales} − 비용 {cost}",
-    "profitEmpty": "이 달 매출을 넣으면 이익이 보여요 →"
+    "profitEmpty": "이 달 매출을 넣으면 이익이 보여요 →",
+    "upcomingCount": "{count}건",
+    "upcomingTotal": "합계",
+    "upcomingMore": "{count}건 더 보기",
+    "upcomingLess": "접기"
   },
   "line": {
     "title": "LINE 연결",
