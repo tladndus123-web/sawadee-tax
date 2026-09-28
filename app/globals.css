@@ -238,6 +238,26 @@
   transition: color 200ms ease, background-color 200ms ease, box-shadow 200ms ease, scale 0.5s var(--motion-spring);
 }
 
+/* Narrow desktops (tablets): the tabs keep one line; only the active one shows its name, the others their icon
+   (the name is the tooltip and what screen readers read) */
+.nav-pill a {
+  white-space: nowrap;
+}
+
+@media (max-width: 1099px) {
+  .nav-pill a {
+    padding-inline: 0.7rem;
+  }
+
+  .nav-pill a:not([data-active="true"]) .nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
 .nav-pill a:hover {
   color: var(--foreground);
 }
@@ -283,6 +303,25 @@
   font-weight: 500;
   color: var(--muted-foreground);
   transition: color 0.2s ease;
+}
+
+/* More than five tabs (admins): a sideways-scrolling row; each tab a little under a fifth wide, so the next one
+   peeks in at the edge and shows there is more */
+.tab-bar .tab-scroll {
+  display: flex;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.tab-bar .tab-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-bar .tab-scroll a {
+  flex: 0 0 18.5%;
+  scroll-snap-align: start;
 }
 
 .tab-bar a[data-active="true"] {

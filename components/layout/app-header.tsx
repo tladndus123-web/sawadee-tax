@@ -1,10 +1,11 @@
 "use client";
 
-import { BookOpen, Building2, LayoutGrid, Settings, TrendingUp } from "lucide-react";
+import { BookOpen, Building2, LayoutGrid, Settings, TrendingUp, WalletCards } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useBranches } from "@/lib/branch-store";
+import { useMe } from "@/lib/role-store";
 import { cn } from "@/lib/utils";
 import { BranchSwitcher, useCurrentBranch } from "./branch-switcher";
 import { APP_MARK_GLOW, AppMark } from "./app-mark";
@@ -17,6 +18,7 @@ const NAV = [
   { href: "/ledger", key: "ledger", icon: BookOpen },
   { href: "/sales", key: "sales", icon: TrendingUp },
   { href: "/vendors", key: "vendors", icon: Building2 },
+  { href: "/payroll", key: "payroll", icon: WalletCards, admin: true },
   { href: "/settings", key: "settings", icon: Settings },
 ] as const;
 
@@ -25,6 +27,12 @@ export function AppHeader() {
   const t = useTranslations();
   const pathname = usePathname();
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  // Payroll is for admins only
+  const isAdmin = useMe().role === "admin";
+  const nav = NAV.filter((n) => !("admin" in n) || isAdmin);
+  // Phones: five tabs fit; with more, the bar scrolls sideways (the next tab peeks in at the edge)
+  const scrolls = nav.length > 5;
+  const barRef = useRef<HTMLDivElement>(null);
   // Detail screens hide the tab bar, like a pushed view on iOS, so their own action bar owns the bottom edge.
   const showTabBar = !pathname.startsWith("/documents");
   // With several branches the switcher takes the phone's top bar; the app name gives way
@@ -34,7 +42,7 @@ export function AppHeader() {
   // A tapped tab lights up at once, before its page has loaded (it only counts while we're still on the
   // page it was tapped from), and its icon plays a small bounce.
   const [tap, setTap] = useState<{ href: string; from: string; n: number } | null>(null);
-  const current = NAV.find((n) => isActive(n.href))?.href;
+  const current = nav.find((n) => isActive(n.href))?.href;
   const active = tap && tap.from === pathname ? tap.href : current;
   const onTap = (href: string) => (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return; // new tab/window
@@ -64,7 +72,13 @@ export function AppHeader() {
     const ro = new ResizeObserver(() => place(false));
     ro.observe(nav);
     return () => ro.disconnect();
-  }, [active]);
+  }, [active, nav.length]);
+
+  // Keep the active tab in view on a scrolling tab bar
+  useEffect(() => {
+    const a = barRef.current?.querySelector<HTMLElement>('a[data-active="true"]');
+    if (scrolls && a) a.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [active, scrolls]);
 
   return (
     <>
@@ -83,10 +97,10 @@ export function AppHeader() {
 
           <nav ref={navRef} aria-label={t("nav.menu")} className="nav-pill relative hidden md:flex">
             <span ref={gliderRef} className="nav-glider" aria-hidden />
-            {NAV.map(({ href, key, icon: Icon }) => (
-              <Link key={href} href={href} onClick={onTap(href)} data-active={active === href} aria-current={isActive(href) ? "page" : undefined}>
+            {nav.map(({ href, key, icon: Icon }) => (
+              <Link key={href} href={href} onClick={onTap(href)} data-active={active === href} aria-current={isActive(href) ? "page" : undefined} title={t(`nav.${key}`)}>
                 <Icon key={bounceKey(href)} className={cn("size-4", bounceKey(href) > 0 && "sym-tap")} aria-hidden />
-                {t(`nav.${key}`)}
+                <span className="nav-label">{t(`nav.${key}`)}</span>
               </Link>
             ))}
           </nav>
@@ -101,8 +115,8 @@ export function AppHeader() {
 
       {showTabBar && (
         <nav aria-label={t("nav.menu")} className="tab-bar md:hidden">
-          <div className="mx-auto grid max-w-lg grid-cols-5">
-            {NAV.map(({ href, key, icon: Icon }) => (
+          <div ref={barRef} className={cn("mx-auto max-w-lg", scrolls ? "tab-scroll" : "grid grid-cols-5")}>
+            {nav.map(({ href, key, icon: Icon }) => (
               <Link key={href} href={href} onClick={onTap(href)} data-active={active === href} aria-current={isActive(href) ? "page" : undefined}>
                 <Icon key={bounceKey(href)} className={cn("size-[22px]", bounceKey(href) > 0 && "sym-tap")} strokeWidth={active === href ? 2.2 : 1.8} aria-hidden />
                 {t(`nav.${key}`)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Settings, WalletCards } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +14,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { signOut, useMe } from "@/lib/role-store";
 
-/** Initial in a circle → name, email, role, settings, payroll (admins), sign out */
+/** Initial in a circle → name, email, role, settings, sign out */
 export function UserMenu() {
   const t = useTranslations();
   const me = useMe();
@@ -40,14 +40,6 @@ export function UserMenu() {
             {t("nav.settings")}
           </Link>
         </DropdownMenuItem>
-        {me.role === "admin" && (
-          <DropdownMenuItem asChild>
-            <Link href="/payroll">
-              <WalletCards className="size-4" />
-              {t("nav.payroll")}
-            </Link>
-          </DropdownMenuItem>
-        )}
         <DropdownMenuItem onSelect={() => void signOut()}>
           <LogOut className="size-4" />
           {t("nav.signOut")}
