@@ -93,10 +93,10 @@ export function FixedCostCard() {
                 </span>
                 {isAdmin && (
                   <span className="flex flex-none">
-                    <Button type="button" variant="ghost" size="icon" className="size-8" aria-label={t("edit")} disabled={busy} onClick={() => setDraft({ ...l })}>
+                    <Button type="button" variant="ghost" size="icon" className="size-9" aria-label={t("edit")} disabled={busy} onClick={() => setDraft({ ...l })}>
                       <Pencil className="size-4" />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-bad" aria-label={t("delete")} disabled={busy} onClick={() => void remove(l)}>
+                    <Button type="button" variant="ghost" size="icon" className="size-9 text-muted-foreground hover:text-bad" aria-label={t("delete")} disabled={busy} onClick={() => void remove(l)}>
                       <Trash2 className="size-4" />
                     </Button>
                   </span>

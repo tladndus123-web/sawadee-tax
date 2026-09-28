@@ -93,31 +93,36 @@ export function AttendanceTab({ month }: { month: string }) {
             <tr>
               <th className="sticky left-0 z-10 bg-card px-3 py-2 text-left font-semibold">{t("employee")}</th>
               {days.map((d) => (
-                <th key={d} className={cn("min-w-8 px-0.5 py-1.5 text-center font-medium", THAI_HOLIDAYS.has(d) ? "text-bad" : isWeekend(d) ? "text-muted-foreground" : "", d === today && "underline underline-offset-4")}>
+                <th key={d} className={cn("min-w-10 px-[3px] py-1.5 text-center font-medium", THAI_HOLIDAYS.has(d) ? "text-bad" : isWeekend(d) ? "text-muted-foreground" : "", d === today && "underline underline-offset-4")}>
                   <span className="block leading-none">{Number(d.slice(8))}</span>
                   <span className="block text-[10px] leading-none text-muted-foreground">{weekday.format(new Date(`${d}T00:00:00Z`))}</span>
                 </th>
               ))}
-              <th className="px-2" />
             </tr>
           </thead>
           <tbody>
             {staff.map((e) => (
               <tr key={e.id} className="border-t border-border/60">
-                <th scope="row" className="sticky left-0 z-10 max-w-[7.5rem] truncate bg-card px-3 py-1.5 text-left font-medium">
-                  {e.nickname || e.name}
+                <th scope="row" className="sticky left-0 z-10 w-[8.5rem] max-w-[8.5rem] bg-card px-3 py-1.5 text-left font-medium">
+                  <span className="block truncate">{e.nickname || e.name}</span>
+                  {!locked && (
+                    <Button type="button" variant="ghost" className="-ml-2 mt-0.5 h-9 rounded-full px-2 text-[11px] font-medium text-primary" disabled={busy === e.id} onClick={() => void fill(e)}>
+                      {busy === e.id ? <Loader2 className="size-3.5 animate-spin" /> : <CalendarCheck className="size-3.5" />}
+                      {t("fillWorked")}
+                    </Button>
+                  )}
                 </th>
                 {days.map((d) => {
                   const r = cellOf.get(`${e.id}|${d}`);
                   const out = (e.startDate && d < e.startDate) || (e.endDate && d > e.endDate);
                   return (
-                    <td key={d} className="p-0.5">
+                    <td key={d} className="p-[3px]">
                       <button
                         type="button"
                         disabled={locked || !!out}
                         aria-label={`${e.name} ${d}`}
                         onClick={() => setOpen({ employee: e, day: d })}
-                        className={cn("press grid h-8 w-8 place-items-center rounded-lg text-[11px] font-semibold leading-none disabled:opacity-40", r ? CELL[r.kind] : "bg-muted/40 text-muted-foreground/60")}
+                        className={cn("press grid h-10 w-10 place-items-center rounded-xl text-[12px] font-semibold leading-none disabled:opacity-40", r ? CELL[r.kind] : "bg-muted/40 text-muted-foreground/60")}
                       >
                         {r ? t(`kindShort.${r.kind}`) : out ? "" : "·"}
                         {r && r.otHours > 0 && <span className="text-[9px] font-normal">+{r.otHours}</span>}
@@ -125,14 +130,6 @@ export function AttendanceTab({ month }: { month: string }) {
                     </td>
                   );
                 })}
-                <td className="px-2">
-                  {!locked && (
-                    <Button type="button" variant="ghost" className="h-7 rounded-full px-2 text-[11px]" disabled={busy === e.id} onClick={() => void fill(e)}>
-                      {busy === e.id ? <Loader2 className="size-3 animate-spin" /> : <CalendarCheck className="size-3" />}
-                      {t("fillWorked")}
-                    </Button>
-                  )}
-                </td>
               </tr>
             ))}
           </tbody>
