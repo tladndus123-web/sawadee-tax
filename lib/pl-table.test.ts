@@ -41,3 +41,17 @@ describe("profit and loss by category, months side by side", () => {
     expect(t.costs.map((c) => c.key)).toEqual(["rent", "fuel"]);
   });
 });
+
+describe("P&L with a mixed receipt and equipment", () => {
+  it("lines split into their categories; depreciation is its own row", () => {
+    const mixed = { ...ours, items: [{ ...ours.items[0], amount: 45000, category: "" as const }, { ...ours.items[0], amount: 15000, category: "office" as const }] };
+    const oven = { ...ours, category: "asset" as const, depYears: 5 };
+    const t = plTable([], [mixed, oven], month, 1, CO);
+    const by = Object.fromEntries(t.costs.map((c) => [c.key, c.total]));
+    expect(by[ours.category]).toBe(45000);
+    expect(by.office).toBe(15000);
+    expect(by.depreciation).toBe(1000);
+    expect(by.asset).toBeUndefined();
+    expect(t.costTotal.total).toBe(61000);
+  });
+});

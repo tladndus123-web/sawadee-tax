@@ -2,8 +2,7 @@
 // the month's result (lib/sales monthResult): sales without VAT; a purchase costs its total minus the input VAT
 // that can be claimed, in the month of its invoice. Satang integers throughout.
 
-import { invoiceMonth } from "./archive";
-import { claimable } from "./checks";
+import { monthCosts } from "./cost-split";
 import { fromSatang, toSatang } from "./money";
 import { type Channel, CHANNELS, saleMonth, type Sale } from "./sales";
 import { type Category, CATEGORIES, type LedgerDoc } from "./types";
@@ -19,7 +18,8 @@ export interface PlTable {
   months: string[];
   sales: PlRow<Channel>[];
   salesTotal: PlRow<"total">;
-  costs: PlRow<Category>[];
+  /** By category, biggest first; "depreciation" = equipment written off this month (lib/cost-split) */
+  costs: PlRow<Category | "depreciation">[];
   costTotal: PlRow<"total">;
   profit: PlRow<"total">;
 }
@@ -37,7 +37,7 @@ export function plTable(sales: Pick<Sale, "date" | "channel" | "gross" | "vat">[
   const months = monthsEnding(endMonth, n);
   const at = new Map(months.map((m, i) => [m, i]));
   const byCh = new Map<Channel, number[]>();
-  const byCat = new Map<Category, number[]>();
+  const byCat = new Map<Category | "depreciation", number[]>();
   const add = <K>(map: Map<K, number[]>, k: K, i: number, v: number) => {
     const row = map.get(k) ?? months.map(() => 0);
     row[i] += v;
@@ -47,11 +47,10 @@ export function plTable(sales: Pick<Sale, "date" | "channel" | "gross" | "vat">[
     const i = at.get(saleMonth(s));
     if (i !== undefined) add(byCh, s.channel, i, toSatang(s.gross) - toSatang(s.vat));
   }
-  for (const d of purchases) {
-    const i = at.get(invoiceMonth(d));
-    if (i === undefined) continue;
-    const cat = (CATEGORIES as readonly string[]).includes(d.category) ? d.category : "other";
-    add(byCat, cat, i, toSatang(d.totals.net) - (claimable(d, companyTaxId) ? toSatang(d.totals.vat) : 0));
+  for (const [i, m] of months.entries()) {
+    const c = monthCosts(purchases, m, companyTaxId);
+    for (const [cat, v] of c.byCategory) add(byCat, cat, i, v);
+    if (c.depreciation) add(byCat, "depreciation", i, c.depreciation);
   }
   const row = <K>(key: K, sat: number[]): PlRow<K> => ({ key, values: sat.map(fromSatang), total: fromSatang(sat.reduce((a, b) => a + b, 0)) });
   const sum = (rows: number[][]) => months.map((_, i) => rows.reduce((a, r) => a + r[i], 0));
@@ -62,7 +61,8 @@ export function plTable(sales: Pick<Sale, "date" | "channel" | "gross" | "vat">[
     sales: CHANNELS.filter((c) => byCh.has(c)).map((c) => row(c, byCh.get(c)!)),
     salesTotal: row("total", salesSat),
     // Biggest cost first (over the whole period), so the table reads top-down by weight
-    costs: CATEGORIES.filter((c) => byCat.has(c))
+    costs: [...CATEGORIES, "depreciation" as const]
+      .filter((c) => byCat.has(c))
       .map((c) => row(c, byCat.get(c)!))
       .sort((a, b) => b.total - a.total),
     costTotal: row("total", costSat),

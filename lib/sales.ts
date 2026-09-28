@@ -5,6 +5,7 @@
 
 import { invoiceMonth } from "./archive";
 import { claimable } from "./checks";
+import { monthCosts } from "./cost-split";
 import { fromSatang, toSatang } from "./money";
 import type { LedgerDoc } from "./types";
 
@@ -46,8 +47,10 @@ export interface MonthResult {
   salesValue: number;
   /** Purchases as paid (VAT included) */
   purchasesGross: number;
-  /** Purchases' cost: total minus the input VAT that can be claimed */
+  /** What the month cost: purchases (total minus the input VAT that comes back), assets being written off replaced by their depreciation */
   purchasesCost: number;
+  /** Depreciation inside purchasesCost (lib/cost-split) */
+  depreciation: number;
   claimableVat: number;
   /** salesValue − purchasesCost */
   profit: number;
@@ -84,7 +87,8 @@ export function monthResult(sales: Sale[], purchases: LedgerDoc[], month: string
     if (claimable(d, companyTaxId)) pv += toSatang(d.totals.vat);
   }
   const salesValue = sg - sv;
-  const cost = pg - pv;
+  const costs = monthCosts(purchases, month, companyTaxId);
+  const cost = costs.cost;
   const profit = salesValue - cost;
   return {
     salesGross: fromSatang(sg),
@@ -92,6 +96,7 @@ export function monthResult(sales: Sale[], purchases: LedgerDoc[], month: string
     salesValue: fromSatang(salesValue),
     purchasesGross: fromSatang(pg),
     purchasesCost: fromSatang(cost),
+    depreciation: fromSatang(costs.depreciation),
     claimableVat: fromSatang(pv),
     profit: fromSatang(profit),
     margin: salesValue ? profit / salesValue : 0,

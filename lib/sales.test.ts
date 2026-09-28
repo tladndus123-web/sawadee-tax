@@ -52,3 +52,17 @@ describe("monthly result", () => {
     expect(rows.map((r) => r.id)).toEqual(["2026-09-01-store", "2026-09-01-grab", "2026-09-02-store"]);
   });
 });
+
+describe("equipment in the month's result", async () => {
+  const { monthResult } = await import("./sales");
+  const { sampleDoc } = await import("./sample");
+  const base = { ...sampleDoc(), customer: { ...sampleDoc().customer, taxId: CO }, date: "2026-09-10" };
+  it("an oven written off over 5 years costs 1,000 a month, not 60,000 at once", () => {
+    const oven = { ...base, category: "asset" as const, depYears: 5 };
+    const r = monthResult([], [oven], "2026-09", CO);
+    expect(r.purchasesGross).toBe(64200);
+    expect(r.purchasesCost).toBe(1000);
+    expect(r.depreciation).toBe(1000);
+    expect(monthResult([], [oven], "2027-03", CO).purchasesCost).toBe(1000);
+  });
+});

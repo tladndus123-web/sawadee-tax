@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
+import { Controller } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import type { HideableField } from "@/lib/form-config";
 import type { FormMode, LabelKey } from "@/lib/form-labels";
 import { fmt, fmtQty } from "@/lib/money";
 import { emptyTri } from "@/lib/normalize";
-import type { Item, LedgerDoc } from "@/lib/types";
+import { CATEGORIES, type Item, type LedgerDoc } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { FieldLabel } from "./fields";
 import { useFormLabels } from "./form-config-context";
@@ -28,7 +29,7 @@ const COLS: Col[] = [
   { k: "amount", num: true },
 ];
 
-function Head({ mode, edit, extra, cols = COLS }: { mode: FormMode; edit?: boolean; extra?: boolean; cols?: Col[] }) {
+function Head({ mode, edit, extra, cols = COLS, category }: { mode: FormMode; edit?: boolean; extra?: boolean; cols?: Col[]; category?: string }) {
   return (
     <thead>
       <tr className="bg-band">
@@ -37,6 +38,7 @@ function Head({ mode, edit, extra, cols = COLS }: { mode: FormMode; edit?: boole
             <FieldLabel k={k} mode={mode} edit={edit} className={cn("text-foreground/80", num && "text-right")} />
           </th>
         ))}
+        {category && <th scope="col" className="border-b border-rule px-2.5 py-2 text-left align-bottom font-semibold text-foreground/80">{category}</th>}
         {extra && <th className="w-10 border-b border-rule" />}
       </tr>
     </thead>
@@ -57,7 +59,10 @@ export function ItemsTableView({
   unsure: (path: string) => boolean;
   onUnsure?: (path: string) => void;
 }) {
+  const t = useTranslations();
   const { show } = useFormLabels();
+  // A mixed receipt: lines with their own category show it (print too, so the accountant sees the split)
+  const mixed = items.some((i) => i.category);
   const cols = COLS.filter((c) => !c.hide || show(c.hide));
   const cell = (k: LabelKey, it: Item, i: number) => {
     const path = `items.${i}.${k}`;
@@ -98,10 +103,13 @@ export function ItemsTableView({
   return (
     <div className="overflow-x-auto border border-rule">
       <table className={cn("w-full border-collapse text-sm", cols.length > 6 ? "min-w-[680px]" : "min-w-[480px]")}>
-        <Head mode={mode} cols={cols} />
+        <Head mode={mode} cols={cols} category={mixed ? t("app.category") : undefined} />
         <tbody>
           {items.map((it, i) => (
-            <tr key={i}>{cols.map((c) => cell(c.k, it, i))}</tr>
+            <tr key={i}>
+              {cols.map((c) => cell(c.k, it, i))}
+              {mixed && <td className={cn(TD, "whitespace-nowrap")}>{it.category ? <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{t(`category.${it.category}`)}</span> : ""}</td>}
+            </tr>
           ))}
           {/* Empty space like the printed form */}
           <tr aria-hidden>
@@ -121,8 +129,8 @@ export function ItemsTableEdit({ mode }: { mode: FormMode }) {
   return (
     <div className="grid gap-2">
       <div className="overflow-x-auto border border-rule">
-        <table className="w-full min-w-[1060px] border-collapse text-sm">
-          <Head mode={mode} edit extra />
+        <table className="w-full min-w-[1200px] border-collapse text-sm">
+          <Head mode={mode} edit extra category={t("app.category")} />
           <tbody>
             {fields.map((f, i) => (
               <tr key={f.id}>
@@ -148,6 +156,22 @@ export function ItemsTableEdit({ mode }: { mode: FormMode }) {
                 <td className={cn(TD, "min-w-36")}>
                   <NumIn name={`items.${i}.amount`} label={t("labels.amount")} />
                 </td>
+                <td className={cn(TD, "min-w-36")}>
+                  <Controller
+                    control={control}
+                    name={`items.${i}.category`}
+                    render={({ field }) => (
+                      <select value={field.value || ""} onChange={(e) => field.onChange(e.target.value)} aria-label={`${t("app.category")} ${i + 1}`} className="h-9 w-full rounded-lg border bg-background px-2 text-xs">
+                        <option value="">{t("app.sameAsDoc")}</option>
+                        {CATEGORIES.map((k) => (
+                          <option key={k} value={k}>
+                            {t(`category.${k}`)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                </td>
                 <td className={cn(TD, "w-10")}>
                   <Button
                     type="button"
@@ -170,7 +194,7 @@ export function ItemsTableEdit({ mode }: { mode: FormMode }) {
         variant="outline"
         size="sm"
         className="w-fit"
-        onClick={() => append({ code: "", desc: emptyTri(), wh: "", qty: 1, unit: emptyTri(), price: 0, amount: 0 })}
+        onClick={() => append({ category: "", code: "", desc: emptyTri(), wh: "", qty: 1, unit: emptyTri(), price: 0, amount: 0 })}
       >
         <Plus className="size-4" />
         {t("app.addItem").replace(/^\+\s*/, "")}

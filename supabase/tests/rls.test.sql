@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(92);
+select plan(94);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -219,6 +219,12 @@ delete from public.sales where sale_date = '2026-06-20';
 select throws_like($$ delete from public.branches where no = '00000' $$, 'head office%', 'the head office cannot be removed');
 update public.documents set branch_id = '00000000-0000-0000-0000-0000000000b1' where id = '00000000-0000-0000-0000-0000000000a1';
 select throws_ok($$ delete from public.branches where no = '00001' $$, '23503', NULL, 'a branch with documents cannot be removed');
+
+-- A mixed receipt keeps each line's category; equipment keeps its depreciation period
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select public.save_document('00000000-0000-0000-0000-0000000000c1', '{"doc_no":"MIX-1","status":"reviewed","doc_date":"2026-09-10","net":100,"category":"asset","dep_years":5}', '[{"line_no":1,"amount":60,"category":"office"},{"line_no":2,"amount":40}]');
+select is((select array_agg(category order by line_no) from public.document_items where document_id = '00000000-0000-0000-0000-0000000000c1'), array['office', ''], 'each line keeps its own category ("" = the document''s)');
+select is((select dep_years from public.documents where id = '00000000-0000-0000-0000-0000000000c1'), 5, 'the depreciation period is kept');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

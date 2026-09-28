@@ -66,7 +66,7 @@ export function PlReport() {
         profit: t("pl.profit"),
         month: monthShort,
         channel: (k) => t(`sales.ch.${k as "store"}`),
-        category: (k) => t(`category.${k as "other"}`),
+        category: (k) => (k === "depreciation" ? t("pl.depreciation") : t(`category.${k as "other"}`)),
       });
       toast.success(t("pl.downloaded", { name }));
     } catch {
@@ -146,7 +146,7 @@ export function PlReport() {
               <MoneyRow label={t("pl.salesTotal")} r={table.salesTotal} strong />
               <SectionRow label={t("pl.costs")} cols={cols} />
               {table.costs.map((r) => (
-                <MoneyRow key={r.key} label={t(`category.${r.key}`)} r={r} indent />
+                <MoneyRow key={r.key} label={r.key === "depreciation" ? t("pl.depreciation") : t(`category.${r.key}`)} r={r} indent />
               ))}
               <MoneyRow label={t("pl.costTotal")} r={table.costTotal} strong />
               <MoneyRow label={t("pl.profit")} r={table.profit} strong profit />

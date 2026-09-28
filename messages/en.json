@@ -72,7 +72,8 @@
     "companySaved": "Saved.",
     "foot": "Tax IDs are checked with the Revenue Department check-digit rule. Confirm with your accountant before filing.",
     "typeSign": "Type a signature here",
-    "print": "Print"
+    "print": "Print",
+    "sameAsDoc": "Same as document"
   },
   "checks": {
     "sellerTax": "Seller tax ID (13 digits)",
@@ -186,7 +187,10 @@
     "utilities": "Utilities",
     "rent": "Rent",
     "entertainment": "Entertainment",
-    "other": "Other"
+    "other": "Other",
+    "consumables": "Consumables",
+    "repairs": "Repairs",
+    "asset": "Equipment (asset)"
   },
   "payment": {
     "credit": "Credit",
@@ -896,7 +900,8 @@
       "shopee": "ShopeeFood",
       "robinhood": "Robinhood",
       "other": "Other"
-    }
+    },
+    "costSubDep": "Paid {gross} · incl. depreciation {dep}"
   },
   "pos": {
     "button": "POS Excel",
@@ -974,7 +979,8 @@
     "untilMonth": "Until {month}",
     "span": "Period",
     "months": "{count} months",
-    "note": "Purchases count by invoice date. Costs not in the ledger (wages, rent paid without a document) are missing. Delivery-app commission is included only when the app's tax invoice is recorded as a purchase. Check final figures with your accountant."
+    "note": "Purchases count by invoice date. Costs not in the ledger (wages, rent paid without a document) are missing. Delivery-app commission is included only when the app's tax invoice is recorded as a purchase. Check final figures with your accountant.",
+    "depreciation": "Depreciation"
   },
   "install": {
     "title": "Install on your phone",
@@ -1042,5 +1048,11 @@
     "colCost": "Costs",
     "colProfit": "Profit",
     "colVat": "VAT to pay"
+  },
+  "dep": {
+    "label": "Depreciation period",
+    "none": "Expense at once",
+    "years": "{count} years",
+    "hint": "Equipment is not a cost all at once in the month it is bought: its cost is spread evenly over the period each month (depreciation). Thai practice: computers 3 years, machines, equipment, furniture and vehicles 5, buildings 20. Its VAT is still claimed in the month of purchase."
   }
 }

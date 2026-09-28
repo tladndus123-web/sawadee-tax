@@ -58,6 +58,7 @@ export interface DocumentRow {
   photo_path: string | null;
   tax_month: string | null;
   branch_id?: string | null;
+  dep_years?: number | null;
   no_claim: boolean | null;
   wht_rate: number | string;
   wht_type: string;
@@ -68,6 +69,7 @@ export interface DocumentRow {
 
 export interface ItemRow {
   line_no: number;
+  category?: string | null;
   code: string;
   desc: unknown;
   wh: string;
@@ -129,11 +131,12 @@ export function docToRow(doc: LedgerDoc, status: DbStatus, companyTaxId?: string
       tax_month: doc.taxMonth || null,
       // Left out when unset: the database then puts it in the head office
       ...(doc.branchId ? { branch_id: doc.branchId } : {}),
+      dep_years: doc.depYears,
       no_claim: doc.noClaim,
       wht_rate: doc.whtRate,
       wht_type: doc.whtType,
     },
-    items: doc.items.map((i, n) => ({ line_no: n + 1, code: i.code, desc: i.desc, wh: i.wh, qty: i.qty, unit: i.unit, price: i.price, amount: i.amount })),
+    items: doc.items.map((i, n) => ({ line_no: n + 1, category: i.category, code: i.code, desc: i.desc, wh: i.wh, qty: i.qty, unit: i.unit, price: i.price, amount: i.amount })),
   };
 }
 
@@ -185,9 +188,10 @@ export function rowToDoc(row: DocumentRow, items: ItemRow[]): LedgerDoc {
     fieldBoxes: row.field_boxes,
     taxMonth: row.tax_month ?? "",
     branchId: row.branch_id ?? "",
+    depYears: row.dep_years ?? 0,
     noClaim: row.no_claim,
     whtRate: row.wht_rate,
     whtType: row.wht_type,
-    items: [...items].sort((a, b) => a.line_no - b.line_no).map((i) => ({ code: i.code, desc: i.desc, wh: i.wh, qty: i.qty, unit: i.unit, price: i.price, amount: i.amount })),
+    items: [...items].sort((a, b) => a.line_no - b.line_no).map((i) => ({ category: i.category ?? "", code: i.code, desc: i.desc, wh: i.wh, qty: i.qty, unit: i.unit, price: i.price, amount: i.amount })),
   });
 }

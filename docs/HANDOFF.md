@@ -438,3 +438,8 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - 대시보드 "지점별 이번 달"(전체 지점 볼 때): 지점마다 매출·비용·남은 돈·낼 부가세 + 합계.
 - 설정 → "지점 관리"(관리자): 번호·이름 추가·수정·삭제(서류 있는 지점은 DB가 거부). 서류 화면·매출 입력·POS 엑셀에 지점 고르기.
 - LINE: 사진에 지점 번호가 없고 지점이 2개 이상이면 영수증 카드 아래 지점 버튼(quick reply postback `branch=<id>&doc=<id>`) → `pickBranch`가 `branch_id` 갱신. 달 마감은 회사 전체 기준 그대로.
+
+### 항목 추가 · 품목별 항목 · 감가상각 (2026-09-28)
+- 항목에 **소모품(consumables)·수리비(repairs)·설비 구입(asset)** 추가(`lib/types.ts CATEGORIES`, 읽기 규칙 글, 아이콘, 4개 언어). 항목 목록은 코드가 기준이고 DB는 글자만 보관.
+- **품목별 항목**: `Item.category`("" = 서류와 같음, `document_items.category`). 서류 고치기의 품목 표에 항목 칸, 보기 표에는 다른 줄만 칩으로. AI는 섞인 전표일 때만 줄마다 항목을 줌. 비용은 줄 금액 비율로 나눔(`lib/cost-split.ts costByCategory`, 반올림 차이는 가장 큰 줄에).
+- **감가상각**: 항목이 "설비 구입"일 때 상각 기간 칩(0·3·5·10·20년, `documents.dep_years`, `components/invoice/DepYears.tsx`). 계산서 달부터 매달 정액(`depreciationFor`, 마지막 달이 나머지). 그 달 비용에서 설비 자체는 빠지고 감가상각비가 들어감 — "이번 달 결과"·대시보드 이익·지점별 표(`monthResult`)와 손익표("감가상각비" 줄, `plTable`) 모두 `monthCosts` 한 곳을 씀. 부가세 공제는 산 달 그대로. 마이그레이션 20260928000200.

@@ -104,7 +104,7 @@ describe("branch buttons under the LINE receipt card", async () => {
   it("one postback button per branch, naming the document; names as the bot says them", () => {
     const q = branchButtons("doc-1", [{ id: "h", no: "00000", name: "" }, { id: "s", no: "00001", name: "Silom" }, { id: "a", no: "00002", name: "" }]);
     expect(q.items).toHaveLength(3);
-    const a = q.items[1].action as { type: string; label: string; data: string };
+    const a = q.items![1].action as { type: string; label: string; data: string };
     expect(a).toMatchObject({ type: "postback", label: "Silom", data: "branch=s&doc=doc-1" });
     expect(lineBranchLabel({ no: "00000", name: "" })).toBe("สำนักงานใหญ่ / 本店");
     expect(lineBranchLabel({ no: "00002", name: "" })).toBe("สาขา 00002");
@@ -112,5 +112,6 @@ describe("branch buttons under the LINE receipt card", async () => {
   it("LINE allows 13 buttons at most", () => {
     const many = Array.from({ length: 20 }, (_, i) => ({ id: `b${i}`, no: String(i).padStart(5, "0"), name: "" }));
     expect(branchButtons("d", many).items).toHaveLength(13);
+    expect(branchButtons("d", many).items?.length).toBe(13);
   });
 });

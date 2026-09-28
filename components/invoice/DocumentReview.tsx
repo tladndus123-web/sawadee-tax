@@ -32,6 +32,7 @@ import { Chip } from "./fields";
 import { InvoiceEdit } from "./InvoiceEdit";
 import { InvoiceView } from "./InvoiceView";
 import { BranchPicker } from "./BranchPicker";
+import { DepYears } from "./DepYears";
 import { TaxFields } from "./TaxFields";
 import { QuickCard } from "./QuickCard";
 import { TranslateBadge } from "./TranslateBadge";
@@ -357,6 +358,7 @@ export function DocumentReview({
             </button>
             <div id="document-payment-details" className={cn("grid gap-4 border-t p-5 sm:grid-cols-2 sm:border-t-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]", !metadataOpen && "hidden sm:grid")}>
             <Controller control={control} name="branchId" render={({ field }) => <BranchPicker className="sm:col-span-2 xl:col-span-3" value={field.value} onChange={field.onChange} />} />
+            <DepYears className="sm:col-span-2 xl:col-span-3" />
             <label className="grid min-w-0 content-start gap-2">
               <span className="text-xs text-muted-foreground">{t("app.category")}</span>
               <Controller

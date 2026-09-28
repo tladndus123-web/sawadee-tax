@@ -153,7 +153,7 @@ export function SalesPage() {
         </p>
         <div className="grid gap-3 sm:grid-cols-3">
           <Fact label={t("sales.salesValue")} value={baht(r.salesValue)} sub={t("sales.salesSub", { gross: baht(r.salesGross), days: r.days })} />
-          <Fact label={t("sales.cost")} value={baht(r.purchasesCost)} sub={t("sales.costSub", { gross: baht(r.purchasesGross) })} />
+          <Fact label={t("sales.cost")} value={baht(r.purchasesCost)} sub={r.depreciation ? t("sales.costSubDep", { gross: baht(r.purchasesGross), dep: baht(r.depreciation) }) : t("sales.costSub", { gross: baht(r.purchasesGross) })} />
           <Fact label={t("sales.profit")} value={baht(r.profit)} sub={r.salesValue ? t("sales.margin", { pct: pct.format(r.margin) }) : "—"} tone={r.profit < 0 ? "bad" : "brand"} />
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t pt-3 text-sm">

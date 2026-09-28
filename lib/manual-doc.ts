@@ -20,6 +20,6 @@ export function manualStart(ledger: LedgerDoc[], companyTaxId: string, today: st
     date: today,
     confidence: "high",
     customer: ours ? { ...ours.customer, code: "" } : { taxId: co },
-    items: [{ code: "", desc: EMPTY, wh: "", qty: 1, unit: EMPTY, price: 0, amount: 0 }],
+    items: [{ category: "", code: "", desc: EMPTY, wh: "", qty: 1, unit: EMPTY, price: 0, amount: 0 }],
   });
 }

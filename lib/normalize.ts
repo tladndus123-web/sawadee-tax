@@ -74,6 +74,7 @@ export function blank(): LedgerDoc {
     fieldBoxes: {},
     taxMonth: "",
     branchId: "",
+    depYears: 0,
     noClaim: null,
     whtRate: 0,
     whtType: "",
@@ -175,6 +176,7 @@ export function normalize(input: unknown): LedgerDoc {
     dueDate,
     sales: { name: tri(sl.name), area: tri(sl.area), ref: str(sl.ref) },
     items: (Array.isArray(a.items) ? a.items : []).slice(0, 40).map((i: Loose) => ({
+      category: oneOf<Category | "">(["", ...CATEGORIES], i?.category, ""),
       code: str(i?.code),
       desc: tri(i?.desc),
       wh: str(i?.wh),
@@ -209,6 +211,7 @@ export function normalize(input: unknown): LedgerDoc {
     note: tri(a.note),
     fieldBoxes: normalizeBoxes(a.fieldBoxes ?? a.field_boxes),
     taxMonth: typeof a.taxMonth === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(a.taxMonth) ? a.taxMonth : "",
+    depYears: Math.max(0, Math.min(50, Math.round(Number(a.depYears) || 0))),
     branchId: typeof a.branchId === "string" && /^[0-9a-f-]{36}$/i.test(a.branchId) ? a.branchId : "",
     noClaim: typeof a.noClaim === "boolean" ? a.noClaim : null,
     whtRate: Math.min(100, Math.max(0, Math.round((Number(a.whtRate) || 0) * 100) / 100)),

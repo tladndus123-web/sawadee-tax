@@ -16,9 +16,12 @@ export const CATEGORIES = [
   "fuel",
   "office",
   "supplies",
+  "consumables",
+  "repairs",
   "utilities",
   "rent",
   "entertainment",
+  "asset",
   "other",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
@@ -84,6 +87,8 @@ export interface Sales {
 }
 
 export interface Item {
+  /** Its own category when it differs from the document's (a mixed receipt); "" = the document's */
+  category: Category | "";
   code: string;
   desc: Tri;
   wh: string;
@@ -154,6 +159,8 @@ export interface LedgerDoc {
   taxMonth: string;
   /** Branch (สาขา) the document belongs to (public.branches id); "" = not set yet → head office */
   branchId: string;
+  /** Equipment: years its cost is written off over (lib/cost-split); 0 = an ordinary cost when bought */
+  depYears: number;
   /** Input VAT may not be claimed (§82/5); null = decided by the category (entertainment → not claimable) */
   noClaim: boolean | null;
   /** Withholding tax rate in % (0 = no withholding) and the kind of income */
