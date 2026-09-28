@@ -10,6 +10,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useBranchName } from "@/components/layout/branch-switcher";
 import { MoneyInput } from "@/components/invoice/fields";
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -152,6 +153,9 @@ function LaborSheet({ month, onDone }: { month: string; onDone: () => void }) {
       <DialogHeader>
         <DialogTitle>{t("laborTitle", { month })}</DialogTitle>
         <DialogDescription className="text-xs">{t("laborHint")}</DialogDescription>
+        <Link href="/payroll" className="w-fit text-xs font-medium text-primary hover:underline">
+          {t("fromPayroll")} →
+        </Link>
       </DialogHeader>
       {branches.length > 1 && (
         <label className="grid gap-1">

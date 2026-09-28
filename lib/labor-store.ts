@@ -80,3 +80,6 @@ export async function saveLabor(l: LaborLine) {
   if (error) throw error;
   await reload();
 }
+
+/** After payroll wrote the month's labour cost */
+export const refreshLabor = () => reload().catch(() => undefined);

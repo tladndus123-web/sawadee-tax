@@ -3,7 +3,7 @@
 // Sales: the month's result (sales − purchases), the days of sales by channel, and the two ways to add a day —
 // a photo / PDF of the POS closing report (the AI reads it) or typing it in. The sales tax report opens from here.
 
-import { Camera, FileSpreadsheet, FileText, Keyboard, Loader2, Table2, TrendingUp } from "lucide-react";
+import { Camera, ChevronDown, FileSpreadsheet, FileText, Keyboard, Loader2, Table2, TrendingUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -36,6 +36,9 @@ type Open = { draft: SaleDraft; photo?: File | null; preview?: string | null; un
 
 const blank = (date: string, branchId = ""): SaleDraft => ({ branchId, date, channel: "store", docFrom: "", docTo: "", bills: 0, gross: 0, vat: 0, exempt: 0, note: "", source: "manual" });
 
+const PAGE = 10;
+const MORE = 20;
+
 export function SalesPage() {
   const t = useTranslations();
   const locale = useLocale();
@@ -50,6 +53,8 @@ export function SalesPage() {
   const chName = useChannelLabel();
   const today = todayBangkok();
   const [month, setMonth] = useState(today.slice(0, 7));
+  // Only the first days are drawn (a busy month has 100+ lines); "more" adds a page at a time
+  const [shown, setShown] = useState(PAGE);
   const [open, setOpen] = useState<Open | null>(null);
   const [reading, setReading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -141,7 +146,10 @@ export function SalesPage() {
             <FileText className="size-4 text-bad" aria-hidden />
             {t("sales.report")}
           </Link>
-          <select className="h-10 rounded-xl border bg-background px-3 text-sm" value={month} onChange={(e) => setMonth(e.target.value)} aria-label={t("dash.month")}>
+          <select className="h-10 rounded-xl border bg-background px-3 text-sm" value={month} onChange={(e) => {
+            setMonth(e.target.value);
+            setShown(PAGE);
+          }} aria-label={t("dash.month")}>
             {months.map((m) => (
               <option key={m} value={m}>
                 {monthLabel(m)}
@@ -202,7 +210,7 @@ export function SalesPage() {
             <p className="text-[15px] text-muted-foreground">{t("sales.empty")}</p>
           </div>
         ) : (
-          days.map((s) => (
+          days.slice(0, shown).map((s) => (
             <button key={s.id} type="button" onClick={() => void openSale(s)} className="workspace-panel tap-row flex items-center gap-3 p-4 text-left">
               <span className="grid min-w-0 flex-1 gap-0.5">
                 <span className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">
@@ -219,6 +227,17 @@ export function SalesPage() {
               </span>
             </button>
           ))
+        )}
+        {days.length > PAGE && (
+          <button
+            type="button"
+            onClick={() => setShown((n) => (n >= days.length ? PAGE : n + MORE))}
+            aria-expanded={shown >= days.length}
+            className="press flex h-10 items-center justify-center gap-1 rounded-full text-sm font-medium text-primary hover:bg-primary/10"
+          >
+            {shown >= days.length ? t("dash.upcomingLess") : t("dash.upcomingMore", { count: Math.min(MORE, days.length - shown) })}
+            <ChevronDown className={cn("size-4 transition-transform", shown >= days.length && "rotate-180")} aria-hidden />
+          </button>
         )}
       </section>
 

@@ -2,14 +2,16 @@
 // - bills to pay: every saved document not ticked paid (the same rule as the dashboard — lib/archive isUnpaid),
 //   overdue or due within 7 days;
 // - the VAT return (ภ.พ.30): what is left to check and the input VAT that can be claimed, on its reminder days
-//   while the month is open (or always, for a test).
+//   while the month is open (or always, for a test);
+// - payroll filings (ภ.ง.ด.1, สปส.1-10): withholding and social security of last month's saved payroll, likewise.
 
 import { monthKey } from "./archive";
 import { type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
 import { summarize, upcoming, vatFiling } from "./dashboard";
-import { dueReminder, vatReminder } from "./line";
+import { dueReminder, payrollReminder, vatReminder } from "./line";
 import { appUrl } from "./line-bot";
 import { serverCategories } from "./categories-server";
+import { payrollFiling } from "./payroll";
 import type { supabaseAdmin } from "./supabase/admin";
 
 type Admin = ReturnType<typeof supabaseAdmin>;
@@ -43,5 +45,16 @@ export async function reminderTexts(admin: Admin, today: string, opts: { test?: 
       { force: opts.test },
     );
   }
-  return [due, vat].filter((x): x is string => !!x);
+  // Payroll filings: only for a month that has payroll saved, and only while it is open
+  let pay: string | null = null;
+  const pf = payrollFiling(today);
+  const [lines, payLock] = await Promise.all([
+    admin.from("payroll_lines").select("wht, ss_employee, ss_employer").eq("month", pf.month),
+    admin.from("month_locks").select("month").eq("month", pf.month).maybeSingle(),
+  ]);
+  if (!lines.error && lines.data?.length && (!payLock.data || opts.test)) {
+    const sum = (k: "wht" | "ss_employee" | "ss_employer") => lines.data.reduce((a, r) => a + Math.round(Number(r[k]) * 100), 0) / 100;
+    pay = payrollReminder({ ...pf, wht: sum("wht"), ss: sum("ss_employee") + sum("ss_employer") }, `${url}payroll`, { force: opts.test });
+  }
+  return [due, vat, pay].filter((x): x is string => !!x);
 }

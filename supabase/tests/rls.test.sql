@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(119);
+select plan(126);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -286,6 +286,20 @@ select throws_like($$ update public.labor_costs set wages = 1 where month = '202
 delete from public.month_locks where month = '2026-09';
 select is((select array_agg(key order by key) from public.categories where food_cost), array['food', 'supplies'], 'food cost starts with food and supplies');
 select is((select builtin from public.categories where key = 'fees'), true, 'the fees category is built in');
+
+-- Payroll: admins only (salaries and ID numbers), one line per employee, month and period, frozen in a closed month
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+insert into public.employees (id, name, pay_type, rate, national_id) values ('00000000-0000-0000-0000-0000000000e9', 'Somchai', 'monthly', 18000, '1101700230705');
+select lives_ok($$ insert into public.payroll_lines (employee_id, branch_id, month, period, gross, net) values ('00000000-0000-0000-0000-0000000000e9', public.head_branch(), '2026-08', 1, 9000, 9000) $$, 'an admin pays the first half of the month');
+select throws_ok($$ insert into public.payroll_lines (employee_id, branch_id, month, period) values ('00000000-0000-0000-0000-0000000000e9', public.head_branch(), '2026-08', 1) $$, '23505', NULL, 'one line per employee, month and period');
+select throws_ok($$ insert into public.employees (name, national_id) values ('x', '123') $$, '23514', NULL, 'an ID number has 13 digits');
+insert into public.month_locks (month) values ('2026-08');
+select throws_like($$ update public.payroll_lines set gross = 1 where month = '2026-08' $$, 'month_locked%', 'a closed month''s payroll cannot change');
+delete from public.month_locks where month = '2026-08';
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select is((select count(*)::int from public.employees), 0, 'staff see no employees (salaries, ID numbers)');
+select is((select count(*)::int from public.payroll_lines), 0, 'nor any payroll');
+select throws_ok($$ insert into public.employees (name) values ('x') $$, '42501', NULL, 'nor add employees');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

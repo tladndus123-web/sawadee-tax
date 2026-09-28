@@ -16,15 +16,17 @@ export interface CompanySettings {
   costTargets: Record<string, unknown>;
   /** The company's names for sales channels (e.g. "other" → "Wongnai") */
   channelNames: Record<string, string>;
+  /** Social security rate, floor and ceiling (lib/payroll: payrollSettingsOf) */
+  payrollSettings: Record<string, unknown>;
 }
 
-const EMPTY: CompanySettings = { loaded: false, taxId: "", formConfig: {}, stickerNames: {}, appFees: {}, costTargets: {}, channelNames: {} };
+const EMPTY: CompanySettings = { loaded: false, taxId: "", formConfig: {}, stickerNames: {}, appFees: {}, costTargets: {}, channelNames: {}, payrollSettings: {} };
 let current: CompanySettings = EMPTY;
 let started = false;
 const listeners = new Set<() => void>();
 
 async function load() {
-  const { data } = await supabaseBrowser().from("company_settings").select("tax_id, form_config, sticker_names, app_fees, cost_targets, channel_names").eq("id", 1).maybeSingle();
+  const { data } = await supabaseBrowser().from("company_settings").select("tax_id, form_config, sticker_names, app_fees, cost_targets, channel_names, payroll_settings").eq("id", 1).maybeSingle();
   current = {
     loaded: true,
     taxId: data?.tax_id ?? "",
@@ -33,6 +35,7 @@ async function load() {
     appFees: (data?.app_fees as Record<string, unknown>) ?? {},
     costTargets: (data?.cost_targets as Record<string, unknown>) ?? {},
     channelNames: (data?.channel_names as Record<string, string>) ?? {},
+    payrollSettings: (data?.payroll_settings as Record<string, unknown>) ?? {},
   };
   listeners.forEach((l) => l());
 }
@@ -61,7 +64,7 @@ export async function companyTaxId(): Promise<string> {
 }
 
 /** Admin only (the database refuses anyone else). */
-export async function saveCompany(patch: Partial<{ tax_id: string; form_config: unknown; sticker_names: unknown; app_fees: unknown; cost_targets: unknown; channel_names: unknown }>) {
+export async function saveCompany(patch: Partial<{ tax_id: string; form_config: unknown; sticker_names: unknown; app_fees: unknown; cost_targets: unknown; channel_names: unknown; payroll_settings: unknown }>) {
   const { data, error } = await supabaseBrowser().from("company_settings").update(patch).eq("id", 1).select("id");
   if (error) throw error;
   if (!data?.length) throw new Error("not allowed");

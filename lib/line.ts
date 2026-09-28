@@ -136,6 +136,33 @@ export function vatReminder(v: VatReminder, url: string, opts: { force?: boolean
   ].join("\n");
 }
 
+export interface PayrollReminder {
+  /** Pay month being filed, YYYY-MM */
+  month: string;
+  pnd1Paper: string;
+  due: string;
+  daysLeft: number;
+  wht: number;
+  /** Employees' and the company's social security together */
+  ss: number;
+}
+
+/** The payroll filings (ภ.ง.ด.1, สปส.1-10) reminder, on the same days before the deadline as the VAT one */
+export function payrollReminder(v: PayrollReminder, url: string, opts: { force?: boolean } = {}): string | null {
+  if (!opts.force && !VAT_REMIND_DAYS.includes(v.daysLeft)) return null;
+  const [y, m] = v.month.split("-");
+  return [
+    "แจ้งเตือนยื่น ภ.ง.ด.1 และ สปส.1-10 · 源泉税・社会保険の申告のお知らせ",
+    `เดือน ${m}/${Number(y) + 543} · ยื่นภายใน ${dmy(v.due)} (อีก ${v.daysLeft} วัน)`,
+    `${y}年${Number(m)}月分 · 期限 ${dmy(v.due)}（あと${v.daysLeft}日）`,
+    "",
+    `ภาษีหัก ณ ที่จ่าย / 源泉徴収税: ${baht(v.wht)}`,
+    `เงินสมทบประกันสังคม / 社会保険料（本人＋会社）: ${baht(v.ss)}`,
+    "",
+    url,
+  ].join("\n");
+}
+
 /** LINE sends photos as JPEG, but look at the bytes rather than trust that */
 export function imageType(b: Buffer): "image/jpeg" | "image/png" | "image/webp" | null {
   if (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";

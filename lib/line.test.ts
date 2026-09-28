@@ -115,3 +115,17 @@ describe("branch buttons under the LINE receipt card", async () => {
     expect(branchButtons("d", many).items?.length).toBe(13);
   });
 });
+
+describe("payroll filing reminder (LINE)", async () => {
+  const { payrollReminder } = await import("./line");
+  const base = { month: "2026-09", pnd1Paper: "2026-10-07", due: "2026-10-15", wht: 1704.17, ss: 3500 };
+  it("is sent 3 days and 1 day before, naming the month, deadline and amounts", () => {
+    expect(payrollReminder({ ...base, daysLeft: 5 }, "https://x")).toBeNull();
+    const text = payrollReminder({ ...base, daysLeft: 3 }, "https://x")!;
+    expect(text).toContain("09/2569");
+    expect(text).toContain("15/10/2026");
+    expect(text).toContain("1,704.17");
+    expect(text).toContain("3,500.00");
+    expect(text.endsWith("https://x")).toBe(true);
+  });
+});
