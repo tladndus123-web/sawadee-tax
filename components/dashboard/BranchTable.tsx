@@ -1,8 +1,9 @@
 "use client";
 
 // The combined board (all branches, when the company has several): the month for all together on top, then one
-// card per branch with the same four figures; tapping a card switches to that branch. Same arithmetic as the
-// sales page (lib/branches branchSummaries → lib/sales monthResult).
+// card per branch with the same figures (sales, costs, profit, and FL / FLR against sales); tapping a card switches
+// to that branch. Same arithmetic as the sales page (lib/branches branchSummaries → lib/sales monthResult) and the
+// cost control card (lib/cost-control).
 
 import { ChevronRight, Layers } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -10,6 +11,10 @@ import { useMemo } from "react";
 import { BranchAvatar, useBranchName } from "@/components/layout/branch-switcher";
 import { BRANCH_COLORS, branchLabel, branchSummaries, colorOf } from "@/lib/branches";
 import { setBranch, useBranches } from "@/lib/branch-store";
+import { useCategories } from "@/lib/category-store";
+import { useCompany } from "@/lib/company-store";
+import { type CostControl, costControl, targetsOf } from "@/lib/cost-control";
+import { monthCosts } from "@/lib/cost-split";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
 import type { MonthResult } from "@/lib/sales";
@@ -24,10 +29,20 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
   const { entries } = useLedger({ all: true });
   const { sales } = useSales({ all: true });
   const { lines: labor } = useLabor({ all: true });
-  const { rows, total } = useMemo(
-    () => branchSummaries(branches, pick(entries, "ledger").map((e) => e.doc), sales, month, companyTaxId, labor),
-    [branches, entries, sales, month, companyTaxId, labor],
-  );
+  const company = useCompany();
+  const { rows: categories } = useCategories();
+  const { rows, total, totalCost } = useMemo(() => {
+    const purchases = pick(entries, "ledger").map((e) => e.doc);
+    const s = branchSummaries(branches, purchases, sales, month, companyTaxId, labor);
+    const food = new Set(categories.filter((c) => c.foodCost).map((c) => c.key as string));
+    const targets = targetsOf(company.costTargets);
+    const cc = (salesValue: number, costs: Parameters<typeof costControl>[1], lab: number) => costControl(Math.round(salesValue * 100), costs, food, lab, targets);
+    return {
+      rows: s.rows.map((r) => ({ ...r, cost: cc(r.result.salesValue, r.costs, r.labor) })),
+      total: s.total,
+      totalCost: cc(s.total.salesValue, monthCosts(purchases, month, companyTaxId), s.rows.reduce((a, r) => a + r.labor, 0)),
+    };
+  }, [branches, entries, sales, month, companyTaxId, labor, categories, company.costTargets]);
   if (branches.length < 2) return null;
 
   const go = (id: string) => {
@@ -50,12 +65,12 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
             <p className="text-xs text-muted-foreground">{t("combinedHint")}</p>
           </div>
         </div>
-        <Figures r={total} big />
+        <Figures r={total} c={totalCost} big />
       </div>
 
       {/* One card per branch */}
       <ul className="grid gap-3 sm:grid-cols-2">
-        {rows.map(({ branch, result }) => {
+        {rows.map(({ branch, result, cost }) => {
           const [fg] = BRANCH_COLORS[colorOf(branch, branches)];
           return (
             <li key={branch.id}>
@@ -74,7 +89,7 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
                   </span>
                   <ChevronRight className="size-4 flex-none text-muted-foreground" aria-hidden />
                 </span>
-                <Figures r={result} />
+                <Figures r={result} c={cost} />
               </button>
             </li>
           );
@@ -84,7 +99,9 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
   );
 }
 
-function Figures({ r, big }: { r: MonthResult; big?: boolean }) {
+const TONE = { ok: "text-ok", near: "text-warn", over: "text-bad", none: undefined } as const;
+
+function Figures({ r, c, big }: { r: MonthResult; c: CostControl; big?: boolean }) {
   const t = useTranslations("branch");
   const cell = (label: string, value: string, tone?: string) => (
     <span className="grid min-w-0 gap-0.5 rounded-2xl bg-muted/60 px-3 py-2">
@@ -97,7 +114,7 @@ function Figures({ r, big }: { r: MonthResult; big?: boolean }) {
       {cell(t("colSales"), r.days ? baht(r.salesValue) : "–")}
       {cell(t("colCost"), baht(r.purchasesCost))}
       {cell(t("colProfit"), r.days ? baht(r.profit) : "–", r.days ? (r.profit < 0 ? "text-bad" : "text-brand") : undefined)}
-      {cell(t("colVat"), baht(r.vatPayable), r.vatPayable < 0 ? "text-ok" : undefined)}
+      {cell("FL / FLR", c.flr.pct === null ? "–" : `${c.fl.pct}% / ${c.flr.pct}%`, TONE[c.flr.level])}
     </span>
   );
 }

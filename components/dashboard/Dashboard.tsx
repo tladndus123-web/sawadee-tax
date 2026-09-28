@@ -24,6 +24,7 @@ import { vendorCategory } from "@/lib/vendors";
 import { monthResult } from "@/lib/sales";
 import { useSales } from "@/lib/sales-store";
 import { InstallCard } from "@/components/settings/InstallCard";
+import { CostCard } from "@/components/sales/CostCard";
 import { useMe } from "@/lib/role-store";
 import { ALL } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
@@ -67,6 +68,7 @@ export function Dashboard() {
   const combined = allBranches && branchCount > 1;
   const result = useMemo(() => monthResult(sales, docs.map((d) => d.doc), month, company.taxId, monthLabor(labor, month)), [sales, docs, month, company.taxId, labor]);
   const hasSales = result.days > 0;
+  const purchases = useMemo(() => docs.map((d) => d.doc), [docs]);
 
   if (!loaded) return <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
 
@@ -111,11 +113,11 @@ export function Dashboard() {
       </Link>
       )}
 
+      {/* What owners watch first: food, labour and rent against sales (FL / FLR) */}
+      <CostCard month={month} salesValue={result.salesValue} purchases={purchases} />
+
       {/* Several branches, looking at all of them: each one's month side by side */}
       {allBranches && <BranchTable month={month} companyTaxId={company.taxId} />}
-
-      {/* This month's job first: the VAT return that is due next */}
-      <VatCard entries={entries} companyTaxId={company.taxId} today={today} />
 
       {/* Phones, until installed or closed: put the app on the home screen */}
       <InstallCard compact />
@@ -157,6 +159,9 @@ export function Dashboard() {
         <DueList items={due} docs={docs} />
         <TrendChart data={points} active={month} />
       </div>
+
+      {/* The VAT return that is due next: still here, after the costs */}
+      <VatCard entries={entries} companyTaxId={company.taxId} today={today} />
 
       {/* Admins: who did what this month */}
       {isAdmin && <TeamCard month={month} />}

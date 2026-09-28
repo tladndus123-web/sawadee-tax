@@ -1,6 +1,7 @@
 // A restaurant's three big costs against sales (owner's feedback 2026-09-28): food cost (the categories marked
 // "food cost" in settings), labour (typed in per branch and month, lib/labor), rent (the rent category) — each as a
-// share of sales without VAT, and the three together. Target shares (30 / 30 / 10 to start) colour the result.
+// share of sales without VAT; FL (food + labour, the "prime cost") and FLR (all three) are what owners watch first.
+// Target shares (30 / 30 / 10 to start) colour the result; the FL and FLR targets are their sums (60 / 70).
 // Satang integers in, ratios out.
 
 
@@ -50,8 +51,10 @@ export interface CostControl {
   food: CostLine;
   labor: CostLine;
   rent: CostLine;
-  /** The three together */
-  prime: CostLine;
+  /** Food + labour (prime cost) */
+  fl: CostLine;
+  /** Food + labour + rent */
+  flr: CostLine;
 }
 
 export function costControl(salesValue: number, costs: { byCategory: ReadonlyMap<string, number> }, foodKeys: ReadonlySet<string>, labor: number, targets: CostTargets): CostControl {
@@ -64,6 +67,7 @@ export function costControl(salesValue: number, costs: { byCategory: ReadonlyMap
     food: line(food, targets.food),
     labor: line(labor, targets.labor),
     rent: line(rent, targets.rent),
-    prime: line(food + labor + rent, targets.food + targets.labor + targets.rent),
+    fl: line(food + labor, targets.food + targets.labor),
+    flr: line(food + labor + rent, targets.food + targets.labor + targets.rent),
   };
 }

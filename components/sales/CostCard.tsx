@@ -68,14 +68,18 @@ export function CostCard({ month, salesValue, purchases }: { month: string; sale
         )}
       </div>
 
-      <div className="grid gap-2.5">
-        <Ratio label={t("food")} line={c.food} />
-        <Ratio label={t("labor")} line={c.labor} empty={!monthLabor(lines, month) ? t("noLabor") : undefined} />
-        <Ratio label={t("rent")} line={c.rent} />
-        <div className="border-t pt-2.5">
-          <Ratio label={t("prime")} line={c.prime} strong />
-        </div>
+      {/* What owners read first: food + labour, and with rent */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <Headline code="FL" label={t("fl")} line={c.fl} />
+        <Headline code="FLR" label={t("flr")} line={c.flr} />
       </div>
+
+      <div className="grid gap-2.5">
+        <Ratio code="F" label={t("food")} line={c.food} />
+        <Ratio code="L" label={t("labor")} line={c.labor} empty={!monthLabor(lines, month) ? t("noLabor") : undefined} />
+        <Ratio code="R" label={t("rent")} line={c.rent} />
+      </div>
+      <p className="text-xs text-muted-foreground tabular-nums">{t("base", { sales: baht(salesValue) })}</p>
       <p className="text-[11px] leading-relaxed text-muted-foreground">{t("note")}</p>
 
       <Dialog open={laborOpen} onOpenChange={setLaborOpen}>{laborOpen && <LaborSheet month={month} onDone={() => setLaborOpen(false)} />}</Dialog>
@@ -84,14 +88,36 @@ export function CostCard({ month, salesValue, purchases }: { month: string; sale
   );
 }
 
-function Ratio({ label, line, strong, empty }: { label: string; line: CostLine; strong?: boolean; empty?: string }) {
+const TILE = { ok: "bg-ok/10", near: "bg-warn/10", over: "bg-bad/10", none: "bg-muted/60" } as const;
+
+/** A big share with its target: FL or FLR */
+function Headline({ code, label, line }: { code: string; label: string; line: CostLine }) {
+  const t = useTranslations("cost");
+  return (
+    <div className={cn("grid gap-0.5 rounded-2xl px-4 py-3", TILE[line.level])}>
+      <span className="flex items-baseline gap-1.5 text-xs text-muted-foreground">
+        <b className="flex-none font-semibold text-foreground">{code}</b>
+        <span className="truncate">{label}</span>
+      </span>
+      <span className={cn("text-[28px] leading-tight font-semibold tracking-tight tabular-nums", TONE[line.level])}>{line.pct === null ? "–" : `${line.pct}%`}</span>
+      <span className="text-[11px] text-muted-foreground tabular-nums">
+        {baht(fromSatang(line.amount))} · {t("target", { pct: line.target })}
+      </span>
+    </div>
+  );
+}
+
+function Ratio({ code, label, line, empty }: { code: string; label: string; line: CostLine; empty?: string }) {
   const t = useTranslations("cost");
   const width = line.pct === null ? 0 : Math.min(100, (line.pct / Math.max(line.target * 1.5, 1)) * 100);
   const mark = Math.min(100, (line.target / Math.max(line.target * 1.5, 1)) * 100);
   return (
     <div className="grid gap-1">
       <div className="flex items-baseline justify-between gap-2">
-        <span className={cn("text-sm", strong && "font-semibold")}>{label}</span>
+        <span className="flex items-baseline gap-2 text-sm">
+          <b className="w-3 font-semibold">{code}</b>
+          {label}
+        </span>
         <span className="flex items-baseline gap-2">
           <span className="text-xs text-muted-foreground tabular-nums">{baht(fromSatang(line.amount))}</span>
           <span className={cn("min-w-[3.5rem] text-right text-[15px] font-semibold tabular-nums", TONE[line.level])}>{line.pct === null ? "–" : `${line.pct}%`}</span>

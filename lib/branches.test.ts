@@ -74,5 +74,9 @@ describe("the combined board: each branch and all together", () => {
     expect(by.a.salesValue).toBe(20000);
     expect(total.salesValue).toBe(by.h.salesValue + by.s.salesValue + by.a.salesValue);
     expect(total.profit).toBe(by.h.profit + by.s.profit + by.a.profit);
+    // Each branch's own costs by category, for its F / L / R shares
+    const s = rows.find((r) => r.branch.id === "s")!;
+    expect([...s.costs.byCategory.values()].reduce((a, v) => a + v, 0)).toBe(6000000);
+    expect(rows.find((r) => r.branch.id === "a")!.costs.byCategory.size).toBe(0);
   });
 });

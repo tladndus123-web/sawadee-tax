@@ -2,6 +2,7 @@
 // Pure part, shared by the app and the LINE bot; the client store is lib/branch-store.ts.
 
 import { type LaborLine, monthLabor } from "./cost-control";
+import { type MonthCosts, monthCosts } from "./cost-split";
 import { type MonthResult, monthResult, type Sale } from "./sales";
 import { branchNo } from "./thai-tax";
 import type { LedgerDoc } from "./types";
@@ -76,6 +77,9 @@ export const sortBranches = (branches: Branch[]) => [...branches].sort((a, b) =>
 export interface BranchSummary {
   branch: Branch;
   result: MonthResult;
+  /** The branch's costs by category and its labour (satang), for its food / labour / rent shares */
+  costs: MonthCosts;
+  labor: number;
 }
 
 /**
@@ -92,15 +96,21 @@ export function branchSummaries(
 ): { rows: BranchSummary[]; total: MonthResult } {
   const head = headOf(branches);
   const of = (id: string) => (id && byId(branches, id) ? id : (head?.id ?? ""));
-  const rows = sortBranches(branches).map((b) => ({
-    branch: b,
-    result: monthResult(
-      sales.filter((s) => of(s.branchId) === b.id),
-      purchases.filter((d) => of(d.branchId) === b.id),
-      month,
-      companyTaxId,
-      monthLabor(labor.filter((l) => of(l.branchId) === b.id), month),
-    ),
-  }));
+  const rows = sortBranches(branches).map((b) => {
+    const mine = purchases.filter((d) => of(d.branchId) === b.id);
+    const lab = monthLabor(labor.filter((l) => of(l.branchId) === b.id), month);
+    return {
+      branch: b,
+      result: monthResult(
+        sales.filter((s) => of(s.branchId) === b.id),
+        mine,
+        month,
+        companyTaxId,
+        lab,
+      ),
+      costs: monthCosts(mine, month, companyTaxId),
+      labor: lab,
+    };
+  });
   return { rows, total: monthResult(sales, purchases, month, companyTaxId, monthLabor(labor, month)) };
 }

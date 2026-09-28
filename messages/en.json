@@ -1063,7 +1063,6 @@
     "colSales": "Sales",
     "colCost": "Costs",
     "colProfit": "Profit",
-    "colVat": "VAT to pay",
     "switch": "Switch branch",
     "sheetHint": "Shows only the chosen branch's books, sales, VAT and profit. \"All branches\" adds them all up.",
     "sheetLine": "This month: sales {sales} · profit {profit}",
@@ -1180,7 +1179,6 @@
     "food": "Food cost",
     "labor": "Labour",
     "rent": "Rent",
-    "prime": "The three together",
     "target": "Target {pct}% or less",
     "near": "A little above the target",
     "over": "Over the target",
@@ -1188,7 +1186,7 @@
     "note": "Food is the categories with 'Counts as food cost' on (food and supplies to start). Purchases count by invoice date, so stock is not taken into account.",
     "enterLabor": "Enter labour",
     "targets": "Change targets",
-    "targetsHint": "A common restaurant guide is food 30%, labour 30%, rent 10% (70% together).",
+    "targetsHint": "A common restaurant guide is food 30%, labour 30%, rent 10%. The FL (food + labour) and FLR targets are their sums (60% · 70%).",
     "targetsSaved": "Targets saved",
     "badTarget": "Enter a number from 1 to 100",
     "laborTitle": "Labour {month}",
@@ -1208,7 +1206,10 @@
     "locked": "That month is closed",
     "fail": "Could not save",
     "laborIn": "labour {labor} on top",
-    "fromPayroll": "Fill in from payroll"
+    "fromPayroll": "Fill in from payroll",
+    "fl": "Food + labour",
+    "flr": "Food + labour + rent",
+    "base": "Against sales without VAT of {sales}"
   },
   "pay": {
     "title": "Payroll",
