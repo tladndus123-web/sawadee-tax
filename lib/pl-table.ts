@@ -82,3 +82,14 @@ export function plTable(
     profit: row("total", months.map((_, i) => salesSat[i] - costSat[i])),
   };
 }
+
+/** A value as a share of that column's sales, in percent with one decimal; null when the column has no sales */
+export function shareOfSales(value: number, sales: number): number | null {
+  if (!sales || sales <= 0) return null;
+  return Math.round((value / sales) * 1000) / 10;
+}
+
+/** A row's shares, month by month and for the whole period (against the sales of the same column) */
+export function rowShares(r: PlRow<unknown>, salesTotal: PlRow<unknown>): { values: (number | null)[]; total: number | null } {
+  return { values: r.values.map((v, i) => shareOfSales(v, salesTotal.values[i])), total: shareOfSales(r.total, salesTotal.total) };
+}

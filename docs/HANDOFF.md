@@ -500,3 +500,4 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **직원 서류 만료**: `employees.documents` jsonb `[{name, expires}]`(직원 정보 폼에서 추가). 직원 탭 위에 30일 이내/지난 것 알림 띠, 아침 알림(LINE·푸시)에 30/7/1/0일 전과 만료 뒤 매일 — `documentReminder`, `expiringDocuments`.
 - 로컬 `db reset` 뒤 storage 업로드 42P10 → CLAUDE.md 메모.
 - **연간 서류** (2026-09-29): 신고 서류 탭 아래 "{연도} 연간 서류" 카드 → `/payroll/print/cert50/{YYYY}`(직원별 50 ทวิ, 1인 1장, 지급자 이름·주소는 우리 회사 앞 최근 청구서에서, 사회보험 납부액 포함, 세액 태국어 문자 `bahtText`) · `/payroll/print/pnd1a/{YYYY}`(ภ.ง.ด.1ก 목록: 개월 수·연 소득·세액). 마감 `annualDeadlines`: 50 ทวิ 다음 해 2월 15일, ภ.ง.ด.1ก 2월 말(영업일). `components/payroll/YearPrint.tsx`; 라우트 `[form]/[month]`가 연도(YYYY)도 받음.
+- **손익표 매출 대비 %** (2026-09-29): 항목별 손익표에 보기 전환 "금액 + % / 금액 / %"(기기에 기억, localStorage `pl-view`). %는 같은 열(그 달·합계)의 매출 합계 대비 — `lib/pl-table.ts shareOfSales/rowShares`(테스트). 엑셀에 두 번째 시트 "매출 대비 %"(0.0% 서식). 아래 안내문도 인건비·고정비가 들어오는 것에 맞게 고침.

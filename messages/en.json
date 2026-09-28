@@ -1000,10 +1000,15 @@
     "untilMonth": "Until {month}",
     "span": "Period",
     "months": "{count} months",
-    "note": "Purchases count by invoice date. Costs not in the ledger (wages, rent paid without a document) are missing. Delivery-app commission is included only when the app's tax invoice is recorded as a purchase. Check final figures with your accountant.",
+    "note": "% is the share of that month's sales without VAT. Purchases count by invoice date. Labour comes from payroll / labour entries; rent and other costs without invoices from Settings → Fixed costs. Delivery-app fees count only when their tax invoices are uploaded. Check final figures with your accountant.",
     "depreciation": "Depreciation",
     "disposal": "Equipment disposed (what was left)",
-    "labor": "Labour"
+    "labor": "Labour",
+    "view": "View",
+    "view_both": "Amount + %",
+    "view_amount": "Amount",
+    "view_share": "%",
+    "shareSheet": "% of sales"
   },
   "install": {
     "title": "Install on your phone",

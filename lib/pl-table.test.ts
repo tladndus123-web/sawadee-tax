@@ -63,3 +63,17 @@ describe("P&L with labour", () => {
     expect(t.profit.total).toBe(-20750);
   });
 });
+
+describe("shares of sales", async () => {
+  const { rowShares, shareOfSales } = await import("./pl-table");
+  it("a value against the same column's sales, one decimal; no sales, no share", () => {
+    expect(shareOfSales(162530.62, 719889.93)).toBe(22.6);
+    expect(shareOfSales(-5000, 100000)).toBe(-5);
+    expect(shareOfSales(1000, 0)).toBeNull();
+  });
+  it("each month and the whole period on its own sales", () => {
+    const sales = { key: "total", values: [0, 100000, 200000], total: 300000 };
+    const rent = { key: "rent", values: [30000, 30000, 30000], total: 90000 };
+    expect(rowShares(rent, sales)).toEqual({ values: [null, 30, 15], total: 30 });
+  });
+});

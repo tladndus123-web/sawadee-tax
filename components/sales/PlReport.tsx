@@ -2,6 +2,7 @@
 
 // Profit and loss by category, months side by side: sales by channel, costs by category (biggest first), profit.
 // On phones the table scrolls sideways with the item names pinned on the left. Excel download for the accountant.
+// Each figure can also show its share of that column's sales (amount / % / both), so the cost structure reads at a glance.
 
 import { ChevronLeft, FileSpreadsheet, Loader2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -13,7 +14,7 @@ import { invoiceMonth, monthDate, NO_DATE } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { fmt } from "@/lib/money";
-import { type PlRow, plTable } from "@/lib/pl-table";
+import { type PlRow, plTable, rowShares } from "@/lib/pl-table";
 import { saleMonth } from "@/lib/sales";
 import { useSales } from "@/lib/sales-store";
 import { todayBangkok } from "@/lib/thai-tax";
@@ -24,6 +25,9 @@ import { useLabor } from "@/lib/labor-store";
 import { useFixedCosts } from "@/lib/fixed-store";
 
 const SPANS = [3, 6, 12] as const;
+const VIEWS = ["both", "amount", "share"] as const;
+type View = (typeof VIEWS)[number];
+const VIEW_KEY = "pl-view";
 
 export function PlReport() {
   const t = useTranslations();
@@ -36,6 +40,20 @@ export function PlReport() {
   const [end, setEnd] = useState(today.slice(0, 7));
   const [span, setSpan] = useState<(typeof SPANS)[number]>(6);
   const [busy, setBusy] = useState(false);
+  // Amount, share of sales, or both — remembered on this device
+  const [view, setView] = useState<View>("both");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(VIEW_KEY);
+      if (v && (VIEWS as readonly string[]).includes(v)) setView(v as View);
+    } catch {}
+  }, []);
+  const pickView = (v: View) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {}
+  };
 
   const purchases = useMemo(() => pick(entries, "ledger").map((e) => e.doc), [entries]);
   const months = useMemo(() => {
@@ -69,6 +87,7 @@ export function PlReport() {
         total: t("pl.total"),
         sales: t("pl.sales"),
         salesTotal: t("pl.salesTotal"),
+        shareSheet: t("pl.shareSheet"),
         costs: t("pl.costs"),
         costTotal: t("pl.costTotal"),
         profit: t("pl.profit"),
@@ -124,6 +143,19 @@ export function PlReport() {
             </button>
           ))}
         </div>
+        <div className="flex rounded-full bg-muted p-1" role="group" aria-label={t("pl.view")}>
+          {VIEWS.map((v) => (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={view === v}
+              onClick={() => pickView(v)}
+              className={cn("h-8 rounded-full px-3 text-sm", view === v ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
+            >
+              {t(`pl.view_${v}`)}
+            </button>
+          ))}
+        </div>
       </div>
 
       {!ready ? (
@@ -149,15 +181,15 @@ export function PlReport() {
             <tbody>
               <SectionRow label={t("pl.sales")} cols={cols} />
               {table.sales.map((r) => (
-                <MoneyRow key={r.key} label={chName(r.key)} r={r} indent />
+                <MoneyRow key={r.key} label={chName(r.key)} r={r} sales={table.salesTotal} view={view} indent />
               ))}
-              <MoneyRow label={t("pl.salesTotal")} r={table.salesTotal} strong />
+              <MoneyRow label={t("pl.salesTotal")} r={table.salesTotal} sales={table.salesTotal} view={view} strong />
               <SectionRow label={t("pl.costs")} cols={cols} />
               {table.costs.map((r) => (
-                <MoneyRow key={r.key} label={r.key === "depreciation" || r.key === "disposal" || r.key === "labor" ? t(`pl.${r.key}`) : catLabel(r.key)} r={r} indent />
+                <MoneyRow key={r.key} label={r.key === "depreciation" || r.key === "disposal" || r.key === "labor" ? t(`pl.${r.key}`) : catLabel(r.key)} r={r} sales={table.salesTotal} view={view} indent />
               ))}
-              <MoneyRow label={t("pl.costTotal")} r={table.costTotal} strong />
-              <MoneyRow label={t("pl.profit")} r={table.profit} strong profit />
+              <MoneyRow label={t("pl.costTotal")} r={table.costTotal} sales={table.salesTotal} view={view} strong />
+              <MoneyRow label={t("pl.profit")} r={table.profit} sales={table.salesTotal} view={view} strong profit />
             </tbody>
           </table>
         </div>
@@ -177,26 +209,56 @@ function SectionRow({ label, cols }: { label: string; cols: number }) {
   );
 }
 
-function MoneyRow({ label, r, strong, profit, indent }: { label: string; r: PlRow<unknown>; strong?: boolean; profit?: boolean; indent?: boolean }) {
+const pctText = (p: number | null) => (p === null ? "–" : `${p.toFixed(1)}%`);
+
+function MoneyRow({
+  label,
+  r,
+  sales,
+  view,
+  strong,
+  profit,
+  indent,
+}: {
+  label: string;
+  r: PlRow<unknown>;
+  sales: PlRow<unknown>;
+  view: View;
+  strong?: boolean;
+  profit?: boolean;
+  indent?: boolean;
+}) {
+  const shares = rowShares(r, sales);
+  const pcts = [...shares.values, shares.total];
   return (
     <tr className={cn("border-b border-border/60", strong && "font-semibold")}>
       <th scope="row" className={cn("sticky left-0 z-10 py-2.5 pr-3 text-left font-[inherit] whitespace-nowrap", indent ? "pl-6" : "pl-4", strong ? "bg-muted" : "bg-card")}>
         {label}
       </th>
-      {[...r.values, r.total].map((v, i) => (
-        <td
-          key={i}
-          className={cn(
-            "px-3 py-2.5 text-right whitespace-nowrap tabular-nums",
-            strong && "bg-muted/50",
-            i === r.values.length && "border-l border-border/60 font-semibold",
-            profit && (v < 0 ? "text-bad" : v > 0 ? "text-brand" : ""),
-            !v && !strong && "text-muted-foreground/60",
-          )}
-        >
-          {v ? fmt(v) : "–"}
-        </td>
-      ))}
+      {[...r.values, r.total].map((v, i) => {
+        const pct = v ? pctText(pcts[i]) : "–";
+        return (
+          <td
+            key={i}
+            className={cn(
+              "px-3 py-2.5 text-right whitespace-nowrap tabular-nums",
+              strong && "bg-muted/50",
+              i === r.values.length && "border-l border-border/60 font-semibold",
+              profit && (v < 0 ? "text-bad" : v > 0 ? "text-brand" : ""),
+              !v && !strong && "text-muted-foreground/60",
+            )}
+          >
+            {view === "share" ? (
+              pct
+            ) : (
+              <>
+                <span className="block">{v ? fmt(v) : "–"}</span>
+                {view === "both" && v !== 0 && <span className={cn("block text-[11px] font-normal", profit ? "" : "text-muted-foreground")}>{pct}</span>}
+              </>
+            )}
+          </td>
+        );
+      })}
     </tr>
   );
 }
