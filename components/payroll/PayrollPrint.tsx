@@ -14,11 +14,10 @@ import { Link } from "@/i18n/navigation";
 import { monthDate } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
 import { fmt } from "@/lib/money";
-import { type Employee, payrollDeadlines, payrollSettingsOf, periodPay } from "@/lib/payroll";
+import { type Employee, maskId, payrollDeadlines, payrollSettingsOf, periodPay } from "@/lib/payroll";
 import { loadPayroll, type PayrollLineRow, useEmployees } from "@/lib/payroll-store";
 import { useMe } from "@/lib/role-store";
 import { branchLabel, dmy, todayBangkok } from "@/lib/thai-tax";
-import { maskId } from "./EmployeesTab";
 import { useOurCompany } from "./our-company";
 
 export type PayForm = "slip" | "pnd1" | "sso";
@@ -74,7 +73,8 @@ export function PayrollPrint({ form, month }: { form: PayForm; month: string }) 
           paidOn: second?.paidOn || first?.paidOn || "",
         };
       })
-      .filter((p): p is Person => !!p);
+      // Nothing paid this month (e.g. a daily worker with no days): not on the lists or payslips
+      .filter((p): p is Person => !!p && p.gross > 0);
   }, [employees, lines]);
 
   const period = new Intl.DateTimeFormat("th-TH", { month: "long", year: "numeric", timeZone: "UTC" }).format(monthDate(month));
@@ -133,7 +133,7 @@ export function PayrollPrint({ form, month }: { form: PayForm; month: string }) 
           ))}
         </div>
       ) : (
-        <FilingList form={form} people={people} us={us} period={period} month={month} ssRate={settings.ssRate} />
+        <FilingList form={form} people={people} us={us} period={period} month={month} ssRate={settings.ssRate} ssAccount={settings.ssAccount} />
       )}
     </div>
   );
@@ -155,7 +155,23 @@ function Header({ us, children }: { us: Us; children: React.ReactNode }) {
   );
 }
 
-function FilingList({ form, people, us, period, month, ssRate }: { form: "pnd1" | "sso"; people: Person[]; us: Us; period: string; month: string; ssRate: number }) {
+function FilingList({
+  form,
+  people,
+  us,
+  period,
+  month,
+  ssRate,
+  ssAccount,
+}: {
+  form: "pnd1" | "sso";
+  people: Person[];
+  us: Us;
+  period: string;
+  month: string;
+  ssRate: number;
+  ssAccount: string;
+}) {
   const head = "px-2 py-1 text-left align-bottom font-semibold";
   const num = "px-2 py-1 text-right tabular-nums whitespace-nowrap";
   const cell = "px-2 py-1 align-top";
@@ -181,7 +197,7 @@ function FilingList({ form, people, us, period, month, ssRate }: { form: "pnd1" 
         {form === "sso" ? (
           <>
             <dt className="font-semibold">เลขที่บัญชีนายจ้าง</dt>
-            <dd>………………………………</dd>
+            <dd className="tabular-nums">{ssAccount ? `${ssAccount.slice(0, 2)}-${ssAccount.slice(2, 9)}-${ssAccount.slice(9)}` : "………………………………"}</dd>
           </>
         ) : null}
       </Header>

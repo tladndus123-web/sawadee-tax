@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PAYROLL, type Employee, EMPTY_PERIOD, incomeTax, monthlyWithholding, monthPay, payrollFiling, payrollSettingsOf, periodPay, socialSecurity, taxableIncome } from "./payroll";
+import { DEFAULT_PAYROLL, type Employee, EMPTY_PERIOD, incomeTax, monthlyWithholding, daysNotEmployed, maskId, monthPay, payrollFiling, payrollSettingsOf, periodPay, socialSecurity, taxableIncome } from "./payroll";
 
 const emp = (p: Partial<Employee> = {}): Employee => ({
   id: "e",
@@ -49,7 +49,7 @@ describe("social security (2026: 5 % of 1,650–17,500)", () => {
     expect(socialSecurity(0, DEFAULT_PAYROLL)).toBe(0);
   });
   it("the company's settings when sane", () => {
-    expect(payrollSettingsOf({ ssCeiling: 20000, ssRate: "x" })).toEqual({ ssRate: 5, ssFloor: 1650, ssCeiling: 20000 });
+    expect(payrollSettingsOf({ ssCeiling: 20000, ssRate: "x", ssAccount: "10-0012345-6" })).toEqual({ ssRate: 5, ssFloor: 1650, ssCeiling: 20000, ssAccount: "1000123456" });
   });
 });
 
@@ -99,5 +99,18 @@ describe("filing deadlines (the month after pay)", () => {
   });
   it("after the deadline, the current month", () => {
     expect(payrollFiling("2026-10-16")).toMatchObject({ month: "2026-10", due: "2026-11-16" });
+  });
+});
+
+describe("joining or leaving during the month (monthly staff)", () => {
+  it("days outside employment become unpaid days off in their half", () => {
+    expect(daysNotEmployed({ startDate: "2026-09-11", endDate: "" }, "2026-09")).toEqual({ first: 10, second: 0 });
+    expect(daysNotEmployed({ startDate: "", endDate: "2026-09-20" }, "2026-09")).toEqual({ first: 0, second: 10 });
+    expect(daysNotEmployed({ startDate: "2026-01-01", endDate: "" }, "2026-09")).toEqual({ first: 0, second: 0 });
+    expect(daysNotEmployed({ startDate: "", endDate: "2026-10-15" }, "2026-10")).toEqual({ first: 0, second: 15 }); // 16 days left, at most 15
+  });
+  it("ID numbers show only the last 4 digits", () => {
+    expect(maskId("1101700203450")).toBe("•••••••••3450");
+    expect(maskId("")).toBe("");
   });
 });

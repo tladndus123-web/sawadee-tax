@@ -16,7 +16,7 @@ import { useCompany } from "@/lib/company-store";
 import { refreshLabor } from "@/lib/labor-store";
 import { fmt } from "@/lib/money";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
-import { type Employee, EMPTY_PERIOD, monthPay, payrollSettingsOf, type PeriodInput } from "@/lib/payroll";
+import { daysNotEmployed, type Employee, EMPTY_PERIOD, monthPay, payrollSettingsOf, type PeriodInput } from "@/lib/payroll";
 import { loadPayroll, savePayrollMonth, useEmployees } from "@/lib/payroll-store";
 import { cn } from "@/lib/utils";
 
@@ -62,8 +62,17 @@ export function PayRunTab({ month }: { month: string }) {
   }, [month]);
 
   const staff = useMemo(() => employees.filter((e) => inMonth(e, month) || saved.has(e.id)), [employees, month, saved]);
-  const rowOf = (id: string) => inputs[id] ?? { first: EMPTY_PERIOD, second: EMPTY_PERIOD };
-  const pays = useMemo(() => new Map(staff.map((e) => [e.id, monthPay(e, rowOf(e.id).first, rowOf(e.id).second, settings)])), [staff, inputs, settings]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Not typed in yet: a monthly employee who joins or leaves during the month starts with those days as unpaid
+  const rows = useMemo(() => {
+    const out = new Map<string, { first: PeriodInput; second: PeriodInput }>();
+    for (const e of staff) {
+      const off = e.payType === "monthly" ? daysNotEmployed(e, month) : { first: 0, second: 0 };
+      out.set(e.id, inputs[e.id] ?? { first: { ...EMPTY_PERIOD, absentDays: off.first }, second: { ...EMPTY_PERIOD, absentDays: off.second } });
+    }
+    return out;
+  }, [staff, inputs, month]);
+  const rowOf = (id: string) => rows.get(id) ?? { first: EMPTY_PERIOD, second: EMPTY_PERIOD };
+  const pays = useMemo(() => new Map(staff.map((e) => [e.id, monthPay(e, rows.get(e.id)!.first, rows.get(e.id)!.second, settings)])), [staff, rows, settings]);
   const total = [...pays.values()].reduce(
     (a, m) => ({ gross: a.gross + m.gross, ss: a.ss + m.ssEmployee, er: a.er + m.ssEmployer, wht: a.wht + m.wht, net: a.net + m.netFirst + m.netSecond, cost: a.cost + m.employerCost }),
     { gross: 0, ss: 0, er: 0, wht: 0, net: 0, cost: 0 },

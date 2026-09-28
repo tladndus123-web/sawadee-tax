@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { branchLabel, byId, headOf } from "@/lib/branches";
 import { useBranches } from "@/lib/branch-store";
 import { baht } from "@/lib/money";
-import type { Employee } from "@/lib/payroll";
+import { type Employee, maskId } from "@/lib/payroll";
 import { deleteEmployee, saveEmployee, useEmployees } from "@/lib/payroll-store";
 import { taxIdOk } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
@@ -38,8 +38,6 @@ const blank = (branchId: string): Employee & { isNew: boolean } => ({
   note: "",
   isNew: true,
 });
-
-export const maskId = (id: string) => (id.length === 13 ? `•••••••••${id.slice(9)}` : "");
 
 export function EmployeesTab() {
   const t = useTranslations("pay");

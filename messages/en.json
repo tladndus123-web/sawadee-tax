@@ -1306,6 +1306,8 @@
     "ssFloor": "Wage floor",
     "ssCeiling": "Wage ceiling",
     "ssRangeBad": "The floor is above the ceiling.",
-    "ssSaved": "Social security rate saved."
+    "ssSaved": "Social security rate saved.",
+    "ssAccount": "Employer SSO account no. (10 digits)",
+    "ssAccountBad": "The account number has 10 digits."
   }
 }

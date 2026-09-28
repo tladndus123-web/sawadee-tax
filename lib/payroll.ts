@@ -58,13 +58,34 @@ export interface PayrollSettings {
   ssRate: number;
   ssFloor: number;
   ssCeiling: number;
+  /** The employer's social security account number (เลขที่บัญชีนายจ้าง, 10 digits) for สปส.1-10 */
+  ssAccount: string;
 }
-export const DEFAULT_PAYROLL: PayrollSettings = { ssRate: 5, ssFloor: 1650, ssCeiling: 17500 };
+export const DEFAULT_PAYROLL: PayrollSettings = { ssRate: 5, ssFloor: 1650, ssCeiling: 17500, ssAccount: "" };
 
 export function payrollSettingsOf(raw: unknown): PayrollSettings {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  const num = (k: keyof PayrollSettings, max: number) => (typeof r[k] === "number" && (r[k] as number) >= 0 && (r[k] as number) <= max ? (r[k] as number) : DEFAULT_PAYROLL[k]);
-  return { ssRate: num("ssRate", 20), ssFloor: num("ssFloor", 1_000_000), ssCeiling: num("ssCeiling", 1_000_000) };
+  const num = (k: "ssRate" | "ssFloor" | "ssCeiling", max: number) => (typeof r[k] === "number" && (r[k] as number) >= 0 && (r[k] as number) <= max ? (r[k] as number) : DEFAULT_PAYROLL[k]);
+  const account = typeof r.ssAccount === "string" ? r.ssAccount.replace(/\D/g, "").slice(0, 10) : "";
+  return { ssRate: num("ssRate", 20), ssFloor: num("ssFloor", 1_000_000), ssCeiling: num("ssCeiling", 1_000_000), ssAccount: account };
+}
+
+/** An ID number for lists and payslips: only the last 4 digits */
+export const maskId = (id: string) => (id.length === 13 ? `•••••••••${id.slice(9)}` : "");
+
+/**
+ * A monthly employee who starts or leaves during the month: the days of each half not employed, as unpaid days off
+ * (the second half counts at most 15, like the pay: salary ÷ 30 a day).
+ */
+export function daysNotEmployed(e: Pick<Employee, "startDate" | "endDate">, month: string): { first: number; second: number } {
+  const last = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).getUTCDate();
+  const out = { first: 0, second: 0 };
+  for (let d = 1; d <= last; d++) {
+    const day = `${month}-${String(d).padStart(2, "0")}`;
+    if ((e.startDate && day < e.startDate) || (e.endDate && day > e.endDate)) out[d <= 15 ? "first" : "second"] += 1;
+  }
+  out.second = Math.min(out.second, 15);
+  return out;
 }
 
 const sat = (baht: number) => Math.round((Number(baht) || 0) * 100);

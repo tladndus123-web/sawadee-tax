@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { MoneyInput } from "@/components/invoice/fields";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Link } from "@/i18n/navigation";
 import { saveCompany, useCompany } from "@/lib/company-store";
 import { fmt } from "@/lib/money";
@@ -29,7 +30,10 @@ export function FilingTab({ month }: { month: string }) {
   const due = payrollDeadlines(month);
   const day = (d: string) => new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", weekday: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
   const sum = (f: (l: PayrollLineRow) => number) => (lines ?? []).reduce((a, l) => a + Math.round(f(l) * 100), 0) / 100;
-  const people = new Set((lines ?? []).map((l) => l.employeeId)).size;
+  // People actually paid this month (a daily worker with no days is left off, as on the lists)
+  const paid = new Map<string, number>();
+  for (const l of lines ?? []) paid.set(l.employeeId, (paid.get(l.employeeId) ?? 0) + l.gross);
+  const people = [...paid.values()].filter((g) => g > 0).length;
   const insured = new Set((lines ?? []).filter((l) => l.ssEmployee > 0).map((l) => l.employeeId)).size;
 
   const card = (key: "pnd1" | "sso", icon: React.ReactNode, amount: number, count: number, dueText: string) => (
@@ -99,6 +103,7 @@ function SsSettings() {
 
   const save = async () => {
     if (s.ssFloor > s.ssCeiling) return toast.error(t("ssRangeBad"));
+    if (s.ssAccount && s.ssAccount.length !== 10) return toast.error(t("ssAccountBad"));
     setBusy(true);
     try {
       await saveCompany({ payroll_settings: s });
@@ -109,7 +114,7 @@ function SsSettings() {
       setBusy(false);
     }
   };
-  const field = (k: keyof PayrollSettings, label: string, kind: "qty" | "money") => (
+  const field = (k: "ssRate" | "ssFloor" | "ssCeiling", label: string, kind: "qty" | "money") => (
     <label className="grid gap-1">
       <span className="text-xs text-muted-foreground">{label}</span>
       <MoneyInput kind={kind} className="h-10 bg-background text-right" value={s[k]} onChange={(v) => setS({ ...s, [k]: Math.max(0, v || 0) })} />
@@ -124,6 +129,10 @@ function SsSettings() {
         {field("ssFloor", t("ssFloor"), "money")}
         {field("ssCeiling", t("ssCeiling"), "money")}
       </div>
+      <label className="grid gap-1">
+        <span className="text-xs text-muted-foreground">{t("ssAccount")}</span>
+        <Input value={s.ssAccount} inputMode="numeric" maxLength={10} placeholder="10xxxxxxxx" onChange={(e) => setS({ ...s, ssAccount: e.target.value.replace(/\D/g, "") })} className="mono h-10 bg-background" />
+      </label>
       <Button type="button" variant="secondary" className="h-10 w-fit rounded-full px-4" disabled={busy} onClick={() => void save()}>
         {busy && <Loader2 className="size-4 animate-spin" />}
         {t("save")}
