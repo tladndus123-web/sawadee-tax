@@ -60,7 +60,6 @@ export function compareDocs(expected: LedgerDoc, got: LedgerDoc): EvalReport {
   expected.items.forEach((it, i) => {
     const g = got.items[i];
     add(`items.${i}.code`, "exact", it.code, g?.code);
-    add(`items.${i}.wh`, "exact", it.wh, g?.wh);
     add(`items.${i}.qty`, "exact", it.qty, g?.qty);
     add(`items.${i}.price`, "exact", it.price, g?.price);
     add(`items.${i}.amount`, "exact", it.amount, g?.amount);

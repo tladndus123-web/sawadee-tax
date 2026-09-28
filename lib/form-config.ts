@@ -19,7 +19,7 @@ export const HIDEABLE_FIELDS = {
   header: ["sellerAddress", "sellerContact", "saleOffice", "branchCode", "formSerial", "docTypeChip"],
   title: ["copyKind", "docTitleSub"],
   parties: ["custCode", "customerAddress", "customerBranch", "orderNo", "term", "due", "salesArea", "salesRef"],
-  items: ["colCode", "colWh", "colUnit", "colPrice"],
+  items: ["colCode", "colUnit", "colPrice"],
   bottom: ["delivery", "terms", "note", "zeroLines", "wht"],
   words: [],
   signs: [],

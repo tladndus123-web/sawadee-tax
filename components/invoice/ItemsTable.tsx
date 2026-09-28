@@ -23,7 +23,6 @@ const COLS: Col[] = [
   { k: "no", cls: "w-12" },
   { k: "code", hide: "colCode" },
   { k: "desc" },
-  { k: "wh", hide: "colWh" },
   { k: "qty", num: true },
   { k: "unit", hide: "colUnit" },
   { k: "price", num: true, hide: "colPrice" },
@@ -86,8 +85,6 @@ export function ItemsTableView({
             <TriText value={it.desc} mode={mode} unsure={unsure(`items.${i}.desc`)} onUnsure={onUnsure && (() => onUnsure(`items.${i}.desc`))} />
           </td>
         );
-      case "wh":
-        return <td key={k} className={cn(TD, "mono")}>{flag(it.wh)}</td>;
       case "qty":
         return <td key={k} className={cn(TD, "num")}>{flag(amountOnly ? "" : fmtQty(it.qty), "end")}</td>;
       case "unit":
@@ -143,9 +140,6 @@ export function ItemsTableEdit({ mode }: { mode: FormMode }) {
                 </td>
                 <td className={cn(TD, "min-w-60")}>
                   <TriInput name={`items.${i}.desc`} label={t("labels.desc")} />
-                </td>
-                <td className={cn(TD, "min-w-20")}>
-                  <TextIn name={`items.${i}.wh`} label={t("labels.wh")} mono />
                 </td>
                 <td className={cn(TD, "min-w-24")}>
                   <NumIn name={`items.${i}.qty`} label={t("labels.qty")} kind="qty" />

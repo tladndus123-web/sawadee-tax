@@ -36,7 +36,7 @@ export const extractSchema = z.object({
   dueDate: z.string(),
   sales: z.object({ name: tri, area: tri, ref: z.string() }),
   items: z.array(
-    z.object({ code: z.string(), desc: tri, wh: z.string(), qty: z.number(), unit: tri, price: z.number(), amount: z.number(), category: z.string().nullish() }),
+    z.object({ code: z.string(), desc: tri, qty: z.number(), unit: tri, price: z.number(), amount: z.number(), category: z.string().nullish() }),
   ),
   delivery: z.object({ note: tri, place: tri, contact: z.string(), person: tri }),
   totals: z.object({

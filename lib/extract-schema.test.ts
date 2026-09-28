@@ -25,7 +25,9 @@ describe("AI reading schema", () => {
     const doc = normalize(extractedToRaw(extractSchema.parse(reading)));
     // Boxes with the wrong number of values are dropped
     expect(doc.fieldBoxes).toEqual({ "customer.name": [0.075, 0.258, 0.15, 0.022] });
-    expect({ ...doc, fieldBoxes: {} }).toEqual({ ...sampleDoc(), fieldBoxes: {} });
+    // The warehouse number is no longer read (removed 2026-09-29): it comes back empty
+    const want = sampleDoc();
+    expect({ ...doc, fieldBoxes: {} }).toEqual({ ...want, items: want.items.map((i) => ({ ...i, wh: "" })), fieldBoxes: {} });
   });
 });
 

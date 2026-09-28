@@ -19,9 +19,9 @@ describe("sanitizeFormConfig", () => {
   });
 
   it("only allows hiding optional blocks and known fields", () => {
-    const c = sanitizeFormConfig({ hiddenBlocks: ["signs", "items"], hidden: ["colWh", "colWh", "bogus"] });
+    const c = sanitizeFormConfig({ hiddenBlocks: ["signs", "items"], hidden: ["colUnit", "colUnit", "colWh", "bogus"] });
     expect(c.hiddenBlocks).toEqual(["signs"]);
-    expect(c.hidden).toEqual(["colWh"]);
+    expect(c.hidden).toEqual(["colUnit"]); // the warehouse column is gone (2026-09-29)
   });
 
   it("trims label overrides and drops empty or unknown ones", () => {

@@ -17,7 +17,7 @@ Read every printed and handwritten field and reply with ONLY one JSON object, no
  "creditDays": 0,
  "dueDate": "YYYY-MM-DD or empty",
  "sales": {"name":{"th":"","en":"","ja":""}, "area":{"th":"","en":"","ja":""}, "ref":"sales order / reference number"},
- "items": [{"code":"", "desc":{"th":"","en":"","ja":""}, "wh":"warehouse", "qty":0, "unit":{"th":"","en":"","ja":""}, "price":0, "amount":0, "category": null}],
+ "items": [{"code":"", "desc":{"th":"","en":"","ja":""}, "qty":0, "unit":{"th":"","en":"","ja":""}, "price":0, "amount":0, "category": null}],
  "delivery": {"note":{"th":"","en":"","ja":""}, "place":{"th":"","en":"","ja":""}, "contact":"phone", "person":{"th":"","en":"","ja":""}},
  "totals": {"total":0, "discount":0, "afterDisc":0, "deposit":0, "afterDep":0, "exempt":0, "taxable":0, "vat":0, "net":0, "wht":0},
  "wordsPrinted": "the amount-in-words exactly as printed, without brackets, in whatever language it is printed (Thai, English, ...)",
