@@ -16,6 +16,7 @@ import { nextMonth } from "@/lib/month-lock-store";
 import { baht } from "@/lib/money";
 import { WHT_MIN_BASE, whtAmount, whtBase } from "@/lib/wht";
 import { type LedgerDoc, WHT_DEFAULT_RATE, WHT_TYPES, type WhtType } from "@/lib/types";
+import { useCategoryLabel } from "@/components/vendors/CategoryIcon";
 
 const CLAIM = { auto: null, yes: false, no: true } as const;
 type ClaimKey = keyof typeof CLAIM;
@@ -23,7 +24,7 @@ const claimKey = (v: boolean | null | undefined): ClaimKey => (v === true ? "no"
 
 export function TaxFields() {
   const t = useTranslations("tax");
-  const tc = useTranslations("category");
+  const catLabel = useCategoryLabel();
   const monthLabel = useMonthLabel();
   const { control, setValue, getValues } = useFormContext<LedgerDoc>();
   const [date, taxMonth, category, noClaim, whtType, whtRate, taxable, exempt, docType, copyKind] = useWatch({
@@ -108,7 +109,7 @@ export function TaxFields() {
           )}
         />
         <span className={blocked ? "text-[11px] leading-snug text-warn" : "text-[11px] leading-snug text-muted-foreground"}>
-          {blocked ? t("blockedHint", { category: tc(category ?? "other") }) : t("noHint")}
+          {blocked ? t("blockedHint", { category: catLabel(category ?? "other") }) : t("noHint")}
         </span>
       </label>
 

@@ -12,20 +12,25 @@ import { Input } from "@/components/ui/input";
 import { exportLang } from "@/lib/export";
 import { quickTotals, vatInside } from "@/lib/quick-totals";
 import { todayBangkok } from "@/lib/thai-tax";
-import { CATEGORIES, type LedgerDoc, PAYMENTS } from "@/lib/types";
+import { type LedgerDoc, PAYMENTS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { MoneyInput } from "./fields";
 import { BranchPicker } from "./BranchPicker";
 import { DepYears } from "./DepYears";
+import { MemoBox } from "./MemoBox";
+import { QuickItems } from "./QuickItems";
 import { TaxFields } from "./TaxFields";
 import { OtherLangs, TranslateBadge } from "./TranslateBadge";
+import { useCategoryOptions } from "@/components/vendors/CategoryIcon";
 
-export function QuickCard({ onJump, manual = false }: { onJump: (path: string) => void; manual?: boolean }) {
+export function QuickCard({ onJump, manual = false, onMemo }: { onJump: (path: string) => void; manual?: boolean; onMemo?: (text: string) => Promise<void> }) {
   const t = useTranslations();
   const lang = exportLang(useLocale());
   const { control, register, setValue, getValues } = useFormContext<LedgerDoc>();
   const [seller, unclear, net, vat, paid, firstItem] = useWatch({ control, name: ["seller", "unclear", "totals.net", "totals.vat", "paid", "items.0"] });
   const unsure = new Set(unclear ?? []);
+  const category = useWatch({ control, name: "category" });
+  const categoryOptions = useCategoryOptions(category);
   const sellerName = seller?.name?.[lang] || seller?.name?.th || seller?.name?.en || seller?.name?.ja || "";
 
   const setTotals = (n: number, v: number) => {
@@ -115,7 +120,7 @@ export function QuickCard({ onJump, manual = false }: { onJump: (path: string) =
         control={control}
         name="category"
         render={({ field }) => (
-          <Chips label={t("app.category")} value={field.value} options={CATEGORIES.map((k) => [k, t(`category.${k}`)])} onPick={field.onChange} />
+          <Chips label={t("app.category")} value={field.value} options={categoryOptions.map((o) => [o.key, o.label])} onPick={field.onChange} />
         )}
       />
       <Controller
@@ -149,6 +154,11 @@ export function QuickCard({ onJump, manual = false }: { onJump: (path: string) =
         />
         {paid && <Input type="date" aria-label={t("app.paidOn")} className="h-10 w-40 max-w-full" {...register("paidDate")} />}
       </div>
+
+      {/* A typed-in document keeps its one line above; a read one can have its lines changed here */}
+      {!manual && <QuickItems />}
+
+      <MemoBox onCommit={onMemo} className="rounded-2xl border-0 bg-muted/50 px-4 py-3" />
 
       <details className="group rounded-2xl bg-muted/50 px-4 py-3">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-xs font-medium text-muted-foreground">

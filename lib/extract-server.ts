@@ -7,6 +7,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { type ExtractErrorCode, extractedToRaw, extractSchema, FIELD_BOX_RULE, parseReply } from "./extract-schema";
 import { normalize } from "./normalize";
 import { isSlip, tileRects } from "./slip-tiles";
+import { categoryPrompt } from "./category-prompt";
+import { serverCategories } from "./categories-server";
 import type { LedgerDoc } from "./types";
 
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -116,6 +118,8 @@ export async function extractDocument(
   }
 
   const started = Date.now();
+  // The company's own categories (settings), added to the instructions
+  const extra = categoryPrompt(await serverCategories());
   try {
     // Plain JSON by prompt (the prototype's proven approach). A structured-output schema this size is
     // rejected by the API ("compiled grammar is too large"), so the shape is checked with zod afterwards.
@@ -135,7 +139,8 @@ export async function extractDocument(
                   ]
                 : await photoBlocks(image, type)),
               ...(opts.cutOut ? [{ type: "text" as const, text: CUT_OUT_NOTE }] : []),
-              { type: "text", text: getPrompt() },
+              { type: "text", text: extra ? `${getPrompt()}
+${extra}` : getPrompt() },
             ],
           },
         ],

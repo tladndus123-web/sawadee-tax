@@ -62,8 +62,8 @@ export function plTable(sales: Pick<Sale, "date" | "channel" | "gross" | "vat">[
     sales: CHANNELS.filter((c) => byCh.has(c)).map((c) => row(c, byCh.get(c)!)),
     salesTotal: row("total", salesSat),
     // Biggest cost first (over the whole period), so the table reads top-down by weight
-    costs: [...CATEGORIES, "depreciation" as const, "disposal" as const]
-      .filter((c) => byCat.has(c))
+    costs: [...CATEGORIES, ...[...byCat.keys()].filter((k) => k.startsWith("c_")), "depreciation" as const, "disposal" as const]
+      .filter((c, i, all) => byCat.has(c) && all.indexOf(c) === i)
       .map((c) => row(c, byCat.get(c)!))
       .sort((a, b) => b.total - a.total),
     costTotal: row("total", costSat),

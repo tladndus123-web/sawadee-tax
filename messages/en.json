@@ -1111,5 +1111,56 @@
       "done": "Fully written off",
       "disposed": "Disposed"
     }
+  },
+  "memo": {
+    "label": "Remark",
+    "placeholder": "Add a note (e.g. checked by the owner, for the March event)",
+    "saving": "Saving",
+    "saved": "Saved",
+    "fail": "Could not save the remark"
+  },
+  "items": {
+    "title": "{count} item lines",
+    "descHint": "Item",
+    "add": "Add a line",
+    "hint": "Write in one language; the others are translated on save. Quantity × price fills the amount. Check the totals and VAT in the fields above."
+  },
+  "cats": {
+    "title": "Categories",
+    "hint": "The categories documents are sorted into. Rename or hide the standard ones, and add the company's own. Write a name in one language and the others are translated.",
+    "hintStaff": "Only admins change categories.",
+    "add": "Add category",
+    "edit": "Edit",
+    "hide": "Hide",
+    "show": "Show again",
+    "delete": "Delete",
+    "deleteAsk": "Delete \"{name}\"? A category documents use cannot be deleted (hide it instead).",
+    "deleted": "Category deleted",
+    "inUse": "Documents or vendor rules use this category, so it cannot be deleted. Hiding it keeps it off new documents only.",
+    "hiddenDone": "Hidden. Documents already in this category keep it.",
+    "shown": "Shown again",
+    "hiddenTag": "Hidden",
+    "noVatTag": "VAT not claimable",
+    "ownTag": "Company category",
+    "newTitle": "New category",
+    "editTitle": "Edit category",
+    "name": "Name",
+    "namePlaceholder": "e.g. Packaging",
+    "nameHint": "Write it in the screen language and save: the other languages are filled in. Correct any odd translation.",
+    "nameHintBuiltin": "Leave empty to use the standard name. A new name is used on screens and reports.",
+    "translate": "Translate",
+    "translateFail": "Could not translate. Please type it.",
+    "needName": "Please enter a name",
+    "aiHint": "Hint for the AI (what belongs here?)",
+    "aiHintPlaceholder": "e.g. packing boxes, plastic bags, tape, sticker labels",
+    "icon": "Icon",
+    "color": "Colour",
+    "noVat": "Input VAT not claimable for this category",
+    "noVatHint": "When on, VAT on this category's documents is left out of the claimable amount (e.g. passenger car costs).",
+    "noVatFixed": "Entertainment VAT is never claimable under Thai law.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "Category saved",
+    "fail": "Could not save"
   }
 }

@@ -18,6 +18,7 @@ import { saleMonth } from "@/lib/sales";
 import { useSales } from "@/lib/sales-store";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
+import { useCategoryLabel } from "@/components/vendors/CategoryIcon";
 
 const SPANS = [3, 6, 12] as const;
 
@@ -28,6 +29,7 @@ export function PlReport() {
   const { sales, loaded: salesLoaded } = useSales();
   const { entries, loaded } = useLedger();
   const today = todayBangkok();
+  const catLabel = useCategoryLabel();
   const [end, setEnd] = useState(today.slice(0, 7));
   const [span, setSpan] = useState<(typeof SPANS)[number]>(6);
   const [busy, setBusy] = useState(false);
@@ -66,7 +68,7 @@ export function PlReport() {
         profit: t("pl.profit"),
         month: monthShort,
         channel: (k) => t(`sales.ch.${k as "store"}`),
-        category: (k) => (k === "depreciation" || k === "disposal" ? t(`pl.${k}`) : t(`category.${k as "other"}`)),
+        category: (k) => (k === "depreciation" || k === "disposal" ? t(`pl.${k}`) : catLabel(k)),
       });
       toast.success(t("pl.downloaded", { name }));
     } catch {
@@ -146,7 +148,7 @@ export function PlReport() {
               <MoneyRow label={t("pl.salesTotal")} r={table.salesTotal} strong />
               <SectionRow label={t("pl.costs")} cols={cols} />
               {table.costs.map((r) => (
-                <MoneyRow key={r.key} label={r.key === "depreciation" || r.key === "disposal" ? t(`pl.${r.key}`) : t(`category.${r.key}`)} r={r} indent />
+                <MoneyRow key={r.key} label={r.key === "depreciation" || r.key === "disposal" ? t(`pl.${r.key}`) : catLabel(r.key)} r={r} indent />
               ))}
               <MoneyRow label={t("pl.costTotal")} r={table.costTotal} strong />
               <MoneyRow label={t("pl.profit")} r={table.profit} strong profit />

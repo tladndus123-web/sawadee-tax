@@ -6,7 +6,7 @@
 
 import { normalize, triHas } from "./normalize";
 import { digitsOnly, taxIdOk } from "./thai-tax";
-import { CATEGORIES, PAYMENTS } from "./types";
+import { isCategoryKey, PAYMENTS } from "./types";
 import type { Category, LedgerDoc, Tri } from "./types";
 
 export interface Vendor {
@@ -78,7 +78,7 @@ export function applyHistory(doc: LedgerDoc, h: VendorHistory | null | undefined
   if (!h) return { doc, fixed: [] };
   const fixed: VendorFix[] = [];
   const out = { ...doc };
-  if ((CATEGORIES as readonly string[]).includes(h.category) && h.category !== doc.category) {
+  if (isCategoryKey(h.category) && h.category !== doc.category) {
     out.category = h.category as LedgerDoc["category"];
     fixed.push("category");
   }
@@ -172,7 +172,7 @@ export function applyVendor(doc: LedgerDoc, v: Vendor | null | undefined): { doc
  * saved documents use most (ties → the most recent of them, as `categories` is newest first), otherwise "other".
  */
 export function vendorCategory(ruleCategory: string | null, categories: string[]): Category {
-  const valid = (c: string | null | undefined): c is Category => !!c && (CATEGORIES as readonly string[]).includes(c);
+  const valid = (c: string | null | undefined): c is Category => isCategoryKey(c);
   if (valid(ruleCategory)) return ruleCategory;
   const count = new Map<Category, number>();
   for (const c of categories) if (valid(c)) count.set(c, (count.get(c) ?? 0) + 1);

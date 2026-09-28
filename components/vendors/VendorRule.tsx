@@ -16,13 +16,15 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useMe } from "@/lib/role-store";
-import { CATEGORIES, PAYMENTS } from "@/lib/types";
+import { PAYMENTS } from "@/lib/types";
 import { saveVendorRule } from "@/lib/vendor-store";
 import type { Vendor } from "@/lib/vendors";
+import { useCategoryOptions } from "./CategoryIcon";
 
 const NONE = "none";
 
 export function VendorRule({ v }: { v: Vendor }) {
+  const categoryOptions = useCategoryOptions(v.ruleCategory ?? undefined);
   const t = useTranslations();
   const isAdmin = useMe().role === "admin";
   const [busy, setBusy] = useState(false);
@@ -66,9 +68,9 @@ export function VendorRule({ v }: { v: Vendor }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={NONE}>{t("vendors.ruleNone")}</SelectItem>
-              {CATEGORIES.map((k) => (
-                <SelectItem key={k} value={k}>
-                  {t(`category.${k}`)}
+              {categoryOptions.map((o) => (
+                <SelectItem key={o.key} value={o.key}>
+                  {o.label}
                 </SelectItem>
               ))}
             </SelectContent>

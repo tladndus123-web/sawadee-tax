@@ -263,6 +263,13 @@ export async function setCategoryMany(ids: string[], category: LedgerDoc["catego
   patchEntries(ids, (e) => ({ ...e, doc: { ...e.doc, category }, updatedAt: Date.now() }));
 }
 
+/** The person's remark on a document (비고); allowed in a closed month too (not part of the figures) */
+export async function setMemo(id: string, memo: string) {
+  const { error } = await supabaseBrowser().from("documents").update({ memo }).eq("id", id);
+  if (error) throw error;
+  patchEntries([id], (e) => ({ ...e, doc: { ...e.doc, memo }, updatedAt: Date.now() }))
+}
+
 /** Equipment sold or thrown away on `date` ("" = still in use). Only into and out of open months (the database checks). */
 export async function setDisposed(id: string, date: string) {
   const { error } = await supabaseBrowser().from("documents").update({ disposed_on: date || null }).eq("id", id);

@@ -3,8 +3,9 @@
 import { z } from "zod";
 import { isIsoDate } from "./thai-tax";
 import {
-  CATEGORIES,
+  type Category,
   CONFIDENCES,
+  isCategoryKey,
   COPY_KINDS,
   DOC_TYPES,
   type LedgerDoc,
@@ -21,7 +22,7 @@ const money = z.number().finite();
 export const triSchema = z.object({ th: z.string(), en: z.string(), ja: z.string() });
 
 export const itemSchema = z.object({
-  category: z.enum(["", ...CATEGORIES]),
+  category: z.custom<Category | "">((v) => v === "" || isCategoryKey(v), "category"),
   code: z.string(),
   desc: triSchema,
   wh: z.string(),
@@ -83,7 +84,7 @@ export const docSchema = z.object({
   }),
   formCode: z.string(),
   formSince: z.string(),
-  category: z.enum(CATEGORIES),
+  category: z.custom<Category>((v) => isCategoryKey(v), "category"),
   payment: z.enum(PAYMENTS),
   paid: z.boolean(),
   paidDate: isoOrEmpty,
@@ -96,6 +97,7 @@ export const docSchema = z.object({
   branchId: z.string(),
   depYears: z.number().int().min(0).max(50),
   disposedOn: z.string(),
+  memo: z.string().max(1000),
   noClaim: z.boolean().nullable(),
   whtRate: z.number().min(0).max(100),
   whtType: z.enum(["", ...WHT_TYPES]),

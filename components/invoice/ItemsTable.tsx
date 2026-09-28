@@ -9,13 +9,14 @@ import type { HideableField } from "@/lib/form-config";
 import type { FormMode, LabelKey } from "@/lib/form-labels";
 import { fmt, fmtQty } from "@/lib/money";
 import { emptyTri } from "@/lib/normalize";
-import { CATEGORIES, type Item, type LedgerDoc } from "@/lib/types";
+import type { Item, LedgerDoc } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { FieldLabel } from "./fields";
 import { useFormLabels } from "./form-config-context";
 import { NumIn, TextIn } from "./form-inputs";
 import { TriInput } from "./TriInput";
 import { Flag, TriText } from "./TriText";
+import { useCategoryLabel, useCategoryOptions } from "@/components/vendors/CategoryIcon";
 
 type Col = { k: LabelKey; num?: boolean; cls?: string; hide?: HideableField };
 const COLS: Col[] = [
@@ -60,6 +61,7 @@ export function ItemsTableView({
   onUnsure?: (path: string) => void;
 }) {
   const t = useTranslations();
+  const catLabel = useCategoryLabel();
   const { show } = useFormLabels();
   // A mixed receipt: lines with their own category show it (print too, so the accountant sees the split)
   const mixed = items.some((i) => i.category);
@@ -108,7 +110,7 @@ export function ItemsTableView({
           {items.map((it, i) => (
             <tr key={i}>
               {cols.map((c) => cell(c.k, it, i))}
-              {mixed && <td className={cn(TD, "whitespace-nowrap")}>{it.category ? <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{t(`category.${it.category}`)}</span> : ""}</td>}
+              {mixed && <td className={cn(TD, "whitespace-nowrap")}>{it.category ? <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{catLabel(it.category)}</span> : ""}</td>}
             </tr>
           ))}
           {/* Empty space like the printed form */}
@@ -126,6 +128,7 @@ export function ItemsTableEdit({ mode }: { mode: FormMode }) {
   const t = useTranslations();
   const { control } = useFormContext<LedgerDoc>();
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
+  const options = useCategoryOptions();
   return (
     <div className="grid gap-2">
       <div className="overflow-x-auto border border-rule">
@@ -163,9 +166,9 @@ export function ItemsTableEdit({ mode }: { mode: FormMode }) {
                     render={({ field }) => (
                       <select value={field.value || ""} onChange={(e) => field.onChange(e.target.value)} aria-label={`${t("app.category")} ${i + 1}`} className="h-9 w-full rounded-lg border bg-background px-2 text-xs">
                         <option value="">{t("app.sameAsDoc")}</option>
-                        {CATEGORIES.map((k) => (
-                          <option key={k} value={k}>
-                            {t(`category.${k}`)}
+                        {options.map((o) => (
+                          <option key={o.key} value={o.key}>
+                            {o.label}
                           </option>
                         ))}
                       </select>

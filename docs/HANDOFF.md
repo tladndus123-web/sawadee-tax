@@ -457,3 +457,10 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **여러 건 항목 바꾸기**(장부 → "여러 건 항목 바꾸기"): 마감한 달 서류는 체크 불가, 품목별 항목은 그대로(`setCategoryMany`).
 - **중복 사진**: 사진 지문 dHash 64bit(`lib/photo-hash.ts`, 서버는 sharp `photo-hash-server.ts`, 8비트 이내 = 같은 사진). 업로드 시 AI 전에 장부(임시저장 포함, 휴지통 제외)·이번 목록과 비교 → "이미 올린 사진 같아요" + 빼기/그래도 읽기/보기. LINE도 같은 사진이면 읽지 않고 링크로 답. 저장 때 `documents.photo_hash`(마이그레이션 20260928000500, 마감 달에도 채울 수 있는 칸). 예전 서류는 `scripts/backfill-photo-hash.ts [--cloud]`로 채움(2026-09-28 로컬·클라우드 실행). 휴대폰(canvas)과 서버(sharp) 지문이 서로 맞는 것 브라우저로 확인.
 - 휴대폰: 사진 목록에서 확인 버튼이 여러 개일 때 아래 줄로(글자가 세로로 깨지던 문제).
+
+### 분류 관리 · 품목 줄 편집 · 비고 (2026-09-28)
+- **분류 관리**(설정 → 분류 관리, 관리자): `public.categories`(마이그레이션 20260928000700). 기본 12개는 이름 변경·숨기기(삭제 불가, "기타"는 숨김 불가), 회사 분류 추가(key `c_` + 6자). 이름은 화면 언어로 쓰면 저장 때 ko·th·en·ja 자동 번역(`/api/translate/label`, 관리자, `translateLabel`), 직접 수정 가능. AI 설명(hint), 아이콘·색, "부가세 공제 안 됨"(접대비는 항상). 서류·품목·거래처 규칙이 쓰는 분류는 DB가 삭제 거부 → 숨기기. 문서의 `category`는 글자 그대로라 기존 데이터 영향 없음.
+  - 코드: 분류 키 = 기본(`CATEGORIES`) 또는 `c_…`(`isCategoryKey`). 이름·목록은 `useCategoryLabel()`/`useCategoryOptions()`(`components/vendors/CategoryIcon.tsx`), 아이콘·색 `lookOf`. AI 읽기 규칙에 회사 분류·숨긴 분류 추가(`lib/category-prompt.ts`, 서버 `categories-server.ts` 1분 캐시). 공제 불가 분류는 `setBlockedCategories`(클라이언트 스토어·서버 둘 다 설정).
+- **품목 줄 편집**(간단히 화면 "품목 N줄"): 추가·수정·삭제, 수량×단가→금액, 줄마다 분류(`components/invoice/QuickItems.tsx`). 한 언어로 쓰면 저장 때 번역.
+- **비고**(`documents.memo`, 마이그레이션 20260928000600): AI 메모와 별개, 간단히 화면과 자세히 화면(메모 아래) — 저장된 서류는 칸을 벗어나면 바로 저장, 마감한 달도 가능. 장부 검색에 포함.
+- 참고: 클라우드 DB 테스트는 실제 값에 기대지 않게(지점 번호 09991, 수수료 요율 전후 비교) — 운영 중 지점·요율이 이미 설정돼 있음.

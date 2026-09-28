@@ -9,12 +9,15 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { type LedgerEntry, setCategoryMany } from "@/lib/ledger-store";
-import { CATEGORIES, type Category } from "@/lib/types";
+import type { Category } from "@/lib/types";
+import { useCategoryLabel, useCategoryOptions } from "@/components/vendors/CategoryIcon";
 
 export function BulkCategoryBar({ chosen, onDone }: { chosen: LedgerEntry[]; onDone: () => void }) {
   const t = useTranslations();
   const [category, setCategory] = useState<Category | "">("");
   const [busy, setBusy] = useState(false);
+  const label = useCategoryLabel();
+  const options = useCategoryOptions();
   if (!chosen.length) return null;
 
   const apply = async () => {
@@ -25,7 +28,7 @@ export function BulkCategoryBar({ chosen, onDone }: { chosen: LedgerEntry[]; onD
         chosen.map((e) => e.id),
         category,
       );
-      toast.success(t("bulkCat.done", { count: chosen.length, category: t(`category.${category}`) }));
+      toast.success(t("bulkCat.done", { count: chosen.length, category: label(category) }));
       onDone();
     } catch {
       toast.error(t("bulkCat.fail"));
@@ -45,9 +48,9 @@ export function BulkCategoryBar({ chosen, onDone }: { chosen: LedgerEntry[]; onD
           className="h-10 min-w-0 flex-1 rounded-full border bg-background px-3 text-sm sm:w-44 sm:flex-none"
         >
           <option value="">{t("bulkCat.pick")}</option>
-          {CATEGORIES.map((k) => (
-            <option key={k} value={k}>
-              {t(`category.${k}`)}
+          {options.map((o) => (
+            <option key={o.key} value={o.key}>
+              {o.label}
             </option>
           ))}
         </select>

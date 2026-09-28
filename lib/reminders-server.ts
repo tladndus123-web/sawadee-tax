@@ -9,6 +9,7 @@ import { type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
 import { summarize, upcoming, vatFiling } from "./dashboard";
 import { dueReminder, vatReminder } from "./line";
 import { appUrl } from "./line-bot";
+import { serverCategories } from "./categories-server";
 import type { supabaseAdmin } from "./supabase/admin";
 
 type Admin = ReturnType<typeof supabaseAdmin>;
@@ -16,6 +17,8 @@ type Row = DocumentRow & { document_items: ItemRow[]; ack_flags?: string[] | nul
 
 export async function reminderTexts(admin: Admin, today: string, opts: { test?: boolean } = {}): Promise<string[]> {
   const f = vatFiling(today);
+  // Which categories' VAT is not claimable (settings) — the claimable VAT in the message depends on it
+  await serverCategories();
   const [docs, lock, settings] = await Promise.all([
     admin.from("documents").select("*, document_items(*)").is("deleted_at", null),
     admin.from("month_locks").select("month").eq("month", f.month).maybeSingle(),

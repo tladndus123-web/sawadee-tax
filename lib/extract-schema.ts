@@ -5,7 +5,7 @@
 // and then cleaned by normalize(), which tolerates missing or loosely typed fields.
 
 import { z } from "zod";
-import { CATEGORIES, CONFIDENCES, COPY_KINDS, DOC_TYPES, PAYMENTS } from "./types";
+import { CONFIDENCES, COPY_KINDS, DOC_TYPES, PAYMENTS } from "./types";
 
 const tri = z.object({ th: z.string(), en: z.string(), ja: z.string() });
 const amount = z.number().nullable();
@@ -36,7 +36,7 @@ export const extractSchema = z.object({
   dueDate: z.string(),
   sales: z.object({ name: tri, area: tri, ref: z.string() }),
   items: z.array(
-    z.object({ code: z.string(), desc: tri, wh: z.string(), qty: z.number(), unit: tri, price: z.number(), amount: z.number(), category: z.enum(CATEGORIES).nullish() }),
+    z.object({ code: z.string(), desc: tri, wh: z.string(), qty: z.number(), unit: tri, price: z.number(), amount: z.number(), category: z.string().nullish() }),
   ),
   delivery: z.object({ note: tri, place: tri, contact: z.string(), person: tri }),
   totals: z.object({
@@ -57,7 +57,8 @@ export const extractSchema = z.object({
   signs: z.object({ receiver: z.boolean(), issuer: z.boolean(), deliverer: tri.nullable() }),
   formCode: z.string(),
   formSince: z.string(),
-  category: z.enum(CATEGORIES),
+  // Built-in or the company's own (the AI is told which exist); normalize() keeps only valid keys
+  category: z.string(),
   payment: z.enum(PAYMENTS),
   confidence: z.enum(CONFIDENCES),
   unclear: z.array(z.string()),

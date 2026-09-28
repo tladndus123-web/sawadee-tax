@@ -268,7 +268,12 @@ export const flagsFor = (r: LedgerDoc, ctx: CheckContext = {}): CheckKey[] =>
  * entertainment (ค่ารับรอง). Passenger cars (≤10 seats) and their fuel/repairs are set by hand — a pickup's
  * fuel is claimable, a sedan's is not, and the category alone can't tell.
  */
-export const vatBlocked = (r: Pick<LedgerDoc, "noClaim" | "category">): boolean => r.noClaim ?? r.category === "entertainment";
+let blockedCategories: ReadonlySet<string> = new Set(["entertainment"]);
+/** Categories whose input VAT is not claimable (settings → categories); loaded by the category store / server */
+export function setBlockedCategories(keys: Iterable<string>) {
+  blockedCategories = new Set(["entertainment", ...keys]);
+}
+export const vatBlocked = (r: Pick<LedgerDoc, "noClaim" | "category">): boolean => r.noClaim ?? blockedCategories.has(r.category);
 
 /** Claimed in the invoice month or up to 6 months later (an invoice with no claim month set counts in its own month) */
 function inClaimWindow(r: LedgerDoc): boolean {

@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(103);
+select plan(113);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -193,8 +193,9 @@ select lives_ok($$ delete from public.sales where sale_date = '2026-06-10' $$, '
 
 -- Delivery-app commission rates: company-wide, only admins change them
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+create temp table fees_before as select app_fees from public.company_settings where id = 1;
 update public.company_settings set app_fees = '{"grab": 99}' where id = 1;
-select is((select app_fees ->> 'grab' from public.company_settings where id = 1), null, 'staff cannot change the app commission rates');
+select is((select app_fees from public.company_settings where id = 1), (select app_fees from fees_before), 'staff cannot change the app commission rates');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select throws_ok($$ update public.company_settings set app_fees = '[30]' where id = 1 $$, '23514', NULL, 'rates are kept per channel (an object)');
 
@@ -231,6 +232,15 @@ select public.save_document('00000000-0000-0000-0000-0000000000c1', '{"doc_no":"
 select is((select array_agg(category order by line_no) from public.document_items where document_id = '00000000-0000-0000-0000-0000000000c1'), array['office', ''], 'each line keeps its own category ("" = the document''s)');
 select is((select dep_years from public.documents where id = '00000000-0000-0000-0000-0000000000c1'), 5, 'the depreciation period is kept');
 
+-- The remark (비고): written on a closed month's document too
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+insert into public.month_locks (month) values ('2026-05');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select lives_ok($$ update public.documents set memo = 'checked with the owner' where id = '00000000-0000-0000-0000-0000000000a1' $$, 'a remark can be written on a closed month''s document');
+select is((select memo from public.documents where id = '00000000-0000-0000-0000-0000000000a1'), 'checked with the owner', 'and it is kept');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+delete from public.month_locks where month = '2026-05';
+
 -- Equipment disposal: allowed on a closed month's purchase, never into or out of a closed month
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select public.save_document('00000000-0000-0000-0000-0000000000d1', '{"doc_no":"OVEN-1","status":"reviewed","doc_date":"2026-04-10","net":64200,"category":"asset","dep_years":5}', '[]');
@@ -250,6 +260,20 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select public.save_document('00000000-0000-0000-0000-0000000000e1', '{"doc_no":"HASH-1","status":"reviewed","doc_date":"2026-09-10","net":10,"photo_hash":"0f0f0f0f0f0f0f0f"}', '[]');
 select is((select photo_hash from public.documents where id = '00000000-0000-0000-0000-0000000000e1'), '0f0f0f0f0f0f0f0f', 'a photo fingerprint is kept with the document');
 select throws_ok($$ update public.documents set photo_hash = 'not-a-hash' where id = '00000000-0000-0000-0000-0000000000e1' $$, '23514', NULL, 'fingerprints have one format');
+
+-- Categories: admins keep the list; built-in ones and used ones are never deleted
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select is((select count(*)::int from public.categories where builtin), 12, 'members see the 12 built-in categories');
+select throws_ok($$ insert into public.categories (key, name) values ('c_staff1', '{"ko":"x"}') $$, '42501', NULL, 'staff cannot add a category');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select lives_ok($$ insert into public.categories (key, name, builtin) values ('c_pack01', '{"ko":"포장재","th":"บรรจุภัณฑ์","en":"Packaging","ja":"包装材"}', true) $$, 'an admin adds a category');
+select is((select builtin from public.categories where key = 'c_pack01'), false, 'a new category is never built-in');
+select throws_like($$ delete from public.categories where key = 'food' $$, 'category_builtin%', 'a built-in category cannot be deleted');
+update public.categories set hidden = true where key = 'other';
+select is((select hidden from public.categories where key = 'other'), false, '"other" always stays visible');
+select public.save_document('00000000-0000-0000-0000-0000000000f1', '{"doc_no":"CAT-1","status":"reviewed","doc_date":"2026-09-10","net":10,"category":"c_pack01"}', '[]');
+select throws_like($$ delete from public.categories where key = 'c_pack01' $$, 'category_in_use%', 'a category in use cannot be deleted');
+select throws_ok($$ insert into public.categories (key) values ('C-BAD') $$, '23514', NULL, 'keys have one format');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

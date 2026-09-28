@@ -67,3 +67,39 @@ export function parseTranslateBody(body: unknown): TranslateItem[] | null {
   }
   return out;
 }
+
+/** Screen languages (category names in settings): Korean too */
+export const LABEL_LANGS = ["ko", "th", "en", "ja"] as const;
+export type LabelLang = (typeof LABEL_LANGS)[number];
+const LABEL_NAMES: Record<LabelLang, string> = { ko: "Korean", th: "Thai", en: "English", ja: "Japanese" };
+
+/** A short label (a spending category's name) into the other screen languages: plain bookkeeping words */
+export async function translateLabel(text: string, from: LabelLang, signal?: AbortSignal): Promise<Partial<Record<LabelLang, string>> | null> {
+  client ??= new Anthropic({ maxRetries: 2 });
+  const to = LABEL_LANGS.filter((l) => l !== from);
+  const response = await client.messages.create(
+    {
+      model: readingSetup().model,
+      max_tokens: 400,
+      output_config: { effort: "low" },
+      messages: [
+        {
+          role: "user",
+          content: `Translate this name of a spending category in a Thai company's bookkeeping app from ${LABEL_NAMES[from]} into ${to.map((l) => LABEL_NAMES[l]).join(", ")}. Use the short word an accountant would use; no explanations.
+Reply with JSON only: {${to.map((l) => `"${l}":""`).join(",")}}
+Name: ${text}`,
+        },
+      ],
+    },
+    { signal },
+  );
+  const out = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+  try {
+    const parsed = JSON.parse(out.slice(out.indexOf("{"), out.lastIndexOf("}") + 1)) as Record<string, unknown>;
+    const res: Partial<Record<LabelLang, string>> = { [from]: text };
+    for (const l of to) if (typeof parsed[l] === "string" && (parsed[l] as string).trim()) res[l] = (parsed[l] as string).trim().slice(0, 40);
+    return res;
+  } catch {
+    return null;
+  }
+}

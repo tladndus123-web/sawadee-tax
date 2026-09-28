@@ -8,11 +8,13 @@ import { toast } from "sonner";
 import { useMe } from "@/lib/role-store";
 import type { LedgerDoc } from "@/lib/types";
 import { ruleSuggestionFor, saveVendorRule } from "@/lib/vendor-store";
-import type { Category, Payment } from "@/lib/types";
+import type { Payment } from "@/lib/types";
+import { useCategoryLabel } from "@/components/vendors/CategoryIcon";
 
 export function useOfferRule(): (doc: LedgerDoc) => Promise<void> {
   const t = useTranslations();
   const isAdmin = useMe().role === "admin";
+  const catLabel = useCategoryLabel();
   return async (doc) => {
     const s = await ruleSuggestionFor(doc);
     if (!s) return;
@@ -20,7 +22,7 @@ export function useOfferRule(): (doc: LedgerDoc) => Promise<void> {
     toast(
       t("vendors.ruleOffer", {
         name,
-        category: t(`category.${s.rule.category as Category}`),
+        category: catLabel(s.rule.category),
         payment: t(`payment.${s.rule.payment as Payment}`),
       }),
       {

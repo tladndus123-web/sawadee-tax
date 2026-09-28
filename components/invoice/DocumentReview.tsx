@@ -21,7 +21,7 @@ import { baht } from "@/lib/money";
 import { dropEmptyItems, normalize } from "@/lib/normalize";
 import { todayBangkok } from "@/lib/thai-tax";
 import { applyTranslations, translationJobs } from "@/lib/translate-gaps";
-import { type Box, CATEGORIES, type LedgerDoc, PAYMENTS } from "@/lib/types";
+import { type Box, type LedgerDoc, PAYMENTS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { StickerDots, StickerPicker, useMonthLabel } from "@/components/ledger/Stickers";
 import { isUnpaid, monthKey } from "@/lib/archive";
@@ -33,10 +33,12 @@ import { InvoiceEdit } from "./InvoiceEdit";
 import { InvoiceView } from "./InvoiceView";
 import { BranchPicker } from "./BranchPicker";
 import { DepYears } from "./DepYears";
+import { MemoBox } from "./MemoBox";
 import { TaxFields } from "./TaxFields";
 import { QuickCard } from "./QuickCard";
 import { TranslateBadge } from "./TranslateBadge";
 import { VendorPicker } from "./VendorPicker";
+import { useCategoryOptions } from "@/components/vendors/CategoryIcon";
 
 // The zoomable photo (react-zoom-pan-pinch) loads after the form is on screen
 const PhotoViewer = dynamic(() => import("./PhotoViewer").then((m) => m.PhotoViewer), {
@@ -80,6 +82,8 @@ export interface DocumentReviewProps {
   startEditing?: boolean;
   /** Typed by hand, no photo: no photo column, and the seller's name / tax ID can be typed on the quick card */
   manual?: boolean;
+  /** Saved documents: the remark (비고) is kept as soon as it is typed */
+  onMemo?: (text: string) => Promise<void>;
   /** Saved documents: the warnings marked "문제 없음" and how to change that */
   ack?: { flags: string[]; by: string | null; at: number | null; onSet: (flags: string[]) => Promise<void> };
   /** Download links of the stored picture and original PDF (saved documents) */
@@ -108,6 +112,7 @@ export function DocumentReview({
   manual = false,
   downloads,
   ack,
+  onMemo,
 }: DocumentReviewProps) {
   const t = useTranslations();
   const form = useForm<LedgerDoc>({ defaultValues: initial, resolver: zodResolver(docSchema), mode: "onBlur" });
@@ -115,6 +120,7 @@ export function DocumentReview({
   const watched = useWatch({ control }) as LedgerDoc;
   const doc = useMemo(() => normalize({ ...watched, id: initial.id }), [watched, initial.id]);
   const results = useMemo(() => runChecks(doc, { companyTaxId, others }), [doc, companyTaxId, others]);
+  const categoryOptions = useCategoryOptions(doc.category);
 
   const [editing, setEditing] = useState(startEditing);
   const [view, setView] = useState<ReviewView>(startEditing ? "detail" : "quick");
@@ -347,7 +353,7 @@ export function DocumentReview({
           {!isSample && <VendorPicker />}
 
           {view === "quick" ? (
-            <QuickCard onJump={showField} manual={manual} />
+            <QuickCard onJump={showField} manual={manual} onMemo={onMemo} />
           ) : (
           <>
           {/* Category, payment, paid */}
@@ -370,9 +376,9 @@ export function DocumentReview({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map((k) => (
-                        <SelectItem key={k} value={k}>
-                          {t(`category.${k}`)}
+                      {categoryOptions.map((o) => (
+                        <SelectItem key={o.key} value={o.key}>
+                          {o.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -437,7 +443,7 @@ export function DocumentReview({
           </div>
 
           {editing && <TranslateBadge />}
-          {editing ? <InvoiceEdit mode={formMode} /> : <InvoiceView doc={doc} mode={formMode} onUnsure={showField} signable />}
+          {editing ? <InvoiceEdit mode={formMode} /> : <InvoiceView doc={doc} mode={formMode} onUnsure={showField} signable memo={<MemoBox onCommit={onMemo} />} />}
           </>
           )}
 

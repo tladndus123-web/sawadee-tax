@@ -6,8 +6,6 @@ import { fromSatang, parseBaht, parseBahtOrNull, parseQty, toSatang } from "./mo
 import { digitsOnly, fixDate, isIsoDate } from "./thai-tax";
 import {
   type Box,
-  CATEGORIES,
-  type Category,
   CONFIDENCES,
   type Confidence,
   COPY_KINDS,
@@ -21,8 +19,7 @@ import {
   type Totals,
   type Tri,
   WHT_TYPES,
-  type WhtType,
-} from "./types";
+  type WhtType, isCategoryKey } from "./types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- normalize accepts untrusted input */
 type Loose = Record<string, any>;
@@ -76,6 +73,7 @@ export function blank(): LedgerDoc {
     branchId: "",
     depYears: 0,
     disposedOn: "",
+    memo: "",
     noClaim: null,
     whtRate: 0,
     whtType: "",
@@ -177,7 +175,7 @@ export function normalize(input: unknown): LedgerDoc {
     dueDate,
     sales: { name: tri(sl.name), area: tri(sl.area), ref: str(sl.ref) },
     items: (Array.isArray(a.items) ? a.items : []).slice(0, 40).map((i: Loose) => ({
-      category: oneOf<Category | "">(["", ...CATEGORIES], i?.category, ""),
+      category: isCategoryKey(i?.category) ? i.category : "",
       code: str(i?.code),
       desc: tri(i?.desc),
       wh: str(i?.wh),
@@ -202,7 +200,7 @@ export function normalize(input: unknown): LedgerDoc {
     },
     formCode: str(a.formCode),
     formSince: str(a.formSince),
-    category: oneOf<Category>(CATEGORIES, a.category, "other"),
+    category: isCategoryKey(a.category) ? a.category : "other",
     payment: oneOf<Payment>(PAYMENTS, a.payment, "other"),
     paid: !!a.paid,
     paidDate: isIsoDate(a.paidDate) ? a.paidDate : "",
@@ -214,6 +212,7 @@ export function normalize(input: unknown): LedgerDoc {
     taxMonth: typeof a.taxMonth === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(a.taxMonth) ? a.taxMonth : "",
     depYears: Math.max(0, Math.min(50, Math.round(Number(a.depYears) || 0))),
     disposedOn: isIsoDate(a.disposedOn) ? a.disposedOn : "",
+    memo: str(a.memo).slice(0, 1000),
     branchId: typeof a.branchId === "string" && /^[0-9a-f-]{36}$/i.test(a.branchId) ? a.branchId : "",
     noClaim: typeof a.noClaim === "boolean" ? a.noClaim : null,
     whtRate: Math.min(100, Math.max(0, Math.round((Number(a.whtRate) || 0) * 100) / 100)),

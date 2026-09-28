@@ -25,8 +25,11 @@ export function InvoiceView({
   mode,
   onUnsure,
   signable,
+  memo,
 }: {
   doc: LedgerDoc;
+  /** The remark box (비고) under the note, left of the totals */
+  memo?: React.ReactNode;
   mode: FormMode;
   /** Inside the document form: signature boxes can be typed into / ticked without edit mode */
   signable?: boolean;
@@ -198,7 +201,7 @@ export function InvoiceView({
       const hasTerms = show("terms") && r.terms.length > 0;
       const hasNote = show("note") && triHas(r.note);
       const ladder = <TotalsLadderView totals={r.totals} mode={mode} unsure={U} onUnsure={onUnsure} />;
-      if (!hasDelivery && !hasTerms && !hasNote) {
+      if (!hasDelivery && !hasTerms && !hasNote && !memo) {
         return <div className="grid @2xl:grid-cols-[minmax(0,1fr)_330px]"><div className="@2xl:col-start-2">{ladder}</div></div>;
       }
       return (
@@ -238,6 +241,7 @@ export function InvoiceView({
                 </Kv>
               </Box>
             )}
+            {memo}
           </div>
           {ladder}
         </div>

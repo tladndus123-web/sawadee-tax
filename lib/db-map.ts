@@ -60,6 +60,7 @@ export interface DocumentRow {
   branch_id?: string | null;
   dep_years?: number | null;
   disposed_on?: string | null;
+  memo?: string | null;
   no_claim: boolean | null;
   wht_rate: number | string;
   wht_type: string;
@@ -133,6 +134,7 @@ export function docToRow(doc: LedgerDoc, status: DbStatus, companyTaxId?: string
       // Left out when unset: the database then puts it in the head office
       ...(doc.branchId ? { branch_id: doc.branchId } : {}),
       dep_years: doc.depYears,
+      memo: doc.memo,
       no_claim: doc.noClaim,
       wht_rate: doc.whtRate,
       wht_type: doc.whtType,
@@ -191,6 +193,7 @@ export function rowToDoc(row: DocumentRow, items: ItemRow[]): LedgerDoc {
     branchId: row.branch_id ?? "",
     depYears: row.dep_years ?? 0,
     disposedOn: row.disposed_on ?? "",
+    memo: row.memo ?? "",
     noClaim: row.no_claim,
     whtRate: row.wht_rate,
     whtType: row.wht_type,

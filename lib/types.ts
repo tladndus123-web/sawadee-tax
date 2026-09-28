@@ -24,7 +24,12 @@ export const CATEGORIES = [
   "asset",
   "other",
 ] as const;
-export type Category = (typeof CATEGORIES)[number];
+/** A built-in category (names in messages/*.json) */
+export type BuiltinCategory = (typeof CATEGORIES)[number];
+/** A built-in category or one the company added in settings (public.categories, key "c_…") */
+export type Category = BuiltinCategory | `c_${string}`;
+export const isBuiltinCategory = (v: unknown): v is BuiltinCategory => (CATEGORIES as readonly unknown[]).includes(v);
+export const isCategoryKey = (v: unknown): v is Category => isBuiltinCategory(v) || (typeof v === "string" && /^c_[a-z0-9]{4,12}$/.test(v));
 
 /**
  * Kind of income a withholding is made on (50 ทวิ, ภ.ง.ด.3 / ภ.ง.ด.53), with the usual rate for a company payer.
@@ -163,6 +168,8 @@ export interface LedgerDoc {
   depYears: number;
   /** Equipment sold or thrown away on this date (YYYY-MM-DD); "" = still in use */
   disposedOn: string;
+  /** The person's own remark (비고), separate from the AI's note; one language, not translated */
+  memo: string;
   /** Input VAT may not be claimed (§82/5); null = decided by the category (entertainment → not claimable) */
   noClaim: boolean | null;
   /** Withholding tax rate in % (0 = no withholding) and the kind of income */

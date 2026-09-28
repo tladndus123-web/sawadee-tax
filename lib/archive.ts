@@ -93,6 +93,7 @@ export function search(doc: LedgerDoc, query: string): boolean {
       doc.seller.taxId.replace(/\D/g, ""),
       tri(doc.customer.name),
       ...doc.items.map((i) => `${tri(i.desc)} ${i.code}`),
+      doc.memo,
       amounts(doc.totals.net),
       amounts(doc.totals.vat),
       amounts(doc.totals.taxable),

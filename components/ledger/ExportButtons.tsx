@@ -12,7 +12,7 @@ import { buildMonthExport, exportLang } from "@/lib/export";
 import { monthCosts } from "@/lib/cost-split";
 import { type LedgerEntry, pick, useLedger } from "@/lib/ledger-store";
 import { fromSatang } from "@/lib/money";
-import { CATEGORIES } from "@/lib/types";
+import { useCategoryLabel } from "@/components/vendors/CategoryIcon";
 
 export const EXPORT_COLS = [
   "date", "docNo", "vendor", "vendorTh", "taxId", "branch", "docType", "category", "items", "taxable", "exempt",
@@ -27,6 +27,7 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
   const [busy, setBusy] = useState(false);
   // Depreciation needs equipment bought in earlier months too
   const { entries: all } = useLedger();
+  const catLabel = useCategoryLabel();
 
   const excel = async () => {
     setBusy(true);
@@ -43,7 +44,7 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
         company.taxId,
       );
       const costRows = [
-        ...CATEGORIES.filter((k) => c.byCategory.get(k)).map((k) => ({ label: t(`category.${k}`), amount: fromSatang(c.byCategory.get(k)!) })),
+        ...[...c.byCategory.entries()].filter(([, v]) => v).map(([k, v]) => ({ label: catLabel(k), amount: fromSatang(v) })),
         ...(c.depreciation ? [{ label: t("pl.depreciation"), amount: fromSatang(c.depreciation) }] : []),
         ...(c.disposal ? [{ label: t("pl.disposal"), amount: fromSatang(c.disposal) }] : []),
       ];
@@ -55,7 +56,7 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
         yes: t("export.yes"),
         no: t("export.no"),
         docType: (k) => t(`docType.${k as "full"}`),
-        category: (k) => t(`category.${k as "other"}`),
+        category: (k) => catLabel(k),
         sheetCosts: t("export.sheetCosts"),
         cost: t("export.cost"),
       }, { rows: costRows, total: fromSatang(c.cost) });
