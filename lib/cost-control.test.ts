@@ -9,7 +9,7 @@ describe("food cost, labour and rent against sales", () => {
   it("each as a share of sales without VAT; FL and FLR with their summed targets", () => {
     const c = costControl(10000000, costs, foodKeys, 2800000, DEFAULT_TARGETS);
     expect(c.food).toMatchObject({ amount: 3300000, pct: 33, target: 30, level: "near" });
-    expect(c.labor).toMatchObject({ amount: 2800000, pct: 28, level: "ok" });
+    expect(c.labor).toMatchObject({ amount: 2800000, pct: 28, level: "watch" });
     expect(c.rent).toMatchObject({ amount: 1200000, pct: 12, level: "near" });
     expect(c.fl).toMatchObject({ amount: 6100000, pct: 61, target: 60, level: "near" });
     expect(c.flr).toMatchObject({ amount: 7300000, pct: 73, target: 70, level: "near" });
@@ -25,7 +25,8 @@ describe("food cost, labour and rent against sales", () => {
   });
 
   it("levels: within the target, up to 5 points over, more", () => {
-    expect([levelOf(30, 30), levelOf(35, 30), levelOf(35.1, 30), levelOf(null, 30)]).toEqual(["ok", "near", "over", "none"]);
+    // room (≤ 80 % of the target), close, up to 5 points over, further over
+    expect([levelOf(24, 30), levelOf(24.1, 30), levelOf(30, 30), levelOf(35, 30), levelOf(35.1, 30), levelOf(null, 30)]).toEqual(["ok", "watch", "watch", "near", "over", "none"]);
   });
 
   it("labour: wages + the employer's social security + other staff costs, per month", () => {

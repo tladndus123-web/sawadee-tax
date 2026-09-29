@@ -28,8 +28,11 @@ import { useMe } from "@/lib/role-store";
 import type { LedgerDoc } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const TONE = { ok: "text-ok", near: "text-warn", over: "text-bad", none: "text-muted-foreground" } as const;
-const BAR = { ok: "bg-ok", near: "bg-warn", over: "bg-bad", none: "bg-muted-foreground/30" } as const;
+// Risk shows as colour AND words: green (room) → yellow (close) → orange (just over) → red (well over)
+const TONE = { ok: "text-ok", watch: "text-caution", near: "text-warn", over: "text-bad", none: "text-muted-foreground" } as const;
+const BAR = { ok: "bg-risk-ok", watch: "bg-risk-watch", near: "bg-risk-near", over: "bg-risk-over", none: "bg-muted-foreground/30" } as const;
+const TILE = { ok: "bg-ok-soft", watch: "bg-caution-soft", near: "bg-warn-soft", over: "bg-bad-soft ring-1 ring-risk-over/40", none: "bg-muted/60" } as const;
+const CHIP = { ok: "bg-risk-ok/15 text-ok", watch: "bg-risk-watch/25 text-caution", near: "bg-risk-near/20 text-warn", over: "bg-risk-over text-white", none: "" } as const;
 
 export function CostCard({ month, salesValue, purchases, fixed }: { month: string; salesValue: number; purchases: LedgerDoc[]; fixed: FixedLine[] }) {
   const t = useTranslations("cost");
@@ -95,8 +98,6 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
   );
 }
 
-const TILE = { ok: "bg-ok/10", near: "bg-warn/10", over: "bg-bad/10", none: "bg-muted/60" } as const;
-
 /** A big share with its target: FL or FLR */
 function Headline({ code, label, line }: { code: string; label: string; line: CostLine }) {
   const t = useTranslations("cost");
@@ -106,7 +107,10 @@ function Headline({ code, label, line }: { code: string; label: string; line: Co
         <b className="flex-none font-semibold text-foreground">{code}</b>
         <span className="truncate">{label}</span>
       </span>
-      <span className={cn("text-[28px] leading-tight font-semibold tracking-tight tabular-nums", TONE[line.level])}>{line.pct === null ? "–" : `${line.pct}%`}</span>
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className={cn("text-[28px] leading-tight font-semibold tracking-tight tabular-nums", TONE[line.level])}>{line.pct === null ? "–" : `${line.pct}%`}</span>
+        {line.level !== "none" && <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap", CHIP[line.level])}>{t(`lvl.${line.level}`)}</span>}
+      </span>
       <span className="text-[11px] text-muted-foreground tabular-nums">
         {baht(fromSatang(line.amount))} · {t("target", { pct: line.target })}
       </span>
@@ -116,8 +120,12 @@ function Headline({ code, label, line }: { code: string; label: string; line: Co
 
 function Ratio({ code, label, line, empty }: { code: string; label: string; line: CostLine; empty?: string }) {
   const t = useTranslations("cost");
-  const width = line.pct === null ? 0 : Math.min(100, (line.pct / Math.max(line.target * 1.5, 1)) * 100);
-  const mark = Math.min(100, (line.target / Math.max(line.target * 1.5, 1)) * 100);
+  // The bar runs to 1.5× the target; its track is tinted with the zones (room · close · just over · well over)
+  const scale = Math.max(line.target * 1.5, 1);
+  const at = (v: number) => Math.min(100, (v / scale) * 100);
+  const width = line.pct === null ? 0 : at(line.pct);
+  const mark = at(line.target);
+  const zones = `linear-gradient(to right, color-mix(in srgb, var(--risk-ok) 14%, transparent) 0 ${at(line.target * 0.8)}%, color-mix(in srgb, var(--risk-watch) 22%, transparent) 0 ${mark}%, color-mix(in srgb, var(--risk-near) 18%, transparent) 0 ${at(line.target + 5)}%, color-mix(in srgb, var(--risk-over) 16%, transparent) 0 100%)`;
   return (
     <div className="grid gap-1">
       <div className="flex items-baseline justify-between gap-2">
@@ -130,14 +138,13 @@ function Ratio({ code, label, line, empty }: { code: string; label: string; line
           <span className={cn("min-w-[3.5rem] text-right text-[15px] font-semibold tabular-nums", TONE[line.level])}>{line.pct === null ? "–" : `${line.pct}%`}</span>
         </span>
       </div>
-      <div className="relative h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-        <div className={cn("h-full rounded-full", BAR[line.level])} style={{ width: `${width}%` }} />
-        <div className="absolute top-0 h-full w-0.5 bg-foreground/40" style={{ left: `${mark}%` }} />
+      <div className="relative h-2.5 overflow-hidden rounded-full bg-muted" style={{ backgroundImage: zones }} aria-hidden>
+        <div className={cn("h-full rounded-full transition-[width] duration-500", BAR[line.level])} style={{ width: `${width}%` }} />
+        <div className="absolute top-0 h-full w-0.5 bg-foreground/50" style={{ left: `${mark}%` }} />
       </div>
-      <span className="text-[11px] text-muted-foreground">
+      <span className="flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
         {empty ?? t("target", { pct: line.target })}
-        {line.level === "over" && ` · ${t("over")}`}
-        {line.level === "near" && ` · ${t("near")}`}
+        {!empty && line.level !== "none" && <span className={cn("font-semibold", TONE[line.level])}>· {t(`lvl.${line.level}`)}</span>}
       </span>
     </div>
   );

@@ -33,10 +33,12 @@ export function targetsOf(raw: unknown): CostTargets {
   return { food: pick("food"), labor: pick("labor"), rent: pick("rent") };
 }
 
-export type Level = "ok" | "near" | "over" | "none";
+/** Room to spare (≤ 80 % of the target), close to it, up to 5 points over, further over; none = no sales */
+export type Level = "ok" | "watch" | "near" | "over" | "none";
 
 /** Within the target, up to 5 points over it, or more */
-export const levelOf = (pct: number | null, target: number): Level => (pct === null ? "none" : pct <= target ? "ok" : pct <= target + 5 ? "near" : "over");
+export const levelOf = (pct: number | null, target: number): Level =>
+  pct === null ? "none" : pct <= target * 0.8 ? "ok" : pct <= target ? "watch" : pct <= target + 5 ? "near" : "over";
 
 export interface CostLine {
   /** Satang */

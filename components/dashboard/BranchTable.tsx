@@ -102,7 +102,7 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
   );
 }
 
-const TONE = { ok: "text-ok", near: "text-warn", over: "text-bad", none: undefined } as const;
+const TONE = { ok: "text-ok", watch: "text-caution", near: "text-warn", over: "text-bad", none: undefined } as const;
 
 function Figures({ r, c, big }: { r: MonthResult; c: CostControl; big?: boolean }) {
   const t = useTranslations("branch");

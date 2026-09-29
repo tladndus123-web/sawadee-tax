@@ -1191,13 +1191,11 @@
   },
   "cost": {
     "title": "Cost control (food · labour · rent)",
-    "hint": "Shares of sales without VAT. The vertical line is the target.",
+    "hint": "Shares of sales without VAT. The vertical line is the target; the tint behind each bar shows the zones: green room → yellow watch → orange warning → red danger.",
     "food": "Food cost",
     "labor": "Labour",
     "rent": "Rent",
     "target": "Target {pct}% or less",
-    "near": "A little above the target",
-    "over": "Over the target",
     "noLabor": "This month's labour is not in yet",
     "note": "Food is the categories with 'Counts as food cost' on (food and supplies to start). Purchases count by invoice date, so stock is not taken into account.",
     "enterLabor": "Enter labour",
@@ -1226,7 +1224,13 @@
     "fl": "Food + labour",
     "flr": "Food + labour + rent",
     "base": "Against sales without VAT of {sales}",
-    "fixed": "Fixed costs"
+    "fixed": "Fixed costs",
+    "lvl": {
+      "ok": "Room to spare",
+      "watch": "Watch · close to target",
+      "near": "Warning · just over",
+      "over": "Danger · over target"
+    }
   },
   "pay": {
     "title": "Payroll",
