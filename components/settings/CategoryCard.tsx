@@ -5,7 +5,7 @@
 // there; an icon and colour; whether its input VAT may be claimed. A category documents use cannot be deleted —
 // hide it instead (its documents keep it).
 
-import { Eye, EyeOff, Languages, Loader2, Pencil, Plus, Shapes, Trash2 } from "lucide-react";
+import { ChevronDown, Eye, EyeOff, Languages, Loader2, Pencil, Plus, Shapes, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -26,6 +26,9 @@ export function CategoryCard() {
   const { rows, loaded } = useCategories();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  // Five at first; the rest one tap away
+  const [all, setAll] = useState(false);
+  const SHOWN = 5;
 
   const toggleHidden = async (r: CategoryRow) => {
     setBusy(r.key);
@@ -65,7 +68,7 @@ export function CategoryCard() {
         <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden />
       ) : (
         <ul className="grid divide-y divide-border/60">
-          {rows.map((r) => (
+          {(all ? rows : rows.slice(0, SHOWN)).map((r) => (
             <li key={r.key} className={cn("flex items-center gap-3 py-2", r.hidden && "opacity-55")}>
               <CategoryIcon category={r.key} className="size-9 rounded-xl" />
               <span className="grid min-w-0 flex-1">
@@ -94,6 +97,17 @@ export function CategoryCard() {
             </li>
           ))}
         </ul>
+      )}
+      {loaded && rows.length > SHOWN && (
+        <button
+          type="button"
+          onClick={() => setAll((v) => !v)}
+          aria-expanded={all}
+          className="press flex h-10 items-center justify-center gap-1 rounded-full text-sm font-medium text-primary hover:bg-primary/10"
+        >
+          {all ? t("less") : t("more", { count: rows.length - SHOWN })}
+          <ChevronDown className={cn("size-4 transition-transform", all && "rotate-180")} aria-hidden />
+        </button>
       )}
 
       {isAdmin && !draft && (

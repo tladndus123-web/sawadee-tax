@@ -92,7 +92,6 @@ export function AppHeader() {
               <AppMark className={`size-8 flex-none rounded-[9px] ${APP_MARK_GLOW}`} />
               <span className={cn("truncate", manyBranches && "max-sm:hidden")}>{t("app.appName")}</span>
             </Link>
-            <BranchSwitcher />
           </div>
 
           <nav ref={navRef} aria-label={t("nav.menu")} className="nav-pill relative hidden md:flex">
@@ -106,6 +105,7 @@ export function AppHeader() {
           </nav>
 
           <div className="flex shrink-0 items-center justify-end gap-1 md:col-start-3">
+            <BranchSwitcher />
             <LocaleSwitcher />
             <ThemeToggle />
             <UserMenu />
