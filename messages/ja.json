@@ -1491,5 +1491,17 @@
     "pay": "給与の確認 残り{count}人",
     "payDone": "給与の確認完了",
     "warn": "まだ残りが {count}件あります。それでも締めますか？"
+  },
+  "fold": {
+    "branches": "{count}店舗",
+    "cats": "{count}個",
+    "fixed": "月 {amount}",
+    "none": "なし",
+    "installed": "インストール済み",
+    "on": "オン",
+    "off": "オフ",
+    "linked": "連携済み",
+    "notLinked": "未連携",
+    "members": "{count}人"
   }
 }

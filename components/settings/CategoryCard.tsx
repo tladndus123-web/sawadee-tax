@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { type CategoryRow, deleteCategory, newCategoryKey, saveCategory, UI_LANGS, type UiLang, useCategories } from "@/lib/category-store";
 import { useMe } from "@/lib/role-store";
 import { cn } from "@/lib/utils";
+import { useFoldStatus } from "./SettingsFold";
 
 type Draft = CategoryRow & { isNew?: boolean };
 
@@ -24,6 +25,8 @@ export function CategoryCard() {
   const label = useCategoryLabel();
   const isAdmin = useMe().role === "admin";
   const { rows, loaded } = useCategories();
+  const tf = useTranslations("fold");
+  useFoldStatus(loaded ? tf("cats", { count: rows.filter((r) => !r.hidden).length }) : null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   // Five at first; the rest one tap away

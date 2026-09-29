@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { promptInstall, useInstall } from "@/lib/install-app";
+import { useFoldStatus } from "./SettingsFold";
 
 const HIDE_KEY = "trl.installTipHidden";
 const noop = () => () => {};
@@ -15,6 +16,8 @@ const noop = () => () => {};
 export function InstallCard({ compact }: { compact?: boolean }) {
   const t = useTranslations("install");
   const state = useInstall();
+  const tf = useTranslations("fold");
+  useFoldStatus(state === "installed" ? tf("installed") : null, true);
   const hiddenAtStart = useSyncExternalStore(
     noop,
     () => {

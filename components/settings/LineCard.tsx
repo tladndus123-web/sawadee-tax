@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useMe } from "@/lib/role-store";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { useFoldStatus } from "./SettingsFold";
 
 // Optional: the bot's LINE ID (e.g. "@123abcde") for an "add friend" link
 const BOT_ID = process.env.NEXT_PUBLIC_LINE_BOT_ID;
@@ -38,6 +39,8 @@ export function LineCard() {
   const t = useTranslations("line");
   const me = useMe();
   const [linked, setLinked] = useState<boolean | null>(null);
+  const tf = useTranslations("fold");
+  useFoldStatus(linked === null ? null : linked ? tf("linked") : tf("notLinked"), !!linked);
   const [code, setCode] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 

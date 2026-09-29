@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { type Role, useMe } from "@/lib/role-store";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { useFoldStatus } from "./SettingsFold";
 
 interface Member {
   userId: string;
@@ -37,6 +38,8 @@ export function MembersCard() {
   const locale = useLocale();
   const me = useMe();
   const [members, setMembers] = useState<Member[] | null>(null);
+  const tf = useTranslations("fold");
+  useFoldStatus(members ? tf("members", { count: members.length }) : null);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("staff");
   const [busy, setBusy] = useState<string | null>(null);

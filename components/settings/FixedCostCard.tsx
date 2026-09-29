@@ -18,12 +18,13 @@ import { branchLabel, byId, headOf } from "@/lib/branches";
 import { useBranches } from "@/lib/branch-store";
 import { type FixedLine, fixedActive } from "@/lib/fixed-costs";
 import { changeAmount, deleteFixed, saveFixed, useFixedCosts } from "@/lib/fixed-store";
-import { baht } from "@/lib/money";
+import { baht, bahtWhole } from "@/lib/money";
 import { isMonthLocked } from "@/lib/month-lock-store";
 import { useMe } from "@/lib/role-store";
 import { todayBangkok } from "@/lib/thai-tax";
 import type { Category } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useFoldStatus } from "./SettingsFold";
 
 type Draft = Omit<FixedLine, "id"> & { id?: string };
 
@@ -44,6 +45,8 @@ export function FixedCostCard() {
   // Running lines first, then the ended ones
   const sorted = [...lines].sort((a, b) => Number(fixedActive(b, thisMonth)) - Number(fixedActive(a, thisMonth)) || a.name.localeCompare(b.name));
   const monthly = lines.filter((l) => fixedActive(l, thisMonth)).reduce((a, l) => a + l.amount, 0);
+  const tf = useTranslations("fold");
+  useFoldStatus(loaded ? (monthly ? tf("fixed", { amount: bahtWhole(monthly) }) : tf("none")) : null);
 
   const remove = async (l: FixedLine) => {
     if (!confirm(t("deleteAsk", { name: l.name }))) return;

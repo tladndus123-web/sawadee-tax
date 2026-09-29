@@ -2,10 +2,21 @@
 
 import { ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 const EVENT = "settings-folds";
+
+type Status = { text: string; on?: boolean } | null;
+const StatusContext = createContext<(s: Status) => void>(() => {});
+
+/** A card inside a fold shows a short state on the folded row ("3곳", "연결됨"); on = a green dot */
+export function useFoldStatus(text: string | null | undefined, on?: boolean) {
+  const set = useContext(StatusContext);
+  useEffect(() => {
+    set(text ? { text, on } : null);
+  }, [set, text, on]);
+}
 
 /**
  * One settings section folded to a single row (icon + title); tapping slides the card open.
@@ -15,6 +26,7 @@ const EVENT = "settings-folds";
  */
 export function SettingsFold({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [status, setStatus] = useState<Status>(null);
   const body = useRef<HTMLDivElement>(null);
   const id = useId();
 
@@ -49,6 +61,12 @@ export function SettingsFold({ icon, title, children }: { icon: ReactNode; title
           {icon}
         </span>
         <span className="min-w-0 flex-1 truncate">{title}</span>
+        {status && (
+          <span className="flex max-w-[45%] flex-none items-center gap-1.5 truncate text-xs font-medium text-muted-foreground">
+            {status.on && <span className="size-1.5 flex-none rounded-full bg-ok" aria-hidden />}
+            <span className="truncate">{status.text}</span>
+          </span>
+        )}
         <ChevronDown
           className={cn("size-5 shrink-0 text-muted-foreground transition-transform duration-300 motion-reduce:transition-none", open && "rotate-180")}
           aria-hidden
@@ -73,7 +91,7 @@ export function SettingsFold({ icon, title, children }: { icon: ReactNode; title
             "[&>div]:px-5 [&>div]:pb-5 sm:[&>div]:px-6 sm:[&>div]:pb-6",
           )}
         >
-          {children}
+          <StatusContext.Provider value={setStatus}>{children}</StatusContext.Provider>
         </div>
       </div>
     </div>

@@ -1491,5 +1491,17 @@
     "pay": "급여 확인 {count}명 남음",
     "payDone": "급여 확인 완료",
     "warn": "아직 남은 일이 {count}개 있어요. 그래도 마감할까요?"
+  },
+  "fold": {
+    "branches": "{count}곳",
+    "cats": "{count}개",
+    "fixed": "월 {amount}",
+    "none": "없음",
+    "installed": "설치됨",
+    "on": "켜짐",
+    "off": "꺼짐",
+    "linked": "연결됨",
+    "notLinked": "연결 안 됨",
+    "members": "{count}명"
   }
 }

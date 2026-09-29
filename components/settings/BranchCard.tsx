@@ -13,12 +13,15 @@ import { BRANCH_COLORS, type Branch, branchLabel, COLOR_NAMES, colorOf, isHead }
 import { deleteBranch, saveBranch, useBranches } from "@/lib/branch-store";
 import { useMe } from "@/lib/role-store";
 import { cn } from "@/lib/utils";
+import { useFoldStatus } from "./SettingsFold";
 
 export function BranchCard() {
   const t = useTranslations("branch");
   const names = useBranchName();
   const isAdmin = useMe().role === "admin";
   const { branches, loaded } = useBranches();
+  const tf = useTranslations("fold");
+  useFoldStatus(loaded ? tf("branches", { count: branches.length }) : null);
   const [editing, setEditing] = useState<Partial<Branch> | null>(null);
   const [busy, setBusy] = useState(false);
   const locale = useLocale();

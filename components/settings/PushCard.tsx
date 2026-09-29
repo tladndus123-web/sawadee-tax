@@ -9,11 +9,14 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { type PushState, pushState, turnOff, turnOn } from "@/lib/push-client";
 import { useMe } from "@/lib/role-store";
+import { useFoldStatus } from "./SettingsFold";
 
 export function PushCard() {
   const t = useTranslations("push");
   const isAdmin = useMe().role === "admin";
   const [state, setState] = useState<PushState | null>(null);
+  const tf = useTranslations("fold");
+  useFoldStatus(state === "on" ? tf("on") : state ? tf("off") : null, state === "on");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {

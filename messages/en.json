@@ -1491,5 +1491,17 @@
     "pay": "{count, plural, one {Pay of # person to check} other {Pay of # people to check}}",
     "payDone": "Pay checked",
     "warn": "{count, plural, one {# thing is still open.} other {# things are still open.}} Close the month anyway?"
+  },
+  "fold": {
+    "branches": "{count, plural, one {# branch} other {# branches}}",
+    "cats": "{count}",
+    "fixed": "{amount} a month",
+    "none": "None",
+    "installed": "Installed",
+    "on": "On",
+    "off": "Off",
+    "linked": "Linked",
+    "notLinked": "Not linked",
+    "members": "{count, plural, one {# person} other {# people}}"
   }
 }
