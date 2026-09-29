@@ -508,3 +508,4 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **DB 마이그레이션은 워크플로에서 안 돌림**: 새 마이그레이션이 있으면 push 전에 PC에서 `npx supabase db push` + `test db --linked` 먼저(앱이 새 열을 읽기 때문). 협업자는 Supabase 조직에 따로 초대 필요.
 - 토큰 등록: GitHub 저장소 → Settings → Secrets and variables → Actions → New repository secret, 이름 `VERCEL_TOKEN`(저장소 주인만 가능). 실행 기록: 저장소 → Actions 탭. 수동 실행: Actions → Deploy → Run workflow.
 - 참고: Vercel Hobby는 비상업 용도 약관 — 회사 운영이 커지면 Pro 권장.
+- 첫 자동 배포 성공 2026-09-29 17:58 (커밋 2191b10). 토큰은 **Scope = tladndus123-webs-projects**여야 함 — 다른 범위면 `vercel pull`이 "Could not retrieve Project Settings"로 실패. Secret 이름은 정확히 `VERCEL_TOKEN`(Variables 탭 아님).
