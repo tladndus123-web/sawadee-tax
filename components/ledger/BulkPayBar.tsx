@@ -18,6 +18,7 @@ import { joinTri } from "@/lib/form-labels";
 import { type LedgerEntry, setPaidMany } from "@/lib/ledger-store";
 import { baht, fromSatang, toSatang } from "@/lib/money";
 import { todayBangkok } from "@/lib/thai-tax";
+import { useDocName } from "./doc-name";
 
 /**
  * Payment run: the chosen unpaid documents, their total, and one button to mark them all paid. The confirm
@@ -25,6 +26,7 @@ import { todayBangkok } from "@/lib/thai-tax";
  */
 export function BulkPayBar({ chosen, onDone }: { chosen: LedgerEntry[]; onDone: () => void }) {
   const t = useTranslations("bulk");
+  const docName = useDocName();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [date, setDate] = useState(todayBangkok);
@@ -34,13 +36,13 @@ export function BulkPayBar({ chosen, onDone }: { chosen: LedgerEntry[]; onDone: 
   const perVendor = useMemo(() => {
     const map = new Map<string, { name: string; count: number; sum: number }>();
     for (const e of chosen) {
-      const name = joinTri(e.doc.seller.name, "en") || joinTri(e.doc.seller.name, "th") || "—";
+      const name = joinTri(e.doc.seller.name, "en") || joinTri(e.doc.seller.name, "th") || docName(e.doc);
       const key = e.doc.seller.taxId || name;
       const v = map.get(key) ?? { name, count: 0, sum: 0 };
       map.set(key, { name: v.name, count: v.count + 1, sum: v.sum + toSatang(e.doc.totals.net) });
     }
     return [...map.values()].sort((a, b) => b.sum - a.sum);
-  }, [chosen]);
+  }, [chosen, docName]);
 
   const pay = async () => {
     const ids = chosen.map((e) => e.id);

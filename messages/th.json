@@ -427,7 +427,8 @@
     "search": "ค้นหาด้วยผู้ขาย · เลขที่เอกสาร · จำนวนเงิน",
     "unchecked": "รอสำนักงานตรวจ",
     "categoryFilter": "กรองตามหมวด",
-    "categoryAll": "ทุกหมวด"
+    "categoryAll": "ทุกหมวด",
+    "andMore": "{name} และอีก {count} รายการ"
   },
   "auth": {
     "title": "เข้าสู่ระบบ",

@@ -427,7 +427,8 @@
     "search": "取引先・書類番号・金額で検索",
     "unchecked": "事務所未確認",
     "categoryFilter": "分類で絞り込み",
-    "categoryAll": "すべての分類"
+    "categoryAll": "すべての分類",
+    "andMore": "{name} ほか{count}件"
   },
   "auth": {
     "title": "ログイン",

@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, ChevronDown, ChevronRight, CircleCheck, Clock, Loader2, Receipt, TrendingUp, Undo2, Wallet, Check } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
@@ -11,7 +11,6 @@ import { Link } from "@/i18n/navigation";
 import { monthKey } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
 import { type Doc, type DueItem, summarize, trend, upcoming } from "@/lib/dashboard";
-import { exportLang } from "@/lib/export";
 import { pick, setQuick, useLedger } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
 import { todayBangkok } from "@/lib/thai-tax";
@@ -32,6 +31,7 @@ import { ActivityList } from "./ActivityList";
 import { BranchTable } from "./BranchTable";
 import { TeamCard } from "./TeamCard";
 import { UncheckedList } from "./UncheckedList";
+import { useDocName } from "@/components/ledger/doc-name";
 import { VatCard } from "./VatCard";
 import { monthLabor } from "@/lib/cost-control";
 import { useLabor } from "@/lib/labor-store";
@@ -234,9 +234,8 @@ function DueList({ items, docs }: { items: DueItem[]; docs: Doc[] }) {
   }, [docs, vendors]);
   const t = useTranslations();
   const sd = useScreenDate();
-  const locale = useLocale();
-  const lang = exportLang(locale);
   const [busy, setBusy] = useState<string | null>(null);
+  const docName = useDocName();
   // Five at first; the rest one tap away
   const [all, setAll] = useState(false);
   const SHOWN = 5;
@@ -294,7 +293,7 @@ function DueList({ items, docs }: { items: DueItem[]; docs: Doc[] }) {
         <ul className="grid">
           {(all ? items : items.slice(0, SHOWN)).map((it) => {
             const b = badge(it);
-            const name = it.doc.seller.name[lang] || it.doc.seller.name.en || it.doc.seller.name.th || it.doc.docNo;
+            const name = docName(it.doc);
             return (
               <li key={it.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 border-b border-border/60 py-3 last:border-0">
                 <CategoryIcon category={iconOf(it.doc.seller.taxId, it.doc.category)} className="row-span-2" />

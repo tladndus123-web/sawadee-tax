@@ -16,6 +16,7 @@ import { Link } from "@/i18n/navigation";
 import { AddDocButtons } from "@/components/upload/AddDocButtons";
 import { type ArchiveFilter, groupByMonth, hasCategory, matches, monthKey, NO_DATE, search, isUnpaid } from "@/lib/archive";
 import { useCategoryOptions } from "@/components/vendors/CategoryIcon";
+import { useDocName } from "./doc-name";
 import { joinTri } from "@/lib/form-labels";
 import { healThumb, type LedgerEntry, type LedgerView, pick, restoreEntry, restoreMany, setQuick, useLedger, usePhotoUrl, setAck } from "@/lib/ledger-store";
 import { useMonthLocks } from "@/lib/month-lock-store";
@@ -465,7 +466,8 @@ function BranchTag({ id }: { id: string }) {
   );
 }
 
-const sellerOf = (e: LedgerEntry) => joinTri(e.doc.seller.name, "en") || joinTri(e.doc.seller.name, "th") || e.doc.docNo || "—";
+/** The seller as printed (English, else Thai); without one, the document number or its first item line (useDocName) */
+const sellerOf = (e: LedgerEntry, name: (d: LedgerEntry["doc"]) => string) => joinTri(e.doc.seller.name, "en") || joinTri(e.doc.seller.name, "th") || name(e.doc);
 
 /** One document; stickers can be changed right from the list. */
 const DocRow = memo(function DocRow({
@@ -490,6 +492,7 @@ const DocRow = memo(function DocRow({
   const locale = useLocale();
   const monthLabel = useMonthLabel();
   const isAdmin = useMe().role === "admin";
+  const docName = useDocName();
   const setStickers = async (stickers: Sticker[]) => {
     await setQuick(e.id, { stickers });
   };
@@ -513,7 +516,7 @@ const DocRow = memo(function DocRow({
         <Checkbox
           checked={!!checked}
           onCheckedChange={() => onToggle?.(e.id)}
-          aria-label={sellerOf(e)}
+          aria-label={sellerOf(e, docName)}
           className="ml-3 size-5 flex-none rounded-md"
         />
       )}
@@ -521,7 +524,7 @@ const DocRow = memo(function DocRow({
         <Thumb path={e.photoPath} />
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-baseline gap-2">
-            <span className="truncate text-[15px] font-semibold">{sellerOf(e)}</span>
+            <span className="truncate text-[15px] font-semibold">{sellerOf(e, docName)}</span>
             {draft && <span className="flex-none rounded-full bg-warn-soft px-2 py-0.5 text-[11px] font-semibold text-warn">{t("archive.draftBadge")}</span>}
             <span className="ml-auto flex-none text-[15px] font-semibold whitespace-nowrap tabular-nums">{baht(e.doc.totals.net)}</span>
           </span>
@@ -624,18 +627,19 @@ function TrashRow({
 }) {
   const t = useTranslations();
   const locale = useLocale();
+  const docName = useDocName();
   const [busy, setBusy] = useState(false);
   const when = e.deletedAt ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(e.deletedAt) : "";
   return (
     <li className={cn("workspace-panel grid gap-3 p-3 sm:p-4", checked && "ring-2 ring-primary")}>
       <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-        {selectable && <Checkbox checked={!!checked} onCheckedChange={() => onToggle?.(e.id)} aria-label={sellerOf(e)} className="size-5 flex-none rounded-md" />}
+        {selectable && <Checkbox checked={!!checked} onCheckedChange={() => onToggle?.(e.id)} aria-label={sellerOf(e, docName)} className="size-5 flex-none rounded-md" />}
         <span className="flex-none opacity-60 grayscale">
           <Thumb path={e.photoPath} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-[15px] font-semibold text-muted-foreground line-through decoration-1">{sellerOf(e)}</span>
+            <span className="truncate text-[15px] font-semibold text-muted-foreground line-through decoration-1">{sellerOf(e, docName)}</span>
             <StickerDots stickers={e.doc.stickers} />
           </span>
           <span className="mt-0.5 block text-xs text-muted-foreground tabular-nums">{baht(e.doc.totals.net)}</span>
@@ -655,7 +659,7 @@ function TrashRow({
             {t("trash.restore")}
           </Button>
         )}
-        {!selectable && <PurgeButton ids={[e.id]} name={sellerOf(e)} />}
+        {!selectable && <PurgeButton ids={[e.id]} name={sellerOf(e, docName)} />}
       </div>
       <dl className="grid gap-x-4 gap-y-1 rounded-xl bg-muted/60 px-3 py-2.5 text-xs sm:grid-cols-[auto_1fr]">
         <dt className="text-muted-foreground">{t("trash.reason")}</dt>

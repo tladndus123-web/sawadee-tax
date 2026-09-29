@@ -427,7 +427,8 @@
     "search": "Search by seller, document no. or amount",
     "unchecked": "not yet checked",
     "categoryFilter": "Filter by category",
-    "categoryAll": "All categories"
+    "categoryAll": "All categories",
+    "andMore": "{name} + {count} more"
   },
   "auth": {
     "title": "Sign in",

@@ -427,7 +427,8 @@
     "search": "거래처 · 문서번호 · 금액으로 검색",
     "unchecked": "사무실 확인 전",
     "categoryFilter": "항목으로 거르기",
-    "categoryAll": "모든 항목"
+    "categoryAll": "모든 항목",
+    "andMore": "{name} 외 {count}건"
   },
   "auth": {
     "title": "로그인",

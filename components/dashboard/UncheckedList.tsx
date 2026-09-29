@@ -4,25 +4,24 @@
 // already in the books; checking only records that someone looked. One tap per document, or all at once.
 
 import { Check, ChevronDown, CircleCheck, Loader2, Undo2 } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useScreenDate } from "@/components/ScreenDate";
 import { Button } from "@/components/ui/button";
 import { CategoryIcon } from "@/components/vendors/CategoryIcon";
 import { Link } from "@/i18n/navigation";
-import { exportLang } from "@/lib/export";
 import { type LedgerEntry, pick, setChecked, useLedger } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
 import { cn } from "@/lib/utils";
+import { useDocName } from "@/components/ledger/doc-name";
 
 const SHOWN = 5;
 
 export function UncheckedList() {
   const t = useTranslations("dash");
   const sd = useScreenDate();
-  const lang = exportLang(useLocale());
   const me = useMe();
   const { entries } = useLedger();
   const items = useMemo(() => pick(entries, "ledger").filter((e) => e.checkedAt === null), [entries]);
@@ -42,7 +41,8 @@ export function UncheckedList() {
       setBusy(null);
     }
   };
-  const name = (e: LedgerEntry) => e.doc.seller.name[lang] || e.doc.seller.name.en || e.doc.seller.name.th || e.doc.docNo || "—";
+  const docName = useDocName();
+  const name = (e: LedgerEntry) => docName(e.doc);
 
   return (
     <section aria-labelledby="unchecked-title" className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-5 sm:p-6">
