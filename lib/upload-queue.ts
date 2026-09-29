@@ -134,6 +134,8 @@ async function readNow(id: string) {
     if (pdf) body.append("pdf", pdf, pdf.name || "document.pdf");
     else body.append("photo", photo, "photo.jpg");
     if (cutOuts.has(id)) body.append("cutOut", "1");
+    // Photos in this upload list: 3 or more are read with the stronger model (server decides, lib/extract-server)
+    body.append("batch", String(items.length));
     const res = await fetch("/api/extract", { method: "POST", body, signal: ctrl.signal });
     const json = (await res.json().catch(() => ({}))) as { doc?: LedgerDoc; error?: ExtractErrorCode };
     if (res.ok && json.doc) {

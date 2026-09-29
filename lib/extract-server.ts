@@ -55,6 +55,21 @@ export const readingSetup = () => ({
   effort: ((process.env.ANTHROPIC_EFFORT || "").trim() || "medium") as Effort,
 });
 
+/** From this many photos in one upload, the reading switches to the bulk setup (owner's choice, 2026-09-30) */
+export const BULK_FROM = 3;
+
+/**
+ * 2026-09-30, owner's choice: 1–2 photos → the normal setup above (Sonnet 5.5, medium); 3 or more at once →
+ * Opus 5.5 at low (Vercel env ANTHROPIC_BULK_MODEL / ANTHROPIC_BULK_EFFORT to change it).
+ */
+export const bulkSetup = () => ({
+  model: process.env.ANTHROPIC_BULK_MODEL || "claude-opus-5-5",
+  effort: ((process.env.ANTHROPIC_BULK_EFFORT || "").trim() || "low") as Effort,
+});
+
+/** The setup for a photo that came with `batch` photos in the same upload (0 / unknown = one) */
+export const readingFor = (batch: number) => (batch >= BULK_FROM ? bulkSetup() : readingSetup());
+
 type ImageBlock = Anthropic.ImageBlockParam;
 const imageBlock = (data: Buffer, type: ImageType): ImageBlock => ({
   type: "image",

@@ -4,7 +4,7 @@
 
 import { endIfExpired } from "@/lib/auth/session-guard";
 import type { ExtractErrorCode } from "@/lib/extract-schema";
-import { extractDocument, IMAGE_TYPES, type ImageType, loadSharp, MAX_IMAGE_BYTES, readingSetup, type SourceType } from "@/lib/extract-server";
+import { bulkSetup, BULK_FROM, extractDocument, IMAGE_TYPES, type ImageType, loadSharp, MAX_IMAGE_BYTES, readingFor, readingSetup, type SourceType } from "@/lib/extract-server";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -30,7 +30,7 @@ const fail = (code: ExtractErrorCode, status: number) => Response.json({ error: 
 
 /** Health check: reading model/effort and whether long slips can be cut into pieces (no data, no AI call) */
 export async function GET() {
-  return Response.json({ ...readingSetup(), slipPieces: !!(await loadSharp()) });
+  return Response.json({ ...readingSetup(), bulk: { from: BULK_FROM, ...bulkSetup() }, slipPieces: !!(await loadSharp()) });
 }
 
 export async function POST(req: Request) {
@@ -56,7 +56,9 @@ export async function POST(req: Request) {
   if (!(file instanceof File) || !allowed || file.size > MAX_IMAGE_BYTES) return fail("badImage", 400);
 
   const cutOut = form?.get("cutOut") === "1";
-  const result = await extractDocument(Buffer.from(await file.arrayBuffer()), type as SourceType, { signal: req.signal, cutOut });
+  // How many photos came in the same upload: 3 or more are read with the bulk setup
+  const batch = Math.max(0, Math.min(99, Number(form?.get("batch")) || 0));
+  const result = await extractDocument(Buffer.from(await file.arrayBuffer()), type as SourceType, { signal: req.signal, cutOut, ...readingFor(batch) });
   if (result.ok) return Response.json({ doc: result.doc });
   if (result.code === "aborted") return new Response(null, { status: 499 });
   if (result.detail) console.error(`extract: ${result.code}`, result.detail);

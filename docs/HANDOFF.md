@@ -342,6 +342,7 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **매출 빠진 날 (2026-09-30):** 매출 화면에 지점별 달력(`components/sales/SaleCalendar.tsx`, 계산 `lib/sale-days.ts`). **매장(store) 채널만** 봄, 그 지점의 첫 매장 매출 전 · 오늘 이후 · 정기 휴무 요일은 빠짐으로 안 셈. 휴무 요일 = `branches.closed_days`(0=일…6=토, migration `20260929000700`), 설정 → 지점 관리에서 편집. 날짜를 누르면 그날 매출 / 새 입력 창.
 - **월말 마감 체크리스트 (2026-09-30):** 대시보드(관리자) 카드 `components/dashboard/MonthCloseCard.tsx`, 계산 `lib/month-close.ts`. 대상 달 = 이번 달 이전에 장부 · 매출이 있고 아직 마감 안 한 가장 오래된 달. 항목 3개(사장님: 간단하게): 확인할 서류(임시저장 · 사무실 확인 전 · 경고), 매장 매출 빠진 날(지점 전체), 급여 확인 안 된 직원. 남은 일이 있어도 마감 가능 — 확인 창에 남은 개수를 보여 줌(`MonthLockButton` `note`). 매출 · 급여 화면은 `?month=YYYY-MM`으로 그 달이 열림.
 - **설정 줄 상태:** 접힌 줄 오른쪽에 짧은 상태(지점 N곳 · 분류 N개 · 고정비 월 ฿ · 앱 설치됨 · 알림 켜짐/꺼짐 · LINE 연결됨/안 됨 · 직원 N명). 카드가 `useFoldStatus(text, on)`으로 알려 줌(`SettingsFold.tsx`), 문구는 `fold` 네임스페이스.
+- **읽기 모델 (2026-09-30, 사장님 결정):** 업로드 목록에 1~2장 → Sonnet 5.5 · medium(`ANTHROPIC_MODEL`/`ANTHROPIC_EFFORT`), **3장 이상 → Opus 5.5 · low**(`ANTHROPIC_BULK_MODEL`/`ANTHROPIC_BULK_EFFORT`, 기본값은 코드). 클라이언트가 `batch`(목록의 장수)를 보내고 서버가 `readingFor()`로 고름. LINE 봇은 한 장씩이라 Sonnet. `GET /api/extract`에 `bulk` 표시.
 - **화면 폭 통일:** 대시보드 · 장부 · 거래처 · 설정 = max-w-5xl, 업로드 = 4xl, 서류 = 넓게.
 
 ## 7-5. 배포 (운영)
