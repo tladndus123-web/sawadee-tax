@@ -68,11 +68,16 @@ export function groupByMonth<T extends { doc: LedgerDoc }>(items: T[]): MonthGro
 export interface ArchiveFilter {
   stickers: Sticker[];
   unpaidOnly: boolean;
+  /** Only documents of this category (its own, or a line that has it); "" = any */
+  category?: string;
 }
 
-/** A document passes when it has any of the chosen stickers (or none are chosen). */
+/** Whether a document counts under a category: its own, or any line given that category (a mixed receipt) */
+export const hasCategory = (doc: LedgerDoc, category: string): boolean => doc.category === category || doc.items.some((i) => i.category === category);
+
+/** A document passes when it has any of the chosen stickers (or none are chosen), and the chosen category. */
 export const matches = (doc: LedgerDoc, f: ArchiveFilter): boolean =>
-  (!f.stickers.length || f.stickers.some((s) => doc.stickers.includes(s))) && (!f.unpaidOnly || isUnpaid(doc));
+  (!f.stickers.length || f.stickers.some((s) => doc.stickers.includes(s))) && (!f.unpaidOnly || isUnpaid(doc)) && (!f.category || hasCategory(doc, f.category));
 
 const fold = (s: string) => s.normalize("NFKC").toLowerCase();
 const tri = (t: { th: string; en: string; ja: string }) => `${t.th} ${t.en} ${t.ja}`;

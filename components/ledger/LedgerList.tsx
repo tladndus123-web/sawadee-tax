@@ -14,7 +14,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link } from "@/i18n/navigation";
 import { AddDocButtons } from "@/components/upload/AddDocButtons";
-import { type ArchiveFilter, groupByMonth, matches, monthKey, NO_DATE, search, isUnpaid } from "@/lib/archive";
+import { type ArchiveFilter, groupByMonth, hasCategory, matches, monthKey, NO_DATE, search, isUnpaid } from "@/lib/archive";
+import { useCategoryOptions } from "@/components/vendors/CategoryIcon";
 import { joinTri } from "@/lib/form-labels";
 import { healThumb, type LedgerEntry, type LedgerView, pick, restoreEntry, restoreMany, setQuick, useLedger, usePhotoUrl, setAck } from "@/lib/ledger-store";
 import { useMonthLocks } from "@/lib/month-lock-store";
@@ -77,7 +78,13 @@ export function LedgerList() {
     () => groupByMonth(filtered).map((g) => ({ group: g, monthEntries: list.filter((e) => monthKey(e.doc) === g.key) })),
     [filtered, list],
   );
-  const filtering = filter.stickers.length > 0 || filter.unpaidOnly || q.trim() !== "";
+  const filtering = filter.stickers.length > 0 || filter.unpaidOnly || !!filter.category || q.trim() !== "";
+  // "Tick all shown": what can be ticked now (unpaid for a payment run; not in a closed month for a category)
+  const tickable = useMemo(
+    () => (selecting && view === "ledger" ? filtered.filter((e) => (mode === "pay" ? isUnpaid(e.doc) : !locks.has(monthKey(e.doc)))) : []),
+    [selecting, view, filtered, mode, locks],
+  );
+  const allTicked = tickable.length > 0 && tickable.every((e) => selected.has(e.id));
   const company = useCompany();
   // Same rule as the dashboard tile "needs a look", duplicates included
   const check = useMemo(
@@ -173,7 +180,22 @@ export function LedgerList() {
             )}
           </div>
         )}
-        {selecting && view === "ledger" && <p className="text-xs text-muted-foreground">{mode === "pay" ? t("bulk.hint") : t("bulkCat.hint")}</p>}
+        {selecting && view === "ledger" && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">{mode === "pay" ? t("bulk.hint") : t("bulkCat.hint")}</p>
+            {tickable.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 rounded-full px-3.5 text-[13px]"
+                onClick={() => setSelected(allTicked ? new Set() : new Set(tickable.map((e) => e.id)))}
+              >
+                <CircleCheck className="size-4" />
+                {allTicked ? t("bulkCat.noneShown") : t("bulkCat.allShown", { count: tickable.length })}
+              </Button>
+            )}
+          </div>
+        )}
         {view === "trash" && counts.trash > 0 && (
           <div className="flex justify-end">
             <Button type="button" variant={selecting ? "secondary" : "ghost"} className="h-9 rounded-full px-3.5 text-[13px]" onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
@@ -223,9 +245,9 @@ export function LedgerList() {
           {months.map(({ group, monthEntries }, i) => (
             // Starting or clearing a search re-opens the months (every match is shown while searching)
             <MonthSection
-              key={`${group.key}:${q.trim() !== ""}`}
+              key={`${group.key}:${q.trim() !== "" || !!filter.category}`}
               group={group}
-              defaultOpen={i < 3 || q.trim() !== ""}
+              defaultOpen={i < 3 || q.trim() !== "" || !!filter.category}
               monthEntries={monthEntries}
               check={check}
               locked={locks.has(group.key)}
@@ -246,6 +268,12 @@ export function LedgerList() {
 function FilterBar({ filter, onChange, entries }: { filter: ArchiveFilter; onChange: (f: ArchiveFilter) => void; entries: LedgerEntry[] }) {
   const t = useTranslations("archive");
   const label = useStickerLabel();
+  // Categories in use, with how many documents each (a mixed receipt counts under each of its categories)
+  const options = useCategoryOptions(filter.category);
+  const cats = useMemo(
+    () => options.map((o) => ({ ...o, count: entries.filter((e) => hasCategory(e.doc, o.key)).length })).filter((o) => o.count > 0 || o.key === filter.category),
+    [options, entries, filter.category],
+  );
   const used = STICKERS.filter((c) => entries.some((e) => e.doc.stickers.includes(c)));
   const toggle = (c: Sticker) =>
     onChange({ ...filter, stickers: filter.stickers.includes(c) ? filter.stickers.filter((s) => s !== c) : [...filter.stickers, c] });
@@ -269,6 +297,22 @@ function FilterBar({ filter, onChange, entries }: { filter: ArchiveFilter; onCha
       <button type="button" aria-pressed={filter.unpaidOnly} className={chip(filter.unpaidOnly)} onClick={() => onChange({ ...filter, unpaidOnly: !filter.unpaidOnly })}>
         {t("unpaidOnly")}
       </button>
+      <label className="relative flex-none">
+        <span className="sr-only">{t("categoryFilter")}</span>
+        <select
+          value={filter.category ?? ""}
+          onChange={(e) => onChange({ ...filter, category: e.target.value || undefined })}
+          className={cn(chip(!!filter.category), "appearance-none pr-7")}
+        >
+          <option value="">{t("categoryAll")}</option>
+          {cats.map((c) => (
+            <option key={c.key} value={c.key}>
+              {c.label} ({c.count})
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 opacity-70" aria-hidden />
+      </label>
     </div>
   );
 }

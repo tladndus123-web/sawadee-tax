@@ -424,7 +424,9 @@
     "purple": "보라",
     "gray": "회색",
     "search": "거래처 · 문서번호 · 금액으로 검색",
-    "unchecked": "사무실 확인 전"
+    "unchecked": "사무실 확인 전",
+    "categoryFilter": "항목으로 거르기",
+    "categoryAll": "모든 항목"
   },
   "auth": {
     "title": "로그인",
@@ -1098,7 +1100,9 @@
     "pick": "바꿀 항목 고르기",
     "apply": "바꾸기",
     "done": "{count}건을 {category}(으)로 바꿨어요.",
-    "fail": "바꾸지 못했어요. 마감한 달의 서류가 섞여 있거나 인터넷 연결이 끊겼을 수 있어요."
+    "fail": "바꾸지 못했어요. 마감한 달의 서류가 섞여 있거나 인터넷 연결이 끊겼을 수 있어요.",
+    "allShown": "보이는 {count}건 모두 체크",
+    "noneShown": "체크 모두 해제"
   },
   "assets": {
     "link": "설비 목록 {count}",

@@ -424,7 +424,9 @@
     "purple": "Purple",
     "gray": "Gray",
     "search": "Search by seller, document no. or amount",
-    "unchecked": "not yet checked"
+    "unchecked": "not yet checked",
+    "categoryFilter": "Filter by category",
+    "categoryAll": "All categories"
   },
   "auth": {
     "title": "Sign in",
@@ -1098,7 +1100,9 @@
     "pick": "New category",
     "apply": "Change",
     "done": "{count} documents changed to {category}.",
-    "fail": "Could not change them. A closed month's document may be among them, or the connection dropped."
+    "fail": "Could not change them. A closed month's document may be among them, or the connection dropped.",
+    "allShown": "Tick all {count} shown",
+    "noneShown": "Untick all"
   },
   "assets": {
     "link": "Equipment {count}",

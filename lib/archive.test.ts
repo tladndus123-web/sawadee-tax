@@ -30,6 +30,10 @@ describe("monthly archive", () => {
     expect(matches(d, { stickers: ["blue", "green"], unpaidOnly: false })).toBe(true);
     expect(matches(d, { stickers: ["green"], unpaidOnly: false })).toBe(false);
     expect(matches({ ...d, paid: true }, { stickers: [], unpaidOnly: true })).toBe(false);
+    // Category: the document's own, or a line of a mixed receipt
+    expect(matches({ ...d, category: "other" }, { stickers: [], unpaidOnly: false, category: "other" })).toBe(true);
+    expect(matches({ ...d, category: "food" }, { stickers: [], unpaidOnly: false, category: "other" })).toBe(false);
+    expect(matches({ ...d, category: "food", items: [{ ...d.items[0], category: "office" }] }, { stickers: [], unpaidOnly: false, category: "office" })).toBe(true);
   });
 
   it("normalize keeps only known stickers, in a fixed order, once", () => {
