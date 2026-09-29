@@ -3,10 +3,11 @@
 // A month's payroll (admins): per employee, what happened in each half of the month (days, unpaid days off, overtime,
 // holiday work, bonus, allowance, other deductions); the app works out pay, social security and withholding (taken
 // from the month-end payment). Saving keeps the lines (payslips, filing lists) and puts each branch's labour cost into
-// the cost control.
+// the cost control. The list shows each person's position, name, pay, deductions and take-home, and whether the office
+// checked that saved pay (stamped who and when; new figures clear it).
 
-import { CalendarCheck, ChevronDown, Loader2, Lock, Printer } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { CalendarCheck, Check, ChevronDown, CircleCheck, Loader2, Lock, Printer, Undo2 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { MoneyInput } from "@/components/invoice/fields";
@@ -19,8 +20,12 @@ import { refreshLabor } from "@/lib/labor-store";
 import { fmt } from "@/lib/money";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
 import { daysNotEmployed, type Employee, EMPTY_PERIOD, monthPay, payrollSettingsOf, type PeriodInput } from "@/lib/payroll";
-import { loadPayroll, savePayrollMonth, useEmployees } from "@/lib/payroll-store";
+import { loadPayroll, loadPayrollChecks, type PayrollCheck, savePayrollMonth, setPayrollCheck, useEmployees } from "@/lib/payroll-store";
 import { cn } from "@/lib/utils";
+
+// Row: the pay figures, then the office check (a column on a computer, a strip under the figures on a phone)
+const ROW = "grid sm:grid-cols-[minmax(0,1fr)_12.5rem]";
+const COLS = "grid-cols-[6rem_minmax(0,1fr)_5.75rem_5.75rem_6.25rem_1rem] items-center gap-x-3";
 
 type Inputs = Record<string, { first: PeriodInput; second: PeriodInput }>;
 
@@ -40,12 +45,16 @@ export function PayRunTab({ month }: { month: string }) {
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  const [checks, setChecks] = useState<Map<string, PayrollCheck>>(new Map());
+  const [checking, setChecking] = useState<string | null>(null);
+  const locale = useLocale();
 
   useEffect(() => {
     let live = true;
     setReady(false);
-    loadPayroll({ month })
-      .then((lines) => {
+    // A failed check lookup must never hide the saved pay
+    Promise.all([loadPayroll({ month }), loadPayrollChecks(month).catch(() => new Map<string, PayrollCheck>())])
+      .then(([lines, found]) => {
         if (!live) return;
         const next: Inputs = {};
         for (const l of lines) {
@@ -56,6 +65,7 @@ export function PayRunTab({ month }: { month: string }) {
         }
         setInputs(next);
         setSaved(new Set(lines.map((l) => l.employeeId)));
+        setChecks(found);
         setDirty(false);
         setReady(true);
       })
@@ -123,6 +133,8 @@ export function PayRunTab({ month }: { month: string }) {
       );
       await refreshLabor();
       setSaved(new Set(staff.map((e) => e.id)));
+      // Changed figures lost their check in the database
+      setChecks(await loadPayrollChecks(month).catch(() => new Map()));
       setDirty(false);
       toast.success(t("runSaved"));
     } catch (e) {
@@ -131,6 +143,23 @@ export function PayRunTab({ month }: { month: string }) {
       setBusy(false);
     }
   };
+
+  // The office checks one person's saved pay (or undoes it); the database stamps who and when
+  const toggleCheck = async (e: Employee, on: boolean) => {
+    setChecking(e.id);
+    try {
+      await setPayrollCheck(e.id, month, on);
+      setChecks(await loadPayrollChecks(month));
+      if (on) toast.success(t("checkedDone", { name: e.name }), { action: { label: <Undo2 className="size-4" aria-label={t("uncheck")} />, onClick: () => void toggleCheck(e, false) } });
+    } catch {
+      toast.error(t("checkFail"));
+    } finally {
+      setChecking(null);
+    }
+  };
+  const day = new Intl.DateTimeFormat(locale, { month: "numeric", day: "numeric" });
+  const stamp = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
+  const checkedCount = staff.filter((e) => checks.has(e.id)).length;
 
   if (!loaded || !ready || !company.loaded) return <Loader2 className="mx-auto my-10 size-5 animate-spin text-muted-foreground" aria-hidden />;
   if (staff.length === 0) return <p className="workspace-panel px-5 py-10 text-center text-sm text-muted-foreground">{t("noStaffThisMonth")}</p>;
@@ -143,27 +172,99 @@ export function PayRunTab({ month }: { month: string }) {
           {t("locked")}
         </p>
       )}
+      <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
+        <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">{t("checkHint")}</p>
+        <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums", checkedCount === staff.length ? "bg-ok-soft text-ok" : "bg-muted text-muted-foreground")}>
+          {t("checkedCount", { done: checkedCount, all: staff.length })}
+        </span>
+      </div>
+      <div aria-hidden className={cn(ROW, "hidden px-0 text-[11px] font-medium text-muted-foreground sm:grid")}>
+        <span className={cn(COLS, "grid px-4")}>
+          <span>{t("position")}</span>
+          <span>{t("name")}</span>
+          <span className="text-right">{t("gross")}</span>
+          <span className="text-right">{t("deducted")}</span>
+          <span className="text-right">{t("net")}</span>
+          <span />
+        </span>
+        <span className="px-3">{t("checkCol")}</span>
+      </div>
       <ul className="grid gap-2">
         {staff.map((e) => {
           const m = pays.get(e.id)!;
+          const net = m.netFirst + m.netSecond;
+          const deducted = Math.round(m.gross * 100 - net * 100) / 100;
           const isOpen = open === e.id;
+          const check = checks.get(e.id);
+          const canCheck = saved.has(e.id) && !dirty;
           return (
-            <li key={e.id} className="workspace-panel overflow-hidden p-0">
-              <button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : e.id)} className="press flex w-full items-center gap-3 px-4 py-3 text-left">
-                <span className="grid min-w-0 flex-1 gap-0.5">
-                  <span className="truncate text-[15px] font-semibold">{e.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {t(e.payType)} · {fmt(e.rate)}
-                    {!saved.has(e.id) && <span className="ml-1.5 text-warn">· {t("notSaved")}</span>}
+            <li key={e.id} className={cn(ROW, "workspace-panel overflow-hidden p-0")}>
+              <button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : e.id)} className="press w-full px-4 py-3 text-left">
+                {/* Phone: position over name, take-home on the right, pay and deductions below */}
+                <span className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 sm:hidden">
+                  <span className="grid min-w-0 gap-0.5">
+                    {e.position && <span className="truncate text-xs text-muted-foreground">{e.position}</span>}
+                    <span className="truncate text-[15px] font-semibold">{e.name}</span>
+                  </span>
+                  <span className="grid text-right">
+                    <span className="text-[15px] font-semibold tabular-nums">{fmt(net)}</span>
+                    <span className="text-[11px] text-muted-foreground">{t("net")}</span>
+                  </span>
+                  <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} aria-hidden />
+                  <span className="col-span-3 mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground tabular-nums">
+                    <span>
+                      {t("gross")} {fmt(m.gross)}
+                    </span>
+                    <span>
+                      {t("deducted")} {deducted ? fmt(-deducted) : fmt(0)}
+                    </span>
+                    {!saved.has(e.id) && <span className="text-warn">{t("notSaved")}</span>}
                   </span>
                 </span>
-                <span className="grid flex-none text-right">
-                  <span className="text-[15px] font-semibold tabular-nums">{fmt(m.netFirst + m.netSecond)}</span>
-                  <span className="text-[11px] text-muted-foreground">{t("takeHome")}</span>
+                {/* Computer: one line under the column heads */}
+                <span className={cn(COLS, "hidden sm:grid")}>
+                  <span className="truncate text-sm text-muted-foreground">{e.position || "—"}</span>
+                  <span className="grid min-w-0">
+                    <span className="truncate text-[15px] font-semibold">{e.name}</span>
+                    {!saved.has(e.id) && <span className="text-[11px] text-warn">{t("notSaved")}</span>}
+                  </span>
+                  <span className="text-right text-sm tabular-nums">{fmt(m.gross)}</span>
+                  <span className="text-right text-sm text-muted-foreground tabular-nums">{deducted ? fmt(-deducted) : fmt(0)}</span>
+                  <span className="text-right text-[15px] font-semibold tabular-nums">{fmt(net)}</span>
+                  <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} aria-hidden />
                 </span>
-                <ChevronDown className={cn("size-4 flex-none text-muted-foreground transition-transform", isOpen && "rotate-180")} aria-hidden />
               </button>
-              {isOpen && <PeriodGrid employee={e} row={rowOf(e.id)} pay={m} disabled={locked} onSet={(half, k, v) => set(e.id, half, k, v)} />}
+              <div className="flex min-h-12 items-center gap-2 border-t border-border/60 px-4 py-2 sm:border-t-0 sm:border-l sm:px-3">
+                <span className="text-xs text-muted-foreground sm:hidden">{t("checkCol")}</span>
+                <span className="ml-auto flex min-w-0 items-center gap-2 sm:ml-0 sm:w-full">
+                  {check ? (
+                    <>
+                      <CircleCheck className="size-4 flex-none text-ok" aria-hidden />
+                      <span className="grid min-w-0 flex-1 leading-tight">
+                        <span className="text-[13px] font-semibold text-ok">{t("checkedMark")}</span>
+                        <span className="truncate text-[11px] text-muted-foreground" title={stamp.format(check.checkedAt)}>
+                          {check.checkedBy ?? "—"} · {day.format(check.checkedAt)}
+                        </span>
+                      </span>
+                      <Button type="button" variant="ghost" size="icon" className="size-8 flex-none rounded-full" disabled={checking !== null} aria-label={t("uncheck")} title={t("uncheck")} onClick={() => void toggleCheck(e, false)}>
+                        {checking === e.id ? <Loader2 className="size-4 animate-spin" /> : <Undo2 className="size-4" />}
+                      </Button>
+                    </>
+                  ) : canCheck ? (
+                    <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs sm:w-full" disabled={checking !== null} onClick={() => void toggleCheck(e, true)}>
+                      {checking === e.id ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                      {t("checkBtn")}
+                    </Button>
+                  ) : (
+                    <span className="text-[11px] leading-tight text-muted-foreground">{t("checkAfterSave")}</span>
+                  )}
+                </span>
+              </div>
+              {isOpen && (
+                <div className="sm:col-span-2">
+                  <PeriodGrid employee={e} row={rowOf(e.id)} pay={m} disabled={locked} onSet={(half, k, v) => set(e.id, half, k, v)} />
+                </div>
+              )}
             </li>
           );
         })}

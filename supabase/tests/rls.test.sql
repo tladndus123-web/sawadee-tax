@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(151);
+select plan(159);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -300,6 +300,22 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select is((select count(*)::int from public.employees), 0, 'staff see no employees (salaries, ID numbers)');
 select is((select count(*)::int from public.payroll_lines), 0, 'nor any payroll');
 select throws_ok($$ insert into public.employees (name) values ('x') $$, '42501', NULL, 'nor add employees');
+select throws_ok($$ insert into public.payroll_checks (employee_id, month) values ('00000000-0000-0000-0000-0000000000e9', '2026-08') $$, '42501', NULL, 'nor check anyone''s pay');
+
+-- Payroll check: an admin checks a saved month, stamped by the database; new figures clear it; allowed on a closed month
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select throws_like($$ insert into public.payroll_checks (employee_id, month) values ('00000000-0000-0000-0000-0000000000e9', '2026-07') $$, 'payroll_not_saved%', 'a month without saved pay cannot be checked');
+select lives_ok($$ insert into public.payroll_checks (employee_id, month, checked_by) values ('00000000-0000-0000-0000-0000000000e9', '2026-08', '00000000-0000-0000-0000-00000000000b') $$, 'an admin checks a saved month');
+select is((select checked_by from public.payroll_checks where month = '2026-08'), '00000000-0000-0000-0000-00000000000a'::uuid, 'the database stamps who checked, whatever was sent');
+update public.payroll_lines set paid_on = '2026-08-15' where month = '2026-08';
+select is((select count(*)::int from public.payroll_checks where employee_id = '00000000-0000-0000-0000-0000000000e9'), 1, 'saving the same figures again keeps the check');
+update public.payroll_lines set gross = 9500, net = 9500 where month = '2026-08';
+select is((select count(*)::int from public.payroll_checks where employee_id = '00000000-0000-0000-0000-0000000000e9'), 0, 'different figures clear the check');
+insert into public.month_locks (month) values ('2026-08');
+select lives_ok($$ insert into public.payroll_checks (employee_id, month) values ('00000000-0000-0000-0000-0000000000e9', '2026-08') $$, 'a closed month can still be checked');
+delete from public.month_locks where month = '2026-08';
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select is((select count(*)::int from public.payroll_checks), 0, 'staff see no payroll checks');
 
 -- Office check: staff / LINE saves are unchecked until an admin looks; an admin's own saves are checked; a staff edit
 -- after the check needs a new look; checking is allowed on a closed month

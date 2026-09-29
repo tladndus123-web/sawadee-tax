@@ -37,7 +37,7 @@ export function PayrollPage() {
   const shown: Tab = tab ?? (loaded && employees.length === 0 ? "employees" : "run");
 
   return (
-    <div className={cn("mx-auto grid w-full gap-5", shown === "attendance" ? "max-w-6xl" : "max-w-3xl")}>
+    <div className={cn("mx-auto grid w-full gap-5", shown === "attendance" ? "max-w-6xl" : shown === "run" ? "max-w-4xl" : "max-w-3xl")}>
       <header className="grid gap-1">
         <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("title")}</h1>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("intro")}</p>

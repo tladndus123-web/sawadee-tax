@@ -219,3 +219,32 @@ export async function savePayrollMonth(month: string, input: { employee: Employe
     if (error) throw error;
   }
 }
+
+export interface PayrollCheck {
+  checkedAt: number;
+  /** The admin's name (or email); null if that account is gone */
+  checkedBy: string | null;
+}
+
+/** Which employees' pay the office checked for the month, and who */
+export async function loadPayrollChecks(month: string): Promise<Map<string, PayrollCheck>> {
+  const sb = supabaseBrowser();
+  const [{ data, error }, { data: members }] = await Promise.all([
+    sb.from("payroll_checks").select("employee_id, checked_at, checked_by").eq("month", month),
+    sb.from("members").select("user_id, name, email"),
+  ]);
+  if (error) throw error;
+  const who = new Map((members ?? []).map((m) => [m.user_id as string, (m.name as string) || (m.email as string)]));
+  return new Map(
+    (data ?? []).map((r) => [r.employee_id as string, { checkedAt: Date.parse(r.checked_at as string), checkedBy: r.checked_by ? (who.get(r.checked_by as string) ?? null) : null }]),
+  );
+}
+
+/** Check (or undo) one employee's saved pay for the month. Who / when are stamped by the database. */
+export async function setPayrollCheck(employeeId: string, month: string, on: boolean) {
+  const sb = supabaseBrowser();
+  const { error } = on
+    ? await sb.from("payroll_checks").upsert({ employee_id: employeeId, month }, { onConflict: "employee_id,month" })
+    : await sb.from("payroll_checks").delete().eq("employee_id", employeeId).eq("month", month);
+  if (error) throw error;
+}
