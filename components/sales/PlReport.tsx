@@ -165,7 +165,7 @@ export function PlReport() {
           <table className="w-full min-w-max border-collapse text-sm">
             <thead>
               <tr className="border-b">
-                <th scope="col" className="sticky left-0 z-10 bg-card py-3 pr-3 pl-4 text-left text-xs font-medium text-muted-foreground">
+                <th scope="col" className="sticky left-0 z-10 bg-card py-3 pr-3 pl-4 text-left text-xs font-medium text-muted-foreground shadow-[inset_-1px_0_0_var(--border),6px_0_8px_-6px_rgb(0_0_0/12%)]">
                   {t("pl.item")}
                 </th>
                 {table.months.map((m) => (
@@ -232,7 +232,7 @@ function MoneyRow({
   const pcts = [...shares.values, shares.total];
   return (
     <tr className={cn("border-b border-border/60", strong && "font-semibold")}>
-      <th scope="row" className={cn("sticky left-0 z-10 py-2.5 pr-3 text-left font-[inherit] whitespace-nowrap", indent ? "pl-6" : "pl-4", strong ? "bg-muted" : "bg-card")}>
+      <th scope="row" className={cn("sticky left-0 z-10 py-2.5 pr-3 text-left font-[inherit] whitespace-nowrap shadow-[inset_-1px_0_0_var(--border),6px_0_8px_-6px_rgb(0_0_0/12%)]", indent ? "pl-6" : "pl-4", strong ? "bg-muted" : "bg-card")}>
         {label}
       </th>
       {[...r.values, r.total].map((v, i) => {

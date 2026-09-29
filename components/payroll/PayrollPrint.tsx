@@ -144,7 +144,7 @@ type Us = ReturnType<typeof useOurCompany>;
 
 function Header({ us, children }: { us: Us; children: React.ReactNode }) {
   return (
-    <dl className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-1 border-y border-neutral-900 py-2">
+    <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 sm:grid-cols-[auto_1fr_auto_1fr] print:grid-cols-[auto_1fr_auto_1fr] gap-y-1 border-y border-neutral-900 py-2">
       <dt className="font-semibold">ชื่อผู้มีหน้าที่หักภาษี / นายจ้าง</dt>
       <dd>{us.name || "………………………………"}</dd>
       <dt className="font-semibold">เลขประจำตัวผู้เสียภาษีอากร</dt>
@@ -338,7 +338,7 @@ function Slip({ p, us, period, month }: { p: Person; us: Us; period: string; mon
           <p className="text-neutral-600">Payslip · {period} / {en}</p>
         </div>
       </header>
-      <dl className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-1">
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 sm:grid-cols-[auto_1fr_auto_1fr] print:grid-cols-[auto_1fr_auto_1fr] gap-y-1">
         <dt className="text-neutral-600">ชื่อ / Name</dt>
         <dd className="font-semibold">{e.name}</dd>
         <dt className="text-neutral-600">ตำแหน่ง / Position</dt>

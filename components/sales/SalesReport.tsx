@@ -93,7 +93,7 @@ export function SalesReport({ month }: { month: string }) {
           <h1 className="text-[16px] font-bold">รายงานภาษีขาย</h1>
           <p>เดือนภาษี {period}</p>
         </header>
-        <dl className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-1 border-y border-neutral-900 py-2">
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 sm:grid-cols-[auto_1fr_auto_1fr] print:grid-cols-[auto_1fr_auto_1fr] gap-y-1 border-y border-neutral-900 py-2">
           <dt className="font-semibold">ชื่อผู้ประกอบการ</dt>
           <dd>{us?.name || "………………………………"}</dd>
           <dt className="font-semibold">เลขประจำตัวผู้เสียภาษีอากร</dt>

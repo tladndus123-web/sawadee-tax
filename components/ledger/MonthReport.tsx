@@ -345,18 +345,18 @@ export function MonthReport({ month }: { month: string }) {
                       <th scope="row" className="px-2 py-1 text-left font-normal">
                         {t(`report.${k}`).replace(/\s*[(（].*$/, "")} <span className="text-neutral-500">({t("report.count", { count: s.count })})</span>
                       </th>
-                      <td className="px-2 py-1 text-right tabular-nums">{fmt(s.value)}</td>
-                      <td className="px-2 py-1 text-right tabular-nums">{fmt(s.vat)}</td>
-                      <td className="px-2 py-1 text-right tabular-nums">{fmt(s.total)}</td>
+                      <td className="px-2 py-1 text-right whitespace-nowrap tabular-nums">{fmt(s.value)}</td>
+                      <td className="px-2 py-1 text-right whitespace-nowrap tabular-nums">{fmt(s.vat)}</td>
+                      <td className="px-2 py-1 text-right whitespace-nowrap tabular-nums">{fmt(s.total)}</td>
                     </tr>
                   ))}
                   <tr className="border-b-2 border-double border-neutral-900 font-semibold">
                     <th scope="row" className="px-2 py-1 text-left">
                       {t("report.grand")} <span className="font-normal text-neutral-500">({t("report.count", { count: allSum.count })})</span>
                     </th>
-                    <td className="px-2 py-1 text-right tabular-nums">{fmt(allSum.value)}</td>
-                    <td className="px-2 py-1 text-right tabular-nums">{fmt(allSum.vat)}</td>
-                    <td className="px-2 py-1 text-right tabular-nums">{fmt(allSum.total)}</td>
+                    <td className="px-2 py-1 text-right whitespace-nowrap tabular-nums">{fmt(allSum.value)}</td>
+                    <td className="px-2 py-1 text-right whitespace-nowrap tabular-nums">{fmt(allSum.vat)}</td>
+                    <td className="px-2 py-1 text-right whitespace-nowrap tabular-nums">{fmt(allSum.total)}</td>
                   </tr>
                   <tr>
                     <th scope="row" className="px-2 pt-2 text-left font-normal">

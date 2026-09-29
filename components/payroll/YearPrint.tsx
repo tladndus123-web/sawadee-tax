@@ -132,7 +132,7 @@ function Pnd1a({ people, us, year }: { people: Person[]; us: Us; year: string })
         <h1 className="text-[16px] font-bold">ใบแนบ ภ.ง.ด.1ก</h1>
         <p>สรุปการจ่ายเงินได้ตามมาตรา 40 (1) และภาษีที่หักไว้ ประจำปีภาษี {Number(year) + 543}</p>
       </header>
-      <dl className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-4 gap-y-1 border-y border-neutral-900 py-2">
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 sm:grid-cols-[auto_1fr_auto_1fr] print:grid-cols-[auto_1fr_auto_1fr] gap-y-1 border-y border-neutral-900 py-2">
         <dt className="font-semibold">ชื่อผู้มีหน้าที่หักภาษี</dt>
         <dd>{us.name || "………………………………"}</dd>
         <dt className="font-semibold">เลขประจำตัวผู้เสียภาษีอากร</dt>
