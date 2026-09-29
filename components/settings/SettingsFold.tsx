@@ -7,16 +7,24 @@ import { cn } from "@/lib/utils";
 
 const EVENT = "settings-folds";
 
-type Status = { text: string; on?: boolean } | null;
+type Tone = "ok" | "warn" | "bad" | "brand";
+type Status = { text: string; on?: boolean; tone?: Tone } | null;
 const StatusContext = createContext<(s: Status) => void>(() => {});
 
-/** A card inside a fold shows a short state on the folded row ("3곳", "연결됨"); on = a green dot */
-export function useFoldStatus(text: string | null | undefined, on?: boolean) {
+/** A card inside a fold shows a short state on the folded row ("3곳", "연결됨"); on = a green dot, tone = a pill */
+export function useFoldStatus(text: string | null | undefined, on?: boolean, tone?: Tone) {
   const set = useContext(StatusContext);
   useEffect(() => {
-    set(text ? { text, on } : null);
-  }, [set, text, on]);
+    set(text ? { text, on, tone } : null);
+  }, [set, text, on, tone]);
 }
+
+const PILL: Record<Tone, string> = {
+  ok: "bg-ok-soft text-ok",
+  warn: "bg-warn-soft text-warn",
+  bad: "bg-bad-soft text-bad",
+  brand: "bg-brand-soft text-brand",
+};
 
 /**
  * One settings section folded to a single row (icon + title); tapping slides the card open.
@@ -24,9 +32,24 @@ export function useFoldStatus(text: string | null | undefined, on?: boolean) {
  * taken over by the fold. A card that renders nothing (admin-only for staff) hides the whole row.
  * A link to one of the card's ids (/settings#fixed-title) opens it.
  */
-export function SettingsFold({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+export function SettingsFold({
+  icon,
+  title,
+  children,
+  row = false,
+  status: given,
+}: {
+  icon: ReactNode;
+  title: string;
+  children: ReactNode;
+  /** A line inside a card (dashboard "할 일") instead of a card of its own */
+  row?: boolean;
+  /** The folded row's state, when the page knows it (else the card inside reports it) */
+  status?: Status;
+}) {
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<Status>(null);
+  const [reported, setStatus] = useState<Status>(null);
+  const status = given ?? reported;
   const body = useRef<HTMLDivElement>(null);
   const id = useId();
 
@@ -49,20 +72,33 @@ export function SettingsFold({ icon, title, children }: { icon: ReactNode; title
   }, []);
 
   return (
-    <div className="workspace-panel hover-lift [--lift:1.006] scroll-mt-24 has-[[data-fold-body]:empty]:hidden">
+    <div
+      className={cn(
+        "min-w-0 scroll-mt-24 has-[[data-fold-body]:empty]:hidden",
+        row ? "border-b border-border/60 last:border-0" : "workspace-panel hover-lift [--lift:1.006]",
+      )}
+    >
       <button
         type="button"
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((v) => !v)}
-        className="flex min-h-16 w-full items-center gap-3 rounded-[inherit] px-5 text-left text-lg font-semibold tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-6"
+        className={cn(
+          "flex w-full items-center gap-3 text-left font-semibold tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          row ? "min-h-14 rounded-xl px-1 text-[15px]" : "min-h-16 rounded-[inherit] px-5 text-lg sm:px-6",
+        )}
       >
         <span className="flex [&>svg]:size-5" aria-hidden>
           {icon}
         </span>
         <span className="min-w-0 flex-1 truncate">{title}</span>
         {status && (
-          <span className="flex max-w-[45%] flex-none items-center gap-1.5 truncate text-xs font-medium text-muted-foreground">
+          <span
+            className={cn(
+              "flex max-w-[55%] flex-none items-center gap-1.5 truncate text-xs font-medium tabular-nums",
+              status.tone ? cn("rounded-full px-2.5 py-1 font-semibold", PILL[status.tone]) : "text-muted-foreground",
+            )}
+          >
             {status.on && <span className="size-1.5 flex-none rounded-full bg-ok" aria-hidden />}
             <span className="truncate">{status.text}</span>
           </span>
@@ -86,9 +122,10 @@ export function SettingsFold({ icon, title, children }: { icon: ReactNode; title
           className={cn(
             "min-h-0 overflow-hidden",
             // the card's own frame, lift and title belong to the fold now
-            "[&>*]:rounded-none [&>*]:border-0 [&>*]:bg-transparent [&>*]:[box-shadow:none] [&>*]:[scale:none] [&>*]:pt-1",
+            "[&>*]:rounded-none [&>*]:border-0 [&>*]:bg-transparent [&>*]:[box-shadow:none] [&>*]:[scale:none]",
             "[&_h2[id$='-title']]:sr-only",
-            "[&>div]:px-5 [&>div]:pb-5 sm:[&>div]:px-6 sm:[&>div]:pb-6",
+            // a line inside a card: the card inside loses its own padding too
+            row ? "[&>*]:px-1! [&>*]:pt-0! [&>*]:pb-4!" : "[&>*]:pt-1 [&>div]:px-5 [&>div]:pb-5 sm:[&>div]:px-6 sm:[&>div]:pb-6",
           )}
         >
           <StatusContext.Provider value={setStatus}>{children}</StatusContext.Provider>

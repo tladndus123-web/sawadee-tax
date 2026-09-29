@@ -642,7 +642,16 @@
     "checkAll": "ตรวจแล้วทั้ง {count} รายการ",
     "checkedDone": "ตรวจแล้ว {count} รายการ",
     "checkUndo": "ยกเลิก",
-    "checkFail": "บันทึกไม่สำเร็จ"
+    "checkFail": "บันทึกไม่สำเร็จ",
+    "todo": "สิ่งที่ต้องทำ",
+    "nItems": "{count} รายการ",
+    "none": "ไม่มี",
+    "dueStatus": "{count} รายการ · {amount}",
+    "vatRow": "ยื่น VAT {month}",
+    "vatCheck": "ต้องตรวจ {count}",
+    "vatToPay": "VAT ที่ต้องชำระ (ประมาณ)",
+    "vatCreditShort": "ภาษีซื้อมากกว่า",
+    "salesDays": "บันทึก {count} วัน"
   },
   "line": {
     "title": "เชื่อม LINE",
@@ -1490,7 +1499,10 @@
     "salesDone": "บันทึกยอดขายครบแล้ว",
     "pay": "ยังไม่ตรวจเงินเดือน {count} คน",
     "payDone": "ตรวจเงินเดือนครบแล้ว",
-    "warn": "ยังเหลืออีก {count} เรื่อง จะปิดงวดเลยไหม"
+    "warn": "ยังเหลืออีก {count} เรื่อง จะปิดงวดเลยไหม",
+    "row": "ปิดงวดรายเดือน",
+    "leftShort": "เหลือ {count}",
+    "readyShort": "พร้อม"
   },
   "fold": {
     "branches": "{count} สาขา",

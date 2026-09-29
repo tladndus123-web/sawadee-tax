@@ -5,7 +5,7 @@
 // month can be closed anyway (asks first, with what is left).
 
 import { ChevronRight, CircleCheck, FileText, Store, Users, type LucideIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { MonthLockButton } from "@/components/ledger/MonthLockButton";
 import { useMonthLabel } from "@/components/ledger/Stickers";
@@ -20,6 +20,7 @@ import { loadPayrollChecks, useEmployees } from "@/lib/payroll-store";
 import { useSales } from "@/lib/sales-store";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
+import { useFoldStatus } from "@/components/settings/SettingsFold";
 
 export function MonthCloseCard() {
   const t = useTranslations("close");
@@ -32,6 +33,8 @@ export function MonthCloseCard() {
   const { employees, loaded: staffLoaded } = useEmployees();
   const locks = useMonthLocks();
   const today = todayBangkok();
+  const locale = useLocale();
+  const shortMonth = (m: string) => new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(new Date(`${m}-01T00:00:00Z`));
 
   const live = useMemo(() => entries.filter((e) => e.deletedAt === null), [entries]);
   const month = useMemo(() => monthToClose(live.map((e) => monthKey(e.doc)), sales, locks, today.slice(0, 7)), [live, sales, locks, today]);
@@ -54,10 +57,13 @@ export function MonthCloseCard() {
         : null,
     [month, checked, live, company.taxId, today, sales, branches, employees],
   );
-  if (!month || !todo || !loaded || !salesLoaded || !staffLoaded) return null;
+  const ready = !!month && !!todo && loaded && salesLoaded && staffLoaded;
+  const left = todo ? openCount(todo) : 0;
+  const label = month ? monthLabel(month) : "";
+  // On the dashboard this card is a line of "할 일": the month and what is left show on the folded line
+  useFoldStatus(ready && month ? `${shortMonth(month)} · ${left ? t("leftShort", { count: left }) : t("readyShort")}` : null, false, left ? "warn" : "ok");
+  if (!ready || !month || !todo) return null;
 
-  const left = openCount(todo);
-  const label = monthLabel(month);
   return (
     <section className="workspace-panel grid gap-3 p-4 sm:p-5" aria-labelledby="close-title">
       <div className="flex flex-wrap items-center justify-between gap-2">

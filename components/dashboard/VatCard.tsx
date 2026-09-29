@@ -4,7 +4,6 @@ import { CalendarClock, CircleCheck, FileText, ListChecks, Lock, TriangleAlert }
 import { useScreenDate } from "@/components/ScreenDate";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
-import { MonthLockButton } from "@/components/ledger/MonthLockButton";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { Link } from "@/i18n/navigation";
 import { monthKey } from "@/lib/archive";
@@ -12,7 +11,6 @@ import { summarize, vatFiling } from "@/lib/dashboard";
 import { type LedgerEntry, pick } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
 import { useMonthLocks } from "@/lib/month-lock-store";
-import { useMe } from "@/lib/role-store";
 import { reviewQueue } from "@/lib/review-queue";
 import { reviewRun } from "@/lib/review-run";
 import { cn } from "@/lib/utils";
@@ -26,7 +24,6 @@ export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry
   const sd = useScreenDate();
   const tf = useTranslations("flow");
   const monthLabel = useMonthLabel();
-  const me = useMe();
   const locks = useMonthLocks();
   const f = vatFiling(today);
   const label = monthLabel(f.month);
@@ -115,7 +112,6 @@ export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry
             {t("toLedger")}
           </Link>
         )}
-        {me.role === "admin" && <MonthLockButton month={f.month} label={label} locked={closed} />}
       </div>
     </section>
   );

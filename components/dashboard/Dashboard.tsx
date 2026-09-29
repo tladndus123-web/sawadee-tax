@@ -1,16 +1,15 @@
 "use client";
 
-import { AlertTriangle, ChevronDown, ChevronRight, CircleCheck, Clock, Loader2, Receipt, TrendingUp, Undo2, Wallet, Check } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { CalendarClock, ChevronDown, ChevronRight, CircleCheck, Clock, Inbox, Landmark, Loader2, Lock, Receipt, TrendingUp, Undo2, Wallet, Check } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
-import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { monthKey } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
-import { type Doc, type DueItem, summarize, trend, upcoming } from "@/lib/dashboard";
+import { type Doc, type DueItem, summarize, upcoming, vatFiling } from "@/lib/dashboard";
 import { pick, setQuick, useLedger } from "@/lib/ledger-store";
 import { baht, bahtWhole } from "@/lib/money";
 import { todayBangkok } from "@/lib/thai-tax";
@@ -27,11 +26,12 @@ import { CostCard } from "@/components/sales/CostCard";
 import { useMe } from "@/lib/role-store";
 import { ALL } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
-import { ActivityList } from "./ActivityList";
 import { BranchTable } from "./BranchTable";
 import { TeamCard } from "./TeamCard";
 import { UncheckedList } from "./UncheckedList";
 import { MonthCloseCard } from "./MonthCloseCard";
+import { SettingsFold } from "@/components/settings/SettingsFold";
+import { useMonthLocks } from "@/lib/month-lock-store";
 import { useDocName } from "@/components/ledger/doc-name";
 import { VatCard } from "./VatCard";
 import { monthLabor } from "@/lib/cost-control";
@@ -39,15 +39,11 @@ import { useLabor } from "@/lib/labor-store";
 import { fixedForMonth } from "@/lib/fixed-costs";
 import { useFixedCosts } from "@/lib/fixed-store";
 
-// The chart library (recharts) is the heaviest part of this page: load it after the numbers are on screen
-const TrendChart = dynamic(() => import("./TrendChart").then((m) => m.TrendChart), {
-  ssr: false,
-  loading: () => <div className="workspace-panel h-[330px] animate-pulse" aria-hidden />,
-});
 
 /** Step 8 dashboard: the 4 summary tiles, bills due soon (mark paid here), 6-month trend, recent activity. */
 export function Dashboard() {
   const t = useTranslations();
+  const locale = useLocale();
   const company = useCompany();
   const monthLabel = useMonthLabel();
   const { entries, loaded } = useLedger();
@@ -62,7 +58,6 @@ export function Dashboard() {
 
   const s = useMemo(() => summarize(docs, month, company.taxId, today), [docs, month, company.taxId, today]);
   const due = useMemo(() => upcoming(docs, today), [docs, today]);
-  const points = useMemo(() => trend(docs, month), [docs, month]);
   const { sales } = useSales();
   const { lines: labor } = useLabor();
   const { lines: fixed } = useFixedCosts();
@@ -73,6 +68,21 @@ export function Dashboard() {
   const combined = allBranches && branchCount > 1;
   const result = useMemo(() => monthResult(sales, docs.map((d) => d.doc), month, company.taxId, monthLabor(labor, month), fixedForMonth(fixed, month)), [sales, docs, month, company.taxId, labor, fixed]);
   const hasSales = result.days > 0;
+  const pct = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 });
+  const unchecked = useMemo(() => pick(entries, "ledger").filter((e) => e.checkedAt === null).length, [entries]);
+  const dueTotal = due.reduce((a, it) => a + Math.round(it.doc.totals.net * 100), 0) / 100;
+  // The VAT return due next: days left, and what still needs a look in that month
+  const locks = useMonthLocks();
+  const filing = vatFiling(today);
+  const filingCheck = useMemo(() => summarize(docs, filing.month, company.taxId, today).toCheck, [docs, filing.month, company.taxId, today]);
+  const vatStatus = locks.has(filing.month)
+    ? { text: t("vat.closed"), tone: "ok" as const }
+    : {
+        text: [filing.daysLeft < 0 ? t("vat.late") : filing.daysLeft === 0 ? t("vat.today") : t("vat.daysLeft", { days: filing.daysLeft }), filingCheck ? t("dash.vatCheck", { count: filingCheck }) : ""]
+          .filter(Boolean)
+          .join(" · "),
+        tone: filing.daysLeft < 0 ? ("bad" as const) : filing.daysLeft <= 5 || filingCheck ? ("warn" as const) : ("brand" as const),
+      };
   const purchases = useMemo(() => docs.map((d) => d.doc), [docs]);
 
   if (!loaded) return <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
@@ -93,65 +103,46 @@ export function Dashboard() {
         </label>
       </div>
 
-      {/* The one number owners ask first: what is left this month (same figure as the sales page) */}
-      {!combined && (
-      <Link href="/sales" className="workspace-panel tap-row flex items-center gap-3 px-4 py-3.5 sm:px-5">
-        <span className="intelligence-mark is-soft size-10 flex-none">
-          <TrendingUp className="size-4 text-brand" aria-hidden />
-        </span>
-        {/* title, the amount under it, then the sum in whole baht: each gets the full width, so nothing wraps or cuts on a phone */}
-        <span className="grid min-w-0 flex-1 gap-0.5">
-          <span className="text-xs font-medium text-muted-foreground">{t("dash.profitTitle")}</span>
+      {/* 1. How the month is going: what is left (the one number owners ask first), then four figures */}
+      {combined ? (
+        // Several branches seen together: each branch's month side by side carries the profit
+        <BranchTable month={month} companyTaxId={company.taxId} />
+      ) : (
+        <Link
+          href="/sales"
+          className="tap-row grid gap-3 rounded-[1.375rem] border border-brand/15 bg-brand-soft/70 p-5 shadow-[var(--shadow-soft)] sm:p-6"
+        >
+          <span className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-sm font-semibold text-brand">
+              <TrendingUp className="size-4" aria-hidden />
+              {t("dash.profitTitle")}
+            </span>
+            <ChevronRight className="size-4 flex-none text-brand/70" aria-hidden />
+          </span>
           {hasSales ? (
             <>
-              <span className={cn("text-[clamp(1.15rem,5.2vw,1.5rem)] leading-tight font-semibold whitespace-nowrap tabular-nums", result.profit < 0 ? "text-bad" : "text-brand")}>
+              <span
+                key={result.profit}
+                className={cn("num-in text-[clamp(2rem,9vw,3rem)] leading-none font-bold tracking-tight whitespace-nowrap tabular-nums", result.profit < 0 ? "text-bad" : "text-foreground")}
+              >
                 {baht(result.profit)}
               </span>
-              <span className="truncate text-xs text-muted-foreground tabular-nums" title={t("dash.profitLine", { sales: baht(result.salesValue), cost: baht(result.purchasesCost) })}>
-                {t("dash.profitLine", { sales: bahtWhole(result.salesValue), cost: bahtWhole(result.purchasesCost) })}
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground tabular-nums">
+                <span>{t("dash.profitLine", { sales: bahtWhole(result.salesValue), cost: bahtWhole(result.purchasesCost) })}</span>
+                {result.salesValue > 0 && (
+                  <span className="rounded-full bg-background/70 px-2 py-0.5 text-xs font-semibold text-foreground">{t("sales.margin", { pct: pct.format(result.margin) })}</span>
+                )}
               </span>
             </>
           ) : (
-            <span className="text-xs text-primary">{t("dash.profitEmpty")}</span>
+            <span className="text-sm text-primary">{t("dash.profitEmpty")}</span>
           )}
-        </span>
-        <ChevronRight className="size-4 flex-none text-muted-foreground" aria-hidden />
-      </Link>
+        </Link>
       )}
 
-      {/* The office's in-tray: what staff and the LINE bot saved and nobody has looked at */}
-      {/* The month to close next and what is left in it */}
-      {isAdmin && <MonthCloseCard />}
-
-      {isAdmin && <UncheckedList />}
-
-      {/* What owners watch first: food, labour and rent against sales (FL / FLR) */}
-      <CostCard month={month} salesValue={result.salesValue} purchases={purchases} fixed={fixed} />
-
-      {/* Several branches, looking at all of them: each one's month side by side */}
-      {allBranches && <BranchTable month={month} companyTaxId={company.taxId} />}
-
-      {/* Phones, until installed or closed: put the app on the home screen */}
-      <InstallCard compact />
-
-      {/* The four tiles of PROMPT §3 */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Tile icon={TrendingUp} label={t("sales.salesValue")} value={baht(result.salesValue)} note={t("dash.salesDays", { count: result.days })} />
         <Tile icon={Receipt} label={t("app.sTotal")} value={baht(s.total)} note={t("dash.monthDocs", { count: s.count })} />
-        <Tile
-          icon={Wallet}
-          label={t("app.sVat")}
-          value={baht(s.claimableVat)}
-          tone="brand"
-          note={
-            company.taxId ? (
-              t("app.sVatNote")
-            ) : (
-              <Link href="/settings" className="text-primary hover:underline">
-                {t("dash.companyMissing")}
-              </Link>
-            )
-          }
-        />
         <Tile
           icon={Clock}
           label={t("app.sUnpaid")}
@@ -164,21 +155,62 @@ export function Dashboard() {
             </>
           }
         />
-        <Tile icon={AlertTriangle} label={t("app.sCheck")} value={String(s.toCheck)} tone={s.toCheck ? "warn" : undefined} note={t("dash.checkHint")} />
+        <Tile
+          icon={Landmark}
+          label={t("dash.vatToPay")}
+          value={baht(result.vatPayable)}
+          tone={result.vatPayable < 0 ? "brand" : undefined}
+          note={result.vatPayable < 0 ? t("dash.vatCreditShort") : `${bahtWhole(result.salesVat)} − ${bahtWhole(result.claimableVat)}`}
+        />
       </div>
 
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <DueList items={due} docs={docs} />
-        <TrendChart data={points} active={month} />
+      {/* 2. What to do: one card, one line each; a line opens its list */}
+      <div className="grid items-start gap-5 lg:grid-cols-2">
+        <section aria-labelledby="todo-title" className="workspace-panel grid min-w-0 grid-cols-1 content-start px-4 pt-3 pb-1 sm:px-5">
+          <h2 id="todo-title" className="px-1 pt-1 pb-1 text-lg font-semibold tracking-tight">
+            {t("dash.todo")}
+          </h2>
+          {isAdmin && (
+            <SettingsFold
+              row
+              icon={<Inbox className="text-brand" />}
+              title={t("dash.unchecked")}
+              status={unchecked ? { text: t("dash.nItems", { count: unchecked }), tone: "brand" } : { text: t("dash.none"), tone: "ok" }}
+            >
+              <UncheckedList />
+            </SettingsFold>
+          )}
+          <SettingsFold
+            row
+            icon={<Wallet className="text-warn" />}
+            title={t("dash.upcoming")}
+            status={
+              due.length
+                ? { text: t("dash.dueStatus", { count: due.length, amount: bahtWhole(dueTotal) }), tone: s.overdueCount ? "bad" : "warn" }
+                : { text: t("dash.none"), tone: "ok" }
+            }
+          >
+            <DueList items={due} docs={docs} />
+          </SettingsFold>
+          <SettingsFold row icon={<CalendarClock className="text-primary" />} title={t("dash.vatRow", { month: new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(new Date(`${filing.month}-01T00:00:00Z`)) })} status={vatStatus}>
+            <VatCard entries={entries} companyTaxId={company.taxId} today={today} />
+          </SettingsFold>
+          {isAdmin && (
+            <SettingsFold row icon={<Lock className="text-muted-foreground" />} title={t("close.row")}>
+              <MonthCloseCard />
+            </SettingsFold>
+          )}
+        </section>
+
+        {/* 3. In more detail: food, labour and rent against sales (FL / FLR) */}
+        <CostCard month={month} salesValue={result.salesValue} purchases={purchases} fixed={fixed} />
       </div>
 
-      {/* The VAT return that is due next: still here, after the costs */}
-      <VatCard entries={entries} companyTaxId={company.taxId} today={today} />
+      {/* Phones, until installed or closed: put the app on the home screen */}
+      <InstallCard compact />
 
       {/* Admins: who did what this month */}
       {isAdmin && <TeamCard month={month} />}
-
-      <ActivityList limit={5} />
     </div>
   );
 }

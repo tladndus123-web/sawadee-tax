@@ -642,7 +642,16 @@
     "checkAll": "{count}件すべて確認",
     "checkedDone": "{count}件を確認しました。",
     "checkUndo": "元に戻す",
-    "checkFail": "保存できませんでした。"
+    "checkFail": "保存できませんでした。",
+    "todo": "やること",
+    "nItems": "{count}件",
+    "none": "なし",
+    "dueStatus": "{count}件 · {amount}",
+    "vatRow": "{month} VAT申告",
+    "vatCheck": "確認 {count}件",
+    "vatToPay": "納めるVAT（見込み）",
+    "vatCreditShort": "仕入VATの方が多い",
+    "salesDays": "{count}日入力"
   },
   "line": {
     "title": "LINE連携",
@@ -1490,7 +1499,10 @@
     "salesDone": "売上の入力完了",
     "pay": "給与の確認 残り{count}人",
     "payDone": "給与の確認完了",
-    "warn": "まだ残りが {count}件あります。それでも締めますか？"
+    "warn": "まだ残りが {count}件あります。それでも締めますか？",
+    "row": "月次締め",
+    "leftShort": "残り{count}件",
+    "readyShort": "準備完了"
   },
   "fold": {
     "branches": "{count}店舗",

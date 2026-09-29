@@ -642,7 +642,16 @@
     "checkAll": "Check all {count}",
     "checkedDone": "{count} checked.",
     "checkUndo": "Undo",
-    "checkFail": "Couldn't save."
+    "checkFail": "Couldn't save.",
+    "todo": "To do",
+    "nItems": "{count}",
+    "none": "None",
+    "dueStatus": "{count} · {amount}",
+    "vatRow": "VAT return · {month}",
+    "vatCheck": "{count} to check",
+    "vatToPay": "VAT to pay (est.)",
+    "vatCreditShort": "More input VAT than output",
+    "salesDays": "{count, plural, one {# day entered} other {# days entered}}"
   },
   "line": {
     "title": "LINE",
@@ -1490,7 +1499,10 @@
     "salesDone": "Sales all entered",
     "pay": "{count, plural, one {Pay of # person to check} other {Pay of # people to check}}",
     "payDone": "Pay checked",
-    "warn": "{count, plural, one {# thing is still open.} other {# things are still open.}} Close the month anyway?"
+    "warn": "{count, plural, one {# thing is still open.} other {# things are still open.}} Close the month anyway?",
+    "row": "Month-end close",
+    "leftShort": "{count} left",
+    "readyShort": "Ready"
   },
   "fold": {
     "branches": "{count, plural, one {# branch} other {# branches}}",
