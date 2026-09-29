@@ -25,3 +25,13 @@ describe("backup: which old runs to remove", () => {
     expect(runsToRemove(folders, 12)).toEqual([]);
   });
 });
+
+describe("migration files", () => {
+  it("every migration has its own number (two sessions once used the same one and the second was skipped)", () => {
+    const versions = readdirSync("supabase/migrations")
+      .filter((f) => f.endsWith(".sql"))
+      .map((f) => f.split("_")[0]);
+    const dup = versions.filter((v, i) => versions.indexOf(v) !== i);
+    expect(dup).toEqual([]);
+  });
+});

@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (325) · `npm run db:test` (pgTAP 161) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (325) · `npm run db:test` (pgTAP 163) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -46,6 +46,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 - After `npx supabase db reset` the local storage container may lose its unique index (uploads fail with 42P10): `docker exec supabase_db_thai-receipt-ledger psql -U supabase_admin -d postgres -c "create unique index if not exists bucketid_objname on storage.objects (bucket_id, name)"` then bootstrap again.
 
 ## Rules that protect the books (see HANDOFF §7)
+- **Before adding a migration, `git pull` and take the next free number** in `supabase/migrations` (two sessions once both used `…000400`; the second was skipped by the database and the deploy stopped). A test now fails on duplicate numbers.
 - Money in satang integers; don't change `lib/` results without updating tests first.
 - Deleting is a soft delete (reason required, admins only). Delete for good only from the trash, admins only, never a saved
   document of a closed month, and a record stays (`purge_document`, owner's decision 2026-09-26). Drafts never count in totals.
