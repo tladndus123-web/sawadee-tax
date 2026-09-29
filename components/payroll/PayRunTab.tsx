@@ -197,7 +197,13 @@ export function PayRunTab({ month }: { month: string }) {
   const stale = staff.some((e) => savedRates.has(e.id) && !sameRates(savedRates.get(e.id)!, lineRates(settings.ot, e.payType)));
 
   if (!loaded || !ready || !company.loaded) return <Loader2 className="mx-auto my-10 size-5 animate-spin text-muted-foreground" aria-hidden />;
-  if (staff.length === 0) return <p className="workspace-panel px-5 py-10 text-center text-sm text-muted-foreground">{t("noStaffThisMonth")}</p>;
+  if (staff.length === 0)
+    return (
+      <div className="grid gap-3">
+        <p className="workspace-panel px-5 py-10 text-center text-sm text-muted-foreground">{t("noStaffThisMonth")}</p>
+        <OtSettings />
+      </div>
+    );
 
   return (
     <div className="grid gap-3">
