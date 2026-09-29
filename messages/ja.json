@@ -1459,5 +1459,11 @@
     "newAmount": "新しい金額（毎月）",
     "applyFrom": "適用開始月",
     "changeHint": "その月から新しい金額、それより前の月は今の金額（{amount}）のままです。"
+  },
+  "docTypeShort": {
+    "full": "インボイス",
+    "abbr": "簡易",
+    "receipt": "領収書",
+    "other": "その他"
   }
 }

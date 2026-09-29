@@ -4,9 +4,23 @@
 
 import { digitsOnly } from "./thai-tax";
 import { normalize } from "./normalize";
-import type { LedgerDoc } from "./types";
+import type { DocType, LedgerDoc, Tri } from "./types";
 
 const EMPTY = { th: "", en: "", ja: "" };
+
+/** The printed title of each kind of document typed by hand ("other" has none) */
+const TITLES: Record<DocType, Tri> = {
+  full: { th: "ใบกำกับภาษี", en: "Tax Invoice", ja: "タックスインボイス" },
+  abbr: { th: "ใบกำกับภาษีอย่างย่อ", en: "Abbreviated Tax Invoice", ja: "簡易タックスインボイス" },
+  receipt: { th: "ใบเสร็จรับเงิน", en: "Receipt", ja: "領収書" },
+  other: EMPTY,
+};
+
+/** Picking another kind of document retitles it — unless someone wrote their own title */
+export function retitle(current: Tri, next: DocType): Tri {
+  const own = Object.values(TITLES).every((t) => t.th !== current.th || t.en !== current.en || t.ja !== current.ja);
+  return own && (current.th || current.en || current.ja) ? current : TITLES[next];
+}
 
 export function manualStart(ledger: LedgerDoc[], companyTaxId: string, today: string): LedgerDoc {
   const co = digitsOnly(companyTaxId);
@@ -16,7 +30,7 @@ export function manualStart(ledger: LedgerDoc[], companyTaxId: string, today: st
   return normalize({
     docType: "full",
     copyKind: "original",
-    docTitle: { th: "ใบกำกับภาษี", en: "Tax Invoice", ja: "タックスインボイス" },
+    docTitle: TITLES.full,
     date: today,
     confidence: "high",
     customer: ours ? { ...ours.customer, code: "" } : { taxId: co },

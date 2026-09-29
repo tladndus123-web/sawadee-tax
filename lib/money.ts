@@ -39,3 +39,8 @@ export const fmt = (n: number): string => fmt2.format(fromSatang(toSatang(n)));
 
 /** 64200 → "฿ 64,200.00" */
 export const baht = (n: number): string => `฿ ${fmt(n)}`;
+
+const fmt0 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+
+/** 663602.8 → "฿663,603" — whole baht, for a short line where the exact figure is one tap away */
+export const bahtWhole = (n: number): string => `${n < 0 ? "−" : ""}฿${fmt0.format(Math.round(Math.abs(n)))}`;

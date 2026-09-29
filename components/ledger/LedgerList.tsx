@@ -529,6 +529,7 @@ const DocRow = memo(function DocRow({
             <span className="ml-auto flex-none text-[15px] font-semibold whitespace-nowrap tabular-nums">{baht(e.doc.totals.net)}</span>
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs whitespace-nowrap text-muted-foreground">
+            <span className="font-medium text-foreground/70">{t(`docTypeShort.${e.doc.docType}`)}</span>
             {e.doc.docNo && <span className="mono max-sm:hidden">{e.doc.docNo}</span>}
             <BranchTag id={e.doc.branchId} />
             {e.doc.date && <span>{sd(e.doc.date)}</span>}

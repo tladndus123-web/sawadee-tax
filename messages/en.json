@@ -1459,5 +1459,11 @@
     "newAmount": "New amount (a month)",
     "applyFrom": "From",
     "changeHint": "The new amount from that month; the months before keep {amount}."
+  },
+  "docTypeShort": {
+    "full": "Tax invoice",
+    "abbr": "Abbreviated",
+    "receipt": "Receipt",
+    "other": "Other"
   }
 }

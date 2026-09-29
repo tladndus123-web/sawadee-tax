@@ -12,7 +12,7 @@ import { monthKey } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
 import { type Doc, type DueItem, summarize, trend, upcoming } from "@/lib/dashboard";
 import { pick, setQuick, useLedger } from "@/lib/ledger-store";
-import { baht } from "@/lib/money";
+import { baht, bahtWhole } from "@/lib/money";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { useMonthLabel } from "@/components/ledger/Stickers";
@@ -98,21 +98,22 @@ export function Dashboard() {
         <span className="intelligence-mark is-soft size-10 flex-none">
           <TrendingUp className="size-4 text-brand" aria-hidden />
         </span>
+        {/* title, the amount under it, then the sum in whole baht: each gets the full width, so nothing wraps or cuts on a phone */}
         <span className="grid min-w-0 flex-1 gap-0.5">
           <span className="text-xs font-medium text-muted-foreground">{t("dash.profitTitle")}</span>
           {hasSales ? (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {t("dash.profitLine", { sales: baht(result.salesValue), cost: baht(result.purchasesCost) })}
-            </span>
+            <>
+              <span className={cn("text-[clamp(1.15rem,5.2vw,1.5rem)] leading-tight font-semibold whitespace-nowrap tabular-nums", result.profit < 0 ? "text-bad" : "text-brand")}>
+                {baht(result.profit)}
+              </span>
+              <span className="truncate text-xs text-muted-foreground tabular-nums" title={t("dash.profitLine", { sales: baht(result.salesValue), cost: baht(result.purchasesCost) })}>
+                {t("dash.profitLine", { sales: bahtWhole(result.salesValue), cost: bahtWhole(result.purchasesCost) })}
+              </span>
+            </>
           ) : (
             <span className="text-xs text-primary">{t("dash.profitEmpty")}</span>
           )}
         </span>
-        {hasSales && (
-          <span className={cn("text-[clamp(1.15rem,5.2vw,1.5rem)] font-semibold whitespace-nowrap tabular-nums", result.profit < 0 ? "text-bad" : "text-brand")}>
-            {baht(result.profit)}
-          </span>
-        )}
         <ChevronRight className="size-4 flex-none text-muted-foreground" aria-hidden />
       </Link>
       )}

@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { exportLang } from "@/lib/export";
 import { quickTotals, vatInside } from "@/lib/quick-totals";
 import { todayBangkok } from "@/lib/thai-tax";
-import { type LedgerDoc, PAYMENTS } from "@/lib/types";
+import { retitle } from "@/lib/manual-doc";
+import { DOC_TYPES, type LedgerDoc, PAYMENTS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { MoneyInput } from "./fields";
 import { BranchPicker } from "./BranchPicker";
@@ -49,6 +50,22 @@ export function QuickCard({ onJump, manual = false, onMemo }: { onJump: (path: s
       {manual ? (
         <div className="grid gap-3">
           <TranslateBadge />
+          {/* What kind of paper this is: it names the document and decides the tax checks */}
+          <Controller
+            control={control}
+            name="docType"
+            render={({ field }) => (
+              <Chips
+                label={t("labels.docType")}
+                value={field.value}
+                options={DOC_TYPES.map((k) => [k, t(`docType.${k}`)])}
+                onPick={(k) => {
+                  field.onChange(k);
+                  setValue("docTitle", retitle(getValues("docTitle"), k as LedgerDoc["docType"]), { shouldDirty: true });
+                }}
+              />
+            )}
+          />
           <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)]">
             <Row label={t("labels.seller")} path="seller.name" unsure={unsure} onJump={onJump}>
               <Input className="h-10" aria-label={t("labels.seller")} {...register(`seller.name.${lang}`)} />

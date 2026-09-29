@@ -1459,5 +1459,11 @@
     "newAmount": "새 금액 (매달)",
     "applyFrom": "적용 시작 달",
     "changeHint": "그 달부터 새 금액이, 그 전 달까지는 지금 금액({amount})이 그대로 잡혀요."
+  },
+  "docTypeShort": {
+    "full": "세금계산서",
+    "abbr": "간이",
+    "receipt": "영수증",
+    "other": "기타"
   }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { missingRequired } from "./checks";
-import { manualStart } from "./manual-doc";
+import { manualStart, retitle } from "./manual-doc";
 import { normalize } from "./normalize";
 
 const CO = "0105557035035";
@@ -28,5 +28,20 @@ describe("a document typed by hand starts as a proper tax invoice", () => {
   it("then only lacks what the person types: seller, number and the item", () => {
     const d = manualStart([addressedToUs("2026-09-20", "บริษัท ซันยู ครีเอท จำกัด")], CO, "2026-09-27");
     expect(missingRequired(d)).toEqual(["docNo", "seller.name", "seller.address", "seller.branch", "items.0.desc"]);
+  });
+});
+
+describe("picking the kind of document typed by hand", () => {
+  it("retitles it: abbreviated invoice, receipt, and no title for other", () => {
+    const d = manualStart([], CO, "2026-09-30");
+    expect(retitle(d.docTitle, "abbr").th).toBe("ใบกำกับภาษีอย่างย่อ");
+    expect(retitle(retitle(d.docTitle, "receipt"), "full").th).toBe("ใบกำกับภาษี");
+    expect(retitle(d.docTitle, "receipt")).toEqual({ th: "ใบเสร็จรับเงิน", en: "Receipt", ja: "領収書" });
+    expect(retitle(d.docTitle, "other")).toEqual({ th: "", en: "", ja: "" });
+    expect(retitle({ th: "", en: "", ja: "" }, "full").th).toBe("ใบกำกับภาษี");
+  });
+  it("keeps a title someone wrote themselves", () => {
+    const own = { th: "ใบแจ้งหนี้", en: "Invoice", ja: "" };
+    expect(retitle(own, "receipt")).toEqual(own);
   });
 });
