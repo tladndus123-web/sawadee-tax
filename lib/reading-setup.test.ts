@@ -4,12 +4,12 @@ import { BULK_FROM, readingFor } from "./extract-server";
 afterEach(() => vi.unstubAllEnvs());
 
 describe("which model reads a photo (owner's choice 2026-09-30)", () => {
-  it("1–2 photos in the upload: Sonnet 5.5 at medium", () => {
+  it("a photo of its own, or 2 receipts on one photo: Sonnet 5.5 at medium", () => {
     vi.stubEnv("ANTHROPIC_MODEL", "");
     vi.stubEnv("ANTHROPIC_EFFORT", "");
     for (const n of [0, 1, 2]) expect(readingFor(n)).toEqual({ model: "claude-sonnet-5-5", effort: "medium" });
   });
-  it("3 or more at once: Opus 5.5 at low", () => {
+  it("3 or more receipts on one photo: Opus 5.5 at low", () => {
     vi.stubEnv("ANTHROPIC_BULK_MODEL", "");
     vi.stubEnv("ANTHROPIC_BULK_EFFORT", "");
     expect(BULK_FROM).toBe(3);

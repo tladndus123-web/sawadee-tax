@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   if (!(file instanceof File) || !allowed || file.size > MAX_IMAGE_BYTES) return fail("badImage", 400);
 
   const cutOut = form?.get("cutOut") === "1";
-  // How many photos came in the same upload: 3 or more are read with the bulk setup
+  // How many receipts were cut from the same photo: 3 or more are read with the bulk setup
   const batch = Math.max(0, Math.min(99, Number(form?.get("batch")) || 0));
   const result = await extractDocument(Buffer.from(await file.arrayBuffer()), type as SourceType, { signal: req.signal, cutOut, ...readingFor(batch) });
   if (result.ok) return Response.json({ doc: result.doc });

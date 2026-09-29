@@ -58,6 +58,8 @@ const pdfs = new Map<string, File>();
 const aborts = new Map<string, AbortController>();
 /** Pieces cut from a photo of several receipts: the reader is told to ignore the neighbours' edges */
 const cutOuts = new Set<string>();
+/** How many receipts were cut from the same photo as this one (not set = a photo of its own) */
+const together = new Map<string, number>();
 
 const emit = () => listeners.forEach((l) => l());
 const patch = (id: string, change: Partial<UploadItem>) => {
@@ -134,8 +136,8 @@ async function readNow(id: string) {
     if (pdf) body.append("pdf", pdf, pdf.name || "document.pdf");
     else body.append("photo", photo, "photo.jpg");
     if (cutOuts.has(id)) body.append("cutOut", "1");
-    // Photos in this upload list: 3 or more are read with the stronger model (server decides, lib/extract-server)
-    body.append("batch", String(items.length));
+    // Receipts cut from the same photo: 3 or more are read with the stronger model (server decides, lib/extract-server)
+    body.append("batch", String(together.get(id) ?? 1));
     const res = await fetch("/api/extract", { method: "POST", body, signal: ctrl.signal });
     const json = (await res.json().catch(() => ({}))) as { doc?: LedgerDoc; error?: ExtractErrorCode };
     if (res.ok && json.doc) {
@@ -179,12 +181,13 @@ async function autoSave(doc: LedgerDoc, vendor: Parameters<typeof canAutoRegiste
 }
 
 /** Add photos (extra ones beyond the limit are ignored) and start reading them all at once. Returns how many were accepted. */
-export function addPhotos(files: File[], opts: { cutOut?: boolean } = {}): number {
+export function addPhotos(files: File[], opts: { cutOut?: boolean; together?: number } = {}): number {
   const room = Math.max(0, MAX_QUEUE - items.length);
   const accepted = files.slice(0, room);
   for (const file of accepted) {
     const id = crypto.randomUUID();
     if (opts.cutOut) cutOuts.add(id);
+    if (opts.together) together.set(id, opts.together);
     items = [...items, { id, name: file.name, status: "preparing", preview: null, startedAt: Date.now(), finishedAt: null, error: null, doc: null, vendorFixed: [], issues: [] }];
     emit();
     const pdf = isPdf(file);
@@ -241,7 +244,7 @@ export async function addSeveral(shot: File): Promise<{ found: number; accepted:
       c.getContext("2d")?.drawImage(bmp, r.left, r.top, r.width, r.height, 0, 0, r.width, r.height);
       pieces.push(await jpegOf(c, `shot-${stamp}-${i + 1}.jpg`));
     }
-    return { found: boxes.length, accepted: addPhotos(pieces, { cutOut: true }), more: !!json.more };
+    return { found: boxes.length, accepted: addPhotos(pieces, { cutOut: true, together: pieces.length }), more: !!json.more };
   } finally {
     bmp.close();
   }
@@ -276,6 +279,7 @@ export function removePhoto(id: string) {
   photos.delete(id);
   pdfs.delete(id);
   cutOuts.delete(id);
+  together.delete(id);
   const w = waiting.indexOf(id);
   if (w >= 0) waiting.splice(w, 1);
   items = items.filter((x) => x.id !== id);
