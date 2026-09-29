@@ -11,6 +11,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { ALLOWANCE_PRINT, rowsFromSaved } from "@/lib/allowances";
 import { monthDate } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
 import { fmt } from "@/lib/money";
@@ -293,7 +294,7 @@ function Slip({ p, us, period, month }: { p: Person; us: Us; period: string; mon
   const payType = p.second?.payType ?? p.first?.payType ?? e.payType;
   const en = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }).format(monthDate(month));
   const num = "px-2 py-1 text-right tabular-nums whitespace-nowrap";
-  const row = (th: string, eng: string, k: "base" | "overtime" | "holiday" | "holidayOvertime" | "bonus" | "allowance") => {
+  const row = (th: string, eng: string, k: "base" | "overtime" | "holiday" | "holidayOvertime" | "bonus") => {
     const a = halves[0]?.[k] ?? 0;
     const b = halves[1]?.[k] ?? 0;
     if (!a && !b) return null;
@@ -319,6 +320,8 @@ function Slip({ p, us, period, month }: { p: Person; us: Us; period: string; mon
         <td className={num}>-{fmt(add(a, b))}</td>
       </tr>
     ) : null;
+  // One line per named allowance (a line saved before names existed shows its total as "other")
+  const allowances = rowsFromSaved({ items: p.first?.allowances ?? [], total: p.first?.allowance ?? 0 }, { items: p.second?.allowances ?? [], total: p.second?.allowance ?? 0 });
   const net1 = p.first?.net ?? 0;
   const net2 = p.second?.net ?? 0;
   return (
@@ -358,7 +361,24 @@ function Slip({ p, us, period, month }: { p: Person; us: Us; period: string; mon
           {row("ค่าทำงานในวันหยุด", "Holiday work", "holiday")}
           {row("ค่าล่วงเวลาในวันหยุด (3 เท่า)", "Holiday overtime", "holidayOvertime")}
           {row("โบนัส", "Bonus", "bonus")}
-          {row("เบี้ยเลี้ยง / ค่าอื่น ๆ", "Allowance", "allowance")}
+          {allowances.map((a, i) =>
+            a.first || a.second ? (
+              <tr key={`a${i}`} className="border-b border-neutral-200">
+                <td className="px-2 py-1">
+                  {a.key ? (
+                    <>
+                      {ALLOWANCE_PRINT[a.key].th} <span className="text-neutral-500">/ {ALLOWANCE_PRINT[a.key].en}</span>
+                    </>
+                  ) : (
+                    a.name
+                  )}
+                </td>
+                <td className={num}>{fmt(a.first)}</td>
+                <td className={num}>{fmt(a.second)}</td>
+                <td className={num}>{fmt(add(a.first, a.second))}</td>
+              </tr>
+            ) : null,
+          )}
           <tr className="border-b border-neutral-900 font-semibold">
             <td className="px-2 py-1">รวมเงินได้ / Gross pay</td>
             <td className={num}>{fmt(p.first?.gross ?? 0)}</td>

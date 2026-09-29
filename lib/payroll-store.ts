@@ -5,6 +5,7 @@
 // into the cost control (public.labor_costs: pay and the company's social security share; "other" is left as typed).
 
 import { useEffect, useSyncExternalStore } from "react";
+import { allowanceTotal, type AllowanceRow, customNames, parseAllowances, type SavedAllowance, savedFromRows } from "./allowances";
 import { parseDocuments } from "./attendance";
 import { type Employee, EMPTY_PERIOD, monthPay, type PayrollSettings, type PeriodInput } from "./payroll";
 import { supabaseBrowser } from "./supabase/client";
@@ -125,6 +126,8 @@ export interface PayrollLineRow extends PeriodInput {
   wht: number;
   net: number;
   paidOn: string;
+  /** What `allowance` is made of (empty on lines saved before names existed) */
+  allowances: SavedAllowance[];
 }
 
 export async function loadPayroll(opts: { month?: string; year?: string } = {}): Promise<PayrollLineRow[]> {
@@ -154,6 +157,7 @@ export async function loadPayroll(opts: { month?: string; year?: string } = {}):
     wht: Number(r.wht) || 0,
     net: Number(r.net) || 0,
     paidOn: r.paid_on ?? "",
+    allowances: parseAllowances(r.allowances),
   }));
 }
 
@@ -163,9 +167,12 @@ const lastDay = (month: string) => new Date(Date.UTC(Number(month.slice(0, 4)), 
  * Save a month's payroll: two lines per employee as worked out, then each branch's labour cost for the month
  * (pay + the company's social security) into the cost control. A closed month is refused by the database.
  */
-export async function savePayrollMonth(month: string, input: { employee: Employee; first: PeriodInput; second: PeriodInput }[], s: PayrollSettings) {
+export async function savePayrollMonth(month: string, input: { employee: Employee; first: PeriodInput; second: PeriodInput; allowances?: AllowanceRow[] }[], s: PayrollSettings) {
   const sb = supabaseBrowser();
-  const rows = input.flatMap(({ employee: e, first, second }) => {
+  const rows = input.flatMap(({ employee: e, first: f, second: g, allowances }) => {
+    // With named allowances, their totals are the allowance of each half (the names and the pay never disagree)
+    const first = allowances ? { ...f, allowance: allowanceTotal(allowances, "first") } : f;
+    const second = allowances ? { ...g, allowance: allowanceTotal(allowances, "second") } : g;
     const m = monthPay(e, first, second, s);
     const line = (period: 1 | 2, p: PeriodInput) => ({
       employee_id: e.id,
@@ -188,6 +195,7 @@ export async function savePayrollMonth(month: string, input: { employee: Employe
       wht: period === 2 ? m.wht : 0,
       net: period === 1 ? m.netFirst : m.netSecond,
       paid_on: period === 1 ? `${month}-15` : lastDay(month),
+      allowances: savedFromRows(allowances ?? [], period === 1 ? "first" : "second"),
     });
     return [line(1, first ?? EMPTY_PERIOD), line(2, second ?? EMPTY_PERIOD)];
   });
@@ -247,4 +255,11 @@ export async function setPayrollCheck(employeeId: string, month: string, on: boo
     ? await sb.from("payroll_checks").upsert({ employee_id: employeeId, month }, { onConflict: "employee_id,month" })
     : await sb.from("payroll_checks").delete().eq("employee_id", employeeId).eq("month", month);
   if (error) throw error;
+}
+
+/** Allowance names typed on earlier pay runs, offered in the list next to the built-in ones */
+export async function loadAllowanceNames(): Promise<string[]> {
+  const { data, error } = await supabaseBrowser().from("payroll_lines").select("allowances").neq("allowances", "[]");
+  if (error) throw error;
+  return customNames((data ?? []).flatMap((r) => parseAllowances(r.allowances)));
 }

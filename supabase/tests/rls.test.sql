@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(159);
+select plan(161);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -311,6 +311,8 @@ update public.payroll_lines set paid_on = '2026-08-15' where month = '2026-08';
 select is((select count(*)::int from public.payroll_checks where employee_id = '00000000-0000-0000-0000-0000000000e9'), 1, 'saving the same figures again keeps the check');
 update public.payroll_lines set gross = 9500, net = 9500 where month = '2026-08';
 select is((select count(*)::int from public.payroll_checks where employee_id = '00000000-0000-0000-0000-0000000000e9'), 0, 'different figures clear the check');
+select throws_ok($$ update public.payroll_lines set allowances = '{"key":"meal"}' where month = '2026-08' $$, '23514', NULL, 'named allowances are a list');
+select lives_ok($$ update public.payroll_lines set allowances = '[{"key":"meal","name":"","amount":500}]', allowance = 500 where month = '2026-08' $$, 'an admin names the allowances of a pay line');
 insert into public.month_locks (month) values ('2026-08');
 select lives_ok($$ insert into public.payroll_checks (employee_id, month) values ('00000000-0000-0000-0000-0000000000e9', '2026-08') $$, 'a closed month can still be checked');
 delete from public.month_locks where month = '2026-08';

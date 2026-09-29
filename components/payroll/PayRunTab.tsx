@@ -6,13 +6,14 @@
 // the cost control. The list shows each person's position, name, pay, deductions and take-home, and whether the office
 // checked that saved pay (stamped who and when; new figures clear it).
 
-import { CalendarCheck, Check, ChevronDown, CircleCheck, Loader2, Lock, Printer, Undo2 } from "lucide-react";
+import { CalendarCheck, Check, ChevronDown, CircleCheck, Loader2, Lock, Plus, Printer, Undo2, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { MoneyInput } from "@/components/invoice/fields";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { ALLOWANCE_KINDS, type AllowanceRow, allowanceTotal, rowsFromSaved } from "@/lib/allowances";
 import { periodFromAttendance } from "@/lib/attendance";
 import { loadAttendance } from "@/lib/attendance-store";
 import { useCompany } from "@/lib/company-store";
@@ -20,14 +21,17 @@ import { refreshLabor } from "@/lib/labor-store";
 import { fmt } from "@/lib/money";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
 import { daysNotEmployed, type Employee, EMPTY_PERIOD, monthPay, payrollSettingsOf, type PeriodInput } from "@/lib/payroll";
-import { loadPayroll, loadPayrollChecks, type PayrollCheck, savePayrollMonth, setPayrollCheck, useEmployees } from "@/lib/payroll-store";
+import { loadAllowanceNames, loadPayroll, loadPayrollChecks, type PayrollCheck, type PayrollLineRow, savePayrollMonth, setPayrollCheck, useEmployees } from "@/lib/payroll-store";
 import { cn } from "@/lib/utils";
 
 // Row: the pay figures, then the office check (a column on a computer, a strip under the figures on a phone)
 const ROW = "grid sm:grid-cols-[minmax(0,1fr)_12.5rem]";
 const COLS = "grid-cols-[6rem_minmax(0,1fr)_5.75rem_5.75rem_6.25rem_1rem] items-center gap-x-3";
 
-type Inputs = Record<string, { first: PeriodInput; second: PeriodInput }>;
+/** One person's month: each half, and the named allowances (their totals are each half's allowance) */
+type Row = { first: PeriodInput; second: PeriodInput; allowances: AllowanceRow[] };
+type Inputs = Record<string, Row>;
+const EMPTY_ROW: Row = { first: EMPTY_PERIOD, second: EMPTY_PERIOD, allowances: [] };
 
 const lastDay = (month: string) => new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
 /** Employed at some point in the month */
@@ -47,6 +51,9 @@ export function PayRunTab({ month }: { month: string }) {
   const [open, setOpen] = useState<string | null>(null);
   const [checks, setChecks] = useState<Map<string, PayrollCheck>>(new Map());
   const [checking, setChecking] = useState<string | null>(null);
+  // Allowance names typed on earlier pay runs (offered in the list)
+  const [typedNames, setTypedNames] = useState<string[]>([]);
+  useEffect(() => void loadAllowanceNames().then(setTypedNames, () => {}), []);
   const locale = useLocale();
 
   useEffect(() => {
@@ -57,11 +64,22 @@ export function PayRunTab({ month }: { month: string }) {
       .then(([lines, found]) => {
         if (!live) return;
         const next: Inputs = {};
+        const halves = new Map<string, { first?: PayrollLineRow; second?: PayrollLineRow }>();
         for (const l of lines) {
-          const row = (next[l.employeeId] ??= { first: EMPTY_PERIOD, second: EMPTY_PERIOD });
+          const row = (next[l.employeeId] ??= { ...EMPTY_ROW });
           const p: PeriodInput = { daysWorked: l.daysWorked, absentDays: l.absentDays, otHours: l.otHours, holidayHours: l.holidayHours, holidayOtHours: l.holidayOtHours, bonus: l.bonus, allowance: l.allowance, otherDeduction: l.otherDeduction };
-          if (l.period === 1) row.first = p;
-          else row.second = p;
+          const h = halves.get(l.employeeId) ?? {};
+          if (l.period === 1) {
+            row.first = p;
+            h.first = l;
+          } else {
+            row.second = p;
+            h.second = l;
+          }
+          halves.set(l.employeeId, h);
+        }
+        for (const [id, h] of halves) {
+          next[id].allowances = rowsFromSaved({ items: h.first?.allowances ?? [], total: h.first?.allowance ?? 0 }, { items: h.second?.allowances ?? [], total: h.second?.allowance ?? 0 });
         }
         setInputs(next);
         setSaved(new Set(lines.map((l) => l.employeeId)));
@@ -76,14 +94,14 @@ export function PayRunTab({ month }: { month: string }) {
   const staff = useMemo(() => employees.filter((e) => inMonth(e, month) || saved.has(e.id)), [employees, month, saved]);
   // Not typed in yet: a monthly employee who joins or leaves during the month starts with those days as unpaid
   const rows = useMemo(() => {
-    const out = new Map<string, { first: PeriodInput; second: PeriodInput }>();
+    const out = new Map<string, Row>();
     for (const e of staff) {
       const off = e.payType === "monthly" ? daysNotEmployed(e, month) : { first: 0, second: 0 };
-      out.set(e.id, inputs[e.id] ?? { first: { ...EMPTY_PERIOD, absentDays: off.first }, second: { ...EMPTY_PERIOD, absentDays: off.second } });
+      out.set(e.id, inputs[e.id] ?? { first: { ...EMPTY_PERIOD, absentDays: off.first }, second: { ...EMPTY_PERIOD, absentDays: off.second }, allowances: [] });
     }
     return out;
   }, [staff, inputs, month]);
-  const rowOf = (id: string) => rows.get(id) ?? { first: EMPTY_PERIOD, second: EMPTY_PERIOD };
+  const rowOf = (id: string) => rows.get(id) ?? EMPTY_ROW;
   const pays = useMemo(() => new Map(staff.map((e) => [e.id, monthPay(e, rows.get(e.id)!.first, rows.get(e.id)!.second, settings)])), [staff, rows, settings]);
   const total = [...pays.values()].reduce(
     (a, m) => ({ gross: a.gross + m.gross, ss: a.ss + m.ssEmployee, er: a.er + m.ssEmployer, wht: a.wht + m.wht, net: a.net + m.netFirst + m.netSecond, cost: a.cost + m.employerCost }),
@@ -92,6 +110,15 @@ export function PayRunTab({ month }: { month: string }) {
 
   const set = (id: string, half: "first" | "second", k: keyof PeriodInput, v: number) => {
     setInputs((all) => ({ ...all, [id]: { ...rowOf(id), [half]: { ...rowOf(id)[half], [k]: Math.max(0, v || 0) } } }));
+    setDirty(true);
+  };
+  // The named allowances; each half's allowance is their total
+  const setAllowances = (id: string, list: AllowanceRow[]) => {
+    const cur = rowOf(id);
+    setInputs((all) => ({
+      ...all,
+      [id]: { first: { ...cur.first, allowance: allowanceTotal(list, "first") }, second: { ...cur.second, allowance: allowanceTotal(list, "second") }, allowances: list },
+    }));
     setDirty(true);
   };
 
@@ -106,8 +133,9 @@ export function PayRunTab({ month }: { month: string }) {
         const next = { ...all };
         for (const e of staff) {
           const p = periodFromAttendance(e, rows.filter((r) => r.employeeId === e.id), month);
-          const cur = all[e.id] ?? { first: EMPTY_PERIOD, second: EMPTY_PERIOD };
+          const cur = all[e.id] ?? EMPTY_ROW;
           next[e.id] = {
+            ...cur,
             first: { ...cur.first, daysWorked: p.first.daysWorked, absentDays: p.first.absentDays, otHours: p.first.otHours, holidayHours: p.first.holidayHours, holidayOtHours: p.first.holidayOtHours },
             second: { ...cur.second, daysWorked: p.second.daysWorked, absentDays: p.second.absentDays, otHours: p.second.otHours, holidayHours: p.second.holidayHours, holidayOtHours: p.second.holidayOtHours },
           };
@@ -135,6 +163,7 @@ export function PayRunTab({ month }: { month: string }) {
       setSaved(new Set(staff.map((e) => e.id)));
       // Changed figures lost their check in the database
       setChecks(await loadPayrollChecks(month).catch(() => new Map()));
+      void loadAllowanceNames().then(setTypedNames, () => {});
       setDirty(false);
       toast.success(t("runSaved"));
     } catch (e) {
@@ -262,7 +291,7 @@ export function PayRunTab({ month }: { month: string }) {
               </div>
               {isOpen && (
                 <div className="sm:col-span-2">
-                  <PeriodGrid employee={e} row={rowOf(e.id)} pay={m} disabled={locked} onSet={(half, k, v) => set(e.id, half, k, v)} />
+                  <PeriodGrid employee={e} row={rowOf(e.id)} pay={m} disabled={locked} typedNames={typedNames} onSet={(half, k, v) => set(e.id, half, k, v)} onAllowances={(list) => setAllowances(e.id, list)} />
                 </div>
               )}
             </li>
@@ -318,13 +347,17 @@ function PeriodGrid({
   row,
   pay,
   disabled,
+  typedNames,
   onSet,
+  onAllowances,
 }: {
   employee: Employee;
-  row: { first: PeriodInput; second: PeriodInput };
+  row: Row;
   pay: ReturnType<typeof monthPay>;
   disabled: boolean;
+  typedNames: string[];
   onSet: (half: "first" | "second", k: keyof PeriodInput, v: number) => void;
+  onAllowances: (list: AllowanceRow[]) => void;
 }) {
   const t = useTranslations("pay");
   const fields: { k: keyof PeriodInput; label: string; kind: "qty" | "money" }[] = [
@@ -333,7 +366,6 @@ function PeriodGrid({
     { k: "holidayHours", label: t("holidayHours"), kind: "qty" },
     { k: "holidayOtHours", label: t("holidayOtHours"), kind: "qty" },
     { k: "bonus", label: t("bonus"), kind: "money" },
-    { k: "allowance", label: t("allowance"), kind: "money" },
     { k: "otherDeduction", label: t("otherDeduction"), kind: "money" },
   ];
   const line = "grid grid-cols-[minmax(0,1fr)_5.5rem_5.5rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem]";
@@ -359,6 +391,7 @@ function PeriodGrid({
           ))}
         </label>
       ))}
+      <Allowances rows={row.allowances} disabled={disabled} typedNames={typedNames} line={line} onChange={onAllowances} />
       <div className="mt-1 grid gap-1 border-t border-border/60 pt-2">
         {out(t("gross"), pay.first.gross, pay.second.gross)}
         {out(t("ssEmployee"), "—", pay.ssEmployee ? -pay.ssEmployee : 0)}
@@ -367,6 +400,124 @@ function PeriodGrid({
         {out(t("net"), pay.netFirst, pay.netSecond, true)}
       </div>
       {e.whtFixed !== null && <p className="text-[11px] text-muted-foreground">{t("whtFixedOn")}</p>}
+    </div>
+  );
+}
+
+/**
+ * The named allowances: each row a name from the list (built-in, or typed on an earlier pay run, or "type a new
+ * name…") with an amount for each half. Their totals are the half's allowance.
+ */
+function Allowances({
+  rows,
+  disabled,
+  typedNames,
+  line,
+  onChange,
+}: {
+  rows: AllowanceRow[];
+  disabled: boolean;
+  typedNames: string[];
+  line: string;
+  onChange: (list: AllowanceRow[]) => void;
+}) {
+  const t = useTranslations("pay");
+  const [typing, setTyping] = useState<number | null>(null);
+  const names = [...new Set([...typedNames, ...rows.filter((r) => !r.key && r.name.trim()).map((r) => r.name.trim())])];
+  const patch = (i: number, p: Partial<AllowanceRow>) => onChange(rows.map((r, j) => (j === i ? { ...r, ...p } : r)));
+  const label = (r: AllowanceRow) => (r.key ? t(`allowanceKind.${r.key}`) : r.name);
+  const add = () => {
+    const unused = ALLOWANCE_KINDS.find((k) => k !== "other" && !rows.some((r) => r.key === k)) ?? "other";
+    onChange([...rows, { key: unused, name: "", first: 0, second: 0 }]);
+  };
+  const pick = (i: number, v: string) => {
+    if (v === "__new") {
+      patch(i, { key: "", name: "" });
+      setTyping(i);
+    } else if (v.startsWith("k:")) patch(i, { key: v.slice(2) as AllowanceRow["key"], name: "" });
+    else patch(i, { key: "", name: v.slice(2) });
+  };
+  // Left without a name: back to "other", so the amounts still count
+  const doneTyping = (i: number) => {
+    setTyping(null);
+    if (!rows[i]?.key && !rows[i]?.name.trim()) patch(i, { key: "other", name: "" });
+  };
+
+  return (
+    <div className="grid gap-2">
+      {rows.map((r, i) => (
+        <div key={i} className={line}>
+          <span className="flex min-w-0 items-center gap-1">
+            {typing === i || (!r.key && !r.name.trim()) ? (
+              <input
+                autoFocus
+                disabled={disabled}
+                maxLength={60}
+                aria-label={t("allowanceName")}
+                placeholder={t("allowanceName")}
+                className="h-9 min-w-0 flex-1 rounded-xl border bg-background px-2.5 text-[13px]"
+                value={r.name}
+                onChange={(ev) => patch(i, { name: ev.target.value })}
+                onBlur={() => doneTyping(i)}
+                onKeyDown={(ev) => ev.key === "Enter" && (ev.currentTarget as HTMLInputElement).blur()}
+              />
+            ) : (
+              <select
+                disabled={disabled}
+                aria-label={t("allowanceName")}
+                title={label(r)}
+                className="h-9 min-w-0 flex-1 truncate rounded-xl border bg-background px-2 text-[13px]"
+                value={r.key ? `k:${r.key}` : `n:${r.name.trim()}`}
+                onChange={(ev) => pick(i, ev.target.value)}
+              >
+                {ALLOWANCE_KINDS.map((k) => (
+                  <option key={k} value={`k:${k}`}>
+                    {t(`allowanceKind.${k}`)}
+                  </option>
+                ))}
+                {names.length > 0 && (
+                  <optgroup label="—">
+                    {names.map((n) => (
+                      <option key={n} value={`n:${n}`}>
+                        {n}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                <option value="__new">{t("allowanceNew")}</option>
+              </select>
+            )}
+            {!disabled && (
+              <button
+                type="button"
+                className="press grid size-7 flex-none place-items-center rounded-full text-muted-foreground hover:bg-muted"
+                aria-label={t("removeAllowance")}
+                title={t("removeAllowance")}
+                onClick={() => onChange(rows.filter((_, j) => j !== i))}
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </span>
+          {(["first", "second"] as const).map((h) => (
+            <MoneyInput
+              key={h}
+              kind="money"
+              disabled={disabled}
+              aria-label={`${label(r) || t("allowance")} ${t(h === "first" ? "half1" : "half2")}`}
+              className="h-9 bg-background text-right"
+              value={r[h]}
+              onChange={(v) => patch(i, { [h]: Math.max(0, v || 0) })}
+            />
+          ))}
+        </div>
+      ))}
+      {!disabled && (
+        <button type="button" onClick={add} className="press flex h-8 w-fit items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium text-brand hover:bg-brand-soft">
+          <Plus className="size-4" aria-hidden />
+          {t("addAllowance")}
+        </button>
+      )}
     </div>
   );
 }
