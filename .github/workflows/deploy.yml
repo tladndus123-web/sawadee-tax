@@ -1,0 +1,61 @@
+# Deploy to production on every push to main (so a collaborator's push goes live without a Vercel seat).
+# The Vercel Hobby plan blocks Git deployments of a private repo pushed by anyone but the owner, so this runs the
+# owner's Vercel CLI here instead, with the owner's token kept as the repository secret VERCEL_TOKEN (never in git).
+# Checks first (types, lint, unit tests); a failure stops the deploy. Database migrations are not run here: they are
+# pushed from a PC with `npx supabase db push` (docs/HANDOFF.md).
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One deploy at a time, in push order
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      VERCEL_ORG_ID: team_YG0av4A9YO9IrpCm78X4rMi9
+      VERCEL_PROJECT_ID: prj_s727ekVoaFyUnAmnLPCIN2ZcdXRc
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Checks
+        run: |
+          npx tsc --noEmit
+          npx eslint .
+          npx vitest run
+
+      - name: Deploy key present?
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::The repository secret VERCEL_TOKEN is missing (GitHub → Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+
+      - name: Build and deploy
+        run: |
+          npx --yes vercel@61 pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@61 build --prod --token="$VERCEL_TOKEN"
+          npx --yes vercel@61 deploy --prebuilt --prod --token="$VERCEL_TOKEN" | tee deploy-url.txt
+
+      - name: Live check
+        run: |
+          sleep 10
+          curl -fsS https://thai-receipt-ledger.vercel.app/api/extract | grep -q '"slipPieces":true'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST https://thai-receipt-ledger.vercel.app/api/extract)" = "401"
+          echo "Live: https://thai-receipt-ledger.vercel.app ($(tail -1 deploy-url.txt))"

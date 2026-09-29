@@ -11,8 +11,10 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 - Ask when a product decision is theirs ("모르는건 나한테 물어봐"). When a change is done and checked, **commit, push and deploy
   right away** (owner's request, 2026-09-26; push to GitHub after every commit since 2026-09-27 so the collaborator
   has the latest code — `git pull --rebase` first); end commit messages with the `Co-Authored-By` line.
-- Code: https://github.com/tladndus123-web/sawadee-tax (private, shared with a collaborator). Deploys still go from
-  this PC (`npx vercel deploy --prod`), not from GitHub. Keys never go into git.
+- Code: https://github.com/tladndus123-web/sawadee-tax (private, shared with a collaborator). **A push to `main` deploys
+  to production** through GitHub Actions (`.github/workflows/deploy.yml`: checks → owner's Vercel CLI with the repo
+  secret `VERCEL_TOKEN`; Hobby plan, so no Vercel seat for the collaborator). `npx vercel deploy --prod` from this PC
+  still works as a fallback. DB migrations are never run by the workflow: push them from a PC first. Keys never go into git.
 - **Never ask for keys in chat.** Keys live in `.env.local` (local dev) and `.env.deploy` (deploy: Supabase
   cloud + Vercel + Gmail app password), both git-ignored. Open the file for them (Notepad) and validate
   without printing values.
