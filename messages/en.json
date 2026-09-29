@@ -452,11 +452,14 @@
     "removed": "Your access was removed and you were signed out. Contact an admin if you need it back.",
     "expired": "For security, you were signed out {hours} hours after signing in. Please sign in again.",
     "keepSigned": "Once signed in, you stay signed in on this device for {hours} hours.",
-    "codeHint": "If the link opens in a different browser on your phone, enter the 6-digit code from the email here.",
+    "codeHint": "Enter the 6-digit code at the start of the email's subject and you're in. If your phone suggests the code, just tap it.",
     "codeLabel": "6-digit code",
     "codeSubmit": "Sign in with code",
     "codeWrong": "That code is wrong or expired. Check the newest email, or get a new link.",
-    "about": "A ledger where AI reads Thai tax invoices and receipts."
+    "about": "A ledger where AI reads Thai tax invoices and receipts.",
+    "codePaste": "Paste",
+    "codeNotInClipboard": "No 6-digit code in what you copied. Copy the code from the email and tap again.",
+    "codePasteByHand": "This browser blocks pasting for us. Long-press the box and choose Paste."
   },
   "members": {
     "title": "Members",

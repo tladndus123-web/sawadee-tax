@@ -23,7 +23,8 @@ const wrap = (title: string, lines: string[], button: string, code = "") => `<!d
 </html>`;
 
 export const magicLink = {
-  subject: "로그인 링크 · ลิงก์เข้าสู่ระบบ · ログインリンク · Sign-in link",
+  // The code first: the phone's notification shows it, and iPhone / Android offer to copy or fill it in
+  subject: "{{ .Token }} · 로그인 코드 · รหัสเข้าสู่ระบบ · ログインコード · Sign-in code",
   content: wrap(
     "로그인 · เข้าสู่ระบบ · ログイン",
     [

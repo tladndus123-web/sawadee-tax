@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, KeyRound, Loader2, Lock, Mail, MailCheck, ShieldCheck } from "lucide-react";
+import { ArrowRight, ClipboardPaste, KeyRound, Loader2, Lock, Mail, MailCheck, ShieldCheck } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -8,6 +8,7 @@ import { AppMark } from "@/components/layout/app-mark";
 import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { CODE_LENGTH, pickCode } from "@/lib/auth/otp-code";
 import { SESSION_HOURS } from "@/lib/auth/session-limit";
 import { supabaseBrowser, supabaseLinkSender } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,9 @@ export function LoginForm() {
   const [codeState, setCodeState] = useState<"idle" | "checking">("idle");
   const [codeError, setCodeError] = useState<string | null>(null);
   const emailBox = useRef<HTMLLabelElement>(null);
+  const codeBox = useRef<HTMLInputElement>(null);
+  // The last code sent for checking: a wrong one is not sent again by itself
+  const tried = useRef("");
 
   // A wrong or unknown address gives the field a short shake, like a wrong password on a Mac
   useEffect(() => {
@@ -80,10 +84,11 @@ export function LoginForm() {
 
   // The code from the same email signs in right here, in this browser (handy when the phone's mail app
   // opens the link in a different browser). Membership is checked by the callback page, as for links.
-  const verify = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const verify = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     const token = code.replace(/\D/g, "");
-    if (token.length < 6) return;
+    if (token.length < CODE_LENGTH) return;
+    tried.current = token;
     setCodeState("checking");
     setCodeError(null);
     const { error } = await supabaseBrowser().auth.verifyOtp({ email: email.trim(), token, type: "email" });
@@ -93,6 +98,29 @@ export function LoginForm() {
     }
     const next = params.get("next") || `/${locale}`;
     window.location.replace(`/${locale}/auth/callback?next=${encodeURIComponent(next)}`);
+  };
+
+  // Six digits in (typed, auto-filled by the phone, or pasted): sign in at once, no button needed
+  useEffect(() => {
+    if (code.length === CODE_LENGTH && codeState === "idle" && tried.current !== code) void verify();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- verify reads the latest code itself
+  }, [code, codeState]);
+
+  // "Paste": the code out of whatever was copied (the code, the email subject, the whole email)
+  const pasteCode = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const found = pickCode(text);
+      if (found.length === CODE_LENGTH) {
+        setCodeError(null);
+        return setCode(found);
+      }
+      setCodeError(t("codeNotInClipboard"));
+    } catch {
+      // The browser would not share the clipboard: long-press the box and paste instead
+      setCodeError(t("codePasteByHand"));
+    }
+    codeBox.current?.focus();
   };
 
   return (
@@ -128,16 +156,25 @@ export function LoginForm() {
                     <span className="group relative block">
                       <KeyRound className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden />
                       <input
+                        ref={codeBox}
                         value={code}
-                        onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        onChange={(e) => setCode(pickCode(e.target.value))}
                         inputMode="numeric"
                         autoComplete="one-time-code"
                         pattern="[0-9]*"
                         aria-label={t("codeLabel")}
                         placeholder={t("codeLabel")}
                         aria-invalid={!!codeError}
-                        className="h-[52px] w-full rounded-2xl border border-input bg-background/60 pr-4 pl-11 font-mono text-[18px] tracking-[0.3em] transition-[border-color,box-shadow] outline-none placeholder:font-sans placeholder:text-[15px] placeholder:tracking-normal placeholder:text-muted-foreground/70 focus:border-primary focus:bg-card focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--primary)_14%,transparent)] aria-invalid:border-bad"
+                        className="h-[52px] w-full rounded-2xl border border-input bg-background/60 pr-[6.5rem] pl-11 font-mono text-[18px] tracking-[0.3em] transition-[border-color,box-shadow] outline-none placeholder:font-sans placeholder:text-[15px] placeholder:tracking-normal placeholder:text-muted-foreground/70 focus:border-primary focus:bg-card focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--primary)_14%,transparent)] aria-invalid:border-bad"
                       />
+                      <button
+                        type="button"
+                        onClick={() => void pasteCode()}
+                        className="press absolute top-1/2 right-2 flex h-9 -translate-y-1/2 items-center gap-1.5 rounded-xl bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/15"
+                      >
+                        <ClipboardPaste className="size-4" aria-hidden />
+                        {t("codePaste")}
+                      </button>
                     </span>
                   </label>
                   {codeError && (
