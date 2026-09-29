@@ -582,7 +582,11 @@
     "ruleSaved": "ルールを保存しました",
     "ruleSavedAuto": "ルールを保存しました。問題のない書類は確認なしで登録されます",
     "ruleOffer": "{name}：直近3件はすべて {category}・{payment} でした。今後は自動にしますか？",
-    "ruleOfferYes": "自動にする"
+    "ruleOfferYes": "自動にする",
+    "view": "表示",
+    "viewFolders": "フォルダ",
+    "viewList": "一覧",
+    "folderCount": "{count}社"
   },
   "dash": {
     "title": "ダッシュボード",

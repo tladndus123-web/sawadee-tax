@@ -582,7 +582,11 @@
     "ruleSaved": "Rule saved",
     "ruleSavedAuto": "Rule saved. Documents without problems are now saved without asking",
     "ruleOffer": "{name}: the last 3 were all {category} · {payment}. Do it automatically from now on?",
-    "ruleOfferYes": "Do it automatically"
+    "ruleOfferYes": "Do it automatically",
+    "view": "View",
+    "viewFolders": "Folders",
+    "viewList": "List",
+    "folderCount": "{count} vendors"
   },
   "dash": {
     "title": "Dashboard",

@@ -147,7 +147,7 @@ select is((select count(*)::int from public.document_purges), 0, 'staff cannot r
 -- Vendor rules: any member sets category / payment; only admins switch automatic registration
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select lives_ok($$ update public.vendors set rule_category = 'food', rule_payment = 'credit' where tax_id = '9900000000014' $$, 'staff set a vendor rule');
-select throws_ok($$ update public.vendors set rule_category = 'nonsense' where tax_id = '9900000000014' $$, '23514', NULL, 'only known categories');
+select throws_ok($$ update public.vendors set rule_category = 'nonsense' where tax_id = '9900000000014' $$, '23503', NULL, 'only known categories');
 select throws_ok($$ update public.vendors set auto_register = true where tax_id = '9900000000014' $$, '42501', NULL, 'staff cannot switch on automatic registration');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select lives_ok($$ update public.vendors set auto_register = true where tax_id = '9900000000014' $$, 'an admin switches on automatic registration');
@@ -364,6 +364,11 @@ delete from public.month_locks where month = '2026-08';
 select lives_ok($$ update public.employees set documents = '[{"name":"Work permit","expires":"2027-03-31"}]' where id = '00000000-0000-0000-0000-0000000000e9' $$, 'documents with expiry dates are kept on the employee');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select is((select count(*)::int from public.attendance), 0, 'staff see no attendance');
+
+-- A vendor rule may use any existing category (newer built-in or the company's own), and nothing else
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select lives_ok($$ update public.vendors set rule_category = 'repairs' where tax_id = (select tax_id from public.vendors limit 1) $$, 'a vendor rule can use a newer category (repairs)');
+select throws_ok($$ update public.vendors set rule_category = 'no_such' where tax_id = (select tax_id from public.vendors limit 1) $$, '23503', NULL, 'but not a category that does not exist');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

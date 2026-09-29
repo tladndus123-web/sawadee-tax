@@ -582,7 +582,11 @@
     "ruleSaved": "บันทึกกฎแล้ว",
     "ruleSavedAuto": "บันทึกกฎแล้ว เอกสารที่ไม่มีปัญหาจะบันทึกทันทีโดยไม่ต้องตรวจ",
     "ruleOffer": "{name}: 3 ครั้งล่าสุดเป็น {category} · {payment} ทั้งหมด ให้ทำอัตโนมัติต่อไปไหม?",
-    "ruleOfferYes": "ทำอัตโนมัติ"
+    "ruleOfferYes": "ทำอัตโนมัติ",
+    "view": "มุมมอง",
+    "viewFolders": "โฟลเดอร์",
+    "viewList": "รายการ",
+    "folderCount": "{count} ราย"
   },
   "dash": {
     "title": "แดชบอร์ด",

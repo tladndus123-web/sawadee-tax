@@ -3,6 +3,8 @@
 import {
   Building2,
   ChevronDown,
+  FolderClosed,
+  List,
   Loader2,
   Pencil,
   Search,
@@ -12,7 +14,8 @@ import {
 import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useScreenDate } from "@/components/ScreenDate";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -33,12 +36,19 @@ import { FORM_LANGS, type Tri } from "@/lib/types";
 import { useMe } from "@/lib/role-store";
 import { deleteVendor, saveVendorName, useVendors } from "@/lib/vendor-store";
 import { type Vendor, vendorCategory } from "@/lib/vendors";
-import { CategoryIcon } from "./CategoryIcon";
+import { CategoryIcon, useCategoryLabel } from "./CategoryIcon";
 import { VendorRule } from "./VendorRule";
 
 type Stat = { count: number; satang: number; last: string; cats: string[] };
 
-/** Vendor dictionary: every seller seen in saved documents, with their ledger totals. */
+type View = "folders" | "list";
+const VIEW_KEY = "vendors-view";
+
+/**
+ * Vendor dictionary: every seller seen in saved documents, with their ledger totals. Shown as folders — vendors of
+ * the same category behind one icon, opened large in the middle of the screen (owner's choice, 2026-09-29) — or as
+ * the plain list. A search always shows the list.
+ */
 export function VendorList() {
   const t = useTranslations("vendors");
   const locale = useLocale();
@@ -46,6 +56,18 @@ export function VendorList() {
   const { vendors, loaded } = useVendors();
   const { entries } = useLedger();
   const [q, setQ] = useState("");
+  const [view, setView] = useState<View>("folders");
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(VIEW_KEY) === "list") setView("list");
+    } catch {}
+  }, []);
+  const pickView = (v: View) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {}
+  };
 
   // Documents in the ledger (not drafts, not trash) per vendor tax ID
   const stats = useMemo(() => {
@@ -102,7 +124,8 @@ export function VendorList() {
         </p>
       </header>
       {vendors.length > 0 && (
-        <label className="relative block max-w-md">
+        <div className="flex flex-wrap items-center gap-2">
+        <label className="relative block min-w-0 flex-1 basis-60 sm:max-w-md">
           <Search
             className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden
@@ -115,6 +138,24 @@ export function VendorList() {
             className="h-11 rounded-full pl-10"
           />
         </label>
+        <div className="flex rounded-full bg-muted p-1" role="group" aria-label={t("view")}>
+          {(["folders", "list"] as const).map((v) => {
+            const Icon = v === "folders" ? FolderClosed : List;
+            return (
+              <button
+                key={v}
+                type="button"
+                aria-pressed={view === v}
+                onClick={() => pickView(v)}
+                className={cn("flex h-9 items-center gap-1.5 rounded-full px-3 text-sm", view === v ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
+              >
+                <Icon className="size-4" aria-hidden />
+                {t(v === "folders" ? "viewFolders" : "viewList")}
+              </button>
+            );
+          })}
+        </div>
+        </div>
       )}
       {!loaded ? (
         <Loader2
@@ -130,6 +171,8 @@ export function VendorList() {
             {vendors.length ? t("noMatch") : t("empty")}
           </p>
         </div>
+      ) : view === "folders" && !needle ? (
+        <Folders list={list} stats={stats} lang={lang} />
       ) : (
         // One slim panel with a line per vendor (tap a line for its rule, rename and delete)
         <ul className="workspace-panel divide-y divide-border/60 overflow-hidden p-0">
@@ -139,6 +182,78 @@ export function VendorList() {
         </ul>
       )}
     </div>
+  );
+}
+
+/** Vendors grouped by category, like folders on a phone's home screen; a tap opens one large in the middle */
+function Folders({ list, stats, lang }: { list: Vendor[]; stats: Map<string, Stat>; lang: "th" | "en" | "ja" }) {
+  const t = useTranslations("vendors");
+  const catLabel = useCategoryLabel();
+  const [open, setOpen] = useState<string | null>(null);
+  const folders = useMemo(() => {
+    const by = new Map<string, Vendor[]>();
+    for (const v of list) {
+      const k = vendorCategory(v.ruleCategory, stats.get(v.taxId)?.cats ?? []);
+      by.set(k, [...(by.get(k) ?? []), v]);
+    }
+    // Biggest folders first; within one, the latest vendor first (the list's order)
+    return [...by.entries()]
+      .map(([key, vendors]) => ({ key, vendors, satang: vendors.reduce((a, v) => a + (stats.get(v.taxId)?.satang ?? 0), 0) }))
+      .sort((a, b) => b.vendors.length - a.vendors.length || b.satang - a.satang);
+  }, [list, stats]);
+  const current = folders.find((f) => f.key === open) ?? null;
+  const nameOf = (v: Vendor) => v.name[lang] || v.name.en || v.name.th || "—";
+
+  return (
+    <>
+      <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+        {folders.map((f) => (
+          <li key={f.key}>
+            <button
+              type="button"
+              onClick={() => setOpen(f.key)}
+              aria-haspopup="dialog"
+              aria-label={`${catLabel(f.key)} · ${t("folderCount", { count: f.vendors.length })}`}
+              className="press workspace-panel hover-lift [--lift:1.03] grid w-full justify-items-center gap-2 p-3 text-center sm:p-4"
+            >
+              <span className="relative">
+                <CategoryIcon category={f.key} className="size-16 rounded-[1.35rem] sm:size-[4.5rem]" />
+                <span className="absolute -top-1.5 -right-1.5 grid min-w-6 place-items-center rounded-full bg-foreground px-1.5 text-[11px] leading-6 font-semibold text-background tabular-nums shadow-sm">
+                  {f.vendors.length}
+                </span>
+              </span>
+              <span className="w-full truncate text-[13px] font-semibold">{catLabel(f.key)}</span>
+              {/* A peek inside: the first vendors' initials */}
+              <span className="flex -space-x-1.5" aria-hidden>
+                {f.vendors.slice(0, 4).map((v) => (
+                  <span key={v.id} className="grid size-5 place-items-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground ring-2 ring-card">
+                    {Array.from(nameOf(v).trim())[0]?.toUpperCase() ?? "•"}
+                  </span>
+                ))}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <Dialog open={!!current} onOpenChange={(o) => !o && setOpen(null)}>
+        {current && (
+          <DialogContent className="max-h-[85dvh] overflow-y-auto rounded-[2rem] p-0 sm:max-w-lg" data-lenis-prevent>
+            <DialogHeader className="grid justify-items-center gap-2 px-6 pt-7 pb-2 text-center">
+              <CategoryIcon category={current.key} className="size-16 rounded-[1.35rem]" />
+              <DialogTitle className="text-xl">{catLabel(current.key)}</DialogTitle>
+              <DialogDescription className="tabular-nums">
+                {t("folderCount", { count: current.vendors.length })} · {t("total")} {baht(fromSatang(current.satang))}
+              </DialogDescription>
+            </DialogHeader>
+            <ul className="divide-y divide-border/60 border-t border-border/60">
+              {current.vendors.map((v) => (
+                <VendorRow key={v.id} v={v} lang={lang} stat={stats.get(v.taxId)} />
+              ))}
+            </ul>
+          </DialogContent>
+        )}
+      </Dialog>
+    </>
   );
 }
 

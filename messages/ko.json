@@ -582,7 +582,11 @@
     "ruleSaved": "규칙을 저장했어요",
     "ruleSavedAuto": "규칙을 저장했어요. 이제 문제없는 서류는 확인 없이 바로 등록돼요",
     "ruleOffer": "{name}: 최근 3번 모두 {category} · {payment}였어요. 앞으로 자동으로 할까요?",
-    "ruleOfferYes": "자동으로 하기"
+    "ruleOfferYes": "자동으로 하기",
+    "view": "보기",
+    "viewFolders": "폴더",
+    "viewList": "목록",
+    "folderCount": "{count}곳"
   },
   "dash": {
     "title": "대시보드",
