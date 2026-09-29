@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(166);
+select plan(168);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -225,6 +225,8 @@ select throws_ok($$ delete from public.branches where no = '09991' $$, '23503', 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select lives_ok($$ update public.branches set color = 'teal' where no = '00000' $$, 'an admin sets a branch colour');
 select throws_ok($$ update public.branches set color = '#ff0000' where no = '00000' $$, '23514', NULL, 'only palette colours');
+select lives_ok($$ update public.branches set closed_days = '{1}' where no = '00000' $$, 'an admin sets the closing weekday (Monday)');
+select throws_ok($$ update public.branches set closed_days = '{7}' where no = '00000' $$, '23514', NULL, 'closing days are weekdays 0-6 only');
 
 -- A mixed receipt keeps each line's category; equipment keeps its depreciation period
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');

@@ -16,6 +16,8 @@ export interface Branch {
   sort: number;
   /** "" = automatic (by order), else a BRANCH_COLORS name */
   color: string;
+  /** Regular closing weekdays, 0 = Sunday … 6 = Saturday */
+  closedDays?: number[];
 }
 
 /** Colours a branch can wear in the switcher: name → [dot / text, soft background] */

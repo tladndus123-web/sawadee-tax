@@ -22,16 +22,17 @@ if (typeof window !== "undefined") {
   } catch {}
 }
 
-const toBranch = (r: { id: string; no: string; name: string; sort: number; color?: string | null }): Branch => ({
+const toBranch = (r: { id: string; no: string; name: string; sort: number; color?: string | null; closed_days?: number[] | null }): Branch => ({
   id: r.id,
   no: r.no,
   name: r.name ?? "",
   sort: Number(r.sort) || 0,
   color: r.color ?? "",
+  closedDays: (r.closed_days ?? []).map(Number),
 });
 
 async function reload() {
-  const { data, error } = await supabaseBrowser().from("branches").select("id, no, name, sort, color");
+  const { data, error } = await supabaseBrowser().from("branches").select("id, no, name, sort, color, closed_days");
   if (error) throw error;
   branches = sortBranches((data ?? []).map(toBranch));
   // A branch that was removed on another device
@@ -76,8 +77,8 @@ export const branchesNow = () => branches;
 export const branchNow = () => selected;
 
 /** Admin only (the database refuses anyone else) */
-export async function saveBranch(b: { id?: string; no: string; name: string; sort?: number; color?: string }) {
-  const row = { no: b.no, name: b.name.trim(), ...(b.sort !== undefined ? { sort: b.sort } : {}), ...(b.color !== undefined ? { color: b.color } : {}) };
+export async function saveBranch(b: { id?: string; no: string; name: string; sort?: number; color?: string; closedDays?: number[] }) {
+  const row = { no: b.no, name: b.name.trim(), ...(b.sort !== undefined ? { sort: b.sort } : {}), ...(b.color !== undefined ? { color: b.color } : {}), ...(b.closedDays !== undefined ? { closed_days: [...new Set(b.closedDays)].sort() } : {}) };
   const q = b.id ? supabaseBrowser().from("branches").update(row).eq("id", b.id).select("id") : supabaseBrowser().from("branches").insert(row).select("id");
   const { data, error } = await q;
   if (error) throw error;

@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { invoiceMonth, NO_DATE } from "@/lib/archive";
 import { ALL } from "@/lib/branches";
-import { useBranch } from "@/lib/branch-store";
+import { useBranch, useBranches } from "@/lib/branch-store";
 import { useCompany } from "@/lib/company-store";
 import { fixedForMonth } from "@/lib/fixed-costs";
 import { useFixedCosts } from "@/lib/fixed-store";
@@ -32,6 +32,7 @@ import { PosImport } from "./PosImport";
 import { type SaleDraft, SaleSheet } from "./SaleSheet";
 import { useChannelLabel } from "./channel-name";
 import { CostCard } from "./CostCard";
+import { SaleCalendar } from "./SaleCalendar";
 import { monthLabor } from "@/lib/cost-control";
 import { useLabor } from "@/lib/labor-store";
 
@@ -51,6 +52,8 @@ export function SalesPage() {
   const branch = useBranch();
   const branchId = branch === ALL ? "" : branch;
   const { sales, loaded } = useSales();
+  const { branches } = useBranches();
+  const shownBranches = useMemo(() => (branch === ALL ? branches : branches.filter((b) => b.id === branch)), [branch, branches]);
   const { entries } = useLedger();
   const { lines: labor } = useLabor();
   const chName = useChannelLabel();
@@ -211,6 +214,18 @@ export function SalesPage() {
 
       {/* Delivery apps: commission and payout (shown once the month has app sales) */}
       {fees.lines.length > 0 && <AppFeesCard f={fees} />}
+
+      {/* Which days the shop's sales are in, per branch; a tap opens that day */}
+      {loaded && (
+        <SaleCalendar
+          month={month}
+          today={today}
+          sales={sales}
+          branches={shownBranches}
+          all={branches}
+          onDay={(id, d) => (d.sale ? void openSale(d.sale) : setOpen({ draft: blank(d.date, id) }))}
+        />
+      )}
 
       {/* Days */}
       <section className="grid gap-2" aria-label={t("sales.days")}>

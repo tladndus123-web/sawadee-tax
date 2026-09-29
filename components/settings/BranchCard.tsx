@@ -3,8 +3,8 @@
 // Admins: the company's branches (สาขา) — number as on tax invoices, and a name. The head office is always there.
 
 import { Loader2, Pencil, Plus, Store, Trash2 } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BranchAvatar, useBranchName } from "@/components/layout/branch-switcher";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,12 @@ export function BranchCard() {
   const { branches, loaded } = useBranches();
   const [editing, setEditing] = useState<Partial<Branch> | null>(null);
   const [busy, setBusy] = useState(false);
+  const locale = useLocale();
+  // Sunday … Saturday (2026-09-06 is a Sunday)
+  const weekdays = useMemo(() => {
+    const f = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" });
+    return Array.from({ length: 7 }, (_, i) => f.format(new Date(Date.UTC(2026, 8, 6 + i))));
+  }, [locale]);
 
   const save = async () => {
     if (!editing) return;
@@ -28,7 +34,7 @@ export function BranchCard() {
     if (!/^\d{5}$/.test(no)) return toast.error(t("badNo"));
     setBusy(true);
     try {
-      await saveBranch({ id: editing.id, no, name: editing.name ?? "", sort: editing.sort ?? branches.length, color: editing.color ?? "" });
+      await saveBranch({ id: editing.id, no, name: editing.name ?? "", sort: editing.sort ?? branches.length, color: editing.color ?? "", closedDays: editing.closedDays ?? [] });
       toast.success(t("saved"));
       setEditing(null);
     } catch (e) {
@@ -67,7 +73,12 @@ export function BranchCard() {
             <li key={b.id} className="flex items-center gap-3 py-2.5">
               <BranchAvatar branch={b} branches={branches} size="size-8" className="text-sm" />
               <span className="mono w-12 flex-none text-xs text-muted-foreground">{b.no}</span>
-              <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{branchLabel(b, names)}</span>
+              <span className="grid min-w-0 flex-1">
+                <span className="truncate text-[15px] font-medium">{branchLabel(b, names)}</span>
+                {!!b.closedDays?.length && (
+                  <span className="text-xs text-muted-foreground">{t("closedShort", { days: b.closedDays.map((d) => weekdays[d]).join(" · ") })}</span>
+                )}
+              </span>
               {isAdmin && (
                 <>
                   <Button type="button" variant="ghost" size="icon" className="size-9" aria-label={t("rename")} disabled={busy} onClick={() => setEditing(b)}>
@@ -135,6 +146,32 @@ export function BranchCard() {
                 );
               })}
             </div>
+          </div>
+          <div className="grid gap-1.5" role="group" aria-label={t("closedDays")}>
+            <span className="text-[11px] text-muted-foreground">{t("closedDays")}</span>
+            <div className="flex flex-wrap gap-1.5">
+              {weekdays.map((w, i) => {
+                const on = (editing.closedDays ?? []).includes(i);
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => {
+                      const now = editing.closedDays ?? [];
+                      setEditing({ ...editing, closedDays: on ? now.filter((d) => d !== i) : [...now, i].sort() });
+                    }}
+                    className={cn(
+                      "press h-9 min-w-11 rounded-full px-3 text-[13px] font-medium ring-1 ring-foreground/10",
+                      on ? "bg-foreground text-background ring-foreground" : "bg-background hover:bg-muted",
+                    )}
+                  >
+                    {w}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] leading-snug text-muted-foreground">{t("closedHint")}</p>
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" className="rounded-full" disabled={busy} onClick={() => setEditing(null)}>

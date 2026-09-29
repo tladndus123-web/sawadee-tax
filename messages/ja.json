@@ -934,7 +934,18 @@
       "robinhood": "Robinhood",
       "other": "その他"
     },
-    "costSubDep": "支払額 {gross} · 減価償却費 {dep} を含む"
+    "costSubDep": "支払額 {gross} · 減価償却費 {dep} を含む",
+    "calTitle": "店舗売上の入力状況",
+    "calHint": "日付をタップするとその日の売上が開きます。抜けている日はすぐ入力できます。",
+    "calMissing": "抜け {count}日",
+    "calAllIn": "抜けなし",
+    "calState": {
+      "sold": "入力済み",
+      "missing": "抜け",
+      "closed": "定休日",
+      "later": "まだ",
+      "before": "記録前"
+    }
   },
   "pos": {
     "button": "POS Excel",
@@ -1097,7 +1108,10 @@
     "combinedHint": "今月の全支店の合計です。下の支店カードを押すとその支店に切り替わります。",
     "open": "この支店に切り替え",
     "color": "色",
-    "allLong": "統合 · 全支店"
+    "allLong": "統合 · 全支店",
+    "closedDays": "定休日",
+    "closedHint": "この曜日は店舗売上がなくても「抜け」に数えません。",
+    "closedShort": "定休 {days}"
   },
   "dep": {
     "label": "償却期間",

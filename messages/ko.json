@@ -934,7 +934,18 @@
       "robinhood": "Robinhood",
       "other": "기타"
     },
-    "costSubDep": "지급 금액 {gross} · 감가상각비 {dep} 포함"
+    "costSubDep": "지급 금액 {gross} · 감가상각비 {dep} 포함",
+    "calTitle": "매장 매출 입력 현황",
+    "calHint": "날짜를 누르면 그날 매출이 열려요. 빠진 날은 바로 입력할 수 있어요.",
+    "calMissing": "빠진 날 {count}일",
+    "calAllIn": "빠진 날 없음",
+    "calState": {
+      "sold": "입력됨",
+      "missing": "빠짐",
+      "closed": "휴무",
+      "later": "아직",
+      "before": "기록 전"
+    }
   },
   "pos": {
     "button": "POS 엑셀",
@@ -1097,7 +1108,10 @@
     "combinedHint": "이번 달 모든 지점을 합친 숫자예요. 아래 지점 카드를 누르면 그 지점 화면으로 바뀌어요.",
     "open": "이 지점으로 전환",
     "color": "색",
-    "allLong": "통합 · 전체 지점"
+    "allLong": "통합 · 전체 지점",
+    "closedDays": "정기 휴무 요일",
+    "closedHint": "이 요일은 매장 매출이 없어도 '빠진 날'로 세지 않아요.",
+    "closedShort": "휴무 {days}"
   },
   "dep": {
     "label": "상각 기간",

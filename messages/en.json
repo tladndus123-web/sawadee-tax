@@ -934,7 +934,18 @@
       "robinhood": "Robinhood",
       "other": "Other"
     },
-    "costSubDep": "Paid {gross} · incl. depreciation {dep}"
+    "costSubDep": "Paid {gross} · incl. depreciation {dep}",
+    "calTitle": "Shop sales entered",
+    "calHint": "Tap a day to open its sales. Missing days can be entered right away.",
+    "calMissing": "{count, plural, one {# day missing} other {# days missing}}",
+    "calAllIn": "No days missing",
+    "calState": {
+      "sold": "Entered",
+      "missing": "Missing",
+      "closed": "Closed",
+      "later": "Not yet",
+      "before": "Before records"
+    }
   },
   "pos": {
     "button": "POS Excel",
@@ -1097,7 +1108,10 @@
     "combinedHint": "This month for every branch added up. Tap a branch card below to switch to it.",
     "open": "Switch to this branch",
     "color": "Colour",
-    "allLong": "Combined · all branches"
+    "allLong": "Combined · all branches",
+    "closedDays": "Regular closing days",
+    "closedHint": "These weekdays are not counted as missing shop sales.",
+    "closedShort": "Closed {days}"
   },
   "dep": {
     "label": "Depreciation period",
