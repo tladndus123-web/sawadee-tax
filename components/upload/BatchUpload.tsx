@@ -210,7 +210,7 @@ export function BatchUpload() {
           {/* While the AI reads, one large indicator above the list */}
           {items.some((it) => it.status === "reading" || it.status === "preparing") && (
             <div className="grid justify-items-center py-2" aria-live="polite">
-              <ReadingLoader size={168} />
+              <ReadingLoader size={118} />
             </div>
           )}
           <ul className="grid gap-3">

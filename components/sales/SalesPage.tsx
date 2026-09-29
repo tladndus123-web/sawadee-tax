@@ -142,7 +142,7 @@ export function SalesPage() {
       {/* The AI reading the closing report */}
       {reading && (
         <div className="grid justify-items-center py-2" aria-live="polite">
-          <ReadingLoader size={150} />
+          <ReadingLoader size={105} />
         </div>
       )}
 
@@ -224,14 +224,13 @@ export function SalesPage() {
           days.slice(0, shown).map((s) => (
             <button key={s.id} type="button" onClick={() => void openSale(s)} className="workspace-panel tap-row flex items-center gap-3 p-4 text-left">
               <span className="grid min-w-0 flex-1 gap-0.5">
-                <span className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">
-                  {sd(s.date)}
-                  <ChannelChip channel={s.channel} label={chName(s.channel)} />
-                </span>
+                <span className="text-[15px] font-semibold">{sd(s.date)}</span>
                 <span className="text-xs text-muted-foreground">
                   {[s.docFrom && `${s.docFrom} – ${s.docTo}`, s.bills ? t("sales.billsN", { count: s.bills }) : ""].filter(Boolean).join(" · ") || "—"}
                 </span>
               </span>
+              {/* The channel sits on the right, next to its amount */}
+              <ChannelChip channel={s.channel} label={chName(s.channel)} />
               <span className="grid text-right">
                 <span className="text-[15px] font-semibold tabular-nums">{baht(s.gross)}</span>
                 <span className="text-xs text-muted-foreground tabular-nums">VAT {baht(s.vat)}</span>
@@ -283,6 +282,6 @@ function Fact({ label, value, sub, tone }: { label: string; value: string; sub: 
 
 function ChannelChip({ channel, label }: { channel: Channel; label: string }) {
   return (
-    <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", channel === "store" ? "bg-brand-soft text-brand" : "bg-muted text-foreground")}>{label}</span>
+    <span className={cn("max-w-[7rem] flex-none truncate rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap", channel === "store" ? "bg-brand-soft text-brand" : "bg-muted text-foreground")}>{label}</span>
   );
 }
