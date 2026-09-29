@@ -4,12 +4,17 @@
 //   npx.cmd tsx scripts/backup.ts D:\somewhere     → that folder instead
 // Reads .env.deploy (SUPABASE_PROJECT_REF, SUPABASE_SERVICE_ROLE_KEY). Prints no secrets. Safe to run again.
 // Keep the backup folder private: it holds the company's books.
+// - The tables are found in supabase/migrations ("create table public.…"), so a new table is backed up without
+//   touching this file (lib/backup-tables.ts, tested).
+// - One table failing does not stop the others; the run still ends with an error so the log shows it.
+// - The newest 12 runs are kept; older run folders are removed (photos are never removed).
 
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
+import { runsToRemove, tablesOf } from "../lib/backup-tables";
 
 config({ path: ".env.deploy", quiet: true });
 const clean = (v?: string) => (v ?? "").replace(/\s+/g, "");
@@ -26,18 +31,13 @@ mkdirSync(photoDir, { recursive: true });
 
 const db = createClient(`https://${ref}.supabase.co`, key, { auth: { persistSession: false } });
 
-/** Everything the books are made of (one-time LINE link codes are left out: they expire in minutes) */
-const TABLES = [
-  "company_settings",
-  "members",
-  "vendors",
-  "documents",
-  "document_items",
-  "document_events",
-  "document_purges",
-  "month_locks",
-  "line_messages",
-];
+const MIGRATIONS = "supabase/migrations";
+const TABLES = tablesOf(
+  readdirSync(MIGRATIONS)
+    .filter((f) => f.endsWith(".sql"))
+    .map((f) => readFileSync(join(MIGRATIONS, f), "utf8")),
+);
+const KEEP_RUNS = 12;
 
 async function all(table: string) {
   const rows: unknown[] = [];
@@ -66,10 +66,15 @@ async function listPhotos(prefix = ""): Promise<string[]> {
 
 async function main() {
   const counts: Record<string, number> = {};
+  const failed: string[] = [];
   for (const t of TABLES) {
-    const rows = await all(t);
-    counts[t] = rows.length;
-    writeFileSync(join(runDir, `${t}.json`), JSON.stringify(rows, null, 1));
+    try {
+      const rows = await all(t);
+      counts[t] = rows.length;
+      writeFileSync(join(runDir, `${t}.json`), JSON.stringify(rows, null, 1));
+    } catch (e) {
+      failed.push(e instanceof Error ? e.message : String(e));
+    }
   }
 
   const photos = await listPhotos();
@@ -94,11 +99,22 @@ async function main() {
       "",
       ...Object.entries(counts).map(([t, n]) => `${t}: ${n}`),
       `photos: ${photos.length} (${fresh} new this time)`,
+      ...(failed.length ? ["", "NOT BACKED UP:", ...failed] : []),
     ].join("\n"),
   );
   console.log(`Backup saved to ${runDir}`);
   for (const [t, n] of Object.entries(counts)) console.log(`  ${t}: ${n}`);
   console.log(`  photos: ${photos.length} (${fresh} new) in ${photoDir}`);
+
+  // Keep the newest runs (photos stay)
+  const runs = readdirSync(root, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
+  for (const old of runsToRemove(runs, KEEP_RUNS)) {
+    rmSync(join(root, old), { recursive: true, force: true });
+    console.log(`  removed old run ${old}`);
+  }
+  if (failed.length) throw new Error(`not backed up: ${failed.join("; ")}`);
 }
 
 main().catch((e) => {
