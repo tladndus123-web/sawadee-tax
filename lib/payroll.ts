@@ -270,3 +270,9 @@ export function annualDeadlines(year: number): { cert50: string; pnd1a: string }
   const last = new Date(Date.UTC(year + 1, 2, 0)).getUTCDate();
   return { cert50: nextWorkingDay(`${feb}-15`), pnd1a: nextWorkingDay(`${feb}-${last}`) };
 }
+
+/** On the staff for any day of the month (started on or before its last day, not left before its first) */
+export function employedInMonth(e: Pick<Employee, "startDate" | "endDate">, month: string): boolean {
+  const last = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
+  return (!e.startDate || e.startDate <= last) && (!e.endDate || e.endDate >= `${month}-01`);
+}

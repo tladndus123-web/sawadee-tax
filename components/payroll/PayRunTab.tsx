@@ -20,7 +20,7 @@ import { useCompany } from "@/lib/company-store";
 import { refreshLabor } from "@/lib/labor-store";
 import { fmt } from "@/lib/money";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
-import { daysNotEmployed, type Employee, EMPTY_PERIOD, type LineRates, lineRates, monthPay, payrollSettingsOf, type PeriodInput, sameRates, timesText } from "@/lib/payroll";
+import { daysNotEmployed, type Employee, employedInMonth, EMPTY_PERIOD, type LineRates, lineRates, monthPay, payrollSettingsOf, type PeriodInput, sameRates, timesText } from "@/lib/payroll";
 import { loadAllowanceNames, loadPayroll, loadPayrollChecks, type PayrollCheck, type PayrollLineRow, savePayrollMonth, setPayrollCheck, useEmployees } from "@/lib/payroll-store";
 import { cn } from "@/lib/utils";
 import { OtSettings } from "./OtSettings";
@@ -34,9 +34,8 @@ type Row = { first: PeriodInput; second: PeriodInput; allowances: AllowanceRow[]
 type Inputs = Record<string, Row>;
 const EMPTY_ROW: Row = { first: EMPTY_PERIOD, second: EMPTY_PERIOD, allowances: [] };
 
-const lastDay = (month: string) => new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
 /** Employed at some point in the month */
-export const inMonth = (e: Employee, month: string) => (!e.startDate || e.startDate <= lastDay(month)) && (!e.endDate || e.endDate >= `${month}-01`);
+export const inMonth = (e: Employee, month: string) => employedInMonth(e, month);
 
 export function PayRunTab({ month }: { month: string }) {
   const t = useTranslations("pay");

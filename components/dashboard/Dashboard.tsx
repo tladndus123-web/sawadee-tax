@@ -31,6 +31,7 @@ import { ActivityList } from "./ActivityList";
 import { BranchTable } from "./BranchTable";
 import { TeamCard } from "./TeamCard";
 import { UncheckedList } from "./UncheckedList";
+import { MonthCloseCard } from "./MonthCloseCard";
 import { useDocName } from "@/components/ledger/doc-name";
 import { VatCard } from "./VatCard";
 import { monthLabor } from "@/lib/cost-control";
@@ -119,6 +120,9 @@ export function Dashboard() {
       )}
 
       {/* The office's in-tray: what staff and the LINE bot saved and nobody has looked at */}
+      {/* The month to close next and what is left in it */}
+      {isAdmin && <MonthCloseCard />}
+
       {isAdmin && <UncheckedList />}
 
       {/* What owners watch first: food, labour and rent against sales (FL / FLR) */}

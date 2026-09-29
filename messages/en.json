@@ -1479,5 +1479,17 @@
     "abbr": "Abbreviated",
     "receipt": "Receipt",
     "other": "Other"
+  },
+  "close": {
+    "title": "Close {month}",
+    "left": "{count, plural, one {# thing left before closing} other {# things left before closing}}",
+    "ready": "Ready to close",
+    "docs": "{count, plural, one {# document to check} other {# documents to check}}",
+    "docsDone": "Documents checked",
+    "sales": "{count, plural, one {# day of shop sales missing} other {# days of shop sales missing}}",
+    "salesDone": "Sales all entered",
+    "pay": "{count, plural, one {Pay of # person to check} other {Pay of # people to check}}",
+    "payDone": "Pay checked",
+    "warn": "{count, plural, one {# thing is still open.} other {# things are still open.}} Close the month anyway?"
   }
 }

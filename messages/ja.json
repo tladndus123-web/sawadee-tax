@@ -1479,5 +1479,17 @@
     "abbr": "簡易",
     "receipt": "領収書",
     "other": "その他"
+  },
+  "close": {
+    "title": "{month}の締め",
+    "left": "締めまで残り {count}件",
+    "ready": "締めの準備完了",
+    "docs": "確認する書類 {count}件",
+    "docsDone": "書類の確認完了",
+    "sales": "店舗売上の抜け {count}日",
+    "salesDone": "売上の入力完了",
+    "pay": "給与の確認 残り{count}人",
+    "payDone": "給与の確認完了",
+    "warn": "まだ残りが {count}件あります。それでも締めますか？"
   }
 }

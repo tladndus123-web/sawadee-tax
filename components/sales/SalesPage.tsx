@@ -5,7 +5,7 @@
 
 import { Camera, ChevronDown, FileSpreadsheet, FileText, Keyboard, Loader2, Table2, TrendingUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useScreenDate } from "@/components/ScreenDate";
 import { ReadingLoader } from "@/components/upload/ReadingLoader";
@@ -59,6 +59,11 @@ export function SalesPage() {
   const chName = useChannelLabel();
   const today = todayBangkok();
   const [month, setMonth] = useState(today.slice(0, 7));
+  // A link can open the page at a month (/…?month=2026-08, from the closing checklist)
+  useEffect(() => {
+    const m = new URLSearchParams(window.location.search).get("month");
+    if (m && /^\d{4}-\d{2}$/.test(m)) setMonth(m);
+  }, []);
   // Only the first days are drawn (a busy month has 100+ lines); "more" adds a page at a time
   const [shown, setShown] = useState(PAGE);
   const [open, setOpen] = useState<Open | null>(null);

@@ -4,7 +4,7 @@
 // refuses them too (RLS).
 
 import { useLocale, useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { monthDate } from "@/lib/archive";
 import { useEmployees } from "@/lib/payroll-store";
 import { useMe } from "@/lib/role-store";
@@ -26,6 +26,11 @@ export function PayrollPage() {
   const [tab, setTab] = useState<Tab | null>(null);
   const today = todayBangkok().slice(0, 7);
   const [month, setMonth] = useState(today);
+  // A link can open the page at a month (/…?month=2026-08, from the closing checklist)
+  useEffect(() => {
+    const m = new URLSearchParams(window.location.search).get("month");
+    if (m && /^\d{4}-\d{2}$/.test(m)) setMonth(m);
+  }, []);
   // This month and the 12 before it
   const months = useMemo(
     () => Array.from({ length: 13 }, (_, i) => new Date(Date.UTC(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1 - i, 1)).toISOString().slice(0, 7)),

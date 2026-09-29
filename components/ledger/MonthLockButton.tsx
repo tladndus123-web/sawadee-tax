@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { closeMonth, reopenMonth } from "@/lib/month-lock-store";
 
 /** Admin: close a filed tax month (asks first), or reopen it */
-export function MonthLockButton({ month, label, locked }: { month: string; label: string; locked: boolean }) {
+export function MonthLockButton({ month, label, locked, note, primary }: { month: string; label: string; locked: boolean; note?: string; primary?: boolean }) {
   const t = useTranslations("lock");
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -45,7 +45,12 @@ export function MonthLockButton({ month, label, locked }: { month: string; label
 
   return (
     <>
-      <Button type="button" variant="ghost" className="h-9 rounded-full px-3 text-muted-foreground" onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        variant={primary ? "default" : "ghost"}
+        className={primary ? "h-10 rounded-full px-4" : "h-9 rounded-full px-3 text-muted-foreground"}
+        onClick={() => setOpen(true)}
+      >
         <Lock className="size-4" />
         {t("close")}
       </Button>
@@ -54,6 +59,7 @@ export function MonthLockButton({ month, label, locked }: { month: string; label
           <AlertDialogHeader>
             <AlertDialogTitle>{t("confirmTitle", { month: label })}</AlertDialogTitle>
             <AlertDialogDescription>{t("confirmDesc")}</AlertDialogDescription>
+            {note && <p className="rounded-xl bg-warn-soft px-3 py-2 text-sm font-medium text-warn">{note}</p>}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-full">{t("cancel")}</AlertDialogCancel>
