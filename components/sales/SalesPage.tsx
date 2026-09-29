@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useScreenDate } from "@/components/ScreenDate";
+import { ReadingLoader } from "@/components/upload/ReadingLoader";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
@@ -137,6 +138,13 @@ export function SalesPage() {
           />
         </div>
       </header>
+
+      {/* The AI reading the closing report */}
+      {reading && (
+        <div className="grid justify-items-center py-2" aria-live="polite">
+          <ReadingLoader size={150} />
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold">{monthLabel(month)}</h2>

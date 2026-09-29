@@ -585,6 +585,91 @@
   to { opacity: 0; }
 }
 
+/* "AI is reading" loader (components/upload/ReadingLoader): a black disc, a turning inner glow, letters lighting up */
+.reading-loader {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, #1c1c22 0%, #0b0b0f 70%);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 28%), inset 0 0 0 1px rgb(255 255 255 / 6%);
+  color: #fff;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  user-select: none;
+  isolation: isolate;
+}
+
+.reading-loader-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  animation: reading-loader-rotate 2s linear infinite;
+  z-index: 0;
+}
+
+.reading-loader-letter {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  opacity: 0.4;
+  white-space: pre;
+  animation: reading-loader-letter 2s infinite;
+}
+
+@keyframes reading-loader-rotate {
+  0% {
+    transform: rotate(90deg);
+    box-shadow: 0 10px 20px 0 #fff inset, 0 20px 30px 0 #ad5fff inset, 0 60px 60px 0 #471eec inset;
+  }
+  50% {
+    transform: rotate(270deg);
+    box-shadow: 0 10px 20px 0 #fff inset, 0 20px 10px 0 #d60a47 inset, 0 40px 60px 0 #311e80 inset;
+  }
+  100% {
+    transform: rotate(450deg);
+    box-shadow: 0 10px 20px 0 #fff inset, 0 20px 30px 0 #ad5fff inset, 0 60px 60px 0 #471eec inset;
+  }
+}
+
+@keyframes reading-loader-letter {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  40% {
+    opacity: 0.7;
+    transform: translateY(0);
+  }
+}
+
+/* Small thumbnails: the same glow, scaled down */
+.reading-loader-sm .reading-loader-ring {
+  animation-name: reading-loader-rotate-sm;
+}
+
+@keyframes reading-loader-rotate-sm {
+  0% {
+    transform: rotate(90deg);
+    box-shadow: 0 4px 7px 0 #fff inset, 0 7px 10px 0 #ad5fff inset, 0 20px 20px 0 #471eec inset;
+  }
+  50% {
+    transform: rotate(270deg);
+    box-shadow: 0 4px 7px 0 #fff inset, 0 7px 4px 0 #d60a47 inset, 0 14px 20px 0 #311e80 inset;
+  }
+  100% {
+    transform: rotate(450deg);
+    box-shadow: 0 4px 7px 0 #fff inset, 0 7px 10px 0 #ad5fff inset, 0 20px 20px 0 #471eec inset;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;

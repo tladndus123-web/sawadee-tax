@@ -34,6 +34,7 @@ import { monthKey } from "@/lib/archive";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { ContinuousCamera } from "./ContinuousCamera";
 import { MaxNotice } from "./MaxNotice";
+import { ReadingLoader } from "./ReadingLoader";
 import { UploadTips } from "./UploadTips";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,application/pdf,.pdf";
@@ -206,6 +207,12 @@ export function BatchUpload() {
               <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${(settled / items.length) * 100}%` }} />
             </div>
           </div>
+          {/* While the AI reads, one large indicator above the list */}
+          {items.some((it) => it.status === "reading" || it.status === "preparing") && (
+            <div className="grid justify-items-center py-2" aria-live="polite">
+              <ReadingLoader size={168} />
+            </div>
+          )}
           <ul className="grid gap-3">
             {items.map((it) => (
               <Row
@@ -266,7 +273,11 @@ function Row({
           // eslint-disable-next-line @next/next/no-img-element -- blob URL
           <img src={it.preview} alt="" className="size-full object-cover" />
         )}
-        {busy && <span className="absolute inset-0 grid place-items-center bg-black/25"><Loader2 className="size-5 animate-spin text-white" aria-hidden /></span>}
+        {busy && (
+          <span className="absolute inset-0 grid place-items-center bg-black/55">
+            <ReadingLoader size={44} word={false} className="reading-loader-sm" />
+          </span>
+        )}
       </div>
 
       <div className="min-w-0 flex-1">

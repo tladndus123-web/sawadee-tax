@@ -354,7 +354,8 @@
     "dupLedger": "Same photo as a document in the ledger ({no}). Stopped before the AI read it (no cost).",
     "dupDraft": "Same photo as a draft ({no}). Stopped before the AI read it (no cost).",
     "dupQueue": "The same photo is already in this list. Stopped before the AI read it (no cost).",
-    "dupRemove": "Remove"
+    "dupRemove": "Remove",
+    "loaderWord": "Reading"
   },
   "role": {
     "admin": "Admin",
