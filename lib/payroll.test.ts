@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { annualDeadlines, DEFAULT_PAYROLL, type Employee, EMPTY_PERIOD, incomeTax, monthlyWithholding, daysNotEmployed, maskId, monthPay, payrollFiling, payrollSettingsOf, periodPay, socialSecurity, taxableIncome } from "./payroll";
+import { annualDeadlines, DEFAULT_PAYROLL, type Employee, EMPTY_PERIOD, incomeTax, LEGAL_OT, lineRates, otRatesOf, monthlyWithholding, daysNotEmployed, maskId, monthPay, payrollFiling, payrollSettingsOf, periodPay, socialSecurity, taxableIncome } from "./payroll";
 
 const emp = (p: Partial<Employee> = {}): Employee => ({
   id: "e",
@@ -36,6 +36,16 @@ describe("pay per period", () => {
     const m = periodPay(emp({ rate: 24000 }), period({ otHours: 2, holidayHours: 8 })); // 100/h
     expect([m.overtime, m.holiday]).toEqual([300, 800]);
   });
+  it("the company may pay higher multiples, never lower than the law", () => {
+    const x = lineRates(otRatesOf({ ot: 2, holidayMonthly: 0.5, holidayDaily: 2.5, holidayOt: "4" }), "daily");
+    expect(x).toEqual({ ot: 2, holiday: 2.5, holidayOt: 3 });
+    const d = periodPay(emp({ payType: "daily", rate: 400 }), period({ otHours: 4, holidayHours: 8, holidayOtHours: 2 }), x); // 50/h
+    expect([d.overtime, d.holiday, d.holidayOvertime]).toEqual([400, 1000, 300]);
+    expect(otRatesOf({ ot: 99, holidayOt: 3.333 })).toEqual({ ot: 10, holidayMonthly: 1, holidayDaily: 2, holidayOt: 3.33 });
+    expect(payrollSettingsOf({}).ot).toEqual(LEGAL_OT);
+    const s = { ...DEFAULT_PAYROLL, ot: { ...LEGAL_OT, ot: 2 } };
+    expect(monthPay(emp({ rate: 24000 }), period({ otHours: 2 }), EMPTY_PERIOD, s).first.overtime).toBe(400); // 100/h × 2 × 2
+  });
   it("bonus and allowance are pay but not social-security wages", () => {
     const p = periodPay(emp(), period({ bonus: 2000, allowance: 500 }));
     expect([p.wages, p.gross]).toEqual([9000, 11500]);
@@ -50,7 +60,7 @@ describe("social security (2026: 5 % of 1,650–17,500)", () => {
     expect(socialSecurity(0, DEFAULT_PAYROLL)).toBe(0);
   });
   it("the company's settings when sane", () => {
-    expect(payrollSettingsOf({ ssCeiling: 20000, ssRate: "x", ssAccount: "10-0012345-6" })).toEqual({ ssRate: 5, ssFloor: 1650, ssCeiling: 20000, ssAccount: "1000123456" });
+    expect(payrollSettingsOf({ ssCeiling: 20000, ssRate: "x", ssAccount: "10-0012345-6" })).toEqual({ ssRate: 5, ssFloor: 1650, ssCeiling: 20000, ssAccount: "1000123456", ot: LEGAL_OT });
   });
 });
 

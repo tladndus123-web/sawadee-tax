@@ -7,7 +7,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { allowanceTotal, type AllowanceRow, customNames, parseAllowances, type SavedAllowance, savedFromRows } from "./allowances";
 import { parseDocuments } from "./attendance";
-import { type Employee, EMPTY_PERIOD, monthPay, type PayrollSettings, type PeriodInput } from "./payroll";
+import { type Employee, EMPTY_PERIOD, LEGAL_OT, type LineRates, lineRates, monthPay, type PayrollSettings, type PeriodInput } from "./payroll";
 import { supabaseBrowser } from "./supabase/client";
 
 type EmpRow = {
@@ -128,6 +128,8 @@ export interface PayrollLineRow extends PeriodInput {
   paidOn: string;
   /** What `allowance` is made of (empty on lines saved before names existed) */
   allowances: SavedAllowance[];
+  /** The overtime multiples it was paid with */
+  rates: LineRates;
 }
 
 export async function loadPayroll(opts: { month?: string; year?: string } = {}): Promise<PayrollLineRow[]> {
@@ -136,29 +138,35 @@ export async function loadPayroll(opts: { month?: string; year?: string } = {}):
   if (opts.year) q = q.like("month", `${opts.year}-%`);
   const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []).map((r) => ({
-    employeeId: r.employee_id,
-    branchId: r.branch_id,
-    month: r.month,
-    period: r.period,
-    payType: r.pay_type === "daily" ? "daily" : "monthly",
-    rate: Number(r.rate) || 0,
-    daysWorked: Number(r.days_worked) || 0,
-    absentDays: Number(r.absent_days) || 0,
-    otHours: Number(r.ot_hours) || 0,
-    holidayHours: Number(r.holiday_hours) || 0,
-    holidayOtHours: Number(r.holiday_ot_hours) || 0,
-    bonus: Number(r.bonus) || 0,
-    allowance: Number(r.allowance) || 0,
-    otherDeduction: Number(r.other_deduction) || 0,
-    gross: Number(r.gross) || 0,
-    ssEmployee: Number(r.ss_employee) || 0,
-    ssEmployer: Number(r.ss_employer) || 0,
-    wht: Number(r.wht) || 0,
-    net: Number(r.net) || 0,
-    paidOn: r.paid_on ?? "",
-    allowances: parseAllowances(r.allowances),
-  }));
+  return (data ?? []).map((r) => {
+    const payType = r.pay_type === "daily" ? "daily" : "monthly";
+    const legal = lineRates(LEGAL_OT, payType);
+    const rate = (v: unknown, fallback: number) => (v === null || v === undefined ? fallback : Number(v) || fallback);
+    return {
+      employeeId: r.employee_id,
+      branchId: r.branch_id,
+      month: r.month,
+      period: r.period,
+      payType,
+      rate: Number(r.rate) || 0,
+      daysWorked: Number(r.days_worked) || 0,
+      absentDays: Number(r.absent_days) || 0,
+      otHours: Number(r.ot_hours) || 0,
+      holidayHours: Number(r.holiday_hours) || 0,
+      holidayOtHours: Number(r.holiday_ot_hours) || 0,
+      bonus: Number(r.bonus) || 0,
+      allowance: Number(r.allowance) || 0,
+      otherDeduction: Number(r.other_deduction) || 0,
+      gross: Number(r.gross) || 0,
+      ssEmployee: Number(r.ss_employee) || 0,
+      ssEmployer: Number(r.ss_employer) || 0,
+      wht: Number(r.wht) || 0,
+      net: Number(r.net) || 0,
+      paidOn: r.paid_on ?? "",
+      allowances: parseAllowances(r.allowances),
+      rates: { ot: rate(r.ot_rate, legal.ot), holiday: rate(r.holiday_rate, legal.holiday), holidayOt: rate(r.holiday_ot_rate, legal.holidayOt) },
+    } satisfies PayrollLineRow;
+  });
 }
 
 const lastDay = (month: string) => new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
@@ -174,6 +182,7 @@ export async function savePayrollMonth(month: string, input: { employee: Employe
     const first = allowances ? { ...f, allowance: allowanceTotal(allowances, "first") } : f;
     const second = allowances ? { ...g, allowance: allowanceTotal(allowances, "second") } : g;
     const m = monthPay(e, first, second, s);
+    const x = lineRates(s.ot ?? LEGAL_OT, e.payType);
     const line = (period: 1 | 2, p: PeriodInput) => ({
       employee_id: e.id,
       branch_id: e.branchId,
@@ -196,6 +205,9 @@ export async function savePayrollMonth(month: string, input: { employee: Employe
       net: period === 1 ? m.netFirst : m.netSecond,
       paid_on: period === 1 ? `${month}-15` : lastDay(month),
       allowances: savedFromRows(allowances ?? [], period === 1 ? "first" : "second"),
+      ot_rate: x.ot,
+      holiday_rate: x.holiday,
+      holiday_ot_rate: x.holidayOt,
     });
     return [line(1, first ?? EMPTY_PERIOD), line(2, second ?? EMPTY_PERIOD)];
   });

@@ -20,9 +20,10 @@ import { useCompany } from "@/lib/company-store";
 import { refreshLabor } from "@/lib/labor-store";
 import { fmt } from "@/lib/money";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
-import { daysNotEmployed, type Employee, EMPTY_PERIOD, monthPay, payrollSettingsOf, type PeriodInput } from "@/lib/payroll";
+import { daysNotEmployed, type Employee, EMPTY_PERIOD, type LineRates, lineRates, monthPay, payrollSettingsOf, type PeriodInput, sameRates, timesText } from "@/lib/payroll";
 import { loadAllowanceNames, loadPayroll, loadPayrollChecks, type PayrollCheck, type PayrollLineRow, savePayrollMonth, setPayrollCheck, useEmployees } from "@/lib/payroll-store";
 import { cn } from "@/lib/utils";
+import { OtSettings } from "./OtSettings";
 
 // Row: the pay figures, then the office check (a column on a computer, a strip under the figures on a phone)
 const ROW = "grid sm:grid-cols-[minmax(0,1fr)_12.5rem]";
@@ -53,6 +54,8 @@ export function PayRunTab({ month }: { month: string }) {
   const [checking, setChecking] = useState<string | null>(null);
   // Allowance names typed on earlier pay runs (offered in the list)
   const [typedNames, setTypedNames] = useState<string[]>([]);
+  // The overtime multiples each saved person was paid with (to say when the settings have changed since)
+  const [savedRates, setSavedRates] = useState<Map<string, LineRates>>(new Map());
   useEffect(() => void loadAllowanceNames().then(setTypedNames, () => {}), []);
   const locale = useLocale();
 
@@ -83,6 +86,7 @@ export function PayRunTab({ month }: { month: string }) {
         }
         setInputs(next);
         setSaved(new Set(lines.map((l) => l.employeeId)));
+        setSavedRates(new Map(lines.map((l) => [l.employeeId, l.rates])));
         setChecks(found);
         setDirty(false);
         setReady(true);
@@ -161,6 +165,7 @@ export function PayRunTab({ month }: { month: string }) {
       );
       await refreshLabor();
       setSaved(new Set(staff.map((e) => e.id)));
+      setSavedRates(new Map(staff.map((e) => [e.id, lineRates(settings.ot, e.payType)])));
       // Changed figures lost their check in the database
       setChecks(await loadPayrollChecks(month).catch(() => new Map()));
       void loadAllowanceNames().then(setTypedNames, () => {});
@@ -189,6 +194,7 @@ export function PayRunTab({ month }: { month: string }) {
   const day = new Intl.DateTimeFormat(locale, { month: "numeric", day: "numeric" });
   const stamp = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
   const checkedCount = staff.filter((e) => checks.has(e.id)).length;
+  const stale = staff.some((e) => savedRates.has(e.id) && !sameRates(savedRates.get(e.id)!, lineRates(settings.ot, e.payType)));
 
   if (!loaded || !ready || !company.loaded) return <Loader2 className="mx-auto my-10 size-5 animate-spin text-muted-foreground" aria-hidden />;
   if (staff.length === 0) return <p className="workspace-panel px-5 py-10 text-center text-sm text-muted-foreground">{t("noStaffThisMonth")}</p>;
@@ -201,6 +207,7 @@ export function PayRunTab({ month }: { month: string }) {
           {t("locked")}
         </p>
       )}
+      {stale && !locked && <p className="rounded-2xl bg-warn-soft px-4 py-3 text-sm text-warn">{t("otStale")}</p>}
       <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
         <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">{t("checkHint")}</p>
         <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums", checkedCount === staff.length ? "bg-ok-soft text-ok" : "bg-muted text-muted-foreground")}>
@@ -291,7 +298,7 @@ export function PayRunTab({ month }: { month: string }) {
               </div>
               {isOpen && (
                 <div className="sm:col-span-2">
-                  <PeriodGrid employee={e} row={rowOf(e.id)} pay={m} disabled={locked} typedNames={typedNames} onSet={(half, k, v) => set(e.id, half, k, v)} onAllowances={(list) => setAllowances(e.id, list)} />
+                  <PeriodGrid employee={e} row={rowOf(e.id)} pay={m} rates={lineRates(settings.ot, e.payType)} disabled={locked} typedNames={typedNames} onSet={(half, k, v) => set(e.id, half, k, v)} onAllowances={(list) => setAllowances(e.id, list)} />
                 </div>
               )}
             </li>
@@ -338,6 +345,7 @@ export function PayRunTab({ month }: { month: string }) {
           {t("saveRun")}
         </Button>
       </div>
+      <OtSettings />
     </div>
   );
 }
@@ -346,6 +354,7 @@ function PeriodGrid({
   employee: e,
   row,
   pay,
+  rates,
   disabled,
   typedNames,
   onSet,
@@ -354,6 +363,7 @@ function PeriodGrid({
   employee: Employee;
   row: Row;
   pay: ReturnType<typeof monthPay>;
+  rates: LineRates;
   disabled: boolean;
   typedNames: string[];
   onSet: (half: "first" | "second", k: keyof PeriodInput, v: number) => void;
@@ -362,9 +372,9 @@ function PeriodGrid({
   const t = useTranslations("pay");
   const fields: { k: keyof PeriodInput; label: string; kind: "qty" | "money" }[] = [
     e.payType === "daily" ? { k: "daysWorked", label: t("daysWorked"), kind: "qty" } : { k: "absentDays", label: t("absentDays"), kind: "qty" },
-    { k: "otHours", label: t("otHours"), kind: "qty" },
-    { k: "holidayHours", label: t("holidayHours"), kind: "qty" },
-    { k: "holidayOtHours", label: t("holidayOtHours"), kind: "qty" },
+    { k: "otHours", label: t("otHours", { rate: timesText(rates.ot) }), kind: "qty" },
+    { k: "holidayHours", label: t("holidayHours", { rate: timesText(rates.holiday) }), kind: "qty" },
+    { k: "holidayOtHours", label: t("holidayOtHours", { rate: timesText(rates.holidayOt) }), kind: "qty" },
     { k: "bonus", label: t("bonus"), kind: "money" },
     { k: "otherDeduction", label: t("otherDeduction"), kind: "money" },
   ];

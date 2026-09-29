@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ATTENDANCE_KINDS, type AttendanceKind, type AttendanceRow, daysOfMonth, leaveBalance } from "@/lib/attendance";
 import { fillWorked, loadAttendance, saveAttendance } from "@/lib/attendance-store";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
-import type { Employee } from "@/lib/payroll";
+import { useCompany } from "@/lib/company-store";
+import { type Employee, payrollSettingsOf, timesText } from "@/lib/payroll";
 import { useEmployees } from "@/lib/payroll-store";
 import { THAI_HOLIDAYS } from "@/lib/thai-holidays";
 import { todayBangkok } from "@/lib/thai-tax";
@@ -186,6 +187,7 @@ function DaySheet({ employee, day, current, onDone }: { employee: Employee; day:
   const locale = useLocale();
   const [kind, setKind] = useState<AttendanceKind>(current?.kind ?? "work");
   const [ot, setOt] = useState(current?.otHours ?? 0);
+  const rates = payrollSettingsOf(useCompany().payrollSettings).ot;
   const [busy, setBusy] = useState(false);
   const dayText = new Intl.DateTimeFormat(locale, { month: "long", day: "numeric", weekday: "short", timeZone: "UTC" }).format(new Date(`${day}T00:00:00Z`));
   const holiday = THAI_HOLIDAYS.has(day);
@@ -225,7 +227,7 @@ function DaySheet({ employee, day, current, onDone }: { employee: Employee; day:
       </div>
       {kind === "work" && (
         <label className="grid gap-1">
-          <span className="text-xs text-muted-foreground">{holiday ? t("otHoursHoliday") : t("otHoursDay")}</span>
+          <span className="text-xs text-muted-foreground">{holiday ? t("otHoursHoliday", { rate: timesText(rates.holidayOt) }) : t("otHoursDay", { rate: timesText(rates.ot) })}</span>
           <MoneyInput kind="qty" className="h-10 bg-background text-right" value={ot} onChange={(v) => setOt(Math.max(0, Math.min(24, Number(v) || 0)))} />
         </label>
       )}

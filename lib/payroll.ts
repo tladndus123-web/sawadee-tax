@@ -2,7 +2,8 @@
 // security and withholding tax are worked out for the month and taken from the month-end payment.
 // - Hourly rate: monthly pay ÷ 30 ÷ 8, or daily pay ÷ 8 (Labour Protection Act).
 // - Overtime on a working day ×1.5; work on a holiday ×1 extra for monthly staff (the day is already paid) or ×2 for
-//   daily staff; overtime on a holiday ×3.
+//   daily staff; overtime on a holiday ×3. These are the legal minimums: the company may set higher ones in the payroll
+//   settings (owner's request 2026-09-29), never lower. Each saved pay line keeps the multiples it was paid with.
 // - Social security (ประกันสังคม มาตรา 33): the same rate from employee and employer on wages between a floor and a
 //   ceiling — 5 % of 1,650–17,500 in 2026 (at most 875 each). Settings, because the ceiling is being raised in steps.
 // - Withholding tax (ภ.ง.ด.1), the Revenue Department's monthly method: this month's regular pay ×12 as the year's
@@ -63,14 +64,53 @@ export interface PayrollSettings {
   ssCeiling: number;
   /** The employer's social security account number (เลขที่บัญชีนายจ้าง, 10 digits) for สปส.1-10 */
   ssAccount: string;
+  /** Overtime multiples the company pays (at least the legal ones) */
+  ot: OtRates;
 }
-export const DEFAULT_PAYROLL: PayrollSettings = { ssRate: 5, ssFloor: 1650, ssCeiling: 17500, ssAccount: "" };
+
+/** Overtime multiples of the hourly pay */
+export interface OtRates {
+  /** Overtime on a working day */
+  ot: number;
+  /** Work on a holiday, monthly staff (on top of the day already in the salary) */
+  holidayMonthly: number;
+  /** Work on a holiday, daily staff */
+  holidayDaily: number;
+  /** Overtime on a holiday */
+  holidayOt: number;
+}
+/** Labour Protection Act minimums */
+export const LEGAL_OT: OtRates = { ot: 1.5, holidayMonthly: 1, holidayDaily: 2, holidayOt: 3 };
+const OT_MAX = 10;
+
+/** The multiples one pay line uses (holiday work depends on the pay type) */
+export interface LineRates {
+  ot: number;
+  holiday: number;
+  holidayOt: number;
+}
+/** A multiple as people write it: 1.5, 2, 3.25 */
+export const timesText = (n: number) => String(Math.round(n * 100) / 100);
+export const sameRates = (a: LineRates, b: LineRates) => a.ot === b.ot && a.holiday === b.holiday && a.holidayOt === b.holidayOt;
+export const lineRates = (r: OtRates, payType: PayType): LineRates => ({ ot: r.ot, holiday: payType === "monthly" ? r.holidayMonthly : r.holidayDaily, holidayOt: r.holidayOt });
+
+/** Stored multiples → at least the legal ones, at most ×10, 2 decimals */
+export function otRatesOf(raw: unknown): OtRates {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const one = (k: keyof OtRates) => {
+    const v = r[k];
+    return typeof v === "number" && Number.isFinite(v) ? Math.min(OT_MAX, Math.max(LEGAL_OT[k], Math.round(v * 100) / 100)) : LEGAL_OT[k];
+  };
+  return { ot: one("ot"), holidayMonthly: one("holidayMonthly"), holidayDaily: one("holidayDaily"), holidayOt: one("holidayOt") };
+}
+
+export const DEFAULT_PAYROLL: PayrollSettings = { ssRate: 5, ssFloor: 1650, ssCeiling: 17500, ssAccount: "", ot: LEGAL_OT };
 
 export function payrollSettingsOf(raw: unknown): PayrollSettings {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const num = (k: "ssRate" | "ssFloor" | "ssCeiling", max: number) => (typeof r[k] === "number" && (r[k] as number) >= 0 && (r[k] as number) <= max ? (r[k] as number) : DEFAULT_PAYROLL[k]);
   const account = typeof r.ssAccount === "string" ? r.ssAccount.replace(/\D/g, "").slice(0, 10) : "";
-  return { ssRate: num("ssRate", 20), ssFloor: num("ssFloor", 1_000_000), ssCeiling: num("ssCeiling", 1_000_000), ssAccount: account };
+  return { ssRate: num("ssRate", 20), ssFloor: num("ssFloor", 1_000_000), ssCeiling: num("ssCeiling", 1_000_000), ssAccount: account, ot: otRatesOf(r.ot) };
 }
 
 /** An ID number for lists and payslips: only the last 4 digits */
@@ -111,13 +151,13 @@ export interface PeriodPay {
   gross: number;
 }
 
-/** One pay period (half a month), in baht */
-export function periodPay(e: Pick<Employee, "payType" | "rate">, p: PeriodInput): PeriodPay {
+/** One pay period (half a month), in baht; overtime at the given multiples (the legal ones if none) */
+export function periodPay(e: Pick<Employee, "payType" | "rate">, p: PeriodInput, x: LineRates = lineRates(LEGAL_OT, e.payType)): PeriodPay {
   const h = hourlySat(e);
   const base = e.payType === "monthly" ? Math.max(0, sat(e.rate) / 2 - (p.absentDays || 0) * (sat(e.rate) / 30)) : (p.daysWorked || 0) * sat(e.rate);
-  const overtime = (p.otHours || 0) * 1.5 * h;
-  const holiday = (p.holidayHours || 0) * (e.payType === "monthly" ? 1 : 2) * h;
-  const holidayOvertime = (p.holidayOtHours || 0) * 3 * h;
+  const overtime = (p.otHours || 0) * x.ot * h;
+  const holiday = (p.holidayHours || 0) * x.holiday * h;
+  const holidayOvertime = (p.holidayOtHours || 0) * x.holidayOt * h;
   const r = (v: number) => Math.round(v);
   const wages = r(base) + r(overtime) + r(holiday) + r(holidayOvertime);
   return {
@@ -194,8 +234,9 @@ export interface MonthPay {
 }
 
 export function monthPay(e: Employee, first: PeriodInput, second: PeriodInput, s: PayrollSettings): MonthPay {
-  const a = periodPay(e, first);
-  const b = periodPay(e, second);
+  const x = lineRates(s.ot ?? LEGAL_OT, e.payType);
+  const a = periodPay(e, first, x);
+  const b = periodPay(e, second, x);
   const wages = baht(sat(a.wages) + sat(b.wages));
   const gross = baht(sat(a.gross) + sat(b.gross));
   const bonus = baht(sat(a.bonus) + sat(b.bonus));

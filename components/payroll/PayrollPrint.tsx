@@ -15,7 +15,7 @@ import { ALLOWANCE_PRINT, rowsFromSaved } from "@/lib/allowances";
 import { monthDate } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
 import { fmt } from "@/lib/money";
-import { type Employee, maskId, payrollDeadlines, payrollSettingsOf, periodPay } from "@/lib/payroll";
+import { type Employee, maskId, payrollDeadlines, payrollSettingsOf, periodPay, timesText } from "@/lib/payroll";
 import { loadPayroll, type PayrollLineRow, useEmployees } from "@/lib/payroll-store";
 import { useMe } from "@/lib/role-store";
 import { branchLabel, dmy, todayBangkok } from "@/lib/thai-tax";
@@ -289,7 +289,9 @@ function FilingList({
 
 function Slip({ p, us, period, month }: { p: Person; us: Us; period: string; month: string }) {
   const e = p.employee;
-  const halves = [p.first, p.second].map((l) => (l ? periodPay({ payType: l.payType, rate: l.rate }, l) : null));
+  // With the multiples each line was paid with (a later change of the settings leaves the payslip alone)
+  const halves = [p.first, p.second].map((l) => (l ? periodPay({ payType: l.payType, rate: l.rate }, l, l.rates) : null));
+  const x = (p.second ?? p.first)?.rates;
   const rate = p.second?.rate ?? p.first?.rate ?? e.rate;
   const payType = p.second?.payType ?? p.first?.payType ?? e.payType;
   const en = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }).format(monthDate(month));
@@ -357,9 +359,9 @@ function Slip({ p, us, period, month }: { p: Person; us: Us; period: string; mon
         </thead>
         <tbody>
           {row(payType === "monthly" ? "เงินเดือน" : "ค่าจ้าง", payType === "monthly" ? "Salary" : "Wages", "base")}
-          {row("ค่าล่วงเวลา (1.5 เท่า)", "Overtime", "overtime")}
-          {row("ค่าทำงานในวันหยุด", "Holiday work", "holiday")}
-          {row("ค่าล่วงเวลาในวันหยุด (3 เท่า)", "Holiday overtime", "holidayOvertime")}
+          {row(`ค่าล่วงเวลา (${timesText(x?.ot ?? 1.5)} เท่า)`, "Overtime", "overtime")}
+          {row(`ค่าทำงานในวันหยุด (${timesText(x?.holiday ?? (payType === "monthly" ? 1 : 2))} เท่า)`, "Holiday work", "holiday")}
+          {row(`ค่าล่วงเวลาในวันหยุด (${timesText(x?.holidayOt ?? 3)} เท่า)`, "Holiday overtime", "holidayOvertime")}
           {row("โบนัส", "Bonus", "bonus")}
           {allowances.map((a, i) =>
             a.first || a.second ? (
