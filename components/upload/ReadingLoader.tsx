@@ -1,6 +1,6 @@
 "use client";
 
-// "The AI is reading" indicator: a black disc with a turning violet / crimson glow and the word lighting up letter by
+// "The AI is reading" indicator: a blue disc (the app's blue) with a turning sky-blue glow and the word lighting up letter by
 // letter (owner's pick, 2026-09-29). Letters are split by grapheme, so Thai vowel and tone marks stay on their
 // consonant. Small version (no word) for photo thumbnails. Styles: .reading-loader in app/globals.css; with
 // reduced motion the glow and letters hold still.
