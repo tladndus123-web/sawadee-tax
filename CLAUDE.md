@@ -13,8 +13,10 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   has the latest code — `git pull --rebase` first); end commit messages with the `Co-Authored-By` line.
 - Code: https://github.com/tladndus123-web/sawadee-tax (private, shared with a collaborator). **A push to `main` deploys
   to production** through GitHub Actions (`.github/workflows/deploy.yml`: checks → owner's Vercel CLI with the repo
-  secret `VERCEL_TOKEN`; Hobby plan, so no Vercel seat for the collaborator). `npx vercel deploy --prod` from this PC
-  still works as a fallback. DB migrations are never run by the workflow: push them from a PC first. Keys never go into git.
+  secret `VERCEL_TOKEN`; Hobby plan, so no Vercel seat for the collaborator). The workflow also applies new
+  `supabase/migrations` to the cloud DB and runs the pgTAP tests there **before** the site deploys (secrets
+  `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`), so a collaborator needs no Supabase access. `npx vercel deploy
+  --prod` / `npx supabase db push` from this PC still work as a fallback. Keys never go into git.
 - **Never ask for keys in chat.** Keys live in `.env.local` (local dev) and `.env.deploy` (deploy: Supabase
   cloud + Vercel + Gmail app password), both git-ignored. Open the file for them (Notepad) and validate
   without printing values.

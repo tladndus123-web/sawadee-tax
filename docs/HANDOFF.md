@@ -509,3 +509,4 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - 토큰 등록: GitHub 저장소 → Settings → Secrets and variables → Actions → New repository secret, 이름 `VERCEL_TOKEN`(저장소 주인만 가능). 실행 기록: 저장소 → Actions 탭. 수동 실행: Actions → Deploy → Run workflow.
 - 참고: Vercel Hobby는 비상업 용도 약관 — 회사 운영이 커지면 Pro 권장.
 - 첫 자동 배포 성공 2026-09-29 17:58 (커밋 2191b10). 토큰은 **Scope = tladndus123-webs-projects**여야 함 — 다른 범위면 `vercel pull`이 "Could not retrieve Project Settings"로 실패. Secret 이름은 정확히 `VERCEL_TOKEN`(Variables 탭 아님).
+- **DB도 자동** (2026-09-29, 오너 결정 "방법 B"): 워크플로 순서 = 검사 → `vercel pull`(사이트 설정) → **Database**(설정의 NEXT_PUBLIC_SUPABASE_URL에서 프로젝트 ref → `supabase link` → `db push --dry-run` → `db push --yes` → `test db --linked`) → Vercel 빌드·배포 → 확인. Secrets `SUPABASE_ACCESS_TOKEN`(supabase.com/dashboard/account/tokens) · `SUPABASE_DB_PASSWORD`. 둘이 없으면 마이그레이션이 없는 push는 경고만 하고 배포, 마이그레이션이 있으면 멈춤. 협업자는 Supabase 초대·DB 비밀번호가 필요 없고 실제 데이터도 못 봄. 위의 "DB 마이그레이션은 워크플로에서 안 돌림"은 이걸로 대체.
