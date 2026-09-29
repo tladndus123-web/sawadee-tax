@@ -29,8 +29,11 @@ const runs = Math.max(1, Math.min(5, Number(arg("runs") ?? 1)));
 const effort = arg("effort") as "low" | "medium" | "high" | "xhigh" | "max" | undefined;
 const model = arg("model");
 
-// Claude Opus 5.5 list price per million tokens (update if the model changes)
-const PRICE = { input: 4, output: 20 };
+// List prices per million tokens (docs.anthropic.com pricing, 2026-09-29)
+const PRICES: Record<string, { input: number; output: number }> = {
+  "claude-opus-5-5": { input: 4, output: 20 },
+  "claude-sonnet-5-5": { input: 2, output: 10 },
+};
 
 const pct = (s: { ok: number; total: number }) => `${s.ok}/${s.total} (${s.total ? Math.round((s.ok / s.total) * 100) : 0}%)`;
 
@@ -68,7 +71,8 @@ async function main() {
     console.log(`  AI marked unclear: ${out.doc.unclear.join(", ") || "none"}`);
     console.log(`  Reply shape vs schema: ${out.schemaIssues.length ? `${out.schemaIssues.length} issue(s) — ${out.schemaIssues.slice(0, 5).join("; ")}` : "matches"}`);
     console.log(`  Automatic checks failing: ${flags.join(", ") || "none"}`);
-    const cost = (out.inputTokens * PRICE.input + out.outputTokens * PRICE.output) / 1e6;
+    const price = PRICES[out.model] ?? PRICES["claude-opus-5-5"];
+    const cost = (out.inputTokens * price.input + out.outputTokens * price.output) / 1e6;
     console.log(`  Tokens: ${out.inputTokens} in / ${out.outputTokens} out ≈ $${cost.toFixed(3)}\n`);
   }
 

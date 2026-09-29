@@ -44,9 +44,13 @@ let client: Anthropic | null = null;
 const CUT_OUT_NOTE =
   "This image was cut from a photo of several receipts laid out together. Its edges may show parts of neighbouring receipts: read only the one document that fills most of the image and ignore the others.";
 
-/** Model and effort the app reads with (Vercel env; defaults below). Low was chosen 2026-09-26: same tax fields as medium, ~40% cheaper, ~2× faster. */
+/**
+ * Model and effort the app reads with (Vercel env ANTHROPIC_MODEL / ANTHROPIC_EFFORT; defaults below).
+ * 2026-09-29, owner's choice: Sonnet 5.5 at medium — same tax fields as Opus 5.5 low on the sample (20/21), ~52%
+ * cheaper ($2/$10 per MTok vs $4/$20) and ~30% faster; a few more slips in names' spelling (82% vs 88% of all fields).
+ */
 export const readingSetup = () => ({
-  model: process.env.ANTHROPIC_MODEL || "claude-opus-5-5",
+  model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5",
   // Opus 5.5 defaults to "medium"; set explicitly so a model change does not silently change depth.
   effort: ((process.env.ANTHROPIC_EFFORT || "").trim() || "medium") as Effort,
 });
