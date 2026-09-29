@@ -15,3 +15,13 @@ describe("the sign-in code out of pasted text", () => {
     expect(pickCode("12345678901")).toBe("123456");
   });
 });
+
+describe("works on older phones", () => {
+  it("no lookbehind in the code pattern (older iPhones cannot load a script that has one)", async () => {
+    const { readFileSync } = await import("node:fs");
+    expect(readFileSync("lib/auth/otp-code.ts", "utf8")).not.toMatch(/\(\?<[!=]/);
+  });
+  it("a code at the very start, in the middle, or at the end", () => {
+    expect([pickCode("123456 · code"), pickCode("code: 123456."), pickCode("x123456")]).toEqual(["123456", "123456", "123456"]);
+  });
+});

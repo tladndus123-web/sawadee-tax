@@ -8,7 +8,7 @@ import { AppMark } from "@/components/layout/app-mark";
 import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { CODE_LENGTH, pickCode } from "@/lib/auth/otp-code";
+import { CODE_LENGTH, pickCode, readClipboard } from "@/lib/auth/otp-code";
 import { SESSION_HOURS } from "@/lib/auth/session-limit";
 import { supabaseBrowser, supabaseLinkSender } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -106,21 +106,20 @@ export function LoginForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- verify reads the latest code itself
   }, [code, codeState]);
 
-  // "Paste": the code out of whatever was copied (the code, the email subject, the whole email)
+  // "Paste": the code out of whatever was copied (the code, the email subject, the whole email). When the browser
+  // will not let the page read the clipboard, the box is focused and selected so a long-press → Paste works.
   const pasteCode = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
+    const text = await readClipboard();
+    if (text !== null) {
       const found = pickCode(text);
       if (found.length === CODE_LENGTH) {
         setCodeError(null);
         return setCode(found);
       }
       setCodeError(t("codeNotInClipboard"));
-    } catch {
-      // The browser would not share the clipboard: long-press the box and paste instead
-      setCodeError(t("codePasteByHand"));
-    }
+    } else setCodeError(t("codePasteByHand"));
     codeBox.current?.focus();
+    codeBox.current?.select();
   };
 
   return (
