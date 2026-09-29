@@ -146,7 +146,7 @@ export function AttendanceTab({ month }: { month: string }) {
       </p>
 
       {/* Leave this year */}
-      <div className="workspace-panel grid gap-2 p-4">
+      <div className="workspace-panel hover-lift [--lift:1.006] grid gap-2 p-4">
         <p className="text-sm font-semibold">{t("leaveTitle", { year })}</p>
         <ul className="grid gap-1 text-sm">
           {staff.map((e) => {

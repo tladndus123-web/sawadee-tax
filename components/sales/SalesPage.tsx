@@ -171,7 +171,7 @@ export function SalesPage() {
       </div>
 
       {/* The month's result */}
-      <section className="workspace-panel grid gap-4 p-5 sm:p-6" aria-label={t("sales.result")}>
+      <section className="workspace-panel hover-lift [--lift:1.006] grid gap-4 p-5 sm:p-6" aria-label={t("sales.result")}>
         <p className="flex items-center gap-2 text-sm font-semibold">
           <TrendingUp className="size-4 text-brand" aria-hidden />
           {t("sales.result")}
@@ -222,7 +222,7 @@ export function SalesPage() {
           </div>
         ) : (
           days.slice(0, shown).map((s) => (
-            <button key={s.id} type="button" onClick={() => void openSale(s)} className="workspace-panel tap-row flex items-center gap-3 p-4 text-left">
+            <button key={s.id} type="button" onClick={() => void openSale(s)} className="workspace-panel hover-lift [--lift:1.015] tap-row flex items-center gap-3 p-4 text-left">
               <span className="grid min-w-0 flex-1 gap-0.5">
                 <span className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">
                   {sd(s.date)}

@@ -50,7 +50,7 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
   );
 
   return (
-    <section className="workspace-panel grid gap-4 p-5 sm:p-6" aria-labelledby="cost-title">
+    <section className="workspace-panel hover-lift [--lift:1.006] grid gap-4 p-5 sm:p-6" aria-labelledby="cost-title">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="grid gap-0.5">
           <h2 id="cost-title" className="flex items-center gap-2 text-sm font-semibold">

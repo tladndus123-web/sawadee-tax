@@ -36,7 +36,7 @@ export function TeamCard({ month }: { month: string }) {
   const when = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
   return (
-    <section aria-labelledby="team-title" className="workspace-panel grid gap-3 p-5 sm:p-6">
+    <section aria-labelledby="team-title" className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-5 sm:p-6">
       <div>
         <h2 id="team-title" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
           <Users className="size-5 text-muted-foreground" aria-hidden />

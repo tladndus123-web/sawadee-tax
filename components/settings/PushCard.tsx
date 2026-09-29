@@ -48,7 +48,7 @@ export function PushCard() {
   };
 
   return (
-    <section aria-labelledby="push-title" className="workspace-panel grid content-start gap-3 p-5 sm:p-6">
+    <section aria-labelledby="push-title" className="workspace-panel hover-lift [--lift:1.006] grid content-start gap-3 p-5 sm:p-6">
       <div className="grid gap-1">
         <h2 id="push-title" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
           <Bell className="size-5 text-brand" aria-hidden />

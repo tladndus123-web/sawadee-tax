@@ -51,7 +51,7 @@ export function AppFeesCard({ f }: { f: MonthFees }) {
   };
 
   return (
-    <section className="workspace-panel grid gap-3 p-5 sm:p-6" aria-label={t("fees.title")}>
+    <section className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-5 sm:p-6" aria-label={t("fees.title")}>
       <div className="flex items-center justify-between gap-3">
         <p className="flex items-center gap-2 text-sm font-semibold">
           <Bike className="size-4 text-brand" aria-hidden />

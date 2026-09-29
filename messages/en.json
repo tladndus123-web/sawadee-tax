@@ -889,7 +889,7 @@
     "vatLine": "VAT: output − input",
     "vatPay": "VAT to pay this month (estimate)",
     "vatCredit": "More input than output · carried forward or refunded",
-    "resultNote": "Purchases count by invoice date. Costs not in the ledger (wages, rent…) are not included, so the real profit may differ. Confirm the final figures with your accountant.",
+    "resultNote": "Purchases count by invoice date. Labour comes from saved payroll or labour entries; rent and other costs without invoices from Settings → Fixed costs. If either is missing, profit looks higher than it is. Check final figures with your accountant.",
     "days": "Days of sales",
     "empty": "No sales this month yet. Upload a POS closing report or type it in.",
     "billsN": "{count} bills",

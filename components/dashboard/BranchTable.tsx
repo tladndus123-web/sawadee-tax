@@ -56,7 +56,7 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
   return (
     <section aria-labelledby="combined-title" className="grid gap-3">
       {/* All branches together */}
-      <div className="workspace-panel grid gap-4 p-5 sm:p-6">
+      <div className="workspace-panel hover-lift [--lift:1.006] grid gap-4 p-5 sm:p-6">
         <div className="flex items-center gap-3">
           <span className="grid size-10 flex-none place-items-center rounded-full bg-foreground text-background" aria-hidden>
             <Layers className="size-5" />
@@ -80,7 +80,7 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
               <button
                 type="button"
                 onClick={() => go(branch.id)}
-                className="workspace-panel tap-row grid w-full gap-3 border-l-4 p-4 text-left"
+                className="workspace-panel hover-lift [--lift:1.015] tap-row grid w-full gap-3 border-l-4 p-4 text-left"
                 style={{ borderLeftColor: fg }}
                 aria-label={`${branchLabel(branch, names)} — ${t("open")}`}
               >

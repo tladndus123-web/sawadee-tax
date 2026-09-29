@@ -72,7 +72,7 @@ export function AssetRegister() {
 
 function Total({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
-    <div className="workspace-panel grid min-w-0 gap-0.5 px-3 py-3">
+    <div className="workspace-panel hover-lift [--lift:1.015] grid min-w-0 gap-0.5 px-3 py-3">
       <span className="truncate text-[11px] text-muted-foreground">{label}</span>
       <span className={cn("truncate text-[13px] font-semibold tabular-nums sm:text-[15px]", strong && "text-brand")}>{value}</span>
     </div>

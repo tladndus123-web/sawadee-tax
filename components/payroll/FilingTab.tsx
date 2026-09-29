@@ -37,7 +37,7 @@ export function FilingTab({ month }: { month: string }) {
   const insured = new Set((lines ?? []).filter((l) => l.ssEmployee > 0).map((l) => l.employeeId)).size;
 
   const card = (key: "pnd1" | "sso", icon: React.ReactNode, amount: number, count: number, dueText: string) => (
-    <div className="workspace-panel grid gap-3 p-4">
+    <div className="workspace-panel hover-lift [--lift:1.015] grid gap-3 p-4">
       <div className="flex items-start gap-3">
         <span className="grid size-10 flex-none place-items-center rounded-2xl bg-muted" aria-hidden>
           {icon}
