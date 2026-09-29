@@ -296,7 +296,9 @@
       "note": "メモ",
       "zeroLines": "0の値引き・前受金・非課税の行",
       "wht": "源泉徴収の行"
-    }
+    },
+    "expandAll": "すべて開く",
+    "collapseAll": "すべて閉じる"
   },
   "ui": {
     "skipToContent": "本文へスキップ",

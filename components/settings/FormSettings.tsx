@@ -95,7 +95,7 @@ export function FormSettings() {
     <div className="grid gap-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid max-w-2xl gap-1">
-          <h2 className="text-xl font-semibold">{t("settings.formTitle")}</h2>
+          <h2 id="form-title" className="text-xl font-semibold">{t("settings.formTitle")}</h2>
           <p className="text-sm text-muted-foreground">{t("settings.formDesc")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

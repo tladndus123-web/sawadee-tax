@@ -1,0 +1,100 @@
+"use client";
+
+import { ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
+
+const EVENT = "settings-folds";
+
+/**
+ * One settings section folded to a single row (icon + title); tapping slides the card open.
+ * The card inside keeps its own content; its panel frame and its title (id ending in "-title") are
+ * taken over by the fold. A card that renders nothing (admin-only for staff) hides the whole row.
+ * A link to one of the card's ids (/settings#fixed-title) opens it.
+ */
+export function SettingsFold({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const body = useRef<HTMLDivElement>(null);
+  const id = useId();
+
+  useEffect(() => {
+    const byHash = () => {
+      const hash = decodeURIComponent(window.location.hash.slice(1));
+      const target = hash && body.current?.querySelector(`[id="${CSS.escape(hash)}"]`);
+      if (!target) return;
+      setOpen(true);
+      window.setTimeout(() => body.current?.parentElement?.scrollIntoView({ block: "start", behavior: "smooth" }), 80);
+    };
+    const all = (e: Event) => setOpen((e as CustomEvent<boolean>).detail);
+    byHash();
+    window.addEventListener("hashchange", byHash);
+    window.addEventListener(EVENT, all);
+    return () => {
+      window.removeEventListener("hashchange", byHash);
+      window.removeEventListener(EVENT, all);
+    };
+  }, []);
+
+  return (
+    <div className="workspace-panel hover-lift [--lift:1.006] scroll-mt-24 has-[[data-fold-body]:empty]:hidden">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((v) => !v)}
+        className="flex min-h-16 w-full items-center gap-3 rounded-[inherit] px-5 text-left text-lg font-semibold tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-6"
+      >
+        <span className="flex [&>svg]:size-5" aria-hidden>
+          {icon}
+        </span>
+        <span className="min-w-0 flex-1 truncate">{title}</span>
+        <ChevronDown
+          className={cn("size-5 shrink-0 text-muted-foreground transition-transform duration-300 motion-reduce:transition-none", open && "rotate-180")}
+          aria-hidden
+        />
+      </button>
+      <div
+        id={id}
+        className={cn(
+          "grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+        inert={!open}
+      >
+        <div
+          ref={body}
+          data-fold-body
+          className={cn(
+            "min-h-0 overflow-hidden",
+            // the card's own frame, lift and title belong to the fold now
+            "[&>*]:rounded-none [&>*]:border-0 [&>*]:bg-transparent [&>*]:[box-shadow:none] [&>*]:[scale:none] [&>*]:pt-1",
+            "[&_h2[id$='-title']]:sr-only",
+            "[&>div]:px-5 [&>div]:pb-5 sm:[&>div]:px-6 sm:[&>div]:pb-6",
+          )}
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Open or close every section at once */
+export function FoldAllButton() {
+  const t = useTranslations("settings");
+  const [open, setOpen] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        window.dispatchEvent(new CustomEvent(EVENT, { detail: !open }));
+        setOpen(!open);
+      }}
+      className="inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+    >
+      {open ? <ChevronsDownUp className="size-4" aria-hidden /> : <ChevronsUpDown className="size-4" aria-hidden />}
+      {open ? t("collapseAll") : t("expandAll")}
+    </button>
+  );
+}

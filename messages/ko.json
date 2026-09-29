@@ -296,7 +296,9 @@
       "note": "메모",
       "zeroLines": "0원인 할인 · 계약금 · 면세 줄",
       "wht": "원천징수 줄"
-    }
+    },
+    "expandAll": "모두 펼치기",
+    "collapseAll": "모두 접기"
   },
   "ui": {
     "skipToContent": "본문으로 건너뛰기",

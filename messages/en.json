@@ -296,7 +296,9 @@
       "note": "Note",
       "zeroLines": "Discount · deposit · exempt lines at 0",
       "wht": "Withholding tax line"
-    }
+    },
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all"
   },
   "ui": {
     "skipToContent": "Skip to content",
