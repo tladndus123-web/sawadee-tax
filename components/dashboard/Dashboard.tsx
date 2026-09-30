@@ -172,7 +172,7 @@ export function Dashboard() {
       </div>
 
       {/* 2. What to do: one card, one line each; a line opens its list */}
-      <div className="grid items-start gap-5 lg:grid-cols-2">
+      <div className="grid items-start gap-5 lg:grid-cols-2 lg:items-stretch">
         <div className="grid min-w-0 content-start gap-5">
         <section aria-labelledby="todo-title" className="workspace-panel grid min-w-0 grid-cols-1 content-start px-4 pt-3 pb-1 sm:px-5">
           <div className="flex items-center justify-between gap-2 pt-1 pb-1">
