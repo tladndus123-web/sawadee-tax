@@ -1543,5 +1543,13 @@
     "linked": "連携済み",
     "notLinked": "未連携",
     "members": "{count}人"
+  },
+  "weekday": {
+    "title": "曜日別の売上",
+    "hint": "直近{weeks}週、売上のあった日の1日平均（VAT抜き）",
+    "span": "期間",
+    "weeks": "{weeks}週",
+    "days": "{count}日",
+    "none": "売上なし"
   }
 }

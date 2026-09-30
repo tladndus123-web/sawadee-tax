@@ -33,6 +33,7 @@ import { type SaleDraft, SaleSheet } from "./SaleSheet";
 import { useChannelLabel } from "./channel-name";
 import { CostCard } from "./CostCard";
 import { SaleCalendar } from "./SaleCalendar";
+import { WeekdayCard } from "./WeekdayCard";
 import { monthLabor } from "@/lib/cost-control";
 import { useLabor } from "@/lib/labor-store";
 import { stockChange } from "@/lib/stock";
@@ -237,6 +238,9 @@ export function SalesPage() {
           onDay={(id, d) => (d.sale ? void openSale(d.sale) : setOpen({ draft: blank(d.date, id) }))}
         />
       )}
+
+      {/* Which weekdays sell: the average day over the last weeks */}
+      {loaded && <WeekdayCard sales={sales} today={today} />}
 
       {/* Days */}
       <section className="grid gap-2" aria-label={t("sales.days")}>

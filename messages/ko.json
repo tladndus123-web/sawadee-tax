@@ -1543,5 +1543,13 @@
     "linked": "연결됨",
     "notLinked": "연결 안 됨",
     "members": "{count}명"
+  },
+  "weekday": {
+    "title": "요일별 매출",
+    "hint": "최근 {weeks}주, 매출이 있던 날의 하루 평균 (부가세 제외)",
+    "span": "기간",
+    "weeks": "{weeks}주",
+    "days": "{count}일",
+    "none": "매출 없음"
   }
 }

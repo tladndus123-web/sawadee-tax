@@ -1543,5 +1543,13 @@
     "linked": "Linked",
     "notLinked": "Not linked",
     "members": "{count, plural, one {# person} other {# people}}"
+  },
+  "weekday": {
+    "title": "Sales by weekday",
+    "hint": "Last {weeks} weeks, average day with sales (excl. VAT)",
+    "span": "Period",
+    "weeks": "{weeks} wk",
+    "days": "{count, plural, one {# day} other {# days}}",
+    "none": "No sales"
   }
 }
