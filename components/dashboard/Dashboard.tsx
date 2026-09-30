@@ -173,7 +173,7 @@ export function Dashboard() {
 
       {/* 2. What to do: one card, one line each; a line opens its list */}
       <div className="grid items-start gap-5 lg:grid-cols-2 lg:items-stretch">
-        <div className="grid min-w-0 content-start gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
         <section aria-labelledby="todo-title" className="workspace-panel grid min-w-0 grid-cols-1 content-start px-4 pt-3 pb-1 sm:px-5">
           <div className="flex items-center justify-between gap-2 pt-1 pb-1">
             <h2 id="todo-title" className="px-1 text-lg font-semibold tracking-tight">
@@ -218,7 +218,12 @@ export function Dashboard() {
         </div>
 
         {/* 3. In more detail: food, labour and rent against sales (FL / FLR) */}
-        <CostCard month={month} salesValue={result.salesValue} purchases={purchases} fixed={fixed} />
+        {/* Stays in view beside a long to-do list */}
+        <div className="min-w-0">
+          <div className="lg:sticky lg:top-24">
+            <CostCard month={month} salesValue={result.salesValue} purchases={purchases} fixed={fixed} />
+          </div>
+        </div>
       </div>
 
       {/* Phones, until installed or closed: put the app on the home screen */}

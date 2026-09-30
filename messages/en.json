@@ -1294,7 +1294,21 @@
     "stockCur": "Stock at the end of this month ({month})",
     "stockSaved": "Month-end stock saved.",
     "stockApplied": "Stock counted · {open} last month → {close} this month",
-    "stockPartial": "Stock: enter both last month's and this month's to use it"
+    "stockPartial": "Stock: enter both last month's and this month's to use it",
+    "tips": {
+      "title": "Check points",
+      "noSales": "Enter this month's sales to see the cost shares.",
+      "goSales": "Enter sales",
+      "overFood": "Food cost is {points} points over the target. Check for ingredients that got pricier, or waste.",
+      "overLabor": "Labour is {points} points over the target. Check staffing in quiet hours.",
+      "over": "{name} is {points} points over the target.",
+      "rentSales": "Rent is {points} points over the target. {amount} more sales would bring it within.",
+      "rise": "Food cost is up {points} points on last month.",
+      "fall": "Food cost is down {points} points on last month. Nice work.",
+      "noLabor": "This month's labour is not entered yet.",
+      "stock": "Enter the month-end stock so food cost is what was actually used.",
+      "allGood": "All three are within target. Keep it up."
+    }
   },
   "pay": {
     "title": "Payroll",

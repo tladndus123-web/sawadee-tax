@@ -23,10 +23,14 @@ import { monthCosts } from "@/lib/cost-split";
 import { type FixedLine, fixedForMonth } from "@/lib/fixed-costs";
 import { useLabor, saveLabor } from "@/lib/labor-store";
 import { prevMonth, stockChange } from "@/lib/stock";
+import { type CostTip, costTips, type TipAction } from "@/lib/cost-tips";
+import { saleMonth } from "@/lib/sales";
+import { useSales } from "@/lib/sales-store";
+import { todayBangkok } from "@/lib/thai-tax";
 import { saveStock, useStock } from "@/lib/stock-store";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { isMonthLocked } from "@/lib/month-lock-store";
-import { baht, fromSatang } from "@/lib/money";
+import { baht, bahtWhole, fromSatang } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
 import type { LedgerDoc } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -45,6 +49,7 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
   const { lines } = useLabor();
   const { counts } = useStock();
   const stock = useMemo(() => stockChange(counts, month), [counts, month]);
+  const { sales } = useSales();
   const [laborOpen, setLaborOpen] = useState(false);
   const [stockOpen, setStockOpen] = useState(false);
   const [targetsOpen, setTargetsOpen] = useState(false);
@@ -54,6 +59,24 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
     () => costControl(Math.round(salesValue * 100), monthCosts(purchases, month, company.taxId, fixedForMonth(fixed, month), stock.change), foodKeys, monthLabor(lines, month), targets),
     [salesValue, purchases, month, company.taxId, foodKeys, lines, targets, fixed, stock.change],
   );
+
+  // Last month's shares, for "food cost went up / down"
+  const before = useMemo(() => {
+    const prev = prevMonth(month);
+    const prevSales = sales.filter((s) => saleMonth(s) === prev).reduce((a, s) => a + Math.round(s.gross * 100) - Math.round(s.vat * 100), 0);
+    if (prevSales <= 0) return null;
+    const costs = monthCosts(purchases, prev, company.taxId, fixedForMonth(fixed, prev), stockChange(counts, prev).change);
+    return costControl(prevSales, costs, foodKeys, monthLabor(lines, prev), targets);
+  }, [month, sales, purchases, company.taxId, fixed, counts, foodKeys, lines, targets]);
+  const today = todayBangkok();
+  const tips = costTips({
+    now: c,
+    before,
+    salesValue: Math.round(salesValue * 100),
+    laborEntered: monthLabor(lines, month) > 0,
+    stockCounted: stock.applied > 0,
+    monthEnding: today.slice(0, 7) > month || (today.slice(0, 7) === month && Number(today.slice(8, 10)) >= 25),
+  });
 
   return (
     <section className="workspace-panel hover-lift [--lift:1.006] flex flex-col gap-4 p-5 sm:p-6" aria-labelledby="cost-title">
@@ -94,7 +117,7 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
         <Headline code="FLR" label={t("flr")} line={c.flr} />
       </div>
 
-      <div className="grid flex-1 content-around gap-2.5">
+      <div className="grid gap-2.5">
         <Ratio
           code="F"
           label={t("food")}
@@ -110,6 +133,12 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
         <Ratio code="L" label={t("labor")} line={c.labor} empty={!monthLabor(lines, month) ? t("noLabor") : undefined} />
         <Ratio code="R" label={t("rent")} line={c.rent} />
       </div>
+      {/* The numbers in plain words, most important first, each with what to do */}
+      <Tips
+        tips={tips}
+        isAdmin={isAdmin}
+        onAction={(a) => (a === "labor" ? setLaborOpen(true) : a === "stock" ? setStockOpen(true) : undefined)}
+      />
       <p className="text-xs text-muted-foreground tabular-nums">{t("base", { sales: baht(salesValue) })}</p>
       <p className="text-[11px] leading-relaxed text-muted-foreground">{t("note")}</p>
 
@@ -117,6 +146,45 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
       <Dialog open={stockOpen} onOpenChange={setStockOpen}>{stockOpen && <StockSheet month={month} onDone={() => setStockOpen(false)} />}</Dialog>
       <Dialog open={targetsOpen} onOpenChange={setTargetsOpen}>{targetsOpen && <TargetsSheet onDone={() => setTargetsOpen(false)} />}</Dialog>
     </section>
+  );
+}
+
+const DOT = { bad: "bg-risk-over", warn: "bg-risk-near", ok: "bg-risk-ok", info: "bg-primary" } as const;
+
+/** 원가 체크 포인트: a few sentences from the numbers, each with a button when there is something to enter */
+function Tips({ tips, isAdmin, onAction }: { tips: CostTip[]; isAdmin: boolean; onAction: (a: TipAction) => void }) {
+  const t = useTranslations("cost");
+  const lineName = (l?: CostTip["line"]) => (l === "fl" ? "FL" : l === "flr" ? "FLR" : l ? t(l) : "");
+  const text = (tip: CostTip) => {
+    const p = { name: lineName(tip.line), points: tip.points ?? 0, amount: tip.amount ? bahtWhole(fromSatang(tip.amount)) : "" };
+    if (tip.key === "over") return t(tip.line === "food" ? "tips.overFood" : tip.line === "labor" ? "tips.overLabor" : "tips.over", p);
+    return t(`tips.${tip.key}`, p);
+  };
+  const button = (a: TipAction) => (a === "sales" ? t("tips.goSales") : a === "labor" ? t("enterLabor") : t("stockBtn"));
+  return (
+    <div className="grid gap-2 rounded-2xl bg-muted/50 p-3.5">
+      <p className="text-xs font-semibold">{t("tips.title")}</p>
+      <ul className="grid gap-2">
+        {tips.map((tip, i) => (
+          <li key={`${tip.key}-${tip.line ?? i}`} className="flex items-start gap-2 text-[13px] leading-snug">
+            <span className={cn("mt-1.5 size-1.5 flex-none rounded-full", DOT[tip.tone])} aria-hidden />
+            <span className="min-w-0 flex-1">
+              {text(tip)}
+              {tip.action === "sales" && (
+                <Link href="/sales" className="ml-1.5 font-medium whitespace-nowrap text-primary hover:underline">
+                  {button("sales")} →
+                </Link>
+              )}
+              {tip.action && tip.action !== "sales" && isAdmin && (
+                <button type="button" onClick={() => onAction(tip.action!)} className="ml-1.5 font-medium whitespace-nowrap text-primary hover:underline">
+                  {button(tip.action)} →
+                </button>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

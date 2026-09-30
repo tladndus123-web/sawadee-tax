@@ -29,7 +29,7 @@ export function RecentSalesCard({ today }: { today: string }) {
   const pct = r.change === null ? null : Math.round(r.change * 100);
 
   return (
-    <section className="workspace-panel grid gap-4 p-5 sm:p-6" aria-labelledby="recent-title">
+    <section className="workspace-panel flex flex-1 flex-col gap-4 p-5 sm:p-6" aria-labelledby="recent-title">
       <Link href="/sales" className="press flex items-start justify-between gap-3 rounded-lg">
         <span className="grid gap-0.5">
           <h2 id="recent-title" className="text-lg font-semibold tracking-tight">
@@ -55,15 +55,15 @@ export function RecentSalesCard({ today }: { today: string }) {
         )}
       </div>
 
-      <ol className="grid grid-cols-7 items-end gap-1.5" aria-label={t("title")}>
+      <ol className="grid min-h-36 flex-1 grid-cols-7 items-stretch gap-1.5" aria-label={t("title")}>
         {r.days.map((d, i) => {
           const w = new Date(`${d.date}T00:00:00Z`).getUTCDay();
           const last = i === r.days.length - 1;
           const label = d.value ? bahtWhole(fromSatang(d.value)) : closed(w) ? t("closed") : t("missing");
           return (
-            <li key={d.date} className="grid justify-items-center gap-1" title={`${d.date} · ${label}`}>
+            <li key={d.date} className="grid grid-rows-[auto_1fr_auto_auto] justify-items-center gap-1" title={`${d.date} · ${label}`}>
               <span className="text-[10px] text-muted-foreground tabular-nums">{d.value ? `${Math.round(fromSatang(d.value) / 1000)}k` : ""}</span>
-              <span className="flex h-20 w-full items-end">
+              <span className="flex min-h-20 w-full items-end">
                 <span
                   className={cn("w-full rounded-md", d.value ? (last ? "bg-brand" : "bg-brand/40") : "h-1 bg-muted")}
                   style={d.value ? { height: `${Math.max(6, (d.value / max) * 100)}%` } : undefined}
