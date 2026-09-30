@@ -1551,5 +1551,13 @@
     "weeks": "{weeks}週",
     "days": "{count}日",
     "none": "売上なし"
+  },
+  "recent": {
+    "title": "直近7日の売上",
+    "total": "7日合計 {amount} · VAT抜き",
+    "yesterday": "昨日",
+    "vsWeek": "先週の同じ曜日より {pct}",
+    "closed": "定休日",
+    "missing": "未入力"
   }
 }

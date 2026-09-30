@@ -1551,5 +1551,13 @@
     "weeks": "{weeks}주",
     "days": "{count}일",
     "none": "매출 없음"
+  },
+  "recent": {
+    "title": "최근 7일 매출",
+    "total": "7일 합계 {amount} · 부가세 제외",
+    "yesterday": "어제",
+    "vsWeek": "지난주 같은 요일보다 {pct}",
+    "closed": "휴무",
+    "missing": "입력 없음"
   }
 }

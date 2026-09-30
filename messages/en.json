@@ -1551,5 +1551,13 @@
     "weeks": "{weeks} wk",
     "days": "{count, plural, one {# day} other {# days}}",
     "none": "No sales"
+  },
+  "recent": {
+    "title": "Last 7 days of sales",
+    "total": "7-day total {amount} · excl. VAT",
+    "yesterday": "Yesterday",
+    "vsWeek": "{pct} vs same day last week",
+    "closed": "Closed",
+    "missing": "Not entered"
   }
 }
