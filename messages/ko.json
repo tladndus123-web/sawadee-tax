@@ -661,7 +661,14 @@
     "vatCheck": "확인 {count}건",
     "vatToPay": "낼 부가세 (예상)",
     "vatCreditShort": "공제가 더 많아요",
-    "salesDays": "{count}일 입력"
+    "salesDays": "{count}일 입력",
+    "bep": "손익분기 {amount}",
+    "bepDone": "손익분기 넘음",
+    "bepBasis": "손익분기점 = 식재료 외 모든 비용 ÷ (1 − 식재료 원가율). 이번 달은 영수증이 다 안 들어와서 지난달 비용으로 계산해요.",
+    "goal": "목표 {amount}",
+    "perDay": "남은 영업일 {days}일 · 하루 {amount}씩 더",
+    "perDayNone": "이번 달 영업일이 끝났어요",
+    "setGoal": "월 매출 목표 정하기 →"
   },
   "line": {
     "title": "LINE 연결",
@@ -1051,7 +1058,8 @@
     "view_both": "금액 + %",
     "view_amount": "금액",
     "view_share": "%",
-    "shareSheet": "매출 대비 %"
+    "shareSheet": "매출 대비 %",
+    "stock": "재고 증감"
   },
   "install": {
     "title": "휴대폰에 앱으로 설치",
@@ -1130,7 +1138,9 @@
     "allLong": "통합 · 전체 지점",
     "closedDays": "정기 휴무 요일",
     "closedHint": "이 요일은 매장 매출이 없어도 '빠진 날'로 세지 않아요.",
-    "closedShort": "휴무 {days}"
+    "closedShort": "휴무 {days}",
+    "salesTarget": "월 매출 목표 (부가세 제외)",
+    "salesTargetHint": "0이면 목표 없음. 대시보드에 달성률이 보여요."
   },
   "dep": {
     "label": "상각 기간",
@@ -1276,7 +1286,15 @@
       "watch": "주의 · 목표에 가까워요",
       "near": "경고 · 목표를 조금 넘었어요",
       "over": "위험 · 목표를 넘었어요"
-    }
+    },
+    "stockBtn": "월말 재고",
+    "stockTitle": "{month} 월말 재고",
+    "stockHint": "달 마지막 날 가게에 남은 식재료 · 소모품을 대략 금액으로 적어 주세요. 지난달 말과 이번 달 말이 둘 다 있으면 식재료 원가가 '실제로 쓴 만큼'(산 금액 + 지난달 말 재고 − 이번 달 말 재고)으로 바뀌고, 이익에도 반영돼요.",
+    "stockPrev": "지난달 말 재고 ({month})",
+    "stockCur": "이번 달 말 재고 ({month})",
+    "stockSaved": "월말 재고를 저장했어요.",
+    "stockApplied": "재고 반영 · 지난달 말 {open} → 이번 달 말 {close}",
+    "stockPartial": "재고: 지난달 말과 이번 달 말을 둘 다 넣으면 반영돼요"
   },
   "pay": {
     "title": "급여",

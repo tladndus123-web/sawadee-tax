@@ -35,6 +35,8 @@ import { CostCard } from "./CostCard";
 import { SaleCalendar } from "./SaleCalendar";
 import { monthLabor } from "@/lib/cost-control";
 import { useLabor } from "@/lib/labor-store";
+import { stockChange } from "@/lib/stock";
+import { useStock } from "@/lib/stock-store";
 
 type Open = { draft: SaleDraft; photo?: File | null; preview?: string | null; unclear?: string[] };
 
@@ -77,7 +79,11 @@ export function SalesPage() {
     return [...set].sort().reverse();
   }, [sales, purchases, today]);
   const { lines: fixed } = useFixedCosts();
-  const r = useMemo(() => monthResult(sales, purchases, month, company.taxId, monthLabor(labor, month), fixedForMonth(fixed, month)), [sales, purchases, month, company.taxId, labor, fixed]);
+  const { counts: stock } = useStock();
+  const r = useMemo(
+    () => monthResult(sales, purchases, month, company.taxId, monthLabor(labor, month), fixedForMonth(fixed, month), stockChange(stock, month).change),
+    [sales, purchases, month, company.taxId, labor, fixed, stock],
+  );
   const fees = useMemo(() => monthFees(sales, month, company.appFees), [sales, month, company.appFees]);
   const days = useMemo(() => sales.filter((s) => saleMonth(s) === month), [sales, month]);
   const existingFor = (d: SaleDraft) => sales.find((x) => x.date === d.date && x.channel === d.channel && (x.branchId || "") === (d.branchId || "") && x.id !== d.id) ?? null;

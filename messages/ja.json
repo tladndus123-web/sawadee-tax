@@ -661,7 +661,14 @@
     "vatCheck": "確認 {count}件",
     "vatToPay": "納めるVAT（見込み）",
     "vatCreditShort": "仕入VATの方が多い",
-    "salesDays": "{count}日入力"
+    "salesDays": "{count}日入力",
+    "bep": "損益分岐点 {amount}",
+    "bepDone": "損益分岐点を超えました",
+    "bepBasis": "損益分岐点 = 食材以外のすべての費用 ÷（1 − 食材原価率）。今月はレシートが揃っていないため前月の費用で計算します。",
+    "goal": "目標 {amount}",
+    "perDay": "残り営業日 {days}日 · 1日あたり {amount} 追加",
+    "perDayNone": "今月の営業日は終わりました",
+    "setGoal": "月の売上目標を設定 →"
   },
   "line": {
     "title": "LINE連携",
@@ -1051,7 +1058,8 @@
     "view_both": "金額＋%",
     "view_amount": "金額",
     "view_share": "%",
-    "shareSheet": "売上比 %"
+    "shareSheet": "売上比 %",
+    "stock": "在庫増減"
   },
   "install": {
     "title": "スマホにアプリとして追加",
@@ -1130,7 +1138,9 @@
     "allLong": "統合 · 全支店",
     "closedDays": "定休日",
     "closedHint": "この曜日は店舗売上がなくても「抜け」に数えません。",
-    "closedShort": "定休 {days}"
+    "closedShort": "定休 {days}",
+    "salesTarget": "月の売上目標（VAT抜き）",
+    "salesTargetHint": "0 = 目標なし。ダッシュボードに達成率が表示されます。"
   },
   "dep": {
     "label": "償却期間",
@@ -1276,7 +1286,15 @@
       "watch": "注意 · 目標に近い",
       "near": "警告 · 目標を少し超過",
       "over": "危険 · 目標超過"
-    }
+    },
+    "stockBtn": "月末在庫",
+    "stockTitle": "{month} 月末在庫",
+    "stockHint": "月の最終日にお店に残っている食材・消耗品のおおよその金額を入れてください。前月末と今月末の両方があると、食材原価が「実際に使った分」（仕入 + 前月末在庫 − 今月末在庫）になり、利益にも反映されます。",
+    "stockPrev": "前月末の在庫（{month}）",
+    "stockCur": "今月末の在庫（{month}）",
+    "stockSaved": "月末在庫を保存しました。",
+    "stockApplied": "在庫反映 · 前月末 {open} → 今月末 {close}",
+    "stockPartial": "在庫：前月末と今月末の両方を入れると反映されます"
   },
   "pay": {
     "title": "給与",

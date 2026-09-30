@@ -13,6 +13,8 @@ import { originalPdfPath } from "@/lib/ledger-store";
 import { packFileName, packName } from "@/lib/month-pack";
 import { saleMonth } from "@/lib/sales";
 import { useSales } from "@/lib/sales-store";
+import { stockChange } from "@/lib/stock";
+import { useStock } from "@/lib/stock-store";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useChannelLabel } from "@/components/sales/channel-name";
 import { useDocName } from "./doc-name";
@@ -41,6 +43,7 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
   const { lines: fixed } = useFixedCosts();
 
   const { sales } = useSales();
+  const { counts: stock } = useStock();
   const chName = useChannelLabel();
   const docName = useDocName();
   const [packing, setPacking] = useState<{ done: number; total: number } | null>(null);
@@ -56,11 +59,13 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
       month,
       company.taxId,
       fixedForMonth(fixed, month),
+      stockChange(stock, month).change,
     );
     const costRows = [
       ...[...c.byCategory.entries()].filter(([, v]) => v).map(([k, v]) => ({ label: catLabel(k), amount: fromSatang(v) })),
       ...(c.depreciation ? [{ label: t("pl.depreciation"), amount: fromSatang(c.depreciation) }] : []),
       ...(c.disposal ? [{ label: t("pl.disposal"), amount: fromSatang(c.disposal) }] : []),
+      ...(c.stock ? [{ label: t("pl.stock"), amount: fromSatang(c.stock) }] : []),
     ];
     const labels: XlsxLabels = {
       sheetLedger: t("export.sheetLedger"),

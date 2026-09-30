@@ -6,6 +6,7 @@ import { type LaborLine, monthLabor } from "./cost-control";
 import { monthCosts } from "./cost-split";
 import { type FixedLine, fixedForMonth } from "./fixed-costs";
 import { fromSatang, toSatang } from "./money";
+import { type StockCount, stockChange } from "./stock";
 import { type Channel, CHANNELS, saleMonth, type Sale } from "./sales";
 import { type Category, CATEGORIES, type LedgerDoc } from "./types";
 
@@ -21,7 +22,7 @@ export interface PlTable {
   sales: PlRow<Channel>[];
   salesTotal: PlRow<"total">;
   /** By category, biggest first; "depreciation" = equipment written off this month (lib/cost-split) */
-  costs: PlRow<Category | "depreciation" | "disposal" | "labor">[];
+  costs: PlRow<Category | "depreciation" | "disposal" | "labor" | "stock">[];
   costTotal: PlRow<"total">;
   profit: PlRow<"total">;
 }
@@ -43,11 +44,12 @@ export function plTable(
   companyTaxId: string,
   labor: LaborLine[] = [],
   fixed: FixedLine[] = [],
+  stock: StockCount[] = [],
 ): PlTable {
   const months = monthsEnding(endMonth, n);
   const at = new Map(months.map((m, i) => [m, i]));
   const byCh = new Map<Channel, number[]>();
-  const byCat = new Map<Category | "depreciation" | "disposal" | "labor", number[]>();
+  const byCat = new Map<Category | "depreciation" | "disposal" | "labor" | "stock", number[]>();
   const add = <K>(map: Map<K, number[]>, k: K, i: number, v: number) => {
     const row = map.get(k) ?? months.map(() => 0);
     row[i] += v;
@@ -58,10 +60,11 @@ export function plTable(
     if (i !== undefined) add(byCh, s.channel, i, toSatang(s.gross) - toSatang(s.vat));
   }
   for (const [i, m] of months.entries()) {
-    const c = monthCosts(purchases, m, companyTaxId, fixedForMonth(fixed, m));
+    const c = monthCosts(purchases, m, companyTaxId, fixedForMonth(fixed, m), stockChange(stock, m).change);
     for (const [cat, v] of c.byCategory) add(byCat, cat, i, v);
     if (c.depreciation) add(byCat, "depreciation", i, c.depreciation);
     if (c.disposal) add(byCat, "disposal", i, c.disposal);
+    if (c.stock) add(byCat, "stock", i, c.stock);
     const l = monthLabor(labor, m);
     if (l) add(byCat, "labor", i, l);
   }
@@ -74,7 +77,7 @@ export function plTable(
     sales: CHANNELS.filter((c) => byCh.has(c)).map((c) => row(c, byCh.get(c)!)),
     salesTotal: row("total", salesSat),
     // Biggest cost first (over the whole period), so the table reads top-down by weight
-    costs: [...CATEGORIES, ...[...byCat.keys()].filter((k) => k.startsWith("c_")), "labor" as const, "depreciation" as const, "disposal" as const]
+    costs: [...CATEGORIES, ...[...byCat.keys()].filter((k) => k.startsWith("c_")), "labor" as const, "depreciation" as const, "disposal" as const, "stock" as const]
       .filter((c, i, all) => byCat.has(c) && all.indexOf(c) === i)
       .map((c) => row(c, byCat.get(c)!))
       .sort((a, b) => b.total - a.total),

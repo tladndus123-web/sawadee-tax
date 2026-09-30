@@ -30,6 +30,7 @@ import { BranchTable } from "./BranchTable";
 import { TeamCard } from "./TeamCard";
 import { UncheckedList } from "./UncheckedList";
 import { MonthCloseCard } from "./MonthCloseCard";
+import { GoalBars } from "./GoalBars";
 import { FoldAllButton, SettingsFold } from "@/components/settings/SettingsFold";
 import { useMonthLocks } from "@/lib/month-lock-store";
 import { useDocName } from "@/components/ledger/doc-name";
@@ -38,6 +39,8 @@ import { monthLabor } from "@/lib/cost-control";
 import { useLabor } from "@/lib/labor-store";
 import { fixedForMonth } from "@/lib/fixed-costs";
 import { useFixedCosts } from "@/lib/fixed-store";
+import { stockChange } from "@/lib/stock";
+import { useStock } from "@/lib/stock-store";
 
 
 /** Step 8 dashboard: the 4 summary tiles, bills due soon (mark paid here), 6-month trend, recent activity. */
@@ -66,7 +69,11 @@ export function Dashboard() {
   const branchCount = useBranches().branches.length;
   // Several branches seen together: the combined board carries the profit, so the single line steps aside
   const combined = allBranches && branchCount > 1;
-  const result = useMemo(() => monthResult(sales, docs.map((d) => d.doc), month, company.taxId, monthLabor(labor, month), fixedForMonth(fixed, month)), [sales, docs, month, company.taxId, labor, fixed]);
+  const { counts: stock } = useStock();
+  const result = useMemo(
+    () => monthResult(sales, docs.map((d) => d.doc), month, company.taxId, monthLabor(labor, month), fixedForMonth(fixed, month), stockChange(stock, month).change),
+    [sales, docs, month, company.taxId, labor, fixed, stock],
+  );
   const hasSales = result.days > 0;
   const pct = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 });
   const unchecked = useMemo(() => pick(entries, "ledger").filter((e) => e.checkedAt === null).length, [entries]);
@@ -108,17 +115,14 @@ export function Dashboard() {
         // Several branches seen together: each branch's month side by side carries the profit
         <BranchTable month={month} companyTaxId={company.taxId} />
       ) : (
-        <Link
-          href="/sales"
-          className="tap-row grid gap-3 rounded-[1.375rem] border border-brand/15 bg-brand-soft/70 p-5 shadow-[var(--shadow-soft)] sm:p-6"
-        >
-          <span className="flex items-center justify-between gap-3">
+        <section className="grid gap-3 rounded-[1.375rem] border border-brand/15 bg-brand-soft/70 p-5 shadow-[var(--shadow-soft)] sm:p-6" aria-label={t("dash.profitTitle")}>
+          <Link href="/sales" className="press flex items-center justify-between gap-3 rounded-lg">
             <span className="flex items-center gap-2 text-sm font-semibold text-brand">
               <TrendingUp className="size-4" aria-hidden />
               {t("dash.profitTitle")}
             </span>
             <ChevronRight className="size-4 flex-none text-brand/70" aria-hidden />
-          </span>
+          </Link>
           {hasSales ? (
             <>
               <span
@@ -137,7 +141,9 @@ export function Dashboard() {
           ) : (
             <span className="text-sm text-primary">{t("dash.profitEmpty")}</span>
           )}
-        </Link>
+          {/* How far towards break-even and the month's target */}
+          <GoalBars month={month} today={today} salesValue={result.salesValue} />
+        </section>
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

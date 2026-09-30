@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { BranchAvatar, useBranchName } from "@/components/layout/branch-switcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/invoice/fields";
 import { BRANCH_COLORS, type Branch, branchLabel, COLOR_NAMES, colorOf, isHead } from "@/lib/branches";
 import { deleteBranch, saveBranch, useBranches } from "@/lib/branch-store";
 import { useMe } from "@/lib/role-store";
@@ -37,7 +38,7 @@ export function BranchCard() {
     if (!/^\d{5}$/.test(no)) return toast.error(t("badNo"));
     setBusy(true);
     try {
-      await saveBranch({ id: editing.id, no, name: editing.name ?? "", sort: editing.sort ?? branches.length, color: editing.color ?? "", closedDays: editing.closedDays ?? [] });
+      await saveBranch({ id: editing.id, no, name: editing.name ?? "", sort: editing.sort ?? branches.length, color: editing.color ?? "", closedDays: editing.closedDays ?? [], salesTarget: editing.salesTarget ?? 0 });
       toast.success(t("saved"));
       setEditing(null);
     } catch (e) {
@@ -150,6 +151,11 @@ export function BranchCard() {
               })}
             </div>
           </div>
+          <label className="grid gap-1">
+            <span className="text-[11px] text-muted-foreground">{t("salesTarget")}</span>
+            <MoneyInput className="h-10 bg-background" value={editing.salesTarget ?? 0} onChange={(v) => setEditing({ ...editing, salesTarget: Number(v) || 0 })} />
+            <span className="text-[11px] leading-snug text-muted-foreground">{t("salesTargetHint")}</span>
+          </label>
           <div className="grid gap-1.5" role="group" aria-label={t("closedDays")}>
             <span className="text-[11px] text-muted-foreground">{t("closedDays")}</span>
             <div className="flex flex-wrap gap-1.5">

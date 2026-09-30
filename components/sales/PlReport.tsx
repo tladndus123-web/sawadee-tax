@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useCategoryLabel } from "@/components/vendors/CategoryIcon";
 import { useChannelLabel } from "./channel-name";
 import { useLabor } from "@/lib/labor-store";
+import { useStock } from "@/lib/stock-store";
 import { useFixedCosts } from "@/lib/fixed-store";
 
 const SPANS = [3, 6, 12] as const;
@@ -63,7 +64,8 @@ export function PlReport() {
   const { lines: labor } = useLabor();
   const chName = useChannelLabel();
   const { lines: fixed } = useFixedCosts();
-  const table = useMemo(() => plTable(sales, purchases, end, span, company.taxId, labor, fixed), [sales, purchases, end, span, company.taxId, labor, fixed]);
+  const { counts: stock } = useStock();
+  const table = useMemo(() => plTable(sales, purchases, end, span, company.taxId, labor, fixed, stock), [sales, purchases, end, span, company.taxId, labor, fixed, stock]);
 
   const short = new Intl.DateTimeFormat(locale, { year: "2-digit", month: "short", timeZone: "UTC" });
   const long = new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", timeZone: "UTC" });
@@ -93,7 +95,7 @@ export function PlReport() {
         profit: t("pl.profit"),
         month: monthShort,
         channel: (k) => chName(k),
-        category: (k) => (k === "depreciation" || k === "disposal" || k === "labor" ? t(`pl.${k}`) : catLabel(k)),
+        category: (k) => (k === "depreciation" || k === "disposal" || k === "labor" || k === "stock" ? t(`pl.${k}`) : catLabel(k)),
       });
       toast.success(t("pl.downloaded", { name }));
     } catch {
@@ -186,7 +188,7 @@ export function PlReport() {
               <MoneyRow label={t("pl.salesTotal")} r={table.salesTotal} sales={table.salesTotal} view={view} strong />
               <SectionRow label={t("pl.costs")} cols={cols} />
               {table.costs.map((r) => (
-                <MoneyRow key={r.key} label={r.key === "depreciation" || r.key === "disposal" || r.key === "labor" ? t(`pl.${r.key}`) : catLabel(r.key)} r={r} sales={table.salesTotal} view={view} indent />
+                <MoneyRow key={r.key} label={r.key === "depreciation" || r.key === "disposal" || r.key === "labor" || r.key === "stock" ? t(`pl.${r.key}`) : catLabel(r.key)} r={r} sales={table.salesTotal} view={view} indent />
               ))}
               <MoneyRow label={t("pl.costTotal")} r={table.costTotal} sales={table.salesTotal} view={view} strong />
               <MoneyRow label={t("pl.profit")} r={table.profit} sales={table.salesTotal} view={view} strong profit />

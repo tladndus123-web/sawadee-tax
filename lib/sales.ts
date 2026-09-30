@@ -64,8 +64,11 @@ export interface MonthResult {
   byChannel: { channel: Channel; gross: number; value: number }[];
 }
 
-/** `labor`: the month's labour in satang (lib/cost-control monthLabor); it lowers the profit like any cost */
-export function monthResult(sales: Sale[], purchases: LedgerDoc[], month: string, companyTaxId: string, labor = 0, fixed?: ReadonlyMap<Category, number>): MonthResult {
+/**
+ * `labor`: the month's labour in satang (lib/cost-control monthLabor); it lowers the profit like any cost.
+ * `stock`: the month-end stock change in satang (lib/stock stockChange), part of the food cost.
+ */
+export function monthResult(sales: Sale[], purchases: LedgerDoc[], month: string, companyTaxId: string, labor = 0, fixed?: ReadonlyMap<Category, number>, stock = 0): MonthResult {
   let sg = 0;
   let sv = 0;
   const days = new Set<string>();
@@ -90,7 +93,7 @@ export function monthResult(sales: Sale[], purchases: LedgerDoc[], month: string
     if (claimable(d, companyTaxId)) pv += toSatang(d.totals.vat);
   }
   const salesValue = sg - sv;
-  const costs = monthCosts(purchases, month, companyTaxId, fixed);
+  const costs = monthCosts(purchases, month, companyTaxId, fixed, stock);
   const cost = costs.cost;
   const profit = salesValue - cost - labor;
   return {

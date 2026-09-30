@@ -23,6 +23,8 @@ import { cn } from "@/lib/utils";
 import { useLabor } from "@/lib/labor-store";
 import { fixedForMonth } from "@/lib/fixed-costs";
 import { useFixedCosts } from "@/lib/fixed-store";
+import { stockChange } from "@/lib/stock";
+import { useStock } from "@/lib/stock-store";
 
 export function BranchTable({ month, companyTaxId }: { month: string; companyTaxId: string }) {
   const t = useTranslations("branch");
@@ -32,20 +34,21 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
   const { sales } = useSales({ all: true });
   const { lines: labor } = useLabor({ all: true });
   const { lines: fixed } = useFixedCosts({ all: true });
+  const { counts: stock } = useStock({ all: true });
   const company = useCompany();
   const { rows: categories } = useCategories();
   const { rows, total, totalCost } = useMemo(() => {
     const purchases = pick(entries, "ledger").map((e) => e.doc);
-    const s = branchSummaries(branches, purchases, sales, month, companyTaxId, labor, fixed);
+    const s = branchSummaries(branches, purchases, sales, month, companyTaxId, labor, fixed, stock);
     const food = new Set(categories.filter((c) => c.foodCost).map((c) => c.key as string));
     const targets = targetsOf(company.costTargets);
     const cc = (salesValue: number, costs: Parameters<typeof costControl>[1], lab: number) => costControl(Math.round(salesValue * 100), costs, food, lab, targets);
     return {
       rows: s.rows.map((r) => ({ ...r, cost: cc(r.result.salesValue, r.costs, r.labor) })),
       total: s.total,
-      totalCost: cc(s.total.salesValue, monthCosts(purchases, month, companyTaxId, fixedForMonth(fixed, month)), s.rows.reduce((a, r) => a + r.labor, 0)),
+      totalCost: cc(s.total.salesValue, monthCosts(purchases, month, companyTaxId, fixedForMonth(fixed, month), stockChange(stock, month).change), s.rows.reduce((a, r) => a + r.labor, 0)),
     };
-  }, [branches, entries, sales, month, companyTaxId, labor, fixed, categories, company.costTargets]);
+  }, [branches, entries, sales, month, companyTaxId, labor, fixed, stock, categories, company.costTargets]);
   if (branches.length < 2) return null;
 
   const go = (id: string) => {

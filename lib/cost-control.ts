@@ -59,8 +59,9 @@ export interface CostControl {
   flr: CostLine;
 }
 
-export function costControl(salesValue: number, costs: { byCategory: ReadonlyMap<string, number> }, foodKeys: ReadonlySet<string>, labor: number, targets: CostTargets): CostControl {
-  let food = 0;
+export function costControl(salesValue: number, costs: { byCategory: ReadonlyMap<string, number>; stock?: number }, foodKeys: ReadonlySet<string>, labor: number, targets: CostTargets): CostControl {
+  // Food used = food bought + the month-end stock change (lib/stock)
+  let food = costs.stock ?? 0;
   for (const [k, v] of costs.byCategory) if (foodKeys.has(k)) food += v;
   const rent = costs.byCategory.get("rent") ?? 0;
   const pct = (v: number) => (salesValue > 0 ? Math.round((v / salesValue) * 1000) / 10 : null);

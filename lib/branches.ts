@@ -6,6 +6,7 @@ import { type MonthCosts, monthCosts } from "./cost-split";
 import { type FixedLine, fixedForMonth } from "./fixed-costs";
 import { type MonthResult, monthResult, type Sale } from "./sales";
 import { branchNo } from "./thai-tax";
+import { type StockCount, stockChange } from "./stock";
 import type { LedgerDoc } from "./types";
 
 export interface Branch {
@@ -18,6 +19,8 @@ export interface Branch {
   color: string;
   /** Regular closing weekdays, 0 = Sunday … 6 = Saturday */
   closedDays?: number[];
+  /** Monthly sales target without VAT, baht (0 = none) */
+  salesTarget?: number;
 }
 
 /** Colours a branch can wear in the switcher: name → [dot / text, soft background] */
@@ -97,6 +100,7 @@ export function branchSummaries(
   companyTaxId: string,
   labor: LaborLine[] = [],
   fixed: FixedLine[] = [],
+  stock: StockCount[] = [],
 ): { rows: BranchSummary[]; total: MonthResult } {
   const head = headOf(branches);
   const of = (id: string) => (id && byId(branches, id) ? id : (head?.id ?? ""));
@@ -104,12 +108,13 @@ export function branchSummaries(
     const mine = purchases.filter((d) => of(d.branchId) === b.id);
     const lab = monthLabor(labor.filter((l) => of(l.branchId) === b.id), month);
     const fix = fixedForMonth(fixed.filter((l) => of(l.branchId) === b.id), month);
+    const st = stockChange(stock.filter((c) => of(c.branchId) === b.id), month).change;
     return {
       branch: b,
-      result: monthResult(sales.filter((s) => of(s.branchId) === b.id), mine, month, companyTaxId, lab, fix),
-      costs: monthCosts(mine, month, companyTaxId, fix),
+      result: monthResult(sales.filter((s) => of(s.branchId) === b.id), mine, month, companyTaxId, lab, fix, st),
+      costs: monthCosts(mine, month, companyTaxId, fix, st),
       labor: lab,
     };
   });
-  return { rows, total: monthResult(sales, purchases, month, companyTaxId, monthLabor(labor, month), fixedForMonth(fixed, month)) };
+  return { rows, total: monthResult(sales, purchases, month, companyTaxId, monthLabor(labor, month), fixedForMonth(fixed, month), stockChange(stock, month).change) };
 }

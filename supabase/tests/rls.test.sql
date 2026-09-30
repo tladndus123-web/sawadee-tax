@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(168);
+select plan(173);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -286,6 +286,16 @@ select throws_ok($$ insert into public.labor_costs (month, wages) values ('2026-
 insert into public.month_locks (month) values ('2026-09');
 select throws_like($$ update public.labor_costs set wages = 1 where month = '2026-09' $$, 'month_locked%', 'a closed month''s labour costs cannot change');
 delete from public.month_locks where month = '2026-09';
+-- Month-end stock: one total per branch and month, admins only, frozen in a closed month
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select throws_ok($$ insert into public.stock_counts (month, amount) values ('2026-09', 100) $$, '42501', NULL, 'staff cannot enter the month-end stock');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select lives_ok($$ insert into public.stock_counts (month, amount) values ('2026-09', 23000) $$, 'an admin enters the month-end stock');
+select throws_ok($$ insert into public.stock_counts (month, amount) values ('2026-10', -1) $$, '23514', NULL, 'stock is never negative');
+insert into public.month_locks (month) values ('2026-09');
+select throws_like($$ update public.stock_counts set amount = 1 where month = '2026-09' $$, 'month_locked%', 'a closed month''s stock cannot change');
+delete from public.month_locks where month = '2026-09';
+select lives_ok($$ update public.branches set sales_target = 800000 where no = '00000' $$, 'an admin sets a monthly sales target');
 select is((select array_agg(key order by key) from public.categories where food_cost), array['food', 'supplies'], 'food cost starts with food and supplies');
 select is((select builtin from public.categories where key = 'fees'), true, 'the fees category is built in');
 

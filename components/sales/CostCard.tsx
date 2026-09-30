@@ -4,7 +4,7 @@
 // and the three together. Labour has no receipts: admins type it in per branch and month (Thai payroll lines).
 // Admins can change the targets too.
 
-import { CalendarClock, ChefHat, Loader2, Pencil, Users } from "lucide-react";
+import { CalendarClock, ChefHat, Loader2, Package, Pencil, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -22,6 +22,9 @@ import { type CostLine, costControl, type LaborLine, monthLabor, targetsOf } fro
 import { monthCosts } from "@/lib/cost-split";
 import { type FixedLine, fixedForMonth } from "@/lib/fixed-costs";
 import { useLabor, saveLabor } from "@/lib/labor-store";
+import { prevMonth, stockChange } from "@/lib/stock";
+import { saveStock, useStock } from "@/lib/stock-store";
+import { useMonthLabel } from "@/components/ledger/Stickers";
 import { isMonthLocked } from "@/lib/month-lock-store";
 import { baht, fromSatang } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
@@ -40,13 +43,16 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
   const isAdmin = useMe().role === "admin";
   const { rows: categories } = useCategories();
   const { lines } = useLabor();
+  const { counts } = useStock();
+  const stock = useMemo(() => stockChange(counts, month), [counts, month]);
   const [laborOpen, setLaborOpen] = useState(false);
+  const [stockOpen, setStockOpen] = useState(false);
   const [targetsOpen, setTargetsOpen] = useState(false);
   const targets = targetsOf(company.costTargets);
   const foodKeys = useMemo(() => new Set(categories.filter((c) => c.foodCost).map((c) => c.key as string)), [categories]);
   const c = useMemo(
-    () => costControl(Math.round(salesValue * 100), monthCosts(purchases, month, company.taxId, fixedForMonth(fixed, month)), foodKeys, monthLabor(lines, month), targets),
-    [salesValue, purchases, month, company.taxId, foodKeys, lines, targets, fixed],
+    () => costControl(Math.round(salesValue * 100), monthCosts(purchases, month, company.taxId, fixedForMonth(fixed, month), stock.change), foodKeys, monthLabor(lines, month), targets),
+    [salesValue, purchases, month, company.taxId, foodKeys, lines, targets, fixed, stock.change],
   );
 
   return (
@@ -60,10 +66,14 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
           <p className="text-xs text-muted-foreground">{t("hint")}</p>
         </div>
         {isAdmin && (
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             <Button type="button" variant="outline" className="h-9 rounded-full px-3 text-[13px]" onClick={() => setLaborOpen(true)}>
               <Users className="size-4" />
               {t("enterLabor")}
+            </Button>
+            <Button type="button" variant="outline" className="h-9 rounded-full px-3 text-[13px]" onClick={() => setStockOpen(true)}>
+              <Package className="size-4" />
+              {t("stockBtn")}
             </Button>
             <Button asChild variant="outline" className="h-9 rounded-full px-3 text-[13px]">
               <Link href="/settings#fixed-title">
@@ -85,7 +95,18 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
       </div>
 
       <div className="grid gap-2.5">
-        <Ratio code="F" label={t("food")} line={c.food} />
+        <Ratio
+          code="F"
+          label={t("food")}
+          line={c.food}
+          extra={
+            stock.applied
+              ? t("stockApplied", { open: baht(fromSatang(stock.opening)), close: baht(fromSatang(stock.closing)) })
+              : stock.partial
+                ? t("stockPartial")
+                : undefined
+          }
+        />
         <Ratio code="L" label={t("labor")} line={c.labor} empty={!monthLabor(lines, month) ? t("noLabor") : undefined} />
         <Ratio code="R" label={t("rent")} line={c.rent} />
       </div>
@@ -93,6 +114,7 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
       <p className="text-[11px] leading-relaxed text-muted-foreground">{t("note")}</p>
 
       <Dialog open={laborOpen} onOpenChange={setLaborOpen}>{laborOpen && <LaborSheet month={month} onDone={() => setLaborOpen(false)} />}</Dialog>
+      <Dialog open={stockOpen} onOpenChange={setStockOpen}>{stockOpen && <StockSheet month={month} onDone={() => setStockOpen(false)} />}</Dialog>
       <Dialog open={targetsOpen} onOpenChange={setTargetsOpen}>{targetsOpen && <TargetsSheet onDone={() => setTargetsOpen(false)} />}</Dialog>
     </section>
   );
@@ -118,7 +140,7 @@ function Headline({ code, label, line }: { code: string; label: string; line: Co
   );
 }
 
-function Ratio({ code, label, line, empty }: { code: string; label: string; line: CostLine; empty?: string }) {
+function Ratio({ code, label, line, empty, extra }: { code: string; label: string; line: CostLine; empty?: string; extra?: string }) {
   const t = useTranslations("cost");
   // The bar runs to 1.5× the target; its track is tinted with the zones (room · close · just over · well over)
   const scale = Math.max(line.target * 1.5, 1);
@@ -145,6 +167,7 @@ function Ratio({ code, label, line, empty }: { code: string; label: string; line
       <span className="flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
         {empty ?? t("target", { pct: line.target })}
         {!empty && line.level !== "none" && <span className={cn("font-semibold", TONE[line.level])}>· {t(`lvl.${line.level}`)}</span>}
+        {extra && <span className="w-full">{extra}</span>}
       </span>
     </div>
   );
@@ -231,6 +254,79 @@ function LaborSheet({ month, onDone }: { month: string; onDone: () => void }) {
             {t("save")}
           </Button>
         </div>
+      </div>
+    </DialogContent>
+  );
+}
+
+/** Month-end stock for a branch: last month's and this month's totals (both are needed for the food cost to use them) */
+function StockSheet({ month, onDone }: { month: string; onDone: () => void }) {
+  const t = useTranslations("cost");
+  const monthLabel = useMonthLabel();
+  const names = useBranchName();
+  const { branches } = useBranches();
+  const working = useBranch();
+  const { counts } = useStock({ all: true });
+  const prev = prevMonth(month);
+  const [branchId, setBranchId] = useState(() => (working !== ALL ? working : (headOf(branches)?.id ?? "")));
+  const amountOf = (id: string, m: string) => counts.find((c) => c.branchId === id && c.month === m)?.amount ?? null;
+  const [open, setOpen] = useState<number | null>(() => amountOf(branchId, prev));
+  const [close, setClose] = useState<number | null>(() => amountOf(branchId, month));
+  const [busy, setBusy] = useState(false);
+  const pick = (id: string) => {
+    setBranchId(id);
+    setOpen(amountOf(id, prev));
+    setClose(amountOf(id, month));
+  };
+  const save = async () => {
+    setBusy(true);
+    try {
+      if (open !== null) await saveStock({ branchId, month: prev, amount: open, note: "" });
+      if (close !== null) await saveStock({ branchId, month, amount: close, note: "" });
+      toast.success(t("stockSaved"));
+      onDone();
+    } catch (e) {
+      toast.error(isMonthLocked(e) ? t("locked") : t("fail"));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const field = (label: string, value: number | null, set: (v: number | null) => void) => (
+    <label className="grid gap-1">
+      <span className="text-sm font-medium">{label}</span>
+      <MoneyInput className="h-11 text-[15px]" value={value ?? 0} onChange={(v) => set(Number(v) || 0)} />
+    </label>
+  );
+  return (
+    <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-3xl sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>{t("stockTitle", { month: monthLabel(month) })}</DialogTitle>
+        <DialogDescription className="text-xs leading-relaxed">{t("stockHint")}</DialogDescription>
+      </DialogHeader>
+      {branches.length > 1 && (
+        <label className="grid gap-1">
+          <span className="text-xs text-muted-foreground">{t("branch")}</span>
+          <select value={branchId} onChange={(e) => pick(e.target.value)} className="h-10 rounded-xl border bg-background px-3 text-sm">
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {branchLabel(b, names)}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <div className="grid gap-4">
+        {field(t("stockPrev", { month: monthLabel(prev) }), open, setOpen)}
+        {field(t("stockCur", { month: monthLabel(month) }), close, setClose)}
+      </div>
+      <div className="flex justify-end gap-2 border-t pt-3">
+        <Button type="button" variant="ghost" className="rounded-full" disabled={busy} onClick={onDone}>
+          {t("cancel")}
+        </Button>
+        <Button type="button" className="rounded-full" disabled={busy || (open === null && close === null)} onClick={() => void save()}>
+          {busy && <Loader2 className="size-4 animate-spin" />}
+          {t("save")}
+        </Button>
       </div>
     </DialogContent>
   );

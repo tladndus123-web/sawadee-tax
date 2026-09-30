@@ -661,7 +661,14 @@
     "vatCheck": "{count} to check",
     "vatToPay": "VAT to pay (est.)",
     "vatCreditShort": "More input VAT than output",
-    "salesDays": "{count, plural, one {# day entered} other {# days entered}}"
+    "salesDays": "{count, plural, one {# day entered} other {# days entered}}",
+    "bep": "Break-even {amount}",
+    "bepDone": "Past break-even",
+    "bepBasis": "Break-even = every cost except food ÷ (1 − food cost ratio). This month's bills are not all in, so last month's costs are used.",
+    "goal": "Target {amount}",
+    "perDay": "{days, plural, one {# open day left} other {# open days left}} · {amount} more a day",
+    "perDayNone": "No open days left this month",
+    "setGoal": "Set a monthly sales target →"
   },
   "line": {
     "title": "LINE",
@@ -1051,7 +1058,8 @@
     "view_both": "Amount + %",
     "view_amount": "Amount",
     "view_share": "%",
-    "shareSheet": "% of sales"
+    "shareSheet": "% of sales",
+    "stock": "Change in stock"
   },
   "install": {
     "title": "Install on your phone",
@@ -1130,7 +1138,9 @@
     "allLong": "Combined · all branches",
     "closedDays": "Regular closing days",
     "closedHint": "These weekdays are not counted as missing shop sales.",
-    "closedShort": "Closed {days}"
+    "closedShort": "Closed {days}",
+    "salesTarget": "Monthly sales target (excl. VAT)",
+    "salesTargetHint": "0 = no target. The dashboard shows the progress."
   },
   "dep": {
     "label": "Depreciation period",
@@ -1276,7 +1286,15 @@
       "watch": "Watch · close to target",
       "near": "Warning · just over",
       "over": "Danger · over target"
-    }
+    },
+    "stockBtn": "Month-end stock",
+    "stockTitle": "Month-end stock · {month}",
+    "stockHint": "Roughly what the food and supplies left in the shop are worth on the last day of the month. With last month's and this month's, food cost becomes what was actually used (bought + last month's stock − this month's), and the profit follows.",
+    "stockPrev": "Stock at the end of last month ({month})",
+    "stockCur": "Stock at the end of this month ({month})",
+    "stockSaved": "Month-end stock saved.",
+    "stockApplied": "Stock counted · {open} last month → {close} this month",
+    "stockPartial": "Stock: enter both last month's and this month's to use it"
   },
   "pay": {
     "title": "Payroll",
