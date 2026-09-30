@@ -553,7 +553,17 @@
     "no": "No",
     "empty": "No documents to export for this month.",
     "sheetCosts": "Costs by category",
-    "cost": "Cost (excl. claimable VAT)"
+    "cost": "Cost (excl. claimable VAT)",
+    "pack": "Accountant pack (ZIP)",
+    "packHint": "This month's Excel (purchases · items · costs · sales) and every document photo / PDF in one file, ready to send to your accountant.",
+    "packing": "Photos {done}/{total}…",
+    "fileCol": "Photo file",
+    "sheetSales": "Sales",
+    "channel": "Channel",
+    "saleDocs": "Receipt numbers",
+    "bills": "Bills",
+    "gross": "Sales (incl. VAT)",
+    "saleNet": "Sales (excl. VAT)"
   },
   "vendors": {
     "title": "Vendors",

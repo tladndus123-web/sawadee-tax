@@ -553,7 +553,17 @@
     "no": "아니요",
     "empty": "이 달에는 내보낼 서류가 없어요.",
     "sheetCosts": "항목별 비용",
-    "cost": "비용 (돌려받는 부가세 제외)"
+    "cost": "비용 (돌려받는 부가세 제외)",
+    "pack": "회계사용 자료 (ZIP)",
+    "packHint": "이 달 엑셀(매입 · 품목 · 비용 · 매출)과 서류 사진 · PDF를 파일 하나로 받아요. 회계사에게 그대로 보내면 돼요.",
+    "packing": "사진 {done}/{total}…",
+    "fileCol": "사진 파일",
+    "sheetSales": "매출",
+    "channel": "판매 경로",
+    "saleDocs": "영수증 번호",
+    "bills": "건수",
+    "gross": "매출 (부가세 포함)",
+    "saleNet": "매출 (부가세 제외)"
   },
   "vendors": {
     "title": "거래처",

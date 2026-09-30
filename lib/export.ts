@@ -73,13 +73,17 @@ export interface MonthExport {
   totals: ExportTotals;
 }
 
+/** Rows of the month export: by date, then document number (the month pack numbers photos the same way) */
+export const exportOrder = (a: Pick<LedgerDoc, "date" | "docNo">, b: Pick<LedgerDoc, "date" | "docNo">) =>
+  a.date.localeCompare(b.date) || a.docNo.localeCompare(b.docNo);
+
 export function buildMonthExport(
   docs: { doc: LedgerDoc; flags?: number }[],
   locale: string,
   companyTaxId: string,
 ): MonthExport {
   const lang = exportLang(locale);
-  const sorted = [...docs].sort((a, b) => a.doc.date.localeCompare(b.doc.date) || a.doc.docNo.localeCompare(b.doc.docNo));
+  const sorted = [...docs].sort((a, b) => exportOrder(a.doc, b.doc));
   const rows: ExportRow[] = [];
   const items: ExportItemRow[] = [];
   const sum = { taxable: 0, exempt: 0, vat: 0, net: 0, wht: 0, claimableVat: 0, unpaid: 0 };

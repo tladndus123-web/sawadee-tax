@@ -553,7 +553,17 @@
     "no": "いいえ",
     "empty": "この月にエクスポートする書類はありません。",
     "sheetCosts": "科目別費用",
-    "cost": "費用（控除VAT除く）"
+    "cost": "費用（控除VAT除く）",
+    "pack": "会計士用まとめ (ZIP)",
+    "packHint": "今月のExcel（仕入 · 品目 · 費用 · 売上）と書類の写真 · PDFをひとつのファイルに。そのまま会計士に送れます。",
+    "packing": "写真 {done}/{total}…",
+    "fileCol": "写真ファイル",
+    "sheetSales": "売上",
+    "channel": "販売チャネル",
+    "saleDocs": "レシート番号",
+    "bills": "件数",
+    "gross": "売上（VAT込み）",
+    "saleNet": "売上（VAT抜き）"
   },
   "vendors": {
     "title": "取引先",

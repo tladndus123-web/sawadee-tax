@@ -27,7 +27,40 @@ export interface XlsxLabels {
 
 const MONEY = "#,##0.00";
 
+/** The month's shop sales, for the accountant's pack (one row per day and channel) */
+export interface SalesSheet {
+  title: string;
+  cols: Record<"date" | "channel" | "docs" | "bills" | "gross" | "vat" | "net", string>;
+  rows: { date: string; channel: string; docs: string; bills: number; gross: number; vat: number; net: number }[];
+}
+
+/** Extras of the accountant's pack: the photo file of each ledger row, and the sales sheet */
+export interface PackExtras {
+  fileCol: string;
+  files: string[];
+  sales?: SalesSheet;
+}
+
 export async function downloadMonthXlsx(data: MonthExport, month: string, thaiColumn: boolean, L: XlsxLabels, costs?: CostSheet): Promise<string> {
+  const buf = await buildMonthXlsx(data, thaiColumn, L, costs);
+  const file = `purchase-ledger-${month}.xlsx`;
+  saveFile(new Blob([buf], { type: XLSX_TYPE }), file);
+  return file;
+}
+
+export const XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+/** Hand a file to the browser as a download */
+export function saveFile(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+export async function buildMonthXlsx(data: MonthExport, thaiColumn: boolean, L: XlsxLabels, costs?: CostSheet, extras?: PackExtras): Promise<ArrayBuffer> {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
   wb.created = new Date();
@@ -53,10 +86,12 @@ export async function downloadMonthXlsx(data: MonthExport, month: string, thaiCo
     { key: "paidDate", width: 12 },
     { key: "claimable", width: 10 },
     { key: "flags", width: 9 },
+    ...(extras ? [{ key: "file", width: 44 }] : []),
   ];
-  ledger.columns = cols.map((c) => ({ header: L.cols[c.key], key: c.key, width: c.width, style: c.money ? { numFmt: MONEY } : {} }));
-  for (const r of data.rows) {
+  ledger.columns = cols.map((c) => ({ header: c.key === "file" ? extras?.fileCol : L.cols[c.key], key: c.key, width: c.width, style: c.money ? { numFmt: MONEY } : {} }));
+  for (const [n, r] of data.rows.entries()) {
     ledger.addRow({
+      file: extras?.files[n] ?? "",
       ...r,
       docType: L.docType(r.docType),
       category: L.category(r.category),
@@ -111,13 +146,26 @@ export async function downloadMonthXlsx(data: MonthExport, month: string, thaiCo
     sheet.getRow(1).font = { bold: true };
   }
 
-  const buf = await wb.xlsx.writeBuffer();
-  const file = `purchase-ledger-${month}.xlsx`;
-  const url = URL.createObjectURL(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = file;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-  return file;
+  // Sheet 4 (accountant's pack): the month's shop sales, for the output-tax side
+  if (extras?.sales) {
+    const s = extras.sales;
+    const sheet = wb.addWorksheet(s.title, { views: [{ state: "frozen", ySplit: 1 }] });
+    sheet.columns = [
+      { header: s.cols.date, key: "date", width: 12 },
+      { header: s.cols.channel, key: "channel", width: 16 },
+      { header: s.cols.docs, key: "docs", width: 24 },
+      { header: s.cols.bills, key: "bills", width: 8 },
+      { header: s.cols.gross, key: "gross", width: 15, style: { numFmt: MONEY } },
+      { header: s.cols.vat, key: "vat", width: 13, style: { numFmt: MONEY } },
+      { header: s.cols.net, key: "net", width: 15, style: { numFmt: MONEY } },
+    ];
+    for (const r of s.rows) sheet.addRow(r);
+    const sum = (k: "gross" | "vat" | "net") => Math.round(s.rows.reduce((a, r) => a + Math.round(r[k] * 100), 0)) / 100;
+    const tot = sheet.addRow({ date: L.total, bills: s.rows.reduce((a, r) => a + r.bills, 0), gross: sum("gross"), vat: sum("vat"), net: sum("net") });
+    tot.font = { bold: true };
+    tot.eachCell((c) => (c.border = { top: { style: "thin" } }));
+    sheet.getRow(1).font = { bold: true };
+  }
+
+  return (await wb.xlsx.writeBuffer()) as ArrayBuffer;
 }
