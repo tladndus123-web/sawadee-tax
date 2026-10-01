@@ -21,7 +21,7 @@ import { refreshLabor } from "@/lib/labor-store";
 import { fmt } from "@/lib/money";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
 import { daysNotEmployed, type Employee, employedInMonth, EMPTY_PERIOD, type LineRates, lineRates, monthPay, payrollSettingsOf, type PeriodInput, sameRates, timesText } from "@/lib/payroll";
-import { loadAllowanceNames, loadPayroll, loadPayrollChecks, type PayrollCheck, type PayrollLineRow, savePayrollMonth, setPayrollCheck, useEmployees } from "@/lib/payroll-store";
+import { loadAllowanceNames, loadPayroll, loadPayrollChecks, type PayrollCheck, type PayrollLineRow, savePayrollMonth, setPayrollCheck, setPayrollPaid, useEmployees } from "@/lib/payroll-store";
 import { cn } from "@/lib/utils";
 import { OtSettings } from "./OtSettings";
 
@@ -51,6 +51,9 @@ export function PayRunTab({ month }: { month: string }) {
   const [open, setOpen] = useState<string | null>(null);
   const [checks, setChecks] = useState<Map<string, PayrollCheck>>(new Map());
   const [checking, setChecking] = useState<string | null>(null);
+  // Pay handed out: employee → when each half was ticked (ms)
+  const [paid, setPaid] = useState<Map<string, { 1?: number | null; 2?: number | null }>>(new Map());
+  const [paying, setPaying] = useState<string | null>(null);
   // Allowance names typed on earlier pay runs (offered in the list)
   const [typedNames, setTypedNames] = useState<string[]>([]);
   // The overtime multiples each saved person was paid with (to say when the settings have changed since)
@@ -87,6 +90,9 @@ export function PayRunTab({ month }: { month: string }) {
         setSaved(new Set(lines.map((l) => l.employeeId)));
         setSavedRates(new Map(lines.map((l) => [l.employeeId, l.rates])));
         setChecks(found);
+        const p = new Map<string, { 1?: number | null; 2?: number | null }>();
+        for (const l of lines) p.set(l.employeeId, { ...p.get(l.employeeId), [l.period]: l.paidAt });
+        setPaid(p);
         setDirty(false);
         setReady(true);
       })
@@ -178,6 +184,20 @@ export function PayRunTab({ month }: { month: string }) {
   };
 
   // The office checks one person's saved pay (or undoes it); the database stamps who and when
+  // Tick a half-month as handed out (a closed month too: only the tick changes)
+  const togglePaid = async (e: Employee, half: 1 | 2, on: boolean) => {
+    setPaying(`${e.id}:${half}`);
+    try {
+      await setPayrollPaid(e.id, month, half, on);
+      setPaid((p) => new Map(p).set(e.id, { ...p.get(e.id), [half]: on ? Date.now() : null }));
+      if (on) toast.success(t("paidSaved", { name: e.name }), { action: { label: <Undo2 className="size-4" aria-label={t("uncheck")} />, onClick: () => void togglePaid(e, half, false) } });
+    } catch {
+      toast.error(t("paidFail"));
+    } finally {
+      setPaying(null);
+    }
+  };
+
   const toggleCheck = async (e: Employee, on: boolean) => {
     setChecking(e.id);
     try {
@@ -193,6 +213,8 @@ export function PayRunTab({ month }: { month: string }) {
   const day = new Intl.DateTimeFormat(locale, { month: "numeric", day: "numeric" });
   const stamp = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
   const checkedCount = staff.filter((e) => checks.has(e.id)).length;
+  const paidFirst = [...saved].filter((id) => paid.get(id)?.[1]).length;
+  const paidSecond = [...saved].filter((id) => paid.get(id)?.[2]).length;
   const stale = staff.some((e) => savedRates.has(e.id) && !sameRates(savedRates.get(e.id)!, lineRates(settings.ot, e.payType)));
 
   if (!loaded || !ready || !company.loaded) return <Loader2 className="mx-auto my-10 size-5 animate-spin text-muted-foreground" aria-hidden />;
@@ -215,8 +237,15 @@ export function PayRunTab({ month }: { month: string }) {
       {stale && !locked && <p className="rounded-2xl bg-warn-soft px-4 py-3 text-sm text-warn">{t("otStale")}</p>}
       <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
         <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">{t("checkHint")}</p>
-        <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums", checkedCount === staff.length ? "bg-ok-soft text-ok" : "bg-muted text-muted-foreground")}>
-          {t("checkedCount", { done: checkedCount, all: staff.length })}
+        <span className="flex flex-wrap gap-1.5">
+          <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums", checkedCount === staff.length ? "bg-ok-soft text-ok" : "bg-muted text-muted-foreground")}>
+            {t("checkedCount", { done: checkedCount, all: staff.length })}
+          </span>
+          {saved.size > 0 && (
+            <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums", paidFirst + paidSecond === saved.size * 2 ? "bg-ok-soft text-ok" : "bg-muted text-muted-foreground")}>
+              {t("paidSummary", { first: paidFirst, second: paidSecond, total: saved.size })}
+            </span>
+          )}
         </span>
       </div>
       <div aria-hidden className={cn(ROW, "hidden px-0 text-[11px] font-medium text-muted-foreground sm:grid")}>
@@ -301,6 +330,35 @@ export function PayRunTab({ month }: { month: string }) {
                   )}
                 </span>
               </div>
+              {/* Pay handed out: each half on its own day (the 15th, and the end of the month) */}
+              {saved.has(e.id) && (
+                <div className="flex flex-wrap items-center gap-2 border-t border-border/60 px-4 py-2 sm:col-span-2">
+                  <span className="text-xs text-muted-foreground">{t("paidCol")}</span>
+                  {([1, 2] as const).map((half) => {
+                    const at = paid.get(e.id)?.[half] ?? null;
+                    const busyHere = paying === `${e.id}:${half}`;
+                    const amount = half === 1 ? m.netFirst : m.netSecond;
+                    return (
+                      <button
+                        key={half}
+                        type="button"
+                        aria-pressed={!!at}
+                        disabled={paying !== null || (dirty && !at)}
+                        onClick={() => void togglePaid(e, half, !at)}
+                        title={at ? stamp.format(at) : undefined}
+                        className={cn(
+                          "press inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium tabular-nums ring-1",
+                          at ? "bg-ok-soft text-ok ring-ok/30" : "bg-background text-foreground ring-foreground/10 hover:bg-muted",
+                        )}
+                      >
+                        {busyHere ? <Loader2 className="size-3.5 animate-spin" /> : at ? <CircleCheck className="size-3.5" aria-hidden /> : <Check className="size-3.5 text-muted-foreground" aria-hidden />}
+                        {t(half === 1 ? "paidFirst" : "paidSecond", { amount: fmt(amount) })}
+                        <span className={cn("font-semibold", at ? "" : "text-muted-foreground")}>{at ? t("paidDone", { date: day.format(at) }) : t("paidMark")}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               {isOpen && (
                 <div className="sm:col-span-2">
                   <PeriodGrid employee={e} row={rowOf(e.id)} pay={m} rates={lineRates(settings.ot, e.payType)} disabled={locked} typedNames={typedNames} onSet={(half, k, v) => set(e.id, half, k, v)} onAllowances={(list) => setAllowances(e.id, list)} />

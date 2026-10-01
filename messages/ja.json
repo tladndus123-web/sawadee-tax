@@ -1487,7 +1487,15 @@
     "yearDocsHint": "50 ทวิ（源泉徴収票）は{cert50}までに従業員へ渡し、ภ.ง.ด.1ก（年間集計）は{pnd1a}までに歳入局へ提出します。保存済みの給与から作成されます。",
     "printCert50": "50 ทวิ を印刷",
     "printPnd1a": "ภ.ง.ด.1ก 一覧を印刷",
-    "nothingSavedYear": "{year}年に保存された給与がありません。"
+    "nothingSavedYear": "{year}年に保存された給与がありません。",
+    "paidCol": "支払",
+    "paidFirst": "15日分 {amount}",
+    "paidSecond": "月末分 {amount}",
+    "paidMark": "支払済みにする",
+    "paidDone": "支払済み · {date}",
+    "paidSaved": "{name}さんを支払済みにしました。",
+    "paidFail": "支払の記録を保存できませんでした。",
+    "paidSummary": "支払済み · 15日分 {first}/{total} · 月末分 {second}/{total}"
   },
   "fixed": {
     "title": "固定費（領収書のない費用）",

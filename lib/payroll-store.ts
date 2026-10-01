@@ -126,6 +126,8 @@ export interface PayrollLineRow extends PeriodInput {
   wht: number;
   net: number;
   paidOn: string;
+  /** When this half's pay was ticked as handed out (ms), null = not yet */
+  paidAt: number | null;
   /** What `allowance` is made of (empty on lines saved before names existed) */
   allowances: SavedAllowance[];
   /** The overtime multiples it was paid with */
@@ -163,6 +165,7 @@ export async function loadPayroll(opts: { month?: string; year?: string } = {}):
       wht: Number(r.wht) || 0,
       net: Number(r.net) || 0,
       paidOn: r.paid_on ?? "",
+      paidAt: r.paid_at ? Date.parse(r.paid_at) : null,
       allowances: parseAllowances(r.allowances),
       rates: { ot: rate(r.ot_rate, legal.ot), holiday: rate(r.holiday_rate, legal.holiday), holidayOt: rate(r.holiday_ot_rate, legal.holidayOt) },
     } satisfies PayrollLineRow;
@@ -258,6 +261,19 @@ export async function loadPayrollChecks(month: string): Promise<Map<string, Payr
   return new Map(
     (data ?? []).map((r) => [r.employee_id as string, { checkedAt: Date.parse(r.checked_at as string), checkedBy: r.checked_by ? (who.get(r.checked_by as string) ?? null) : null }]),
   );
+}
+
+/** Tick (or untick) one half of an employee's saved pay as handed out; allowed in a closed month too */
+export async function setPayrollPaid(employeeId: string, month: string, period: 1 | 2, on: boolean) {
+  const { data, error } = await supabaseBrowser()
+    .from("payroll_lines")
+    .update({ paid_at: on ? new Date().toISOString() : null })
+    .eq("employee_id", employeeId)
+    .eq("month", month)
+    .eq("period", period)
+    .select("employee_id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("not saved");
 }
 
 /** Check (or undo) one employee's saved pay for the month. Who / when are stamped by the database. */

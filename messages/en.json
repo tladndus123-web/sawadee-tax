@@ -1487,7 +1487,15 @@
     "yearDocsHint": "Give employees their 50 ทวิ certificate by {cert50} and file ภ.ง.ด.1ก (the year's summary) by {pnd1a}. Made from the saved payroll.",
     "printCert50": "Print 50 ทวิ",
     "printPnd1a": "Print the ภ.ง.ด.1ก list",
-    "nothingSavedYear": "No payroll saved for {year}."
+    "nothingSavedYear": "No payroll saved for {year}.",
+    "paidCol": "Paid",
+    "paidFirst": "15th {amount}",
+    "paidSecond": "Month-end {amount}",
+    "paidMark": "Mark paid",
+    "paidDone": "Paid · {date}",
+    "paidSaved": "{name} marked as paid.",
+    "paidFail": "Could not save the payment.",
+    "paidSummary": "Paid · 15th {first}/{total} · month-end {second}/{total}"
   },
   "fixed": {
     "title": "Fixed costs (no invoice)",
