@@ -3,7 +3,7 @@
 // linked it, and as a phone notification to every device an admin turned notifications on for.
 // Nothing is sent on days with nothing to say, so the monthly LINE message quota is barely touched.
 
-import { lineClient, lineConfig } from "@/lib/line";
+import { langMessages, lineClient, lineConfig, splitLangs } from "@/lib/line";
 import { appUrl } from "@/lib/line-bot";
 import { sendPush, toPush } from "@/lib/push-server";
 import { reminderTexts } from "@/lib/reminders-server";
@@ -28,7 +28,8 @@ export async function GET(req: Request) {
   const to = (admins.data ?? []).map((m) => m.line_user_id as string | null).filter((x): x is string => !!x);
   if (lineConfig().channelAccessToken && to.length) {
     const client = lineClient();
-    const messages = texts.map((text) => ({ type: "text" as const, text }));
+    // One clean message per language: every reminder in Thai, then every reminder in Japanese
+    const messages = langMessages(texts);
     const results = await Promise.allSettled(to.map((id) => client.pushMessage({ to: id, messages })));
     const bad = results.filter((r) => r.status === "rejected");
     bad.forEach((r) => console.error("[cron] reminder push failed", (r as PromiseRejectedResult).reason));
@@ -40,7 +41,8 @@ export async function GET(req: Request) {
   const devices = await sendPush(
     admin,
     (admins.data ?? []).map((m) => m.user_id as string),
-    texts.map((t) => toPush(t, `${appUrl()}/`)),
+    // Phone notifications in Japanese (the app's first language)
+    texts.map((t) => toPush(splitLangs(t).at(-1) ?? t, `${appUrl()}/`)),
   ).catch((e) => (console.error("[cron] phone notifications failed", e), 0));
 
   return Response.json({ sent: line, failed, devices, messages: texts.length });

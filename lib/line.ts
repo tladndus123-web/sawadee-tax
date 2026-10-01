@@ -1,5 +1,7 @@
 // LINE bot pieces with no database access: API clients, the bot's words and the receipt card.
-// The bot always answers in Thai and Japanese together (user's choice), Thai first.
+// The bot always answers in Thai and Japanese (user's choice) — since 2026-10-01 as two separate, clean messages,
+// Thai first then Japanese, never mixed line by line: each text carries both parts joined by LANG_SPLIT, and the
+// sender cuts them apart (splitLangs / langMessages).
 
 import { messagingApi } from "@line/bot-sdk";
 import ja from "@/messages/ja.json";
@@ -25,10 +27,30 @@ export const lineClient = () =>
 export const lineBlobClient = () =>
   new messagingApi.MessagingApiBlobClient({ channelAccessToken: lineConfig().channelAccessToken, baseURL: process.env.LINE_DATA_API_BASE_URL || undefined });
 
-const both = (thai: string, japanese: string) => `${thai}\n\n${japanese}`;
+/** Between the Thai and the Japanese part of one text (invisible; the sender splits on it) */
+export const LANG_SPLIT = "\u2063\u2063";
+const both = (thai: string, japanese: string) => `${thai}${LANG_SPLIT}${japanese}`;
+
+/** A text's language parts, Thai first (one part for a text that has no split) */
+export const splitLangs = (text: string): string[] => text.split(LANG_SPLIT).map((s) => s.trim()).filter(Boolean);
+
+/**
+ * Several texts (the morning reminders) as one clean message per language: all the Thai parts in one bubble,
+ * all the Japanese parts in the next, each reminder separated by a line.
+ */
+export function langMessages(texts: string[], prefix = ""): messagingApi.TextMessage[] {
+  const parts = texts.map(splitLangs);
+  const width = Math.max(0, ...parts.map((p) => p.length));
+  return Array.from({ length: width }, (_, i) => ({
+    type: "text" as const,
+    text: `${prefix}${parts.map((p) => p[i] ?? p[0]).join("\n\n— — —\n\n")}`.slice(0, 5000),
+  }));
+}
 
 /** A branch as the bot names it (Thai / Japanese) */
-export const lineBranchLabel = (b: { no: string; name: string }) => b.name.trim() || (b.no === "00000" ? "สำนักงานใหญ่ / 本店" : `สาขา ${b.no}`);
+export const lineBranchLabel = (b: { no: string; name: string }, lang?: "th" | "ja") =>
+  b.name.trim() ||
+  (b.no === "00000" ? (lang === "th" ? "สำนักงานใหญ่" : lang === "ja" ? "本店" : "สำนักงานใหญ่ / 本店") : lang === "ja" ? `支店 ${b.no}` : `สาขา ${b.no}`);
 
 /** Buttons under a sales file: which branch is it for? (postback "branch=<id>&xl=<messageId>&fn=<file name>") */
 export function salesBranchButtons(messageId: string, fileName: string, branches: { id: string; no: string; name: string }[]): messagingApi.QuickReply {
@@ -57,8 +79,12 @@ export const DOC_REMIND_DAYS = [30, 7, 1, 0];
 export function documentReminder(items: { name: string; doc: string; daysLeft: number }[], url: string, opts: { force?: boolean } = {}): string | null {
   const due = items.filter((i) => opts.force || DOC_REMIND_DAYS.includes(i.daysLeft) || i.daysLeft < 0);
   if (!due.length) return null;
-  const when = (d: number) => (d < 0 ? `หมดอายุแล้ว ${-d} วัน / ${-d}日超過` : d === 0 ? "หมดอายุวันนี้ / 本日期限" : `อีก ${d} วัน / あと${d}日`);
-  return ["แจ้งเตือนเอกสารพนักงานใกล้หมดอายุ · 従業員書類の期限のお知らせ", "", ...due.map((i) => `• ${i.name} — ${i.doc}: ${when(i.daysLeft)}`), "", url].join("\n");
+  const th = (d: number) => (d < 0 ? `หมดอายุแล้ว ${-d} วัน` : d === 0 ? "หมดอายุวันนี้" : `อีก ${d} วัน`);
+  const ja = (d: number) => (d < 0 ? `期限切れ ${-d}日` : d === 0 ? "本日期限" : `あと${d}日`);
+  return both(
+    ["แจ้งเตือนเอกสารพนักงานใกล้หมดอายุ", "", ...due.map((i) => `• ${i.name} — ${i.doc}: ${th(i.daysLeft)}`), "", url].join("\n"),
+    ["従業員書類の期限のお知らせ", "", ...due.map((i) => `• ${i.name} — ${i.doc}：${ja(i.daysLeft)}`), "", url].join("\n"),
+  );
 }
 
 export interface SalesSavedText {
@@ -69,7 +95,8 @@ export interface SalesSavedText {
   vat: number;
   locked: number;
   invalid: number;
-  branch: string;
+  /** The branch's name in Thai and in Japanese ("" = none) */
+  branch: { th: string; ja: string } | null;
 }
 
 export const say = {
@@ -80,24 +107,32 @@ export const say = {
   fileNoRows: both("ไม่พบแถวที่มีวันที่และยอดขาย ตรวจสอบไฟล์อีกครั้ง", "日付と売上金額のある行が見つかりません。ファイルを確認してください。"),
   fileTooBig: both("ไฟล์ใหญ่เกินไป (เกิน 5 MB)", "ファイルが大きすぎます（5MB超）。"),
   fileAlready: both("ไฟล์นี้บันทึกไว้แล้ว", "このファイルはすでに登録済みです。"),
-  fileBranchAsk: "ยอดขายของสาขาไหน? กดเลือกด้านล่าง / どの支店の売上ですか？下から選んでください",
+  fileBranchAsk: both("ยอดขายของสาขาไหน? กดเลือกด้านล่าง", "どの支店の売上ですか？下から選んでください"),
   salesSaved: (s: SalesSavedText, url: string) =>
-    [
-      ...(s.days
-        ? [`✓ บันทึกยอดขาย ${s.days} วัน (${dmy(s.from)}${s.to !== s.from ? ` – ${dmy(s.to)}` : ""})${s.branch ? ` · ${s.branch}` : ""}`, `รวม ${baht(s.gross)} · VAT ${baht(s.vat)}`]
-        : ["ไม่ได้บันทึกยอดขาย"]),
-      ...(s.locked ? [`ข้าม ${s.locked} วันของเดือนที่ปิดแล้ว`] : []),
-      ...(s.invalid ? [`ข้าม ${s.invalid} วันที่ตัวเลขผิดปกติ`] : []),
-      "",
-      ...(s.days ? [`売上 ${s.days}日分を登録しました（${dmy(s.from)}${s.to !== s.from ? `〜${dmy(s.to)}` : ""}）`, `合計 ${baht(s.gross)} · VAT ${baht(s.vat)}`] : ["売上は登録されませんでした"]),
-      ...(s.locked ? [`締めた月の${s.locked}日分はスキップ`] : []),
-      "",
-      url,
-    ].join("\n"),
-  duplicate: (url: string) => `รูปนี้บันทึกไว้แล้ว จึงไม่ได้อ่านซ้ำ (ไม่มีค่าใช้จ่าย)\nこの写真は登録済みのため、読み取りを省きました（費用なし）\n${url}`,
-  branchAsk: "สาขาไหน? กดเลือกด้านล่าง / どの支店ですか？下から選んでください",
-  branchSet: (name: string) => `✓ บันทึกเป็น ${name} / ${name} に登録しました`,
-  branchGone: "ไม่พบสาขานั้นแล้ว เปิดแอปเพื่อเลือก / その支店は見つかりません。アプリで選んでください",
+    both(
+      [
+        ...(s.days
+          ? [`✓ บันทึกยอดขาย ${s.days} วัน (${dmy(s.from)}${s.to !== s.from ? ` – ${dmy(s.to)}` : ""})${s.branch?.th ? ` · ${s.branch.th}` : ""}`, `รวม ${baht(s.gross)} · VAT ${baht(s.vat)}`]
+          : ["ไม่ได้บันทึกยอดขาย"]),
+        ...(s.locked ? [`ข้าม ${s.locked} วันของเดือนที่ปิดแล้ว`] : []),
+        ...(s.invalid ? [`ข้าม ${s.invalid} วันที่ตัวเลขผิดปกติ`] : []),
+        "",
+        url,
+      ].join("\n"),
+      [
+        ...(s.days
+          ? [`✓ 売上 ${s.days}日分を登録しました（${dmy(s.from)}${s.to !== s.from ? `〜${dmy(s.to)}` : ""}）${s.branch?.ja ? ` · ${s.branch.ja}` : ""}`, `合計 ${baht(s.gross)} · VAT ${baht(s.vat)}`]
+          : ["売上は登録されませんでした"]),
+        ...(s.locked ? [`締めた月の${s.locked}日分はスキップしました`] : []),
+        ...(s.invalid ? [`数字がおかしい${s.invalid}日分はスキップしました`] : []),
+        "",
+        url,
+      ].join("\n"),
+    ),
+  duplicate: (url: string) => both(`รูปนี้บันทึกไว้แล้ว จึงไม่ได้อ่านซ้ำ (ไม่มีค่าใช้จ่าย)\n${url}`, `この写真は登録済みのため、読み取りを省きました（費用なし）\n${url}`),
+  branchAsk: both("สาขาไหน? กดเลือกด้านล่าง", "どの支店ですか？下から選んでください"),
+  branchSet: (th: string, ja: string) => both(`✓ บันทึกเป็น ${th}`, `✓ ${ja} に登録しました`),
+  branchGone: both("ไม่พบสาขานั้นแล้ว เปิดแอปเพื่อเลือก", "その支店は見つかりません。アプリで選んでください"),
   welcome: both(
     "สวัสดี นี่คือบอท Sawadee TAX\nเปิดแอป → ตั้งค่า → เชื่อม LINE แล้วส่งรหัส 6 หลักมาที่แชทนี้",
     "こんにちは。Sawadee TAXのボットです。\nアプリの「設定 → LINE連携」で6桁のコードを取得し、このトークに送ってください。",
@@ -149,18 +184,26 @@ export function vatReminder(v: VatReminder, url: string, opts: { force?: boolean
   if (!opts.force && !VAT_REMIND_DAYS.includes(v.daysLeft)) return null;
   const [y, m] = v.month.split("-");
   const todo = v.toCheck + v.drafts;
-  return [
-    "แจ้งเตือนยื่น ภ.พ.30 · 付加価値税申告のお知らせ",
-    `เดือนภาษี ${m}/${Number(y) + 543} · ยื่นภายใน ${dmy(v.due)} (อีก ${v.daysLeft} วัน)`,
-    `${y}年${Number(m)}月分 · 期限 ${dmy(v.due)}（あと${v.daysLeft}日）`,
-    "",
-    `ภาษีซื้อที่ขอคืนได้ / 控除できる仕入VAT: ${baht(v.claimableVat)}`,
-    todo
-      ? `ต้องตรวจ ${v.toCheck} · ฉบับร่าง ${v.drafts} — กรุณาจัดการก่อนยื่น\n要確認 ${v.toCheck}件 · 下書き ${v.drafts}件 — 申告前に整理してください`
-      : "เอกสารพร้อมยื่นแล้ว / 書類は申告の準備ができています",
-    "",
-    url,
-  ].join("\n");
+  return both(
+    [
+      "แจ้งเตือนยื่น ภ.พ.30",
+      `เดือนภาษี ${m}/${Number(y) + 543} · ยื่นภายใน ${dmy(v.due)} (อีก ${v.daysLeft} วัน)`,
+      "",
+      `ภาษีซื้อที่ขอคืนได้: ${baht(v.claimableVat)}`,
+      todo ? `ต้องตรวจ ${v.toCheck} · ฉบับร่าง ${v.drafts} — กรุณาจัดการก่อนยื่น` : "เอกสารพร้อมยื่นแล้ว",
+      "",
+      url,
+    ].join("\n"),
+    [
+      "付加価値税（VAT）申告のお知らせ",
+      `${y}年${Number(m)}月分 · 期限 ${dmy(v.due)}（あと${v.daysLeft}日）`,
+      "",
+      `控除できる仕入VAT：${baht(v.claimableVat)}`,
+      todo ? `要確認 ${v.toCheck}件 · 下書き ${v.drafts}件 — 申告前に整理してください` : "書類は申告の準備ができています",
+      "",
+      url,
+    ].join("\n"),
+  );
 }
 
 export interface PayrollReminder {
@@ -178,16 +221,26 @@ export interface PayrollReminder {
 export function payrollReminder(v: PayrollReminder, url: string, opts: { force?: boolean } = {}): string | null {
   if (!opts.force && !VAT_REMIND_DAYS.includes(v.daysLeft)) return null;
   const [y, m] = v.month.split("-");
-  return [
-    "แจ้งเตือนยื่น ภ.ง.ด.1 และ สปส.1-10 · 源泉税・社会保険の申告のお知らせ",
-    `เดือน ${m}/${Number(y) + 543} · ยื่นภายใน ${dmy(v.due)} (อีก ${v.daysLeft} วัน)`,
-    `${y}年${Number(m)}月分 · 期限 ${dmy(v.due)}（あと${v.daysLeft}日）`,
-    "",
-    `ภาษีหัก ณ ที่จ่าย / 源泉徴収税: ${baht(v.wht)}`,
-    `เงินสมทบประกันสังคม / 社会保険料（本人＋会社）: ${baht(v.ss)}`,
-    "",
-    url,
-  ].join("\n");
+  return both(
+    [
+      "แจ้งเตือนยื่น ภ.ง.ด.1 และ สปส.1-10",
+      `เดือน ${m}/${Number(y) + 543} · ยื่นภายใน ${dmy(v.due)} (อีก ${v.daysLeft} วัน)`,
+      "",
+      `ภาษีหัก ณ ที่จ่าย: ${baht(v.wht)}`,
+      `เงินสมทบประกันสังคม (ลูกจ้าง + นายจ้าง): ${baht(v.ss)}`,
+      "",
+      url,
+    ].join("\n"),
+    [
+      "源泉税・社会保険の申告のお知らせ",
+      `${y}年${Number(m)}月分 · 期限 ${dmy(v.due)}（あと${v.daysLeft}日）`,
+      "",
+      `源泉徴収税：${baht(v.wht)}`,
+      `社会保険料（本人＋会社）：${baht(v.ss)}`,
+      "",
+      url,
+    ].join("\n"),
+  );
 }
 
 /** LINE sends photos as JPEG, but look at the bytes rather than trust that */

@@ -96,16 +96,37 @@ describe("payroll filing reminder (LINE)", async () => {
   });
 });
 
+describe("Thai and Japanese as separate messages", async () => {
+  const { langMessages, say, splitLangs, vatReminder } = await import("./line");
+  it("every bot text splits into a Thai part and a Japanese part, nothing mixed", () => {
+    const [th, ja] = splitLangs(say.welcome);
+    expect(th).toMatch(/[฀-๿]/);
+    expect(th).not.toMatch(/[぀-ヿ]/);
+    expect(ja).toMatch(/[぀-ヿ]/);
+    expect(ja).not.toMatch(/[ก-ฺเ-๛]/);
+    expect(splitLangs(say.branchAsk)).toHaveLength(2);
+  });
+  it("the morning reminders: one bubble in Thai, one in Japanese", () => {
+    const base = { month: "2026-09", due: "2026-10-15", toCheck: 0, drafts: 0, claimableVat: 100, daysLeft: 3 };
+    const m = langMessages([vatReminder(base, "https://x")!, vatReminder({ ...base, toCheck: 2 }, "https://x")!]);
+    expect(m).toHaveLength(2);
+    // (฿ sits in the Thai block too, so only Thai letters count)
+    expect(m[0].text).not.toMatch(/[぀-ヿ]/);
+    expect(m[1].text).not.toMatch(/[ก-ฺเ-๛]/);
+    expect(m[1].text.match(/付加価値税/g)).toHaveLength(2);
+  });
+});
+
 describe("sales file reply (LINE)", async () => {
   const { say } = await import("./line");
   it("names the days, the totals, the branch and what was skipped", () => {
-    const text = say.salesSaved({ days: 2, from: "2026-09-26", to: "2026-09-27", gross: 3745, vat: 245, locked: 1, invalid: 0, branch: "สาขา 00001" }, "https://x/sales");
+    const text = say.salesSaved({ days: 2, from: "2026-09-26", to: "2026-09-27", gross: 3745, vat: 245, locked: 1, invalid: 0, branch: { th: "สาขา 00001", ja: "支店 00001" } }, "https://x/sales");
     expect(text).toContain("2 วัน (26/09/2026 – 27/09/2026) · สาขา 00001");
     expect(text).toContain("3,745.00");
     expect(text).toContain("ข้าม 1 วัน");
     expect(text).toContain("締めた月の1日分");
     expect(text.endsWith("https://x/sales")).toBe(true);
-    const none = say.salesSaved({ days: 0, from: "", to: "", gross: 0, vat: 0, locked: 2, invalid: 0, branch: "" }, "https://x/sales");
+    const none = say.salesSaved({ days: 0, from: "", to: "", gross: 0, vat: 0, locked: 2, invalid: 0, branch: null }, "https://x/sales");
     expect(none).toContain("ไม่ได้บันทึกยอดขาย");
     expect(none).toContain("ข้าม 2 วัน");
   });
@@ -113,11 +134,15 @@ describe("sales file reply (LINE)", async () => {
 
 describe("employee document reminder (LINE)", async () => {
   const { documentReminder } = await import("./line");
-  it("is sent 30 / 7 / 1 / 0 days before and daily once expired, naming person and document", () => {
+  it("is sent 30 / 7 / 1 / 0 days before and daily once expired, naming person and document", async () => {
     expect(documentReminder([{ name: "Somchai", doc: "Work permit", daysLeft: 12 }], "https://x")).toBeNull();
     const text = documentReminder([{ name: "Somchai", doc: "Work permit", daysLeft: 7 }, { name: "Mai", doc: "Visa", daysLeft: -3 }], "https://x")!;
-    expect(text).toContain("Somchai — Work permit: อีก 7 วัน / あと7日");
-    expect(text).toContain("Mai — Visa: หมดอายุแล้ว 3 วัน");
-    expect(text.endsWith("https://x")).toBe(true);
+    const { splitLangs } = await import("./line");
+    const [th, ja] = splitLangs(text);
+    expect(th).toContain("Somchai — Work permit: อีก 7 วัน");
+    expect(th).toContain("Mai — Visa: หมดอายุแล้ว 3 วัน");
+    expect(ja).toContain("Somchai — Work permit：あと7日");
+    expect(ja).toContain("Mai — Visa：期限切れ 3日");
+    expect(th.endsWith("https://x") && ja.endsWith("https://x")).toBe(true);
   });
 });

@@ -2,7 +2,7 @@
 // reminder even when today is not one of its days — pushed only to the admin who pressed the button.
 
 import { endIfExpired } from "@/lib/auth/session-guard";
-import { lineClient, lineConfig } from "@/lib/line";
+import { langMessages, lineClient, lineConfig } from "@/lib/line";
 import { reminderTexts } from "@/lib/reminders-server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -36,7 +36,7 @@ export async function POST() {
   if (!texts.length) return Response.json({ sent: 0 });
   await lineClient().pushMessage({
     to: member.line_user_id as string,
-    messages: texts.map((text, i) => ({ type: "text" as const, text: i === 0 ? `🧪 TEST\n${text}` : text })),
+    messages: langMessages(texts, `🧪 TEST\n`),
   });
   return Response.json({ sent: texts.length });
 }

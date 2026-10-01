@@ -14,7 +14,7 @@ import { type LedgerRef, runChecks } from "./checks";
 import { docToRow } from "./db-map";
 import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
-import { imageType, lineBlobClient, lineClient, receiptCard, say, branchButtons, lineBranchLabel, salesBranchButtons } from "./line";
+import { imageType, lineBlobClient, lineClient, receiptCard, say, branchButtons, lineBranchLabel, salesBranchButtons, splitLangs } from "./line";
 import { aggregate, applySavedColumns, findHeader, posColumnsOf } from "./pos-import";
 import { isPosFileName, readPosBuffer } from "./pos-read-server";
 import { assignBranch, type Branch, branchFromPhoto, sortBranches } from "./branches";
@@ -50,8 +50,9 @@ export function appUrl(): string {
 }
 
 /** Reply if the token is still good (it expires ~1 minute after the event), otherwise push */
-async function send(event: { replyToken?: string }, to: string, messages: messagingApi.Message[]) {
+async function send(event: { replyToken?: string }, to: string, given: messagingApi.Message[]) {
   const client = lineClient();
+  const messages = splitMessages(given);
   if (event.replyToken) {
     try {
       await client.replyMessage({ replyToken: event.replyToken, messages });
@@ -63,6 +64,22 @@ async function send(event: { replyToken?: string }, to: string, messages: messag
   await client.pushMessage({ to, messages });
 }
 const text = (t: string): messagingApi.TextMessage => ({ type: "text", text: t });
+
+/** A text in two languages becomes two messages, Thai then Japanese; quick-reply buttons stay on the last one (max 5) */
+function splitMessages(messages: messagingApi.Message[]): messagingApi.Message[] {
+  const out: messagingApi.Message[] = [];
+  for (const m of messages) {
+    if (m.type !== "text") {
+      out.push(m);
+      continue;
+    }
+    const t = m as messagingApi.TextMessage;
+    const parts = splitLangs(t.text);
+    const { quickReply, ...rest } = t;
+    parts.forEach((p, i) => out.push({ ...rest, text: p, ...(i === parts.length - 1 && quickReply ? { quickReply } : {}) }));
+  }
+  return out.slice(-5);
+}
 
 async function memberFor(lineUser: string) {
   const { data } = await supabaseAdmin().from("members").select("user_id, name, email").eq("line_user_id", lineUser).maybeSingle();
@@ -285,7 +302,7 @@ async function importSales(event: { replyToken?: string }, lineUser: string, use
           vat: sum("vat"),
           locked: valid.length - open.length,
           invalid: days.length - valid.length,
-          branch: branch ? lineBranchLabel(branch) : "",
+          branch: branch ? { th: lineBranchLabel(branch, "th"), ja: lineBranchLabel(branch, "ja") } : null,
         },
         `${appUrl()}/sales`,
       ),
@@ -313,7 +330,8 @@ async function pickBranch(event: webhook.PostbackEvent, lineUser: string, data: 
   if (!b) return send(event, lineUser, [text(say.branchGone)]);
   const { error } = await admin.from("documents").update({ branch_id: branchId }).eq("id", docId);
   if (error) throw error;
-  await send(event, lineUser, [text(say.branchSet(lineBranchLabel(b as { no: string; name: string })))]);
+  const named = b as { no: string; name: string };
+  await send(event, lineUser, [text(say.branchSet(lineBranchLabel(named, "th"), lineBranchLabel(named, "ja")))]);
 }
 
 async function readStream(stream: NodeJS.ReadableStream): Promise<Buffer> {
