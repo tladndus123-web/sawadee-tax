@@ -8,8 +8,8 @@
 
 import { monthKey } from "./archive";
 import { type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
-import { summarize, upcoming, vatFiling } from "./dashboard";
-import { documentReminder, dueReminder, payrollReminder, vatReminder } from "./line";
+import { summarize, vatFiling } from "./dashboard";
+import { documentReminder, payrollReminder, vatReminder } from "./line";
 import { appUrl } from "./line-bot";
 import { serverCategories } from "./categories-server";
 import { expiringDocuments, parseDocuments } from "./attendance";
@@ -35,7 +35,7 @@ export async function reminderTexts(admin: Admin, today: string, opts: { test?: 
   const saved = rows.filter((r) => r.status === "reviewed").map(toDoc);
   const url = `${appUrl()}/`;
 
-  const due = dueReminder(upcoming(saved, today), url);
+  // (No daily payment reminder: the owner turned it off on 2026-10-01 — the dashboard lists bills due instead)
 
   let vat: string | null = null;
   if (!lock.data || opts.test) {
@@ -69,5 +69,5 @@ export async function reminderTexts(admin: Admin, today: string, opts: { test?: 
     `${url}payroll`,
     { force: opts.test },
   );
-  return [due, vat, pay, docTexts].filter((x): x is string => !!x);
+  return [vat, pay, docTexts].filter((x): x is string => !!x);
 }

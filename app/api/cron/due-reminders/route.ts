@@ -1,5 +1,5 @@
-// Daily reminders (Vercel Cron, vercel.json — 09:00 Bangkok) to the admins: bills that are overdue or due within
-// 7 days, and the VAT return 3 days / 1 day before its deadline (lib/reminders-server). Sent by LINE to admins who
+// Daily reminders (Vercel Cron, vercel.json — 09:00 Bangkok) to the admins (no daily bills-due list since 2026-10-01):
+// the VAT return 3 days / 1 day before its deadline, payroll filings, staff documents (lib/reminders-server). Sent by LINE to admins who
 // linked it, and as a phone notification to every device an admin turned notifications on for.
 // Nothing is sent on days with nothing to say, so the monthly LINE message quota is barely touched.
 

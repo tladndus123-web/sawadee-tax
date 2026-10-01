@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runChecks } from "./checks";
-import { dueReminder, imageType, receiptCard, say } from "./line";
+import { imageType, receiptCard, say } from "./line";
 import { sampleDoc } from "./sample";
 
 describe("LINE bot", () => {
@@ -31,26 +31,6 @@ describe("LINE bot", () => {
   });
 });
 
-describe("payment reminder", () => {
-  const item = (days: number | null, state: "overdue" | "soon" | "later" | "none", net = 1000) => {
-    const doc = sampleDoc();
-    doc.totals.net = net;
-    return { id: `x${days}`, doc, days, state };
-  };
-  it("says nothing when nothing is overdue or due within a week", () => {
-    expect(dueReminder([item(12, "later"), item(null, "none")], "https://app/")).toBeNull();
-  });
-  it("counts overdue and soon, lists them in Thai and Japanese with the app link", () => {
-    const text = dueReminder([item(-2, "overdue", 64200), item(0, "soon"), item(5, "soon"), item(30, "later")], "https://app/")!;
-    expect(text).toContain("期限切れ 1件 · 7日以内 2件");
-    expect(text).toContain("เกิน 2 วัน / 2日超過");
-    expect(text).toContain("วันนี้ / 本日");
-    expect(text).toContain("฿ 64,200.00");
-    expect(text).toContain("https://app/");
-    expect(text).not.toContain("อีก 30 วัน");
-  });
-});
-
 describe("VAT return reminder (LINE)", async () => {
   const { vatReminder } = await import("./line");
   const base = { month: "2026-09", due: "2026-10-15", toCheck: 2, drafts: 1, claimableVat: 8400 };
@@ -74,20 +54,6 @@ describe("VAT return reminder (LINE)", async () => {
   });
   it("says the documents are ready when nothing is left", () => {
     expect(vatReminder({ ...base, toCheck: 0, drafts: 0, daysLeft: 1 }, "https://x")).toContain("準備ができています");
-  });
-});
-
-describe("payment reminder covers every unpaid bill, not only credit (same rule as the dashboard)", async () => {
-  const { upcoming } = await import("./dashboard");
-  it("a bank-transfer bill with a due date, not ticked paid, is reminded", () => {
-    const doc = { ...sampleDoc(), payment: "transfer" as const, paid: false, dueDate: "2026-10-01" };
-    const text = dueReminder(upcoming([{ id: "t1", doc }], "2026-09-28"), "https://x");
-    expect(text).not.toBeNull();
-    expect(text).toContain("01/10/2026");
-  });
-  it("once ticked paid, it is not", () => {
-    const doc = { ...sampleDoc(), payment: "transfer" as const, paid: true, dueDate: "2026-10-01" };
-    expect(dueReminder(upcoming([{ id: "t1", doc }], "2026-09-28"), "https://x")).toBeNull();
   });
 });
 

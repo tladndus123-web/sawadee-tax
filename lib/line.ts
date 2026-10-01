@@ -5,7 +5,6 @@ import { messagingApi } from "@line/bot-sdk";
 import ja from "@/messages/ja.json";
 import th from "@/messages/th.json";
 import type { CheckResult } from "./checks";
-import type { DueItem } from "./dashboard";
 import { baht } from "./money";
 import { dmy } from "./thai-tax";
 import type { LedgerDoc } from "./types";
@@ -127,31 +126,6 @@ export const say = {
   rate: both("ส่งรูปถี่เกินไป กรุณารอสักครู่แล้วส่งใหม่", "送信が多すぎます。少し待ってからもう一度送ってください。"),
   failed: both("ระบบขัดข้องชั่วคราว กรุณาลองใหม่ภายหลัง", "一時的なエラーです。しばらくしてからもう一度お試しください。"),
 };
-
-/** Daily payment reminder for admins: overdue and due-within-a-week credit purchases, most urgent first */
-export function dueReminder(items: DueItem[], url: string): string | null {
-  const due = items.filter((i) => i.state === "overdue" || i.state === "soon");
-  if (!due.length) return null;
-  const over = due.filter((i) => i.state === "overdue").length;
-  const soon = due.length - over;
-  const line = (i: DueItem) => {
-    const name = i.doc.seller.name.th || i.doc.seller.name.en || i.doc.seller.name.ja || i.doc.docNo || "—";
-    const d = i.days ?? 0;
-    const when = d < 0 ? `เกิน ${-d} วัน / ${-d}日超過` : d === 0 ? "วันนี้ / 本日" : `อีก ${d} วัน / あと${d}日`;
-    return `• ${name}\n   ${baht(i.doc.totals.net)} · ${dmy(i.doc.dueDate)} (${when})`;
-  };
-  const shown = due.slice(0, 8);
-  return [
-    "แจ้งเตือนการชำระเงิน · 支払いのお知らせ",
-    `เกินกำหนด ${over} · ครบกำหนดภายใน 7 วัน ${soon}`,
-    `期限切れ ${over}件 · 7日以内 ${soon}件`,
-    "",
-    ...shown.map(line),
-    ...(due.length > shown.length ? [`… และอีก ${due.length - shown.length} รายการ / ほか${due.length - shown.length}件`] : []),
-    "",
-    url,
-  ].join("\n");
-}
 
 /** Days before the VAT return's deadline on which the admins get a LINE reminder */
 export const VAT_REMIND_DAYS = [3, 1];

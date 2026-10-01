@@ -689,7 +689,7 @@
     "step3": "Send the code to the bot in the LINE chat and you're connected. The code works for 10 minutes.",
     "qrAlt": "QR code to add the LINE bot as a friend",
     "qrCaption": "Scan with LINE",
-    "testHint": "Every morning at 9 admins get LINE reminders: bills due within 7 days, and the VAT return 3 days and 1 day before its deadline. Send today's content to your own LINE only as a test (the VAT reminder shows whatever the date).",
+    "testHint": "Every morning at 9, and only when there is something to say, admins get a LINE message: 3 days and 1 day before the VAT return, 3 days and 1 day before the withholding tax / social security filings (months with payroll saved), and staff documents (work permit, visa …) 30 / 7 / 1 days before they expire and on the day. You can send the current content to your own LINE as a test (shown whatever the date).",
     "testSend": "Send a test reminder",
     "testSent": "Test reminder sent to LINE. Check your phone.",
     "testFail": "Could not send. Please try again later.",
@@ -1085,7 +1085,7 @@
   },
   "push": {
     "title": "Phone notifications",
-    "hint": "Get reminders on this phone (or PC) without LINE: bills coming due, and the VAT return 3 days and 1 day before its deadline. Every morning at 9, to admins.",
+    "hint": "Notifications on this phone (or PC) without LINE: 3 days and 1 day before the VAT / withholding tax / social security deadlines, and before staff documents expire. Sent to admins at 9 every morning, only when there is something to say.",
     "turnOn": "Turn on for this device",
     "turnedOn": "Notifications turned on for this device.",
     "turnOff": "Turn off",
