@@ -122,6 +122,23 @@ async function linkAccount(event: webhook.MessageEvent, lineUser: string, code: 
   await send(event, lineUser, [checking, text(say.linked(m?.name || m?.email || ""))]);
 }
 
+/**
+ * The branches a member may use from LINE right now (branch PINs, 2026-10-06): admins every branch; staff the
+ * branches without a PIN and the one they opened in the app with its PIN — that one first.
+ */
+async function usableBranches(userId: string): Promise<Branch[]> {
+  const admin = supabaseAdmin();
+  const [rows, ok, opened] = await Promise.all([
+    admin.from("branches").select("id, no, name, sort"),
+    admin.rpc("member_branches", { p_user: userId }),
+    admin.from("branch_unlocks").select("branch_id").eq("user_id", userId).gt("expires_at", new Date().toISOString()).maybeSingle(),
+  ]);
+  const allowed = new Set(((ok.data ?? []) as unknown[]).map(String));
+  const list = sortBranches(((rows.data ?? []) as Branch[]).map((b) => ({ ...b, name: b.name ?? "", sort: Number(b.sort) || 0, color: "" }))).filter((b) => allowed.has(b.id));
+  const first = opened.data?.branch_id as string | undefined;
+  return first ? [...list.filter((b) => b.id === first), ...list.filter((b) => b.id !== first)] : list;
+}
+
 async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messageId: string) {
   const member = await memberFor(lineUser);
   if (!member) return send(event, lineUser, [text(say.welcome)]);
@@ -133,6 +150,9 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
     if (claim.error.code === "23505") return;
     throw claim.error;
   }
+  // Only the branches this member may use (staff: open one in the app with its PIN first) — before any AI cost
+  const branches = await usableBranches(member.user_id);
+  if (!branches.length) return send(event, lineUser, [text(say.noBranch)]);
   if (limited(`photo:${member.user_id}`, 10, 60_000)) return send(event, lineUser, [text(say.rate)]);
 
   // "Received, please wait" right away — once per burst, so photos sent together get one notice.
@@ -206,10 +226,9 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   const up = await admin.storage.from("documents").upload(photoPath, photo, { contentType: type });
   if (up.error) throw up.error;
 
-  // Its branch: the buyer's branch number on the invoice, else the head office (and the sender is asked)
-  const { data: branchRows } = await admin.from("branches").select("id, no, name, sort");
-  const branches = sortBranches(((branchRows ?? []) as Branch[]).map((b) => ({ ...b, name: b.name ?? "", sort: Number(b.sort) || 0, color: "" })));
-  doc = assignBranch(doc, branches);
+  // Its branch: the buyer's branch number on the invoice (if the sender may use it), else the branch they opened
+  // (else the first they may use) — and with several, the sender is asked
+  doc = assignBranch(doc, branches, branches[0].id);
   const ask = branches.length > 1 && !branchFromPhoto(doc, branches);
 
   const { row, items } = docToRow({ ...doc, id }, "reviewed", companyTaxId);
@@ -237,8 +256,8 @@ async function salesFile(event: webhook.MessageEvent, lineUser: string, messageI
   const member = await memberFor(lineUser);
   if (!member) return send(event, lineUser, [text(say.welcome)]);
   if (limited(`file:${member.user_id}`, 5, 60_000)) return send(event, lineUser, [text(say.rate)]);
-  const { data: branchRows } = await supabaseAdmin().from("branches").select("id, no, name, sort");
-  const branches = sortBranches(((branchRows ?? []) as Branch[]).map((b) => ({ ...b, name: b.name ?? "", sort: Number(b.sort) || 0, color: "" })));
+  const branches = await usableBranches(member.user_id);
+  if (!branches.length) return send(event, lineUser, [text(say.noBranch)]);
   if (branches.length > 1) return send(event, lineUser, [{ ...text(say.fileBranchAsk), quickReply: salesBranchButtons(messageId, fileName, branches) }]);
   await importSales(event, lineUser, member.user_id, messageId, fileName, branches[0] ?? null);
 }
@@ -319,6 +338,9 @@ async function pickBranch(event: webhook.PostbackEvent, lineUser: string, data: 
   const member = await memberFor(lineUser);
   if (!branchId || !member) return;
   const admin = supabaseAdmin();
+  // The button's branch must be one the member may use now (the buttons come from the LINE client)
+  const usable = await usableBranches(member.user_id);
+  if (!usable.some((b) => b.id === branchId)) return send(event, lineUser, [text(say.branchNotAllowed)]);
   const xl = q.get("xl");
   if (xl) {
     const { data: b } = await admin.from("branches").select("id, no, name").eq("id", branchId).maybeSingle();
@@ -328,6 +350,9 @@ async function pickBranch(event: webhook.PostbackEvent, lineUser: string, data: 
   if (!docId) return;
   const { data: b } = await admin.from("branches").select("id, no, name").eq("id", branchId).maybeSingle();
   if (!b) return send(event, lineUser, [text(say.branchGone)]);
+  // …and the document must sit in a branch the member may use
+  const { data: doc } = await admin.from("documents").select("branch_id").eq("id", docId).maybeSingle();
+  if (!doc || !usable.some((u) => u.id === doc.branch_id)) return send(event, lineUser, [text(say.branchNotAllowed)]);
   const { error } = await admin.from("documents").update({ branch_id: branchId }).eq("id", docId);
   if (error) throw error;
   const named = b as { no: string; name: string };

@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(177);
+select plan(193);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -388,6 +388,30 @@ select is((select count(*)::int from public.attendance), 0, 'staff see no attend
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select lives_ok($$ update public.vendors set rule_category = 'repairs' where tax_id = (select tax_id from public.vendors limit 1) $$, 'a vendor rule can use a newer category (repairs)');
 select throws_ok($$ update public.vendors set rule_category = 'no_such' where tax_id = (select tax_id from public.vendors limit 1) $$, '23503', NULL, 'but not a category that does not exist');
+
+-- Branch PINs: staff see a locked branch only after typing its PIN; admins always; one branch open at a time
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select throws_like($$ select public.set_branch_pin('00000000-0000-0000-0000-0000000000b1', '12') $$, 'bad_pin%', 'a PIN has 4 to 8 digits');
+select lives_ok($$ select public.set_branch_pin('00000000-0000-0000-0000-0000000000b1', '1234') $$, 'an admin sets a branch PIN');
+insert into public.sales (branch_id, sale_date, channel, gross) values ('00000000-0000-0000-0000-0000000000b1', '2026-06-02', 'store', 1000);
+select is((select count(*)::int from public.branch_pins), 0, 'nobody reads the PIN hashes');
+select is((select count(*)::int from public.sales where branch_id = '00000000-0000-0000-0000-0000000000b1'), 1, 'admins see a locked branch');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select throws_like($$ select public.set_branch_pin('00000000-0000-0000-0000-0000000000b1', '5555') $$, 'admin_only%', 'staff cannot set a PIN');
+select is((select count(*)::int from public.sales where branch_id = '00000000-0000-0000-0000-0000000000b1'), 0, 'staff do not see a locked branch''s sales');
+select is((select count(*)::int from public.documents where branch_id = '00000000-0000-0000-0000-0000000000b1'), 0, 'nor its documents');
+select throws_ok($$ insert into public.sales (branch_id, sale_date, channel, gross) values ('00000000-0000-0000-0000-0000000000b1', '2026-06-03', 'store', 1) $$, '42501', NULL, 'nor add to it');
+select is(public.can_see_branch(public.head_branch()), true, 'a branch without a PIN stays open');
+select is(public.unlock_branch('00000000-0000-0000-0000-0000000000b1', '0000'), false, 'a wrong PIN does not open the branch');
+select is(public.unlock_branch('00000000-0000-0000-0000-0000000000b1', '1234'), true, 'the right PIN opens it');
+select is((select count(*)::int from public.sales where branch_id = '00000000-0000-0000-0000-0000000000b1'), 1, 'then staff see it');
+select is(public.unlock_branch(public.head_branch(), ''), true, 'choosing another branch');
+select is((select count(*)::int from public.sales where branch_id = '00000000-0000-0000-0000-0000000000b1'), 0, 'closes the previous one');
+select public.unlock_branch('00000000-0000-0000-0000-0000000000b1', '0000') from generate_series(1, 5);
+select throws_like($$ select public.unlock_branch('00000000-0000-0000-0000-0000000000b1', '1234') $$, 'too_many_tries%', 'after five wrong PINs, a wait');
+reset role;
+select is((select count(*)::int from public.member_branches('00000000-0000-0000-0000-00000000000b') m where m = '00000000-0000-0000-0000-0000000000b1'), 0, 'the LINE bot sees which branches a member may use');
+set local role authenticated;
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

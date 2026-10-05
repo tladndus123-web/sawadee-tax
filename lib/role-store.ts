@@ -80,6 +80,8 @@ export async function saveMyName(name: string) {
 }
 
 export async function signOut() {
+  // Close the branch this sign-in opened, so the next person must choose (and type its PIN) again
+  await import("./branch-lock").then((m) => m.lockBranch()).catch(() => undefined);
   await supabaseBrowser().auth.signOut();
   window.location.assign("/");
 }

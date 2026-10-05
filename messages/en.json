@@ -1140,7 +1140,20 @@
     "closedHint": "These weekdays are not counted as missing shop sales.",
     "closedShort": "Closed {days}",
     "salesTarget": "Monthly sales target (excl. VAT)",
-    "salesTargetHint": "0 = no target. The dashboard shows the progress."
+    "salesTargetHint": "0 = no target. The dashboard shows the progress.",
+    "staffSwitchHint": "Switching closes the current branch. Branches with 🔒 need their password.",
+    "pinTitle": "Branch password",
+    "pinSet": "Set",
+    "pinNone": "None (open to all staff)",
+    "pinNew": "New password",
+    "pinFirst": "4–8 digits",
+    "pinSave": "Set password",
+    "pinChange": "Change password",
+    "pinRemove": "Remove password",
+    "pinSaved": "Branch password saved. Staff who had this branch open must type the new one.",
+    "pinRemoved": "Password removed. The branch is open to all staff.",
+    "pinFail": "Could not save the password. It must be 4–8 digits.",
+    "pinHint": "Staff type it when they choose this branch after signing in. Admins never need it. It is stored encrypted, so nobody can read it back."
   },
   "dep": {
     "label": "Depreciation period",
@@ -1581,5 +1594,18 @@
     "vsWeek": "{pct} vs same day last week",
     "closed": "Closed",
     "missing": "Not entered"
+  },
+  "gate": {
+    "title": "Which branch are you working in?",
+    "hint": "Choose your branch. Branches with 🔒 need their password.",
+    "hintAdmin": "Choose a branch to look at. Admins need no password.",
+    "all": "All branches",
+    "current": "Current branch",
+    "locked": "Password needed",
+    "pin": "Branch password",
+    "enter": "Enter",
+    "wrong": "That password is not right.",
+    "wait": "Five wrong tries. Please try again in 10 minutes.",
+    "fail": "Could not open it now. Please try again shortly."
   }
 }

@@ -19,6 +19,8 @@ import { cn } from "@/lib/utils";
 import { useLabor } from "@/lib/labor-store";
 import { useFixedCosts } from "@/lib/fixed-store";
 import { useStock } from "@/lib/stock-store";
+import { useMe } from "@/lib/role-store";
+import { BranchPicker } from "@/components/auth/BranchGate";
 
 export function useBranchName() {
   const t = useTranslations("branch");
@@ -62,6 +64,7 @@ export function BranchSwitcher() {
   const selected = useBranch();
   const current = useCurrentBranch();
   const [open, setOpen] = useState(false);
+  const staff = useMe().role !== "admin";
   if (branches.length < 2) return null;
   return (
     <>
@@ -78,7 +81,18 @@ export function BranchSwitcher() {
         <ChevronDown className="size-3.5 flex-none text-muted-foreground" aria-hidden />
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        {open && <SwitchSheet branches={branches} selected={selected} names={names} onPick={(id) => (setBranch(id), setOpen(false))} />}
+        {open &&
+          (staff ? (
+            <DialogContent className="max-h-[85dvh] overflow-y-auto rounded-3xl sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>{t("switch")}</DialogTitle>
+                <DialogDescription className="text-xs">{t("staffSwitchHint")}</DialogDescription>
+              </DialogHeader>
+              <BranchPicker onDone={() => setOpen(false)} />
+            </DialogContent>
+          ) : (
+            <SwitchSheet branches={branches} selected={selected} names={names} onPick={(id) => (setBranch(id), setOpen(false))} />
+          ))}
       </Dialog>
     </>
   );

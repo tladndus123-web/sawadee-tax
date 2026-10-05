@@ -2,7 +2,7 @@
 
 // Admins: the company's branches (สาขา) — number as on tax invoices, and a name. The head office is always there.
 
-import { Loader2, Pencil, Plus, Store, Trash2 } from "lucide-react";
+import { Loader2, Lock, Pencil, Plus, Store, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import { BRANCH_COLORS, type Branch, branchLabel, COLOR_NAMES, colorOf, isHead }
 import { deleteBranch, saveBranch, useBranches } from "@/lib/branch-store";
 import { useMe } from "@/lib/role-store";
 import { cn } from "@/lib/utils";
+import { setBranchPin, useBranchPins } from "@/lib/branch-lock";
 import { useFoldStatus } from "./SettingsFold";
 
 export function BranchCard() {
@@ -21,6 +22,7 @@ export function BranchCard() {
   const names = useBranchName();
   const isAdmin = useMe().role === "admin";
   const { branches, loaded } = useBranches();
+  const { pins } = useBranchPins();
   const tf = useTranslations("fold");
   useFoldStatus(loaded ? tf("branches", { count: branches.length }) : null);
   const [editing, setEditing] = useState<Partial<Branch> | null>(null);
@@ -78,7 +80,10 @@ export function BranchCard() {
               <BranchAvatar branch={b} branches={branches} size="size-8" className="text-sm" />
               <span className="mono w-12 flex-none text-xs text-muted-foreground">{b.no}</span>
               <span className="grid min-w-0 flex-1">
-                <span className="truncate text-[15px] font-medium">{branchLabel(b, names)}</span>
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="truncate text-[15px] font-medium">{branchLabel(b, names)}</span>
+                  {pins.has(b.id) && <Lock className="size-3.5 flex-none text-muted-foreground" aria-label={t("pinSet")} />}
+                </span>
                 {!!b.closedDays?.length && (
                   <span className="text-xs text-muted-foreground">{t("closedShort", { days: b.closedDays.map((d) => weekdays[d]).join(" · ") })}</span>
                 )}
@@ -182,6 +187,8 @@ export function BranchCard() {
             </div>
             <p className="text-[11px] leading-snug text-muted-foreground">{t("closedHint")}</p>
           </div>
+          {/* Branch password: staff type it after signing in to open this branch (admins never need it) */}
+          {editing.id && <PinField branchId={editing.id} hasPin={pins.has(editing.id)} />}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" className="rounded-full" disabled={busy} onClick={() => setEditing(null)}>
               {t("cancel")}
@@ -194,5 +201,54 @@ export function BranchCard() {
         </form>
       )}
     </section>
+  );
+}
+
+/** Set, change or remove a branch's password (4–8 digits); staff who had the branch open must type the new one */
+function PinField({ branchId, hasPin }: { branchId: string; hasPin: boolean }) {
+  const t = useTranslations("branch");
+  const [pin, setPin] = useState("");
+  const [busy, setBusy] = useState(false);
+  const save = async (value: string) => {
+    setBusy(true);
+    try {
+      await setBranchPin(branchId, value);
+      toast.success(value ? t("pinSaved") : t("pinRemoved"));
+      setPin("");
+    } catch {
+      toast.error(t("pinFail"));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="grid gap-1.5 rounded-xl bg-background/60 p-3">
+      <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <Lock className="size-3.5" aria-hidden />
+        {t("pinTitle")} · <b className={hasPin ? "text-ok" : ""}>{hasPin ? t("pinSet") : t("pinNone")}</b>
+      </span>
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          value={pin}
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
+          inputMode="numeric"
+          autoComplete="new-password"
+          type="password"
+          placeholder={hasPin ? t("pinNew") : t("pinFirst")}
+          className="mono h-10 w-40 bg-background tracking-[0.3em] placeholder:tracking-normal"
+          aria-label={t("pinTitle")}
+        />
+        <Button type="button" variant="secondary" className="h-10 rounded-full" disabled={busy || pin.length < 4} onClick={() => void save(pin)}>
+          {busy && <Loader2 className="size-4 animate-spin" />}
+          {hasPin ? t("pinChange") : t("pinSave")}
+        </Button>
+        {hasPin && (
+          <Button type="button" variant="ghost" className="h-10 rounded-full text-muted-foreground" disabled={busy} onClick={() => void save("")}>
+            {t("pinRemove")}
+          </Button>
+        )}
+      </div>
+      <p className="text-[11px] leading-snug text-muted-foreground">{t("pinHint")}</p>
+    </div>
   );
 }
