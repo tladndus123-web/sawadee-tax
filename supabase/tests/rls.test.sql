@@ -279,13 +279,13 @@ select throws_ok($$ insert into public.categories (key) values ('C-BAD') $$, '23
 
 -- Labour costs: one line per branch and month, admins only, frozen in a closed month
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
-select throws_ok($$ insert into public.labor_costs (month, wages) values ('2026-09', 100) $$, '42501', NULL, 'staff cannot enter labour costs');
+select throws_ok($$ insert into public.labor_costs (month, wages) values ('2001-09', 100) $$, '42501', NULL, 'staff cannot enter labour costs');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
-select lives_ok($$ insert into public.labor_costs (month, wages, social_security) values ('2026-09', 90000, 3750) $$, 'an admin enters a month of labour costs');
-select throws_ok($$ insert into public.labor_costs (month, wages) values ('2026-09', 1) $$, '23505', NULL, 'one line per branch and month');
-insert into public.month_locks (month) values ('2026-09');
-select throws_like($$ update public.labor_costs set wages = 1 where month = '2026-09' $$, 'month_locked%', 'a closed month''s labour costs cannot change');
-delete from public.month_locks where month = '2026-09';
+select lives_ok($$ insert into public.labor_costs (month, wages, social_security) values ('2001-09', 90000, 3750) $$, 'an admin enters a month of labour costs');
+select throws_ok($$ insert into public.labor_costs (month, wages) values ('2001-09', 1) $$, '23505', NULL, 'one line per branch and month');
+insert into public.month_locks (month) values ('2001-09');
+select throws_like($$ update public.labor_costs set wages = 1 where month = '2001-09' $$, 'month_locked%', 'a closed month''s labour costs cannot change');
+delete from public.month_locks where month = '2001-09';
 -- Month-end stock: one total per branch and month, admins only, frozen in a closed month
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select throws_ok($$ insert into public.stock_counts (month, amount) values ('2026-09', 100) $$, '42501', NULL, 'staff cannot enter the month-end stock');
@@ -370,7 +370,7 @@ select throws_like($$ delete from public.fixed_costs where id = '00000000-0000-0
 select throws_like($$ insert into public.fixed_costs (category, name, amount, from_month) values ('rent', 'x', 1, '2026-06') $$, 'month_locked%', 'a new line cannot start in a closed month');
 delete from public.month_locks where month = '2026-06';
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
-select is((select count(*)::int from public.fixed_costs), 1, 'staff see fixed costs (they are in the cost figures)');
+select is((select count(*)::int from public.fixed_costs where id = '00000000-0000-0000-0000-0000000000f1'), 1, 'staff see fixed costs (they are in the cost figures)');
 select throws_ok($$ insert into public.fixed_costs (category, name, amount, from_month) values ('rent', 'x', 1, '2026-09') $$, '42501', NULL, 'but cannot add one');
 
 -- Attendance: admins only, one row per employee and day, frozen in a closed month; employee documents are a list
