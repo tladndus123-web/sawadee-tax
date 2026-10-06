@@ -24,6 +24,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     description: t("tagline"),
     // iPhone "Add to Home Screen": opens full screen like an app (the manifest does this on Android)
     appleWebApp: { capable: true, title: "Sawadee TAX", statusBarStyle: "default" },
+    // The app has its own four languages: browser auto-translation (Chrome → Thai on staff phones) rewrites the page's
+    // text behind React's back and crashes it ("Application error") as soon as the screen changes after sign-in
+    other: { google: "notranslate" },
   };
 }
 
@@ -47,7 +50,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <html lang={locale} className={fontVariables} suppressHydrationWarning>
+    <html lang={locale} translate="no" className={`${fontVariables} notranslate`} suppressHydrationWarning>
       <body className="min-h-dvh antialiased">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <ThemeColor />
