@@ -16,7 +16,7 @@ import { monthDate } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
 import { fmt } from "@/lib/money";
 import { type Employee, maskId, payrollDeadlines, payrollSettingsOf, periodPay, timesText } from "@/lib/payroll";
-import { loadPayroll, type PayrollLineRow, useEmployees } from "@/lib/payroll-store";
+import { loadPayroll, type PayrollLineRow, useBranchEmployees } from "@/lib/payroll-store";
 import { useMe } from "@/lib/role-store";
 import { branchLabel, dmy, todayBangkok } from "@/lib/thai-tax";
 import { useOurCompany } from "./our-company";
@@ -44,15 +44,15 @@ export function PayrollPrint({ form, month }: { form: PayForm; month: string }) 
   const us = useOurCompany();
   const company = useCompany();
   const settings = payrollSettingsOf(company.payrollSettings);
-  const { employees, loaded } = useEmployees();
+  const { employees, loaded, branch } = useBranchEmployees();
   const [lines, setLines] = useState<PayrollLineRow[] | null>(null);
   const [only, setOnly] = useState("");
 
   useEffect(() => {
-    loadPayroll({ month })
+    loadPayroll({ month, branch })
       .then(setLines)
       .catch(() => setLines([]));
-  }, [month]);
+  }, [month, branch]);
 
   const people = useMemo<Person[]>(() => {
     if (!lines) return [];

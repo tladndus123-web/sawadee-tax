@@ -15,17 +15,20 @@ import { saveCompany, useCompany } from "@/lib/company-store";
 import { fmt } from "@/lib/money";
 import { annualDeadlines, payrollDeadlines, payrollSettingsOf, type PayrollSettings } from "@/lib/payroll";
 import { loadPayroll, type PayrollLineRow } from "@/lib/payroll-store";
+import { useBranch } from "@/lib/branch-store";
 
 export function FilingTab({ month }: { month: string }) {
   const t = useTranslations("pay");
   const locale = useLocale();
   const [lines, setLines] = useState<PayrollLineRow[] | null>(null);
+  // The chosen branch's filings ("all branches" = the whole company together)
+  const branch = useBranch();
   useEffect(() => {
     setLines(null);
-    loadPayroll({ month })
+    loadPayroll({ month, branch })
       .then(setLines)
       .catch(() => setLines([]));
-  }, [month]);
+  }, [month, branch]);
 
   const due = payrollDeadlines(month);
   const day = (d: string) => new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", weekday: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));

@@ -6,7 +6,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { monthDate } from "@/lib/archive";
-import { useEmployees } from "@/lib/payroll-store";
+import { useBranchEmployees } from "@/lib/payroll-store";
 import { useMe } from "@/lib/role-store";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,7 @@ export function PayrollPage() {
   const t = useTranslations("pay");
   const locale = useLocale();
   const me = useMe();
-  const { employees, loaded } = useEmployees();
+  const { employees, loaded } = useBranchEmployees();
   const [tab, setTab] = useState<Tab | null>(null);
   const today = todayBangkok().slice(0, 7);
   const [month, setMonth] = useState(today);

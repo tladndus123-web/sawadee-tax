@@ -1511,7 +1511,14 @@
     "paidDone": "支払済み · {date}",
     "paidSaved": "{name}さんを支払済みにしました。",
     "paidFail": "支払の記録を保存できませんでした。",
-    "paidSummary": "支払済み · 15日分 {first}/{total} · 月末分 {second}/{total}"
+    "paidSummary": "支払済み · 15日分 {first}/{total} · 月末分 {second}/{total}",
+    "moved": "{count}人を{branch}に移しました。次の給与からこの店舗で計算されます。",
+    "moveFail": "店舗を移せませんでした。",
+    "pickedN": "{count}人選択",
+    "moveTo": "移動先の店舗",
+    "moveBtn": "移す",
+    "staffN": "{count}人",
+    "branchOf": "{name}さんの店舗"
   },
   "fixed": {
     "title": "固定費（領収書のない費用）",

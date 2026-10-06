@@ -4,7 +4,9 @@
 // the app worked out per period (so payslips never change afterwards) and puts the month's labour cost of each branch
 // into the cost control (public.labor_costs: pay and the company's social security share; "other" is left as typed).
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { ALL } from "./branches";
+import { useBranch } from "./branch-store";
 import { allowanceTotal, type AllowanceRow, customNames, parseAllowances, type SavedAllowance, savedFromRows } from "./allowances";
 import { parseDocuments } from "./attendance";
 import { type Employee, EMPTY_PERIOD, LEGAL_OT, type LineRates, lineRates, monthPay, type PayrollSettings, type PeriodInput } from "./payroll";
@@ -60,6 +62,14 @@ async function reload() {
   employees = ((data ?? []) as EmpRow[]).map(toEmployee);
   loaded = true;
   emit();
+}
+
+/** Employees of the branch chosen at the top ("all branches" = everyone) — payroll is kept per branch */
+export function useBranchEmployees(): { employees: Employee[]; loaded: boolean; branch: string } {
+  const { employees: all, loaded } = useEmployees();
+  const branch = useBranch();
+  const employees = useMemo(() => (branch === ALL ? all : all.filter((e) => e.branchId === branch)), [all, branch]);
+  return { employees, loaded, branch };
 }
 
 export function useEmployees(): { employees: Employee[]; loaded: boolean } {
@@ -134,8 +144,10 @@ export interface PayrollLineRow extends PeriodInput {
   rates: LineRates;
 }
 
-export async function loadPayroll(opts: { month?: string; year?: string } = {}): Promise<PayrollLineRow[]> {
+/** Pay lines of a month or year; `branch` = only that branch's lines ("all" or none = every branch) */
+export async function loadPayroll(opts: { month?: string; year?: string; branch?: string } = {}): Promise<PayrollLineRow[]> {
   let q = supabaseBrowser().from("payroll_lines").select("*");
+  if (opts.branch && opts.branch !== ALL) q = q.eq("branch_id", opts.branch);
   if (opts.month) q = q.eq("month", opts.month);
   if (opts.year) q = q.like("month", `${opts.year}-%`);
   const { data, error } = await q;
@@ -229,6 +241,8 @@ export async function savePayrollMonth(month: string, input: { employee: Employe
   }
   const { data: existing } = await sb.from("labor_costs").select("branch_id, other, note").eq("month", month);
   const keep = new Map((existing ?? []).map((r) => [r.branch_id as string, r]));
+  // A branch whose staff all moved away: its payroll labour goes back to 0 (lines typed in by hand are left alone)
+  for (const [branchId, r] of keep) if (!byBranch.has(branchId) && r.note === "payroll") byBranch.set(branchId, { wages: 0, ss: 0 });
   const labor = [...byBranch].map(([branchId, v]) => ({
     branch_id: branchId,
     month,

@@ -16,7 +16,7 @@ import { fillWorked, loadAttendance, saveAttendance } from "@/lib/attendance-sto
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
 import { useCompany } from "@/lib/company-store";
 import { type Employee, payrollSettingsOf, timesText } from "@/lib/payroll";
-import { useEmployees } from "@/lib/payroll-store";
+import { useBranchEmployees } from "@/lib/payroll-store";
 import { THAI_HOLIDAYS } from "@/lib/thai-holidays";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
@@ -33,7 +33,7 @@ const CELL: Record<AttendanceKind, string> = {
 export function AttendanceTab({ month }: { month: string }) {
   const t = useTranslations("pay");
   const locale = useLocale();
-  const { employees, loaded } = useEmployees();
+  const { employees, loaded } = useBranchEmployees();
   const locked = useMonthLocks().has(month);
   const [rows, setRows] = useState<AttendanceRow[] | null>(null);
   const [yearRows, setYearRows] = useState<AttendanceRow[]>([]);

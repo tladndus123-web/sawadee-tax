@@ -15,7 +15,7 @@ import { Link } from "@/i18n/navigation";
 import { bahtText } from "@/lib/baht-text";
 import { fmt } from "@/lib/money";
 import { annualDeadlines, type Employee } from "@/lib/payroll";
-import { loadPayroll, type PayrollLineRow, useEmployees } from "@/lib/payroll-store";
+import { loadPayroll, type PayrollLineRow, useBranchEmployees } from "@/lib/payroll-store";
 import { useMe } from "@/lib/role-store";
 import { branchLabel, dmy, todayBangkok } from "@/lib/thai-tax";
 import { useOurCompany } from "./our-company";
@@ -37,14 +37,14 @@ export function YearPrint({ form, year }: { form: YearForm; year: string }) {
   const t = useTranslations("pay");
   const me = useMe();
   const us = useOurCompany();
-  const { employees, loaded } = useEmployees();
+  const { employees, loaded, branch } = useBranchEmployees();
   const [lines, setLines] = useState<PayrollLineRow[] | null>(null);
   const [only, setOnly] = useState("");
   useEffect(() => {
-    loadPayroll({ year })
+    loadPayroll({ year, branch })
       .then(setLines)
       .catch(() => setLines([]));
-  }, [year]);
+  }, [year, branch]);
 
   const people = useMemo<Person[]>(() => {
     if (!lines) return [];

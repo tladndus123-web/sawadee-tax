@@ -1511,7 +1511,14 @@
     "paidDone": "지급 완료 · {date}",
     "paidSaved": "{name} 지급 완료로 표시했어요.",
     "paidFail": "지급 표시를 저장하지 못했어요.",
-    "paidSummary": "지급 완료 · 15일분 {first}/{total} · 말일분 {second}/{total}"
+    "paidSummary": "지급 완료 · 15일분 {first}/{total} · 말일분 {second}/{total}",
+    "moved": "{count}명을 {branch}(으)로 옮겼어요. 다음 급여부터 이 지점으로 계산돼요.",
+    "moveFail": "지점을 옮기지 못했어요.",
+    "pickedN": "{count}명 선택",
+    "moveTo": "옮길 지점",
+    "moveBtn": "옮기기",
+    "staffN": "{count}명",
+    "branchOf": "{name}의 지점"
   },
   "fixed": {
     "title": "고정비 (영수증 없는 비용)",

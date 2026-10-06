@@ -10,15 +10,16 @@ import { toast } from "sonner";
 import { useBranchName } from "@/components/layout/branch-switcher";
 import { MoneyInput } from "@/components/invoice/fields";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { branchLabel, byId, headOf } from "@/lib/branches";
+import { ALL, branchLabel, byId, headOf } from "@/lib/branches";
 import { useBranches } from "@/lib/branch-store";
 import { baht } from "@/lib/money";
 import { expiringDocuments } from "@/lib/attendance";
 import { type Employee, maskId } from "@/lib/payroll";
 import { todayBangkok } from "@/lib/thai-tax";
-import { deleteEmployee, saveEmployee, useEmployees } from "@/lib/payroll-store";
+import { deleteEmployee, saveEmployee, useBranchEmployees } from "@/lib/payroll-store";
 import { taxIdOk } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 
@@ -46,8 +47,28 @@ export function EmployeesTab() {
   const t = useTranslations("pay");
   const names = useBranchName();
   const { branches } = useBranches();
-  const { employees, loaded } = useEmployees();
+  // The branch chosen at the top: its staff only ("all branches" = everyone, grouped by branch)
+  const { employees, loaded, branch } = useBranchEmployees();
   const [draft, setDraft] = useState<(Employee & { isNew?: boolean }) | null>(null);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [moveTo, setMoveTo] = useState("");
+  const [moving, setMoving] = useState(false);
+  // Move staff to another branch: their pay from now on is that branch's (pay already saved keeps its branch)
+  const move = async (list: Employee[], to: string) => {
+    if (!to) return;
+    setMoving(true);
+    try {
+      for (const e of list) if (e.branchId !== to) await saveEmployee({ ...e, branchId: to });
+      const b = byId(branches, to);
+      toast.success(t("moved", { count: list.length, branch: b ? branchLabel(b, names) : "" }));
+      setPicked(new Set());
+    } catch {
+      toast.error(t("moveFail"));
+    } finally {
+      setMoving(false);
+    }
+  };
+  const groups = branch === ALL && branches.length > 1 ? branches.map((b) => ({ b, list: employees.filter((e) => e.branchId === b.id) })).filter((g) => g.list.length) : [{ b: null, list: employees }];
   // Work permits, visas … running out within 30 days (or already out)
   const expiring = expiringDocuments(employees, todayBangkok());
 
@@ -70,12 +91,44 @@ export function EmployeesTab() {
       ) : employees.length === 0 && !draft ? (
         <p className="workspace-panel px-5 py-10 text-center text-sm text-muted-foreground">{t("noEmployees")}</p>
       ) : (
+        <div className="grid gap-3">
+          {/* Several picked: move them together */}
+          {branches.length > 1 && picked.size > 0 && (
+            <div className="sticky top-20 z-10 flex flex-wrap items-center gap-2 rounded-2xl bg-foreground px-4 py-2.5 text-sm text-background shadow-lg">
+              <span className="font-semibold">{t("pickedN", { count: picked.size })}</span>
+              <select value={moveTo} onChange={(e) => setMoveTo(e.target.value)} className="h-9 rounded-full bg-background px-3 text-sm text-foreground" aria-label={t("moveTo")}>
+                <option value="">{t("moveTo")}</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {branchLabel(b, names)}
+                  </option>
+                ))}
+              </select>
+              <Button type="button" size="sm" className="h-9 rounded-full" disabled={!moveTo || moving} onClick={() => void move(employees.filter((e) => picked.has(e.id)), moveTo)}>
+                {moving && <Loader2 className="size-4 animate-spin" />}
+                {t("moveBtn")}
+              </Button>
+              <button type="button" className="ml-auto text-xs underline" onClick={() => setPicked(new Set())}>
+                {t("cancel")}
+              </button>
+            </div>
+          )}
+          {groups.map(({ b: g, list }) => (
+        <section key={g?.id ?? "all"} className="grid gap-1.5">
+          {g && <h3 className="px-1 text-xs font-semibold text-muted-foreground">{branchLabel(g, names)} · {t("staffN", { count: list.length })}</h3>}
         <ul className="workspace-panel divide-y divide-border/60 p-0">
-          {employees.map((e) => {
-            const b = byId(branches, e.branchId);
+          {list.map((e) => {
             const left = !!e.endDate;
             return (
-              <li key={e.id} className={cn("flex items-center gap-3 px-4 py-3", left && "opacity-55")}>
+              <li key={e.id} className={cn("flex flex-wrap items-center gap-3 px-4 py-3", left && "opacity-55")}>
+                {branches.length > 1 ? (
+                  <Checkbox
+                    checked={picked.has(e.id)}
+                    onCheckedChange={(v) => setPicked((s) => { const n = new Set(s); if (v === true) n.add(e.id); else n.delete(e.id); return n; })}
+                    aria-label={e.name}
+                    className="size-5 flex-none rounded-md"
+                  />
+                ) : null}
                 <span className="grid size-10 flex-none place-items-center rounded-full bg-muted text-muted-foreground" aria-hidden>
                   <UserRound className="size-5" />
                 </span>
@@ -85,13 +138,29 @@ export function EmployeesTab() {
                     {e.nickname && <span className="ml-1.5 text-xs font-normal text-muted-foreground">({e.nickname})</span>}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {[b && branches.length > 1 ? branchLabel(b, names) : "", e.position, maskId(e.nationalId), left ? t("left", { date: e.endDate }) : ""].filter(Boolean).join(" · ")}
+                    {[e.position, maskId(e.nationalId), left ? t("left", { date: e.endDate }) : ""].filter(Boolean).join(" · ")}
                   </span>
                 </span>
                 <span className="grid flex-none text-right">
                   <span className="text-[15px] font-semibold tabular-nums">{baht(e.rate)}</span>
                   <span className="text-[11px] text-muted-foreground">{t(e.payType === "monthly" ? "perMonth" : "perDay")}</span>
                 </span>
+                {/* Its branch, changed right here */}
+                {branches.length > 1 && (
+                  <select
+                    value={e.branchId}
+                    disabled={moving}
+                    onChange={(ev) => void move([e], ev.target.value)}
+                    className="h-9 max-w-[9rem] flex-none rounded-full border bg-background px-2.5 text-xs font-medium"
+                    aria-label={t("branchOf", { name: e.name })}
+                  >
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {branchLabel(b, names)}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <Button type="button" variant="ghost" size="icon" className="size-9 flex-none" aria-label={t("edit")} onClick={() => setDraft({ ...e })}>
                   <Pencil className="size-4" />
                 </Button>
@@ -99,9 +168,12 @@ export function EmployeesTab() {
             );
           })}
         </ul>
+        </section>
+          ))}
+        </div>
       )}
       {!draft && (
-        <Button type="button" variant="secondary" className="h-10 w-fit rounded-full px-4" onClick={() => setDraft(blank(headOf(branches)?.id ?? ""))}>
+        <Button type="button" variant="secondary" className="h-10 w-fit rounded-full px-4" onClick={() => setDraft(blank(branch !== ALL ? branch : (headOf(branches)?.id ?? "")))}>
           <Plus className="size-4" />
           {t("addEmployee")}
         </Button>

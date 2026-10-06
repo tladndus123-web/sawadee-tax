@@ -1511,7 +1511,14 @@
     "paidDone": "Paid · {date}",
     "paidSaved": "{name} marked as paid.",
     "paidFail": "Could not save the payment.",
-    "paidSummary": "Paid · 15th {first}/{total} · month-end {second}/{total}"
+    "paidSummary": "Paid · 15th {first}/{total} · month-end {second}/{total}",
+    "moved": "Moved {count} to {branch}. Their next pay is counted there.",
+    "moveFail": "Could not move them.",
+    "pickedN": "{count} picked",
+    "moveTo": "Move to",
+    "moveBtn": "Move",
+    "staffN": "{count}",
+    "branchOf": "{name}'s branch"
   },
   "fixed": {
     "title": "Fixed costs (no invoice)",

@@ -1511,7 +1511,14 @@
     "paidDone": "จ่ายแล้ว · {date}",
     "paidSaved": "ทำเครื่องหมายว่าจ่ายให้ {name} แล้ว",
     "paidFail": "บันทึกการจ่ายไม่สำเร็จ",
-    "paidSummary": "จ่ายแล้ว · งวด 15 {first}/{total} · งวดสิ้นเดือน {second}/{total}"
+    "paidSummary": "จ่ายแล้ว · งวด 15 {first}/{total} · งวดสิ้นเดือน {second}/{total}",
+    "moved": "ย้าย {count} คนไปที่ {branch} แล้ว เงินเดือนงวดถัดไปจะคิดที่สาขานี้",
+    "moveFail": "ย้ายสาขาไม่สำเร็จ",
+    "pickedN": "เลือก {count} คน",
+    "moveTo": "ย้ายไปสาขา",
+    "moveBtn": "ย้าย",
+    "staffN": "{count} คน",
+    "branchOf": "สาขาของ {name}"
   },
   "fixed": {
     "title": "ค่าใช้จ่ายคงที่ (ไม่มีใบเสร็จ)",

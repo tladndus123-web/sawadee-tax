@@ -21,7 +21,7 @@ import { refreshLabor } from "@/lib/labor-store";
 import { fmt } from "@/lib/money";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
 import { daysNotEmployed, type Employee, employedInMonth, EMPTY_PERIOD, type LineRates, lineRates, monthPay, payrollSettingsOf, type PeriodInput, sameRates, timesText } from "@/lib/payroll";
-import { loadAllowanceNames, loadPayroll, loadPayrollChecks, type PayrollCheck, type PayrollLineRow, savePayrollMonth, setPayrollCheck, setPayrollPaid, useEmployees } from "@/lib/payroll-store";
+import { loadAllowanceNames, loadPayroll, loadPayrollChecks, type PayrollCheck, type PayrollLineRow, savePayrollMonth, setPayrollCheck, setPayrollPaid, useBranchEmployees } from "@/lib/payroll-store";
 import { cn } from "@/lib/utils";
 import { OtSettings } from "./OtSettings";
 
@@ -39,7 +39,7 @@ export const inMonth = (e: Employee, month: string) => employedInMonth(e, month)
 
 export function PayRunTab({ month }: { month: string }) {
   const t = useTranslations("pay");
-  const { employees, loaded } = useEmployees();
+  const { employees, loaded, branch } = useBranchEmployees();
   const company = useCompany();
   const settings = useMemo(() => payrollSettingsOf(company.payrollSettings), [company.payrollSettings]);
   const locked = useMonthLocks().has(month);
@@ -65,7 +65,7 @@ export function PayRunTab({ month }: { month: string }) {
     let live = true;
     setReady(false);
     // A failed check lookup must never hide the saved pay
-    Promise.all([loadPayroll({ month }), loadPayrollChecks(month).catch(() => new Map<string, PayrollCheck>())])
+    Promise.all([loadPayroll({ month, branch }), loadPayrollChecks(month).catch(() => new Map<string, PayrollCheck>())])
       .then(([lines, found]) => {
         if (!live) return;
         const next: Inputs = {};
@@ -98,7 +98,7 @@ export function PayRunTab({ month }: { month: string }) {
       })
       .catch(() => live && setReady(true));
     return () => void (live = false);
-  }, [month]);
+  }, [month, branch]);
 
   const staff = useMemo(() => employees.filter((e) => inMonth(e, month) || saved.has(e.id)), [employees, month, saved]);
   // Not typed in yet: a monthly employee who joins or leaves during the month starts with those days as unpaid
