@@ -1617,5 +1617,11 @@
     "wrong": "That password is not right.",
     "wait": "Five wrong tries. Please try again in 10 minutes.",
     "fail": "Could not open it now. Please try again shortly."
+  },
+  "errorPage": {
+    "title": "Something went wrong",
+    "body": "A new version may have come out, or the connection dropped for a moment. Reloading usually fixes it.",
+    "reload": "Reload",
+    "home": "Back to start"
   }
 }
