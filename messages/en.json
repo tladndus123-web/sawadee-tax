@@ -444,7 +444,7 @@
     "tooSoon": "A link was just sent. Try again in a minute.",
     "localMail": "Development: sent emails are at {url}",
     "signingIn": "Signing in…",
-    "linkInvalid": "This link has expired or was already used. Request a new sign-in link.",
+    "linkInvalid": "This link was already used or expired (after 1 hour). Invite and sign-in links work once, and LINE or mail apps sometimes open them first for a preview. No problem: you can get in with a code.",
     "account": "My account",
     "notMember": "You are signed in but not registered as a company member. Please contact an admin.",
     "welcome": "Welcome back",
@@ -462,7 +462,11 @@
     "about": "A ledger where AI reads Thai tax invoices and receipts.",
     "codePaste": "Paste",
     "codeNotInClipboard": "No 6-digit code in what you copied. Copy the code from the email and tap again.",
-    "codePasteByHand": "This browser blocks pasting for us. Long-press the box and choose Paste."
+    "codePasteByHand": "This browser blocks pasting for us. Long-press the box and choose Paste.",
+    "retry1": "Open the sign-in page with the button below.",
+    "retry2": "Type the email you were invited with and tap \"Send sign-in link\".",
+    "retry3": "Enter the 6-digit code at the start of the email's subject.",
+    "getCode": "Get a code on the sign-in page"
   },
   "members": {
     "title": "Members",

@@ -59,8 +59,17 @@ export function AuthCallback() {
       <p className="text-[15px]" role="alert">
         {problem === "invalid" ? t("linkInvalid") : problem === "removed" ? t("removed") : t("notMember")}
       </p>
-      <Button asChild className="rounded-full">
-        <Link href="/login">{t("title")}</Link>
+      {/* A used or old link (invites are one-time; mail and chat apps often open them first for a preview): the
+          sign-in code from the login page always works for an invited person */}
+      {problem === "invalid" && (
+        <ol className="grid gap-1.5 rounded-2xl bg-muted/60 px-4 py-3 text-left text-sm leading-relaxed">
+          <li>1. {t("retry1")}</li>
+          <li>2. {t("retry2")}</li>
+          <li>3. {t("retry3")}</li>
+        </ol>
+      )}
+      <Button asChild className="h-11 rounded-full">
+        <Link href="/login">{problem === "invalid" ? t("getCode") : t("title")}</Link>
       </Button>
     </div>
   );
