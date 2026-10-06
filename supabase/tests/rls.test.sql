@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(193);
+select plan(204);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -412,6 +412,21 @@ select throws_like($$ select public.unlock_branch('00000000-0000-0000-0000-00000
 reset role;
 select is((select count(*)::int from public.member_branches('00000000-0000-0000-0000-00000000000b') m where m = '00000000-0000-0000-0000-0000000000b1'), 0, 'the LINE bot sees which branches a member may use');
 set local role authenticated;
+
+-- Admins type PINs too (on the screen): the branch's own, and a separate "all branches" one
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select is(public.check_branch_pin('00000000-0000-0000-0000-0000000000b1', '0000'), false, 'an admin with a wrong branch PIN is refused');
+select is(public.check_branch_pin('00000000-0000-0000-0000-0000000000b1', '1234'), true, 'the right one passes');
+select is(public.check_all_branches_pin(''), true, 'no "all branches" PIN yet: open');
+select throws_like($$ select public.set_all_branches_pin('1') $$, 'bad_pin%', 'the "all branches" PIN has 4 to 8 digits');
+select lives_ok($$ select public.set_all_branches_pin('86420') $$, 'an admin sets the "all branches" PIN');
+select is(public.has_all_branches_pin(), true, 'members can tell it is set');
+select is((select count(*)::int from public.all_branches_pin), 0, 'nobody reads its hash');
+select is(public.check_all_branches_pin('1111'), false, 'a wrong "all branches" PIN is refused');
+select is(public.check_all_branches_pin('86420'), true, 'the right one passes');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select throws_like($$ select public.set_all_branches_pin('2222') $$, 'admin_only%', 'staff cannot set it');
+select throws_like($$ select public.check_all_branches_pin('86420') $$, 'admin_only%', 'nor use it');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

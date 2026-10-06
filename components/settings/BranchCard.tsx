@@ -14,7 +14,7 @@ import { BRANCH_COLORS, type Branch, branchLabel, COLOR_NAMES, colorOf, isHead }
 import { deleteBranch, saveBranch, useBranches } from "@/lib/branch-store";
 import { useMe } from "@/lib/role-store";
 import { cn } from "@/lib/utils";
-import { setBranchPin, useBranchPins } from "@/lib/branch-lock";
+import { setAllBranchesPin, setBranchPin, useBranchPins } from "@/lib/branch-lock";
 import { useFoldStatus } from "./SettingsFold";
 
 export function BranchCard() {
@@ -22,7 +22,7 @@ export function BranchCard() {
   const names = useBranchName();
   const isAdmin = useMe().role === "admin";
   const { branches, loaded } = useBranches();
-  const { pins } = useBranchPins();
+  const { pins, all: allPin } = useBranchPins();
   const tf = useTranslations("fold");
   useFoldStatus(loaded ? tf("branches", { count: branches.length }) : null);
   const [editing, setEditing] = useState<Partial<Branch> | null>(null);
@@ -104,6 +104,8 @@ export function BranchCard() {
           ))}
         </ul>
       )}
+      {/* Admins: the PIN for seeing every branch together */}
+      {isAdmin && branches.length > 1 && <PinField hasPin={allPin} onSave={setAllBranchesPin} title={t("allPinTitle")} hint={t("allPinHint")} />}
       {isAdmin && !editing && (
         <Button type="button" variant="secondary" className="h-10 w-fit rounded-full px-4" onClick={() => setEditing({ no: String(branches.length).padStart(5, "0"), name: "" })}>
           <Plus className="size-4" />
@@ -188,7 +190,7 @@ export function BranchCard() {
             <p className="text-[11px] leading-snug text-muted-foreground">{t("closedHint")}</p>
           </div>
           {/* Branch password: staff type it after signing in to open this branch (admins never need it) */}
-          {editing.id && <PinField branchId={editing.id} hasPin={pins.has(editing.id)} />}
+          {editing.id && <PinField hasPin={pins.has(editing.id)} onSave={(v) => setBranchPin(editing.id!, v)} />}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" className="rounded-full" disabled={busy} onClick={() => setEditing(null)}>
               {t("cancel")}
@@ -205,14 +207,14 @@ export function BranchCard() {
 }
 
 /** Set, change or remove a branch's password (4–8 digits); staff who had the branch open must type the new one */
-function PinField({ branchId, hasPin }: { branchId: string; hasPin: boolean }) {
+function PinField({ hasPin, onSave, title, hint }: { hasPin: boolean; onSave: (pin: string) => Promise<void>; title?: string; hint?: string }) {
   const t = useTranslations("branch");
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const save = async (value: string) => {
     setBusy(true);
     try {
-      await setBranchPin(branchId, value);
+      await onSave(value);
       toast.success(value ? t("pinSaved") : t("pinRemoved"));
       setPin("");
     } catch {
@@ -225,7 +227,7 @@ function PinField({ branchId, hasPin }: { branchId: string; hasPin: boolean }) {
     <div className="grid gap-1.5 rounded-xl bg-background/60 p-3">
       <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
         <Lock className="size-3.5" aria-hidden />
-        {t("pinTitle")} · <b className={hasPin ? "text-ok" : ""}>{hasPin ? t("pinSet") : t("pinNone")}</b>
+        {title ?? t("pinTitle")} · <b className={hasPin ? "text-ok" : ""}>{hasPin ? t("pinSet") : title ? t("allPinNone") : t("pinNone")}</b>
       </span>
       <div className="flex flex-wrap items-center gap-2">
         <Input
@@ -236,7 +238,7 @@ function PinField({ branchId, hasPin }: { branchId: string; hasPin: boolean }) {
           type="password"
           placeholder={hasPin ? t("pinNew") : t("pinFirst")}
           className="mono h-10 w-40 bg-background tracking-[0.3em] placeholder:tracking-normal"
-          aria-label={t("pinTitle")}
+          aria-label={title ?? t("pinTitle")}
         />
         <Button type="button" variant="secondary" className="h-10 rounded-full" disabled={busy || pin.length < 4} onClick={() => void save(pin)}>
           {busy && <Loader2 className="size-4 animate-spin" />}
@@ -248,7 +250,7 @@ function PinField({ branchId, hasPin }: { branchId: string; hasPin: boolean }) {
           </Button>
         )}
       </div>
-      <p className="text-[11px] leading-snug text-muted-foreground">{t("pinHint")}</p>
+      <p className="text-[11px] leading-snug text-muted-foreground">{hint ?? t("pinHint")}</p>
     </div>
   );
 }

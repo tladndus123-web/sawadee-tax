@@ -1,8 +1,9 @@
 "use client";
 
-// After signing in: which branch to work in (owner's decision 2026-10-06). Staff tap a branch and type its PIN when it
-// has one (the database then opens it for this sign-in, lib/branch-lock.ts); admins pick any branch or all of them
-// without a PIN. Asked once per sign-in. The same list opens from the branch button in the top bar for staff.
+// After signing in: which branch to work in (owner's decisions 2026-10-06). Staff tap a branch and type its PIN when it
+// has one (the database then opens it for this sign-in, lib/branch-lock.ts). Admins type PINs too — the branch's
+// own, or the separate "all branches" one — checked on the screen only (the database shows admins everything).
+// Asked once per sign-in. The same list opens from the branch button in the top bar.
 
 import { ChevronRight, Loader2, Lock } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -10,7 +11,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { BranchAvatar, useBranchName } from "@/components/layout/branch-switcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { chosenFor, markChosen, myUnlock, signInMark, unlockBranch, useBranchPins } from "@/lib/branch-lock";
+import { checkAdminPin, chosenFor, markChosen, myUnlock, signInMark, unlockBranch, useBranchPins } from "@/lib/branch-lock";
 import { ALL, branchLabel } from "@/lib/branches";
 import { setBranch, useBranch, useBranches } from "@/lib/branch-store";
 import { useMe } from "@/lib/role-store";
@@ -23,8 +24,10 @@ export function BranchPicker({ onDone }: { onDone?: () => void }) {
   const me = useMe();
   const staff = me.role !== "admin";
   const { branches } = useBranches();
-  const { pins } = useBranchPins();
+  const { pins, all: allPin } = useBranchPins();
   const selected = useBranch();
+  // Which choices need a PIN: a branch with one (everyone), "all branches" when its PIN is set (admins)
+  const needsPin = (id: string) => (id === ALL ? allPin : pins.has(id));
   const [asking, setAsking] = useState<string | null>(null);
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -44,12 +47,12 @@ export function BranchPicker({ onDone }: { onDone?: () => void }) {
 
   const pick = async (id: string) => {
     setError(null);
-    if (!staff || id === ALL) return void enter(id);
-    if (pins.has(id)) {
+    if (needsPin(id)) {
       setAsking(id);
       setPin("");
       return;
     }
+    if (!staff || id === ALL) return void enter(id);
     setBusy(id);
     try {
       // An open branch: no PIN, but it closes the branch opened before
@@ -67,7 +70,7 @@ export function BranchPicker({ onDone }: { onDone?: () => void }) {
     setBusy(asking);
     setError(null);
     try {
-      const r = await unlockBranch(asking, pin);
+      const r = staff ? await unlockBranch(asking, pin) : await checkAdminPin(asking, pin, asking === ALL);
       if (r === "ok") return void (await enter(asking));
       setError(r === "wait" ? t("wait") : t("wrong"));
       setPin("");
@@ -83,7 +86,7 @@ export function BranchPicker({ onDone }: { onDone?: () => void }) {
     <ul className="grid gap-2">
       {rows.map((id) => {
         const b = id === ALL ? null : (branches.find((x) => x.id === id) ?? null);
-        const locked = staff && !!b && pins.has(b.id);
+        const locked = needsPin(id);
         const open = asking === id;
         return (
           <li key={id} className={cn("overflow-hidden rounded-2xl bg-card ring-1 ring-border", open && "ring-2 ring-primary")}>
@@ -158,7 +161,7 @@ export function BranchGate({ children }: { children: ReactNode }) {
     let live = true;
     void (async () => {
       const staff = me.role !== "admin";
-      const need = branches.length >= 2 || (staff && pins.size > 0);
+      const need = branches.length >= 2 || pins.size > 0;
       let next: "open" | "ask" = "open";
       if (need) {
         if (chosenFor() !== (await signInMark())) next = "ask";
@@ -177,7 +180,7 @@ export function BranchGate({ children }: { children: ReactNode }) {
         <h1 id="gate-title" className="text-2xl font-semibold tracking-tight">
           {t("title")}
         </h1>
-        <p className="text-sm text-muted-foreground">{me.role === "admin" ? t("hintAdmin") : t("hint")}</p>
+        <p className="text-sm text-muted-foreground">{t("hint")}</p>
       </div>
       <BranchPicker onDone={() => setState("open")} />
     </section>

@@ -10,28 +10,34 @@ import { supabaseBrowser } from "./supabase/client";
 const CHOSEN_KEY = "trl.branch.signin";
 
 let pins: ReadonlySet<string> = new Set();
+/** An "all branches" PIN is set (admins type it to see every branch together) */
+let allPin = false;
+let snap = { pins, all: allPin };
 let loaded = false;
 let started = false;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
 async function reload() {
-  const { data, error } = await supabaseBrowser().rpc("branches_with_pin");
+  const sb = supabaseBrowser();
+  const [{ data, error }, all] = await Promise.all([sb.rpc("branches_with_pin"), sb.rpc("has_all_branches_pin")]);
   if (error) throw error;
   pins = new Set(((data ?? []) as unknown[]).map(String));
+  allPin = !!all.data;
+  snap = { pins, all: allPin };
   loaded = true;
   emit();
 }
 
-/** Which branches have a PIN (lock icons; never the PINs) */
-export function useBranchPins(): { pins: ReadonlySet<string>; loaded: boolean } {
-  const snap = useSyncExternalStore(
+/** Which branches have a PIN, and whether "all branches" has one (lock icons; never the PINs) */
+export function useBranchPins(): { pins: ReadonlySet<string>; all: boolean; loaded: boolean } {
+  const now = useSyncExternalStore(
     (l) => {
       listeners.add(l);
       return () => listeners.delete(l);
     },
-    () => pins,
-    () => pins,
+    () => snap,
+    () => snap,
   );
   useEffect(() => {
     if (started) return;
@@ -42,7 +48,7 @@ export function useBranchPins(): { pins: ReadonlySet<string>; loaded: boolean } 
       emit();
     });
   }, []);
-  return { pins: snap, loaded };
+  return { pins: now.pins, all: now.all, loaded };
 }
 
 export type UnlockResult = "ok" | "wrong" | "wait";
@@ -55,6 +61,24 @@ export async function unlockBranch(branchId: string, pin: string): Promise<Unloc
     throw error;
   }
   return data ? "ok" : "wrong";
+}
+
+/** Admins (checked on the screen only): the branch's PIN, or the "all branches" one for `id` = "all" */
+export async function checkAdminPin(branchId: string, pin: string, all: boolean): Promise<UnlockResult> {
+  const sb = supabaseBrowser();
+  const { data, error } = all ? await sb.rpc("check_all_branches_pin", { p_pin: pin }) : await sb.rpc("check_branch_pin", { p_branch: branchId, p_pin: pin });
+  if (error) {
+    if (/too_many_tries/.test(error.message)) return "wait";
+    throw error;
+  }
+  return data ? "ok" : "wrong";
+}
+
+/** Admins only: set, change or remove ("") the "all branches" PIN */
+export async function setAllBranchesPin(pin: string) {
+  const { error } = await supabaseBrowser().rpc("set_all_branches_pin", { p_pin: pin });
+  if (error) throw error;
+  await reload();
 }
 
 /** Close the branch I opened (signing out) — best effort */

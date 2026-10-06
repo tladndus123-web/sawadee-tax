@@ -1153,7 +1153,10 @@
     "pinSaved": "Branch password saved. Staff who had this branch open must type the new one.",
     "pinRemoved": "Password removed. The branch is open to all staff.",
     "pinFail": "Could not save the password. It must be 4–8 digits.",
-    "pinHint": "Staff type it when they choose this branch after signing in. Admins never need it. It is stored encrypted, so nobody can read it back."
+    "pinHint": "Staff and admins type it when they choose this branch. If it is forgotten, an admin sets a new one here. It is stored encrypted, so nobody can read it back.",
+    "allPinTitle": "All-branches password",
+    "allPinNone": "None (admins see all branches without one)",
+    "allPinHint": "Admins type it to enter \"All branches\". It is separate from each branch's password."
   },
   "dep": {
     "label": "Depreciation period",
@@ -1597,7 +1600,7 @@
   },
   "gate": {
     "title": "Which branch are you working in?",
-    "hint": "Choose your branch. Branches with 🔒 need their password.",
+    "hint": "Choose a branch. Those with 🔒 need their password.",
     "hintAdmin": "Choose a branch to look at. Admins need no password.",
     "all": "All branches",
     "current": "Current branch",

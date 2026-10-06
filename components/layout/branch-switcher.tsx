@@ -21,6 +21,7 @@ import { useFixedCosts } from "@/lib/fixed-store";
 import { useStock } from "@/lib/stock-store";
 import { useMe } from "@/lib/role-store";
 import { BranchPicker } from "@/components/auth/BranchGate";
+import { useBranchPins } from "@/lib/branch-lock";
 
 export function useBranchName() {
   const t = useTranslations("branch");
@@ -64,7 +65,9 @@ export function BranchSwitcher() {
   const selected = useBranch();
   const current = useCurrentBranch();
   const [open, setOpen] = useState(false);
-  const staff = useMe().role !== "admin";
+  const pinsNow = useBranchPins();
+  // Staff always, admins once any PIN is set: the list that asks for PINs (else the sheet with the month's figures)
+  const staff = useMe().role !== "admin" || pinsNow.pins.size > 0 || pinsNow.all;
   if (branches.length < 2) return null;
   return (
     <>
