@@ -563,7 +563,7 @@ const DocRow = memo(function DocRow({
         <button
           type="button"
           onClick={() => void accept()}
-          className="press flex h-8 flex-none items-center gap-1 rounded-full border border-input bg-background px-2.5 text-xs font-medium hover:bg-muted max-sm:order-last max-sm:mb-2.5 max-sm:ml-[70px]"
+          className="press flex h-10 flex-none items-center gap-1 rounded-full border border-input bg-background px-3 text-xs pointer-fine:h-8 pointer-fine:px-2.5 font-medium hover:bg-muted max-sm:order-last max-sm:mb-2.5 max-sm:ml-[70px]"
           title={t("ack.hint")}
         >
           <Check className="size-3.5" aria-hidden />

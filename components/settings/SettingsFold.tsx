@@ -38,6 +38,7 @@ export function SettingsFold({
   children,
   row = false,
   status: given,
+  lazy = false,
 }: {
   icon: ReactNode;
   title: string;
@@ -46,8 +47,12 @@ export function SettingsFold({
   row?: boolean;
   /** The folded row's state, when the page knows it (else the card inside reports it) */
   status?: Status;
+  /** Build the inside only once first opened (its code loads then too); for rows whose status the page gives */
+  lazy?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [seen, setSeen] = useState(false);
+  if (open && !seen) setSeen(true);
   const [reported, setStatus] = useState<Status>(null);
   const status = given ?? reported;
   const body = useRef<HTMLDivElement>(null);
@@ -128,7 +133,8 @@ export function SettingsFold({
             row ? "[&>*]:px-1! [&>*]:pt-0! [&>*]:pb-4!" : "[&>*]:pt-1 [&>div]:px-5 [&>div]:pb-5 sm:[&>div]:px-6 sm:[&>div]:pb-6",
           )}
         >
-          <StatusContext.Provider value={setStatus}>{children}</StatusContext.Provider>
+          {/* Not built yet: a placeholder, so the row is not taken for an empty card and hidden */}
+          {lazy && !seen ? <div aria-hidden /> : <StatusContext.Provider value={setStatus}>{children}</StatusContext.Provider>}
         </div>
       </div>
     </div>

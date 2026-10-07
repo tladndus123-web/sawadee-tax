@@ -27,21 +27,25 @@ import { useMe } from "@/lib/role-store";
 import { ALL } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
 import { BranchTable } from "./BranchTable";
-import { TeamCard } from "./TeamCard";
-import { UncheckedList } from "./UncheckedList";
-import { MonthCloseCard } from "./MonthCloseCard";
 import { GoalBars } from "./GoalBars";
 import { RecentSalesCard } from "./RecentSalesCard";
 import { FoldAllButton, SettingsFold } from "@/components/settings/SettingsFold";
 import { useMonthLocks } from "@/lib/month-lock-store";
 import { useDocName } from "@/components/ledger/doc-name";
-import { VatCard } from "./VatCard";
 import { monthLabor } from "@/lib/cost-control";
 import { useLabor } from "@/lib/labor-store";
 import { fixedForMonth } from "@/lib/fixed-costs";
 import { useFixedCosts } from "@/lib/fixed-store";
 import { stockChange } from "@/lib/stock";
 import { useStock } from "@/lib/stock-store";
+import dynamic from "next/dynamic";
+
+// Lists behind the to-do rows (and the admins' team card) load when needed, so the first screen comes up sooner
+const later = <Loader2 className="mx-auto my-4 size-5 animate-spin text-muted-foreground" aria-hidden />;
+const UncheckedList = dynamic(() => import("./UncheckedList").then((m) => m.UncheckedList), { loading: () => later });
+const VatCard = dynamic(() => import("./VatCard").then((m) => m.VatCard), { loading: () => later });
+const MonthCloseCard = dynamic(() => import("./MonthCloseCard").then((m) => m.MonthCloseCard), { loading: () => later });
+const TeamCard = dynamic(() => import("./TeamCard").then((m) => m.TeamCard));
 
 
 /** Step 8 dashboard: the 4 summary tiles, bills due soon (mark paid here), 6-month trend, recent activity. */
@@ -129,7 +133,7 @@ export function Dashboard() {
         <BranchTable month={month} companyTaxId={company.taxId} />
       ) : (
         <section className="workspace-panel grid gap-3 p-5 ring-1 ring-brand/25 sm:p-6" aria-label={t("dash.profitTitle")}>
-          <Link href="/sales" className="press flex items-center justify-between gap-3 rounded-lg">
+          <Link href="/sales" className="press -my-2 flex items-center justify-between gap-3 rounded-lg py-2">
             <span className="flex items-center gap-2 text-sm font-semibold text-brand">
               <TrendingUp className="size-4" aria-hidden />
               {t("dash.profitTitle")}
@@ -152,7 +156,7 @@ export function Dashboard() {
               </span>
             </>
           ) : (
-            <Link href="/sales" className="w-fit text-[15px] font-medium text-primary hover:underline">
+            <Link href="/sales" className="-my-2 w-fit py-2 text-[15px] font-medium text-primary hover:underline">
               {t("dash.profitEmpty")}
             </Link>
           )}
@@ -198,6 +202,7 @@ export function Dashboard() {
           {isAdmin && (
             <SettingsFold
               row
+              lazy
               icon={<Inbox className="text-brand" />}
               title={t("dash.unchecked")}
               status={unchecked ? { text: t("dash.nItems", { count: unchecked }), tone: "brand" } : { text: t("dash.none"), tone: "ok" }}
@@ -217,11 +222,11 @@ export function Dashboard() {
           >
             <DueList items={due} docs={docs} />
           </SettingsFold>
-          <SettingsFold row icon={<CalendarClock className="text-primary" />} title={t("dash.vatRow", { month: new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(new Date(`${filing.month}-01T00:00:00Z`)) })} status={vatStatus}>
+          <SettingsFold row lazy icon={<CalendarClock className="text-primary" />} title={t("dash.vatRow", { month: new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(new Date(`${filing.month}-01T00:00:00Z`)) })} status={vatStatus}>
             <VatCard entries={entries} companyTaxId={company.taxId} today={today} />
           </SettingsFold>
           {isAdmin && (
-            <SettingsFold row icon={<Lock className="text-muted-foreground" />} title={t("close.row")}>
+            <SettingsFold row lazy icon={<Lock className="text-muted-foreground" />} title={t("close.row")}>
               <MonthCloseCard />
             </SettingsFold>
           )}
@@ -377,7 +382,7 @@ function DueList({ items, docs }: { items: DueItem[]; docs: Doc[] }) {
                   <span className={cn("rounded-full px-2 py-0.5 font-semibold", b.cls)}>{b.text}</span>
                   {it.doc.dueDate && <span className="tabular-nums">{sd(it.doc.dueDate)}</span>}
                 </span>
-                <Button type="button" variant="outline" className="h-8 flex-none rounded-full px-3 text-xs" disabled={busy === it.id} onClick={() => void setPaid(it, true)}>
+                <Button type="button" variant="outline" className="h-10 flex-none rounded-full px-3 text-xs pointer-fine:h-8" disabled={busy === it.id} onClick={() => void setPaid(it, true)}>
                   {busy === it.id ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
                   {t("dash.markPaid")}
                 </Button>

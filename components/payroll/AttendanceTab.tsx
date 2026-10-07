@@ -96,7 +96,7 @@ export function AttendanceTab({ month }: { month: string }) {
               {days.map((d) => (
                 <th key={d} className={cn("min-w-10 px-[3px] py-1.5 text-center font-medium", THAI_HOLIDAYS.has(d) ? "text-bad" : isWeekend(d) ? "text-muted-foreground" : "", d === today && "underline underline-offset-4")}>
                   <span className="block leading-none">{Number(d.slice(8))}</span>
-                  <span className="block text-[10px] leading-none text-muted-foreground">{weekday.format(new Date(`${d}T00:00:00Z`))}</span>
+                  <span className="block text-[11px] leading-none text-muted-foreground">{weekday.format(new Date(`${d}T00:00:00Z`))}</span>
                 </th>
               ))}
             </tr>

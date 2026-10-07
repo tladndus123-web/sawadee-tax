@@ -72,7 +72,7 @@ export function InstallCard({ compact }: { compact?: boolean }) {
           {t("tip")}
         </p>
         {steps}
-        <button type="button" onClick={hide} aria-label={t("hide")} className="absolute top-3 right-3 grid size-8 place-items-center rounded-full text-muted-foreground hover:bg-muted">
+        <button type="button" onClick={hide} aria-label={t("hide")} className="absolute top-2 right-2 grid size-10 place-items-center rounded-full text-muted-foreground hover:bg-muted">
           <X className="size-4" />
         </button>
       </section>

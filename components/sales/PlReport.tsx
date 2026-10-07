@@ -139,7 +139,7 @@ export function PlReport() {
               type="button"
               aria-pressed={span === n}
               onClick={() => setSpan(n)}
-              className={cn("h-8 rounded-full px-3 text-sm", span === n ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
+              className={cn("h-10 rounded-full px-3.5 text-sm pointer-fine:h-8 pointer-fine:px-3", span === n ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
             >
               {t("pl.months", { count: n })}
             </button>
@@ -152,7 +152,7 @@ export function PlReport() {
               type="button"
               aria-pressed={view === v}
               onClick={() => pickView(v)}
-              className={cn("h-8 rounded-full px-3 text-sm", view === v ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
+              className={cn("h-10 rounded-full px-3.5 text-sm pointer-fine:h-8 pointer-fine:px-3", view === v ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
             >
               {t(`pl.view_${v}`)}
             </button>

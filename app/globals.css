@@ -264,6 +264,13 @@
   white-space: nowrap;
 }
 
+/* Touch screens (tablets): menu links tall enough for a finger */
+@media (pointer: coarse) {
+  .nav-pill a {
+    min-height: 2.5rem;
+  }
+}
+
 @media (max-width: 1099px) {
   .nav-pill a {
     padding-inline: 0.7rem;

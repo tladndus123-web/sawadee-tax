@@ -57,7 +57,7 @@ export function PayrollPage() {
               role="tab"
               aria-selected={shown === k}
               onClick={() => setTab(k)}
-              className={cn("h-8 rounded-full px-3.5 text-sm", shown === k ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
+              className={cn("h-10 rounded-full px-3.5 text-sm pointer-fine:h-8", shown === k ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
             >
               {t(`tab.${k}`)}
             </button>

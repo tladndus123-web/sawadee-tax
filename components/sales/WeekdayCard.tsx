@@ -43,7 +43,7 @@ export function WeekdayCard({ sales, today }: { sales: Sale[]; today: string }) 
               type="button"
               aria-pressed={weeks === w}
               onClick={() => setWeeks(w)}
-              className={cn("h-8 rounded-full px-3 text-xs font-medium", weeks === w ? "bg-background shadow-sm" : "text-muted-foreground")}
+              className={cn("h-10 rounded-full px-3.5 text-xs font-medium pointer-fine:h-8 pointer-fine:px-3", weeks === w ? "bg-background shadow-sm" : "text-muted-foreground")}
             >
               {t("weeks", { weeks: w })}
             </button>
