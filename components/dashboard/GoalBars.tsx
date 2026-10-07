@@ -16,7 +16,7 @@ import { useCompany } from "@/lib/company-store";
 import { monthLabor } from "@/lib/cost-control";
 import { monthCosts } from "@/lib/cost-split";
 import { fixedForMonth } from "@/lib/fixed-costs";
-import { useFixedCosts } from "@/lib/fixed-store";
+import { useCostLines } from "@/lib/cash-store";
 import { useLabor } from "@/lib/labor-store";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { bahtWhole, fromSatang } from "@/lib/money";
@@ -36,7 +36,7 @@ export function GoalBars({ month, today, salesValue }: { month: string; today: s
   const { entries } = useLedger();
   const { sales } = useSales();
   const { lines: labor } = useLabor();
-  const { lines: fixed } = useFixedCosts();
+  const { lines: fixed } = useCostLines();
   const { counts: stock } = useStock();
   const { rows: categories } = useCategories();
 

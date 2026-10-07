@@ -23,7 +23,7 @@ import { useCategoryLabel } from "@/components/vendors/CategoryIcon";
 import { useChannelLabel } from "./channel-name";
 import { useLabor } from "@/lib/labor-store";
 import { useStock } from "@/lib/stock-store";
-import { useFixedCosts } from "@/lib/fixed-store";
+import { useCostLines } from "@/lib/cash-store";
 
 const SPANS = [3, 6, 12] as const;
 const VIEWS = ["both", "amount", "share"] as const;
@@ -63,7 +63,7 @@ export function PlReport() {
   }, [sales, purchases, today]);
   const { lines: labor } = useLabor();
   const chName = useChannelLabel();
-  const { lines: fixed } = useFixedCosts();
+  const { lines: fixed } = useCostLines();
   const { counts: stock } = useStock();
   const table = useMemo(() => plTable(sales, purchases, end, span, company.taxId, labor, fixed, stock), [sales, purchases, end, span, company.taxId, labor, fixed, stock]);
 

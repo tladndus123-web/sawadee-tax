@@ -38,7 +38,7 @@ import { useDocName } from "@/components/ledger/doc-name";
 import { monthLabor } from "@/lib/cost-control";
 import { useLabor } from "@/lib/labor-store";
 import { fixedForMonth } from "@/lib/fixed-costs";
-import { useFixedCosts } from "@/lib/fixed-store";
+import { useCostLines } from "@/lib/cash-store";
 import { stockChange } from "@/lib/stock";
 import { useStock } from "@/lib/stock-store";
 import dynamic from "next/dynamic";
@@ -71,7 +71,7 @@ export function Dashboard() {
   const due = useMemo(() => upcoming(docs, today), [docs, today]);
   const { sales } = useSales();
   const { lines: labor } = useLabor();
-  const { lines: fixed } = useFixedCosts();
+  const { lines: fixed } = useCostLines();
   const isAdmin = useMe().role === "admin";
   const allBranches = useBranch() === ALL;
   const branchCount = useBranches().branches.length;

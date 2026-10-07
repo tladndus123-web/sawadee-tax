@@ -4,7 +4,7 @@ import { useBranchName } from "@/components/layout/branch-switcher";
 import { ALL, BRANCH_COLORS, branchLabel, byId, colorOf, headOf } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
 import { isDepreciated } from "@/lib/cost-split";
-import { ArchiveRestore, CalendarDays, ChevronDown, ChevronRight, CircleCheck, FilePen, ImagePlus, Loader2, Lock, Search, Trash2, TriangleAlert, X, UserCheck, Check, Tags, Refrigerator } from "lucide-react";
+import { ArchiveRestore, CalendarDays, Check, ChevronDown, ChevronRight, CircleCheck, Coins, FilePen, ImagePlus, Loader2, Lock, Refrigerator, Search, Tags, Trash2, TriangleAlert, UserCheck, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
@@ -101,6 +101,10 @@ export function LedgerList() {
             <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("nav.ledger")}</h1>
             <div className="flex flex-wrap items-center gap-2">
               <AddDocButtons size="sm" />
+              <Link href="/ledger/cash" className="press inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-primary hover:bg-primary/10">
+                <Coins className="size-4" aria-hidden />
+                {t("cash.link")}
+              </Link>
               {assetCount > 0 && (
                 <Link href="/ledger/assets" className="press inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-primary hover:bg-primary/10">
                   <Refrigerator className="size-4" aria-hidden />

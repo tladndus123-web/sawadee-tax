@@ -17,7 +17,7 @@ import { useSales } from "@/lib/sales-store";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { useLabor } from "@/lib/labor-store";
-import { useFixedCosts } from "@/lib/fixed-store";
+import { useCostLines } from "@/lib/cash-store";
 import { useStock } from "@/lib/stock-store";
 import { useMe } from "@/lib/role-store";
 import { BranchPicker } from "@/components/auth/BranchGate";
@@ -108,7 +108,7 @@ function SwitchSheet({ branches, selected, names, onPick }: { branches: Branch[]
   const { entries } = useLedger({ all: true });
   const { sales } = useSales({ all: true });
   const { lines: labor } = useLabor({ all: true });
-  const { lines: fixed } = useFixedCosts({ all: true });
+  const { lines: fixed } = useCostLines({ all: true });
   const { counts: stock } = useStock({ all: true });
   const month = todayBangkok().slice(0, 7);
   const { rows, total } = useMemo(

@@ -21,7 +21,7 @@ import { useDocName } from "./doc-name";
 import type { XlsxLabels } from "@/lib/export-xlsx";
 import { monthCosts } from "@/lib/cost-split";
 import { fixedForMonth } from "@/lib/fixed-costs";
-import { useFixedCosts } from "@/lib/fixed-store";
+import { useCostLines } from "@/lib/cash-store";
 import { type LedgerEntry, pick, useLedger } from "@/lib/ledger-store";
 import { fromSatang } from "@/lib/money";
 import { useCategoryLabel } from "@/components/vendors/CategoryIcon";
@@ -40,7 +40,7 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
   // Depreciation needs equipment bought in earlier months too
   const { entries: all } = useLedger();
   const catLabel = useCategoryLabel();
-  const { lines: fixed } = useFixedCosts();
+  const { lines: fixed } = useCostLines();
 
   const { sales } = useSales();
   const { counts: stock } = useStock();

@@ -17,7 +17,7 @@ import { ALL } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
 import { useCompany } from "@/lib/company-store";
 import { fixedForMonth } from "@/lib/fixed-costs";
-import { useFixedCosts } from "@/lib/fixed-store";
+import { useCostLines } from "@/lib/cash-store";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { baht } from "@/lib/money";
 import { type Channel, monthResult, type Sale, saleMonth } from "@/lib/sales";
@@ -79,7 +79,7 @@ export function SalesPage() {
     const set = new Set<string>([today.slice(0, 7), ...sales.map(saleMonth), ...purchases.map((d) => invoiceMonth(d)).filter((m) => m !== NO_DATE)]);
     return [...set].sort().reverse();
   }, [sales, purchases, today]);
-  const { lines: fixed } = useFixedCosts();
+  const { lines: fixed } = useCostLines();
   const { counts: stock } = useStock();
   const r = useMemo(
     () => monthResult(sales, purchases, month, company.taxId, monthLabor(labor, month), fixedForMonth(fixed, month), stockChange(stock, month).change),

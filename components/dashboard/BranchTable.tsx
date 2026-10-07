@@ -23,7 +23,7 @@ import { useSales } from "@/lib/sales-store";
 import { cn } from "@/lib/utils";
 import { useLabor } from "@/lib/labor-store";
 import { fixedForMonth } from "@/lib/fixed-costs";
-import { useFixedCosts } from "@/lib/fixed-store";
+import { useCostLines } from "@/lib/cash-store";
 import { stockChange } from "@/lib/stock";
 import { useStock } from "@/lib/stock-store";
 
@@ -34,7 +34,7 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
   const { entries } = useLedger({ all: true });
   const { sales } = useSales({ all: true });
   const { lines: labor } = useLabor({ all: true });
-  const { lines: fixed } = useFixedCosts({ all: true });
+  const { lines: fixed } = useCostLines({ all: true });
   const { counts: stock } = useStock({ all: true });
   const company = useCompany();
   const { rows: categories } = useCategories();

@@ -1685,5 +1685,64 @@
     "copy": "Copy {what}",
     "paidNow": "Sent · mark as paid",
     "withheld": "After withholding {amount}"
+  },
+  "cash": {
+    "link": "Cash box",
+    "back": "Ledger",
+    "title": "Cash box",
+    "intro": "Note the shop cash you put in and spend, and you see at once what should be in the box. Count it now and then to check.",
+    "balance": "Should be in the box now",
+    "lastCount": "Last counted: {day}",
+    "neverCounted": "Not counted yet",
+    "diff": "Difference {amount}",
+    "kind": {
+      "in": "Put in",
+      "out": "Spend",
+      "count": "Count"
+    },
+    "kindLabel": "Kind",
+    "sumIn": "Put in this month",
+    "sumOut": "Spent this month",
+    "sumNoReceipt": "Spent without a receipt",
+    "sumNoReceiptHint": "Counts in costs and profit, but no input VAT back",
+    "sumDiff": "Count difference",
+    "list": "Lines",
+    "empty": "Nothing yet. Start with Put in · Spend · Count above.",
+    "after": "Left {amount}",
+    "hasReceipt": "Receipt",
+    "noReceipt": "No receipt",
+    "note": "Cash spent without a receipt is a cost of its month (no input VAT back). Spending with a receipt goes into the ledger as a photo — it is not counted again here. Only admins delete; closed months cannot change.",
+    "sheet": {
+      "in": "Put cash in",
+      "out": "Spend from the box",
+      "count": "Count the box"
+    },
+    "sheetHint": {
+      "in": "Cash put into the box, e.g. change float",
+      "out": "Cash taken out to pay, e.g. ice, gas, market shopping",
+      "count": "Enter what is really there; you see the difference from what should be"
+    },
+    "branch": "Branch",
+    "day": "Date",
+    "amount": "Amount (baht)",
+    "counted": "Counted (baht)",
+    "category": "What for",
+    "memo": "Note",
+    "memoHint": {
+      "in": "e.g. change float",
+      "out": "e.g. 2 bags of ice",
+      "count": "e.g. closing count"
+    },
+    "receiptToggle": "There is a receipt",
+    "receiptYes": "Put the receipt into the ledger as a photo; it is not counted again here.",
+    "receiptNo": "Counted as this month's cost without a receipt (no input VAT back).",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "Saved.",
+    "fail": "Could not save.",
+    "locked": "That month is closed.",
+    "delete": "Delete",
+    "deleteSure": "Delete?",
+    "deleted": "Deleted."
   }
 }

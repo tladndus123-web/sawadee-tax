@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(212);
+select plan(219);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -441,6 +441,20 @@ select throws_ok($$ update public.vendors set pay_promptpay = '12345' where tax_
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select throws_ok($$ update public.vendors set pay_account = '9999999999' where tax_id = (select min(tax_id) from public.vendors) $$, 'only admins change payment details', 'staff cannot change where money goes');
 select lives_ok($$ update public.vendors set tel = '021234567' where tax_id = (select min(tax_id) from public.vendors) $$, 'staff still correct the other vendor details');
+
+-- The cash box: everyone of the branch records, admins delete, a closed month keeps its lines
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select lives_ok($$ insert into public.cash_moves (id, branch_id, day, kind, amount, category, memo) values ('00000000-0000-0000-0000-0000000000c5', public.head_branch(), '2001-02-03', 'out', 120, 'food', 'ice') $$, 'staff record cash spent');
+select is((select created_by::text from public.cash_moves where id = '00000000-0000-0000-0000-0000000000c5'), '00000000-0000-0000-0000-00000000000b', 'who recorded it is stamped');
+select throws_ok($$ insert into public.cash_moves (day, kind, amount) values ('2001-02-03', 'out', 50) $$, '23514', NULL, 'spending needs a category');
+with d as (delete from public.cash_moves where id = '00000000-0000-0000-0000-0000000000c5' returning 1)
+select is((select count(*)::int from d), 0, 'staff cannot delete a cash line');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+insert into public.month_locks (month) values ('2001-02');
+select throws_like($$ insert into public.cash_moves (day, kind, amount) values ('2001-02-10', 'in', 500) $$, 'month_locked%', 'a closed month takes no new cash lines');
+select throws_like($$ delete from public.cash_moves where id = '00000000-0000-0000-0000-0000000000c5' $$, 'month_locked%', 'nor loses one');
+delete from public.month_locks where month = '2001-02';
+select lives_ok($$ delete from public.cash_moves where id = '00000000-0000-0000-0000-0000000000c5' $$, 'an admin deletes a cash line');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');
