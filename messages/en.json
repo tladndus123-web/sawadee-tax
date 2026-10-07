@@ -1332,7 +1332,10 @@
       "noLabor": "This month's labour is not entered yet.",
       "stock": "Enter the month-end stock so food cost is what was actually used.",
       "allGood": "All three are within target. Keep it up."
-    }
+    },
+    "about": "How to read this card",
+    "more": "Food · labour · rent in detail",
+    "less": "Less"
   },
   "pay": {
     "title": "Payroll",
@@ -1619,7 +1622,9 @@
     "yesterday": "Yesterday",
     "vsWeek": "{pct} vs same day last week",
     "closed": "Closed",
-    "missing": "Not entered"
+    "missing": "Not entered",
+    "empty": "No sales entered in the last 7 days",
+    "add": "Add sales"
   },
   "gate": {
     "title": "Which branch are you working in?",

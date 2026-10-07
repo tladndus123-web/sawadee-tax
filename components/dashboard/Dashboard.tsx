@@ -98,17 +98,29 @@ export function Dashboard() {
   return (
     <div className="grid gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold tracking-tight">{monthLabel(month)}</h2>
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          {t("dash.month")}
-          <select value={month} onChange={(e) => setMonth(e.target.value)} className="h-9 rounded-full border bg-card px-3 text-sm text-foreground">
+        {/* The month is the heading, and changes right there */}
+        <span className="relative">
+          <select
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+            aria-label={t("dash.month")}
+            className="press h-11 cursor-pointer appearance-none rounded-full bg-card py-0 pr-10 pl-4 text-xl font-bold tracking-tight shadow-[var(--shadow-soft)] ring-1 ring-border"
+          >
             {months.map((m) => (
               <option key={m} value={m}>
                 {monthLabel(m)}
               </option>
             ))}
           </select>
-        </label>
+          <ChevronDown className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        </span>
+        {/* A new company: what a read document looks like */}
+        {docs.length === 0 && (
+          <Link href="/documents/sample" className="press flex min-h-11 items-center gap-1 rounded-full px-4 text-sm font-medium text-primary hover:bg-primary/10">
+            {t("dash.sample")}
+            <ChevronRight className="size-4" aria-hidden />
+          </Link>
+        )}
       </div>
 
       {/* 1. How the month is going: what is left (the one number owners ask first), then four figures */}
@@ -116,7 +128,7 @@ export function Dashboard() {
         // Several branches seen together: each branch's month side by side carries the profit
         <BranchTable month={month} companyTaxId={company.taxId} />
       ) : (
-        <section className="grid gap-3 rounded-[1.375rem] border border-brand/15 bg-brand-soft/70 p-5 shadow-[var(--shadow-soft)] sm:p-6" aria-label={t("dash.profitTitle")}>
+        <section className="workspace-panel grid gap-3 p-5 ring-1 ring-brand/25 sm:p-6" aria-label={t("dash.profitTitle")}>
           <Link href="/sales" className="press flex items-center justify-between gap-3 rounded-lg">
             <span className="flex items-center gap-2 text-sm font-semibold text-brand">
               <TrendingUp className="size-4" aria-hidden />
@@ -130,7 +142,7 @@ export function Dashboard() {
                 key={result.profit}
                 className={cn("num-in text-[clamp(2rem,9vw,3rem)] leading-none font-bold tracking-tight whitespace-nowrap tabular-nums", result.profit < 0 ? "text-bad" : "text-foreground")}
               >
-                {baht(result.profit)}
+                {bahtWhole(result.profit)}
               </span>
               <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground tabular-nums">
                 <span>{t("dash.profitLine", { sales: bahtWhole(result.salesValue), cost: bahtWhole(result.purchasesCost) })}</span>
@@ -140,20 +152,22 @@ export function Dashboard() {
               </span>
             </>
           ) : (
-            <span className="text-sm text-primary">{t("dash.profitEmpty")}</span>
+            <Link href="/sales" className="w-fit text-[15px] font-medium text-primary hover:underline">
+              {t("dash.profitEmpty")}
+            </Link>
           )}
-          {/* How far towards break-even and the month's target */}
-          <GoalBars month={month} today={today} salesValue={result.salesValue} />
+          {/* How far towards break-even and the month's target (once there are sales to measure) */}
+          {hasSales && <GoalBars month={month} today={today} salesValue={result.salesValue} />}
         </section>
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Tile icon={TrendingUp} label={t("sales.salesValue")} value={baht(result.salesValue)} note={t("dash.salesDays", { count: result.days })} />
-        <Tile icon={Receipt} label={t("app.sTotal")} value={baht(s.total)} note={t("dash.monthDocs", { count: s.count })} />
+        <Tile icon={TrendingUp} label={t("sales.salesValue")} value={result.salesValue} note={t("dash.salesDays", { count: result.days })} />
+        <Tile icon={Receipt} label={t("app.sTotal")} value={s.total} note={t("dash.monthDocs", { count: s.count })} />
         <Tile
           icon={Clock}
           label={t("app.sUnpaid")}
-          value={baht(s.unpaid)}
+          value={s.unpaid}
           tone={s.overdueCount ? "bad" : undefined}
           note={
             <>
@@ -165,7 +179,7 @@ export function Dashboard() {
         <Tile
           icon={Landmark}
           label={t("dash.vatToPay")}
-          value={baht(result.vatPayable)}
+          value={result.vatPayable}
           tone={result.vatPayable < 0 ? "brand" : undefined}
           note={result.vatPayable < 0 ? t("dash.vatCreditShort") : `${bahtWhole(result.salesVat)} − ${bahtWhole(result.claimableVat)}`}
         />
@@ -221,7 +235,7 @@ export function Dashboard() {
         {/* Stays in view beside a long to-do list */}
         <div className="min-w-0">
           <div className="lg:sticky lg:top-24">
-            <CostCard month={month} salesValue={result.salesValue} purchases={purchases} fixed={fixed} />
+            <CostCard month={month} salesValue={result.salesValue} purchases={purchases} fixed={fixed} fold />
           </div>
         </div>
       </div>
@@ -244,7 +258,7 @@ function Tile({
 }: {
   icon: typeof Receipt;
   label: string;
-  value: string;
+  value: number;
   note?: React.ReactNode;
   tone?: "brand" | "bad" | "warn";
 }) {
@@ -258,16 +272,17 @@ function Tile({
         // A new value (another month) remounts the number, so it rolls in
         key={value}
         className={cn(
-          // Shrinks with the screen so "฿ 162,105.00" stays on one line in a two-column phone grid
-          "num-in text-[clamp(1.15rem,5.2vw,1.625rem)] leading-tight font-semibold tracking-tight whitespace-nowrap tabular-nums",
-          tone === "brand" && "text-brand",
-          tone === "bad" && "text-bad",
-          tone === "warn" && "text-warn",
+          // Whole baht here (the ledger keeps the satang); shrinks with the screen to stay on one line
+          "num-in text-[clamp(1.25rem,5.6vw,1.75rem)] leading-tight font-semibold tracking-tight whitespace-nowrap tabular-nums",
+          value === 0 && "text-muted-foreground/60",
+          value !== 0 && tone === "brand" && "text-brand",
+          value !== 0 && tone === "bad" && "text-bad",
+          value !== 0 && tone === "warn" && "text-warn",
         )}
       >
-        {value}
+        {value === 0 ? "฿0" : bahtWhole(value)}
       </span>
-      {note && <span className="text-[11px] leading-snug text-muted-foreground">{note}</span>}
+      {note && <span className="text-xs leading-snug text-muted-foreground">{note}</span>}
     </div>
   );
 }

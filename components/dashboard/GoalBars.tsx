@@ -67,7 +67,7 @@ export function GoalBars({ month, today, salesValue }: { month: string; today: s
   const aim = target ?? bep;
 
   return (
-    <div className="grid gap-2.5 border-t border-brand/15 pt-3">
+    <div className="grid gap-2.5 border-t border-border/60 pt-3">
       {bep && be.point !== null && <Bar label={bep.left ? t("bep", { amount: bahtWhole(fromSatang(be.point)) }) : t("bepDone")} ratio={bep.ratio} done={!bep.left} title={current ? t("bepBasis") : undefined} />}
       {target && <Bar label={t("goal", { amount: bahtWhole(fromSatang(goal)) })} ratio={target.ratio} done={!target.left} strong />}
       {current && aim && aim.left > 0 && (
@@ -95,7 +95,7 @@ function Bar({ label, ratio, done, strong, title }: { label: string; ratio: numb
         </span>
         <span className={cn("font-semibold tabular-nums", done ? "text-ok" : "text-foreground")}>{pct}%</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-background/80" role="progressbar" aria-valuenow={Math.min(pct, 100)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
+      <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={Math.min(pct, 100)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
         <div className={cn("h-full rounded-full transition-[width] duration-700", done ? "bg-ok" : strong ? "bg-brand" : "bg-brand/50")} style={{ width: `${Math.min(100, pct)}%` }} />
       </div>
     </div>

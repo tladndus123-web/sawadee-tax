@@ -34,6 +34,7 @@ export function TeamCard({ month }: { month: string }) {
   }, [month, t]);
 
   const when = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  if (rows && rows.length === 0) return null;
 
   return (
     <section aria-labelledby="team-title" className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-5 sm:p-6">
@@ -44,7 +45,6 @@ export function TeamCard({ month }: { month: string }) {
         </h2>
         <p className="text-xs text-muted-foreground">{t("hint")}</p>
       </div>
-      {rows && rows.length === 0 && <p className="text-sm text-muted-foreground">{t("empty")}</p>}
       <ul className="grid">
         {(rows ?? []).map((r) => (
           <li key={r.userId} className="grid gap-2 border-b border-border/60 py-3 last:border-0">

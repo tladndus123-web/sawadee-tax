@@ -27,6 +27,19 @@ export function RecentSalesCard({ today }: { today: string }) {
   if (!loaded) return null;
   const max = Math.max(...r.days.map((d) => d.value), 1);
   const pct = r.change === null ? null : Math.round(r.change * 100);
+  if (r.total === 0)
+    return (
+      <Link href="/sales" className="workspace-panel press flex items-center justify-between gap-3 p-5 sm:p-6">
+        <span className="grid gap-0.5">
+          <span className="text-lg font-semibold tracking-tight">{t("title")}</span>
+          <span className="text-sm text-muted-foreground">{t("empty")}</span>
+        </span>
+        <span className="flex flex-none items-center gap-1 text-sm font-medium text-primary">
+          {t("add")}
+          <ChevronRight className="size-4" aria-hidden />
+        </span>
+      </Link>
+    );
 
   return (
     <section className="workspace-panel flex flex-1 flex-col gap-4 p-5 sm:p-6" aria-labelledby="recent-title">

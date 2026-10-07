@@ -4,7 +4,7 @@
 // and the three together. Labour has no receipts: admins type it in per branch and month (Thai payroll lines).
 // Admins can change the targets too.
 
-import { CalendarClock, ChefHat, Loader2, Package, Pencil, Users } from "lucide-react";
+import { CalendarClock, ChefHat, ChevronDown, Info, Loader2, Package, Pencil, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -41,7 +41,7 @@ const BAR = { ok: "bg-risk-ok", watch: "bg-risk-watch", near: "bg-risk-near", ov
 const TILE = { ok: "bg-ok-soft", watch: "bg-caution-soft", near: "bg-warn-soft", over: "bg-bad-soft ring-1 ring-risk-over/40", none: "bg-muted/60" } as const;
 const CHIP = { ok: "bg-risk-ok/15 text-ok", watch: "bg-risk-watch/25 text-caution", near: "bg-risk-near/20 text-warn", over: "bg-risk-over text-white", none: "" } as const;
 
-export function CostCard({ month, salesValue, purchases, fixed }: { month: string; salesValue: number; purchases: LedgerDoc[]; fixed: FixedLine[] }) {
+export function CostCard({ month, salesValue, purchases, fixed, fold }: { month: string; salesValue: number; purchases: LedgerDoc[]; fixed: FixedLine[]; fold?: boolean }) {
   const t = useTranslations("cost");
   const company = useCompany();
   const isAdmin = useMe().role === "admin";
@@ -53,6 +53,10 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
   const [laborOpen, setLaborOpen] = useState(false);
   const [stockOpen, setStockOpen] = useState(false);
   const [targetsOpen, setTargetsOpen] = useState(false);
+  // How to read the card (bar colours, what counts as food cost): one tap away, not always on screen
+  const [about, setAbout] = useState(false);
+  // Phones: FL / FLR first, the three lines and the tips one tap away (always open on wide screens)
+  const [more, setMore] = useState(!fold);
   const targets = targetsOf(company.costTargets);
   const foodKeys = useMemo(() => new Set(categories.filter((c) => c.foodCost).map((c) => c.key as string)), [categories]);
   const c = useMemo(
@@ -80,16 +84,29 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
 
   return (
     <section className="workspace-panel hover-lift [--lift:1.006] flex flex-col gap-4 p-5 sm:p-6" aria-labelledby="cost-title">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="grid gap-0.5">
-          <h2 id="cost-title" className="flex items-center gap-2 text-sm font-semibold">
-            <ChefHat className="size-4 text-brand" aria-hidden />
-            {t("title")}
+      <div className="grid gap-3">
+        <div className="flex items-center gap-1">
+          <h2 id="cost-title" className="flex min-w-0 flex-1 items-center gap-2 text-[15px] font-semibold">
+            <ChefHat className="size-4 flex-none text-brand" aria-hidden />
+            <span className="truncate">{t("title")}</span>
           </h2>
-          <p className="text-xs text-muted-foreground">{t("hint")}</p>
+          <Button type="button" variant="ghost" size="icon" className="size-9 flex-none rounded-full" aria-label={t("about")} aria-expanded={about} onClick={() => setAbout((v) => !v)}>
+            <Info className={cn("size-4", about ? "text-primary" : "text-muted-foreground")} />
+          </Button>
+          {isAdmin && (
+            <Button type="button" variant="ghost" size="icon" className="size-9 flex-none rounded-full" aria-label={t("targets")} onClick={() => setTargetsOpen(true)}>
+              <Pencil className="size-4 text-muted-foreground" />
+            </Button>
+          )}
         </div>
+        {about && (
+          <div className="grid gap-1.5 rounded-xl bg-muted/50 px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">
+            <p>{t("hint")}</p>
+            <p>{t("note")}</p>
+          </div>
+        )}
         {isAdmin && (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1.5">
             <Button type="button" variant="outline" className="h-9 rounded-full px-3 text-[13px]" onClick={() => setLaborOpen(true)}>
               <Users className="size-4" />
               {t("enterLabor")}
@@ -104,9 +121,6 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
                 {t("fixed")}
               </Link>
             </Button>
-            <Button type="button" variant="ghost" size="icon" className="size-9" aria-label={t("targets")} onClick={() => setTargetsOpen(true)}>
-              <Pencil className="size-4" />
-            </Button>
           </div>
         )}
       </div>
@@ -117,6 +131,18 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
         <Headline code="FLR" label={t("flr")} line={c.flr} />
       </div>
 
+      {fold && (
+      <button
+        type="button"
+        onClick={() => setMore((v) => !v)}
+        aria-expanded={more}
+        className="press flex h-10 items-center justify-center gap-1 rounded-full text-sm font-medium text-primary hover:bg-primary/10 lg:hidden"
+      >
+        {more ? t("less") : t("more")}
+        <ChevronDown className={cn("size-4 transition-transform", more && "rotate-180")} aria-hidden />
+      </button>
+      )}
+      <div className={cn("gap-4 lg:grid", more ? "grid" : "hidden")}>
       <div className="grid gap-2.5">
         <Ratio
           code="F"
@@ -124,7 +150,7 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
           line={c.food}
           extra={
             stock.applied
-              ? t("stockApplied", { open: baht(fromSatang(stock.opening)), close: baht(fromSatang(stock.closing)) })
+              ? t("stockApplied", { open: bahtWhole(fromSatang(stock.opening)), close: bahtWhole(fromSatang(stock.closing)) })
               : stock.partial
                 ? t("stockPartial")
                 : undefined
@@ -139,8 +165,8 @@ export function CostCard({ month, salesValue, purchases, fixed }: { month: strin
         isAdmin={isAdmin}
         onAction={(a) => (a === "labor" ? setLaborOpen(true) : a === "stock" ? setStockOpen(true) : undefined)}
       />
-      <p className="text-xs text-muted-foreground tabular-nums">{t("base", { sales: baht(salesValue) })}</p>
-      <p className="text-[11px] leading-relaxed text-muted-foreground">{t("note")}</p>
+      <p className="text-xs text-muted-foreground tabular-nums">{t("base", { sales: bahtWhole(salesValue) })}</p>
+      </div>
 
       <Dialog open={laborOpen} onOpenChange={setLaborOpen}>{laborOpen && <LaborSheet month={month} onDone={() => setLaborOpen(false)} />}</Dialog>
       <Dialog open={stockOpen} onOpenChange={setStockOpen}>{stockOpen && <StockSheet month={month} onDone={() => setStockOpen(false)} />}</Dialog>
@@ -201,8 +227,8 @@ function Headline({ code, label, line }: { code: string; label: string; line: Co
         <span className={cn("text-[28px] leading-tight font-semibold tracking-tight tabular-nums", TONE[line.level])}>{line.pct === null ? "–" : `${line.pct}%`}</span>
         {line.level !== "none" && <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap", CHIP[line.level])}>{t(`lvl.${line.level}`)}</span>}
       </span>
-      <span className="text-[11px] text-muted-foreground tabular-nums">
-        {baht(fromSatang(line.amount))} · {t("target", { pct: line.target })}
+      <span className="text-xs text-muted-foreground tabular-nums">
+        {bahtWhole(fromSatang(line.amount))} · {t("target", { pct: line.target })}
       </span>
     </div>
   );
@@ -224,7 +250,7 @@ function Ratio({ code, label, line, empty, extra }: { code: string; label: strin
           {label}
         </span>
         <span className="flex items-baseline gap-2">
-          <span className="text-xs text-muted-foreground tabular-nums">{baht(fromSatang(line.amount))}</span>
+          <span className="text-xs text-muted-foreground tabular-nums">{bahtWhole(fromSatang(line.amount))}</span>
           <span className={cn("min-w-[3.5rem] text-right text-[15px] font-semibold tabular-nums", TONE[line.level])}>{line.pct === null ? "–" : `${line.pct}%`}</span>
         </span>
       </div>
@@ -232,7 +258,7 @@ function Ratio({ code, label, line, empty, extra }: { code: string; label: strin
         <div className={cn("h-full rounded-full transition-[width] duration-500", BAR[line.level])} style={{ width: `${width}%` }} />
         <div className="absolute top-0 h-full w-0.5 bg-foreground/50" style={{ left: `${mark}%` }} />
       </div>
-      <span className="flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
+      <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
         {empty ?? t("target", { pct: line.target })}
         {!empty && line.level !== "none" && <span className={cn("font-semibold", TONE[line.level])}>· {t(`lvl.${line.level}`)}</span>}
         {extra && <span className="w-full">{extra}</span>}
