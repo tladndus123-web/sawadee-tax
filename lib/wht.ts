@@ -85,3 +85,7 @@ export function buildWhtList(docs: { id: string; doc: LedgerDoc }[], month: stri
   const pnd3 = rows.filter((r) => payeeForm(r.taxId) === "3");
   return { pnd53, pnd3, totals: { pnd53: sum(pnd53), pnd3: sum(pnd3) } };
 }
+
+/** What actually goes to the vendor: the bill (VAT included) less the tax we withhold from it */
+export const amountToPay = (d: Pick<LedgerDoc, "whtRate" | "totals">): number =>
+  hasWht(d) ? fromSatang(toSatang(d.totals.net) - toSatang(whtTax(d))) : d.totals.net;

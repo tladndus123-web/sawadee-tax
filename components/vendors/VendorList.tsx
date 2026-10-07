@@ -38,6 +38,7 @@ import { deleteVendor, saveVendorName, useVendors } from "@/lib/vendor-store";
 import { type Vendor, vendorCategory } from "@/lib/vendors";
 import { CategoryIcon, useCategoryLabel } from "./CategoryIcon";
 import { VendorRule } from "./VendorRule";
+import { VendorPayCard } from "./VendorPayCard";
 
 type Stat = { count: number; satang: number; last: string; cats: string[] };
 
@@ -371,6 +372,7 @@ function VendorRow({
             </span>
           </p>
           <VendorRule v={v} />
+          <VendorPayCard v={v} title={shown || v.taxId} />
           <AlertDialog
             open={asking}
             onOpenChange={(o) => !busy && setAsking(o)}

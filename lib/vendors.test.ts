@@ -14,6 +14,7 @@ const vendor: Vendor = {
   ruleCategory: null,
   rulePayment: null,
   autoRegister: false,
+  pay: { promptpay: "", bank: "", account: "", name: "" },
 };
 
 describe("vendor dictionary", () => {

@@ -1,6 +1,9 @@
 "use client";
 
-import { CalendarClock, ChevronDown, ChevronRight, CircleCheck, Clock, Inbox, Landmark, Loader2, Lock, Receipt, TrendingUp, Undo2, Wallet, Check } from "lucide-react";
+import { CalendarClock, ChevronDown, ChevronRight, CircleCheck, Clock, Inbox, Landmark, Loader2, Lock, QrCode, Receipt, TrendingUp, Undo2, Wallet, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { canPay, PayQr } from "@/components/vendors/PayQr";
+import { amountToPay, hasWht, whtTax } from "@/lib/wht";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
 import { useMemo, useState } from "react";
@@ -312,6 +315,10 @@ function DueList({ items, docs }: { items: DueItem[]; docs: Doc[] }) {
   const t = useTranslations();
   const sd = useScreenDate();
   const [busy, setBusy] = useState<string | null>(null);
+  // Paying a bill: the vendor's PromptPay QR / bank account (when an admin saved them)
+  const payOf = useMemo(() => new Map(vendors.filter((v) => canPay(v.pay)).map((v) => [v.taxId, v.pay])), [vendors]);
+  const [paying, setPaying] = useState<DueItem | null>(null);
+  const payingPay = paying ? payOf.get(digitsOnly(paying.doc.seller.taxId)) : undefined;
   const docName = useDocName();
   // Five at first; the rest one tap away
   const [all, setAll] = useState(false);
@@ -382,15 +389,47 @@ function DueList({ items, docs }: { items: DueItem[]; docs: Doc[] }) {
                   <span className={cn("rounded-full px-2 py-0.5 font-semibold", b.cls)}>{b.text}</span>
                   {it.doc.dueDate && <span className="tabular-nums">{sd(it.doc.dueDate)}</span>}
                 </span>
-                <Button type="button" variant="outline" className="h-10 flex-none rounded-full px-3 text-xs pointer-fine:h-8" disabled={busy === it.id} onClick={() => void setPaid(it, true)}>
-                  {busy === it.id ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-                  {t("dash.markPaid")}
-                </Button>
+                <span className="flex flex-none gap-1.5">
+                  {payOf.has(digitsOnly(it.doc.seller.taxId)) && (
+                    <Button type="button" variant="outline" className="h-10 rounded-full px-3 text-xs pointer-fine:h-8" onClick={() => setPaying(it)}>
+                      <QrCode className="size-4" />
+                      {t("pay2.pay")}
+                    </Button>
+                  )}
+                  <Button type="button" variant="outline" className="h-10 rounded-full px-3 text-xs pointer-fine:h-8" disabled={busy === it.id} onClick={() => void setPaid(it, true)}>
+                    {busy === it.id ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                    {t("dash.markPaid")}
+                  </Button>
+                </span>
               </li>
             );
           })}
         </ul>
       )}
+      <Dialog open={!!paying} onOpenChange={(o) => !o && setPaying(null)}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-3xl sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{paying ? docName(paying.doc) : ""}</DialogTitle>
+            <DialogDescription className="text-xs">{t("pay2.hint")}</DialogDescription>
+          </DialogHeader>
+          {paying && payingPay && <PayQr pay={payingPay} amount={amountToPay(paying.doc)} withheld={hasWht(paying.doc) ? whtTax(paying.doc) : undefined} />}
+          {paying && (
+            <Button
+              type="button"
+              className="h-11 rounded-full"
+              disabled={busy === paying.id}
+              onClick={() => {
+                const it = paying;
+                setPaying(null);
+                void setPaid(it, true);
+              }}
+            >
+              <Check className="size-4" />
+              {t("pay2.paidNow")}
+            </Button>
+          )}
+        </DialogContent>
+      </Dialog>
       {items.length > SHOWN && (
         <button
           type="button"

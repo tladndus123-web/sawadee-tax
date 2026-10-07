@@ -22,6 +22,15 @@ export interface Vendor {
   rulePayment: string | null;
   /** Save a new document that passes every check without asking (admins switch it) */
   autoRegister: boolean;
+  /** How to pay them (admins set it): PromptPay ID, bank code (lib/promptpay THAI_BANKS), account number and name */
+  pay: VendorPay;
+}
+
+export interface VendorPay {
+  promptpay: string;
+  bank: string;
+  account: string;
+  name: string;
 }
 
 export interface VendorRow {
@@ -35,10 +44,14 @@ export interface VendorRow {
   rule_category?: string | null;
   rule_payment?: string | null;
   auto_register?: boolean | null;
+  pay_promptpay?: string | null;
+  pay_bank?: string | null;
+  pay_account?: string | null;
+  pay_name?: string | null;
 }
 
 /** Columns the app reads from public.vendors */
-export const VENDOR_COLUMNS = "id, tax_id, name, address, branch, tel, fax, rule_category, rule_payment, auto_register";
+export const VENDOR_COLUMNS = "id, tax_id, name, address, branch, tel, fax, rule_category, rule_payment, auto_register, pay_promptpay, pay_bank, pay_account, pay_name";
 
 /** Rows through normalize() so any stored shape becomes clean {th, en, ja} */
 export function toVendor(r: VendorRow): Vendor {
@@ -54,6 +67,7 @@ export function toVendor(r: VendorRow): Vendor {
     ruleCategory: r.rule_category ?? null,
     rulePayment: r.rule_payment ?? null,
     autoRegister: !!r.auto_register,
+    pay: { promptpay: r.pay_promptpay ?? "", bank: r.pay_bank ?? "", account: r.pay_account ?? "", name: r.pay_name ?? "" },
   };
 }
 

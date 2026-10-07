@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(207);
+select plan(212);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -433,6 +433,14 @@ select throws_ok($$ update public.members set home_branch = '00000000-0000-0000-
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select lives_ok($$ update public.members set home_branch = '00000000-0000-0000-0000-0000000000b1' where user_id = '00000000-0000-0000-0000-00000000000b' $$, 'an admin sets a staff member''s home branch');
 select is((select home_branch::text from public.members where user_id = '00000000-0000-0000-0000-00000000000b'), '00000000-0000-0000-0000-0000000000b1', 'and it is kept');
+
+-- How to pay a vendor: admins only
+select lives_ok($$ update public.vendors set pay_promptpay = '0812345678', pay_bank = 'kbank', pay_account = '1234567890', pay_name = 'PANFOOD' where tax_id = (select min(tax_id) from public.vendors) $$, 'an admin saves a vendor''s payment details');
+select is((select pay_account from public.vendors where tax_id = (select min(tax_id) from public.vendors)), '1234567890', 'and they are kept');
+select throws_ok($$ update public.vendors set pay_promptpay = '12345' where tax_id = (select min(tax_id) from public.vendors) $$, '23514', NULL, 'a PromptPay ID is a phone number, tax ID or e-wallet ID');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select throws_ok($$ update public.vendors set pay_account = '9999999999' where tax_id = (select min(tax_id) from public.vendors) $$, 'only admins change payment details', 'staff cannot change where money goes');
+select lives_ok($$ update public.vendors set tel = '021234567' where tax_id = (select min(tax_id) from public.vendors) $$, 'staff still correct the other vendor details');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

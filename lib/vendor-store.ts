@@ -53,6 +53,14 @@ export async function deleteVendor(id: string) {
   await reload();
 }
 
+/** Admins only (the database refuses others): how to pay the vendor */
+export async function saveVendorPay(id: string, pay: { pay_promptpay: string; pay_bank: string; pay_account: string; pay_name: string }) {
+  const { data, error } = await supabaseBrowser().from("vendors").update({ ...pay, updated_at: new Date().toISOString() }).eq("id", id).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("not allowed");
+  await reload();
+}
+
 /** Set a vendor's automatic registration rule (auto_register: admins only — the database refuses others) */
 export async function saveVendorRule(
   id: string,
