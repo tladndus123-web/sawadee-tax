@@ -1164,7 +1164,18 @@
     "pinHint": "Staff and admins type it when they choose this branch. If it is forgotten, an admin sets a new one here. It is stored encrypted, so nobody can read it back.",
     "allPinTitle": "All-branches password",
     "allPinNone": "None (admins see all branches without one)",
-    "allPinHint": "Admins type it to enter \"All branches\". It is separate from each branch's password."
+    "allPinHint": "Admins type it to enter \"All branches\". It is separate from each branch's password.",
+    "rank": {
+      "by": "Rank by",
+      "sales": "Sales",
+      "profit": "Profit",
+      "margin": "Margin",
+      "fl": "FL cost",
+      "goal": "Target",
+      "place": "No. {n}",
+      "none": "Not ranked",
+      "noTarget": "No target"
+    }
   },
   "dep": {
     "label": "Depreciation period",

@@ -7,7 +7,8 @@
 
 import { ChevronRight, Layers } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { RANK_BY, type RankBy, rankBranches } from "@/lib/branch-rank";
 import { BranchAvatar, useBranchName } from "@/components/layout/branch-switcher";
 import { BRANCH_COLORS, branchLabel, branchSummaries, colorOf } from "@/lib/branches";
 import { setBranch, useBranches } from "@/lib/branch-store";
@@ -16,7 +17,7 @@ import { useCompany } from "@/lib/company-store";
 import { type CostControl, costControl, targetsOf } from "@/lib/cost-control";
 import { monthCosts } from "@/lib/cost-split";
 import { pick, useLedger } from "@/lib/ledger-store";
-import { baht } from "@/lib/money";
+import { bahtWhole } from "@/lib/money";
 import type { MonthResult } from "@/lib/sales";
 import { useSales } from "@/lib/sales-store";
 import { cn } from "@/lib/utils";
@@ -49,7 +50,41 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
       totalCost: cc(s.total.salesValue, monthCosts(purchases, month, companyTaxId, fixedForMonth(fixed, month), stockChange(stock, month).change), s.rows.reduce((a, r) => a + r.labor, 0)),
     };
   }, [branches, entries, sales, month, companyTaxId, labor, fixed, stock, categories, company.costTargets]);
+  // Which figure the branch cards are ranked on (remembered on this device)
+  const [by, setBy] = useState<RankBy>("profit");
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(RANK_KEY) as RankBy | null;
+      if (saved && RANK_BY.includes(saved)) setBy(saved);
+    } catch {}
+  }, []);
+  const choose = (k: RankBy) => {
+    setBy(k);
+    try {
+      localStorage.setItem(RANK_KEY, k);
+    } catch {}
+  };
+  const ranked = useMemo(
+    () =>
+      rankBranches(
+        rows.map((r) => ({
+          ...r,
+          id: r.branch.id,
+          sales: r.result.salesValue,
+          profit: r.result.profit,
+          margin: r.result.margin,
+          fl: r.cost.fl.pct,
+          target: r.branch.salesTarget || 0,
+          days: r.result.days,
+        })),
+        by,
+      ),
+    [rows, by],
+  );
   if (branches.length < 2) return null;
+  const pct = (v: number) => `${Math.round(v * 1000) / 10}%`;
+  const shown = (v: number | null) =>
+    v === null ? (by === "goal" ? t("rank.noTarget") : "–") : by === "sales" || by === "profit" ? bahtWhole(v) : by === "fl" ? `${v}%` : pct(v);
 
   const go = (id: string) => {
     setBranch(id);
@@ -74,9 +109,27 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
         <Figures r={total} c={totalCost} big />
       </div>
 
-      {/* One card per branch */}
+      {/* Ranked on the figure picked here */}
+      <div className="flex flex-wrap items-center gap-2 px-1 pt-1">
+        <span className="text-xs font-medium text-muted-foreground">{t("rank.by")}</span>
+        <div className="flex flex-wrap rounded-full bg-muted p-1" role="group" aria-label={t("rank.by")}>
+          {RANK_BY.map((k) => (
+            <button
+              key={k}
+              type="button"
+              aria-pressed={by === k}
+              onClick={() => choose(k)}
+              className={cn("h-10 rounded-full px-3.5 text-xs font-medium pointer-fine:h-8 pointer-fine:px-3", by === k ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
+            >
+              {t(`rank.${k}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* One card per branch, best first */}
       <ul className="grid gap-3 sm:grid-cols-2">
-        {rows.map(({ branch, result, cost }) => {
+        {ranked.map(({ row: { branch, result, cost }, rank, value }) => {
           const [fg] = BRANCH_COLORS[colorOf(branch, branches)];
           return (
             <li key={branch.id}>
@@ -88,10 +141,21 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
                 aria-label={`${branchLabel(branch, names)} — ${t("open")}`}
               >
                 <span className="flex items-center gap-2.5">
+                  <span
+                    className={cn(
+                      "grid size-8 flex-none place-items-center rounded-full text-sm font-bold tabular-nums",
+                      rank === 1 ? "bg-brand text-white" : rank ? "bg-muted text-foreground" : "bg-muted text-muted-foreground",
+                    )}
+                    aria-label={rank ? t("rank.place", { n: rank }) : t("rank.none")}
+                  >
+                    {rank ?? "–"}
+                  </span>
                   <BranchAvatar branch={branch} branches={branches} />
                   <span className="grid min-w-0 flex-1">
                     <span className="truncate text-[15px] font-semibold">{branchLabel(branch, names)}</span>
-                    <span className="mono text-[11px] text-muted-foreground">{branch.no}</span>
+                    <span className="truncate text-xs text-muted-foreground tabular-nums">
+                      {t(`rank.${by}`)} <b className={cn("font-semibold", rank === 1 ? "text-brand" : "text-foreground")}>{shown(value)}</b>
+                    </span>
                   </span>
                   <ChevronRight className="size-4 flex-none text-muted-foreground" aria-hidden />
                 </span>
@@ -105,6 +169,8 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
   );
 }
 
+const RANK_KEY = "trl.branch.rankBy";
+
 const TONE = { ok: "text-ok", watch: "text-caution", near: "text-warn", over: "text-bad", none: undefined } as const;
 
 function Figures({ r, c, big }: { r: MonthResult; c: CostControl; big?: boolean }) {
@@ -117,9 +183,9 @@ function Figures({ r, c, big }: { r: MonthResult; c: CostControl; big?: boolean 
   );
   return (
     <span className="grid grid-cols-2 gap-2">
-      {cell(t("colSales"), r.days ? baht(r.salesValue) : "–")}
-      {cell(t("colCost"), baht(r.purchasesCost))}
-      {cell(t("colProfit"), r.days ? baht(r.profit) : "–", r.days ? (r.profit < 0 ? "text-bad" : "text-brand") : undefined)}
+      {cell(t("colSales"), r.days ? bahtWhole(r.salesValue) : "–")}
+      {cell(t("colCost"), bahtWhole(r.purchasesCost))}
+      {cell(t("colProfit"), r.days ? bahtWhole(r.profit) : "–", r.days ? (r.profit < 0 ? "text-bad" : "text-brand") : undefined)}
       {cell("FL / FLR", c.flr.pct === null ? "–" : `${c.fl.pct}% / ${c.flr.pct}%`, TONE[c.flr.level])}
     </span>
   );
