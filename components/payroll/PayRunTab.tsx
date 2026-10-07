@@ -20,7 +20,7 @@ import { useCompany } from "@/lib/company-store";
 import { refreshLabor } from "@/lib/labor-store";
 import { fmt } from "@/lib/money";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
-import { daysNotEmployed, type Employee, employedInMonth, EMPTY_PERIOD, type LineRates, lineRates, monthPay, payrollSettingsOf, type PeriodInput, sameRates, timesText } from "@/lib/payroll";
+import { daysNotEmployed, type Employee, employedInMonth, payIssues, EMPTY_PERIOD, type LineRates, lineRates, monthPay, payrollSettingsOf, type PeriodInput, sameRates, timesText } from "@/lib/payroll";
 import { loadAllowanceNames, loadPayroll, loadPayrollChecks, type PayrollCheck, type PayrollLineRow, savePayrollMonth, setPayrollCheck, setPayrollPaid, useBranchEmployees } from "@/lib/payroll-store";
 import { cn } from "@/lib/utils";
 import { OtSettings } from "./OtSettings";
@@ -213,6 +213,7 @@ export function PayRunTab({ month }: { month: string }) {
   const day = new Intl.DateTimeFormat(locale, { month: "numeric", day: "numeric" });
   const stamp = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
   const checkedCount = staff.filter((e) => checks.has(e.id)).length;
+  const withIssues = staff.filter((e) => payIssues(e, rowOf(e.id).first, rowOf(e.id).second, month).length > 0).length;
   const paidFirst = [...saved].filter((id) => paid.get(id)?.[1]).length;
   const paidSecond = [...saved].filter((id) => paid.get(id)?.[2]).length;
   const stale = staff.some((e) => savedRates.has(e.id) && !sameRates(savedRates.get(e.id)!, lineRates(settings.ot, e.payType)));
@@ -241,6 +242,7 @@ export function PayRunTab({ month }: { month: string }) {
           <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums", checkedCount === staff.length ? "bg-ok-soft text-ok" : "bg-muted text-muted-foreground")}>
             {t("checkedCount", { done: checkedCount, all: staff.length })}
           </span>
+          {withIssues > 0 && <span className="rounded-full bg-bad-soft px-2.5 py-0.5 text-xs font-semibold text-bad tabular-nums">⚠ {t("issueCount", { count: withIssues })}</span>}
           {saved.size > 0 && (
             <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums", paidFirst + paidSecond === saved.size * 2 ? "bg-ok-soft text-ok" : "bg-muted text-muted-foreground")}>
               {t("paidSummary", { first: paidFirst, second: paidSecond, total: saved.size })}
@@ -265,6 +267,9 @@ export function PayRunTab({ month }: { month: string }) {
           const net = m.netFirst + m.netSecond;
           const deducted = Math.round(m.gross * 100 - net * 100) / 100;
           const isOpen = open === e.id;
+          // Things to look at before saving (no rate, no days, no ID number …)
+          const issues = payIssues(e, rowOf(e.id).first, rowOf(e.id).second, month);
+          const issueText = issues.map((i) => t(`issue.${i}`)).join(" · ");
           const check = checks.get(e.id);
           const canCheck = saved.has(e.id) && !dirty;
           return (
@@ -289,6 +294,7 @@ export function PayRunTab({ month }: { month: string }) {
                       {t("deducted")} {deducted ? fmt(-deducted) : fmt(0)}
                     </span>
                     {!saved.has(e.id) && <span className="text-warn">{t("notSaved")}</span>}
+                    {issues.length > 0 && <span className="font-medium text-bad">⚠ {issueText}</span>}
                   </span>
                 </span>
                 {/* Computer: one line under the column heads */}
@@ -297,6 +303,7 @@ export function PayRunTab({ month }: { month: string }) {
                   <span className="grid min-w-0">
                     <span className="truncate text-[15px] font-semibold">{e.name}</span>
                     {!saved.has(e.id) && <span className="text-[11px] text-warn">{t("notSaved")}</span>}
+                    {issues.length > 0 && <span className="truncate text-[11px] font-medium text-bad" title={issueText}>⚠ {issueText}</span>}
                   </span>
                   <span className="text-right text-sm tabular-nums">{fmt(m.gross)}</span>
                   <span className="text-right text-sm text-muted-foreground tabular-nums">{deducted ? fmt(-deducted) : fmt(0)}</span>

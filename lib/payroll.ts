@@ -276,3 +276,23 @@ export function employedInMonth(e: Pick<Employee, "startDate" | "endDate">, mont
   const last = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
   return (!e.startDate || e.startDate <= last) && (!e.endDate || e.endDate >= `${month}-01`);
 }
+
+export type PayIssue = "noRate" | "noDays" | "noId" | "badId" | "absentAll";
+
+/**
+ * What to look at before saving someone's pay (owner's request 2026-10-08): no salary / day rate, a day-paid person
+ * with no days worked, a missing or wrong ID number (needed for ภ.ง.ด.1 and social security), every day marked off.
+ */
+export function payIssues(e: Pick<Employee, "rate" | "payType" | "nationalId" | "ssEnrolled">, first: PeriodInput, second: PeriodInput, month: string): PayIssue[] {
+  const out: PayIssue[] = [];
+  if (!(e.rate > 0)) out.push("noRate");
+  if (e.payType === "daily" && e.rate > 0 && first.daysWorked + second.daysWorked <= 0) out.push("noDays");
+  if (e.payType === "monthly" && e.rate > 0) {
+    const days = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).getUTCDate();
+    if (first.absentDays + second.absentDays >= days) out.push("absentAll");
+  }
+  const id = (e.nationalId ?? "").replace(/\D/g, "");
+  if (!id) out.push("noId");
+  else if (id.length !== 13) out.push("badId");
+  return out;
+}

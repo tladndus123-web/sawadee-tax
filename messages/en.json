@@ -1522,7 +1522,15 @@
     "moveTo": "Move to",
     "moveBtn": "Move",
     "staffN": "{count}",
-    "branchOf": "{name}'s branch"
+    "branchOf": "{name}'s branch",
+    "issue": {
+      "noRate": "Salary / day rate is 0 (set it in Staff)",
+      "noDays": "Enter the days worked",
+      "absentAll": "Off the whole month",
+      "noId": "No ID number (needed for filings)",
+      "badId": "ID number is not 13 digits"
+    },
+    "issueCount": "{count, plural, one {# person to check} other {# people to check}}"
   },
   "fixed": {
     "title": "Fixed costs (no invoice)",

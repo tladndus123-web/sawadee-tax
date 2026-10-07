@@ -1522,7 +1522,15 @@
     "moveTo": "移動先の店舗",
     "moveBtn": "移す",
     "staffN": "{count}人",
-    "branchOf": "{name}さんの店舗"
+    "branchOf": "{name}さんの店舗",
+    "issue": {
+      "noRate": "月給・日給が0です（従業員タブで入力）",
+      "noDays": "勤務日数を入れてください",
+      "absentAll": "1か月すべて欠勤です",
+      "noId": "身分証番号なし（申告に必要）",
+      "badId": "身分証番号が13桁ではありません"
+    },
+    "issueCount": "確認する従業員 {count}人"
   },
   "fixed": {
     "title": "固定費（領収書のない費用）",
