@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { useBranchName } from "@/components/layout/branch-switcher";
+import { branchLabel } from "@/lib/branches";
+import { useBranches } from "@/lib/branch-store";
 import { type Role, useMe } from "@/lib/role-store";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -18,6 +21,7 @@ interface Member {
   email: string;
   name: string;
   role: Role;
+  homeBranch: string | null;
   createdAt: string;
   line: boolean;
   lastSignIn: string | null;
@@ -44,6 +48,8 @@ export function MembersCard() {
   const [role, setRole] = useState<Role>("staff");
   const [busy, setBusy] = useState<string | null>(null);
   const [removing, setRemoving] = useState<Member | null>(null);
+  const { branches } = useBranches();
+  const names = useBranchName();
 
   const load = useCallback(async () => {
     const res = await fetch("/api/members");
@@ -95,6 +101,14 @@ export function MembersCard() {
     void load();
   };
 
+  // Their usual branch: first in the branch list after signing in, with its PIN box open
+  const changeHome = async (m: Member, next: string) => {
+    const { error } = await supabaseBrowser().from("members").update({ home_branch: next || null }).eq("user_id", m.userId);
+    if (error) toast.error(error.message);
+    else toast.success(t("members.homeChanged"));
+    void load();
+  };
+
   const active = (members ?? []).filter((m) => !m.disabledAt);
   const removed = (members ?? []).filter((m) => m.disabledAt);
   const when = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
@@ -143,6 +157,22 @@ export function MembersCard() {
                       )}
                     </span>
                   </span>
+                  {branches.length > 1 && (
+                    <select
+                      value={m.homeBranch ?? ""}
+                      onChange={(e) => void changeHome(m, e.target.value)}
+                      aria-label={t("members.homeOf", { name })}
+                      title={t("members.homeHint")}
+                      className={cn("h-10 max-w-[10rem] rounded-full border bg-card px-3 text-sm", !m.homeBranch && "text-muted-foreground")}
+                    >
+                      <option value="">{t("members.noHome")}</option>
+                      {branches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {branchLabel(b, names)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <select
                     value={m.role}
                     onChange={(e) => void changeRole(m, e.target.value as Role)}

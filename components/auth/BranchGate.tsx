@@ -18,7 +18,7 @@ import { useMe } from "@/lib/role-store";
 import { cn } from "@/lib/utils";
 
 /** The list of branches to enter; `onDone` after one was opened */
-export function BranchPicker({ onDone }: { onDone?: () => void }) {
+export function BranchPicker({ onDone, openHome }: { onDone?: () => void; openHome?: boolean }) {
   const t = useTranslations("gate");
   const names = useBranchName();
   const me = useMe();
@@ -36,6 +36,15 @@ export function BranchPicker({ onDone }: { onDone?: () => void }) {
   useEffect(() => {
     if (asking) pinRef.current?.focus();
   }, [asking]);
+  // Right after signing in: their usual branch (set by an admin) has its PIN box open already
+  const home = me.homeBranch && branches.some((b) => b.id === me.homeBranch) ? me.homeBranch : null;
+  const homeOpened = useRef(false);
+  const homeLocked = !!home && pins.has(home);
+  useEffect(() => {
+    if (!openHome || !home || !homeLocked || homeOpened.current) return;
+    homeOpened.current = true;
+    setAsking(home);
+  }, [openHome, home, homeLocked]);
 
   const enter = async (id: string) => {
     markChosen(await signInMark());
@@ -81,7 +90,9 @@ export function BranchPicker({ onDone }: { onDone?: () => void }) {
     }
   };
 
-  const rows = [...(staff ? [] : [ALL]), ...branches.map((b) => b.id)];
+  // Their usual branch first
+  const ids = branches.map((b) => b.id);
+  const rows = [...(staff ? [] : [ALL]), ...(home ? [home, ...ids.filter((id) => id !== home)] : ids)];
   return (
     <ul className="grid gap-2">
       {rows.map((id) => {
@@ -100,7 +111,9 @@ export function BranchPicker({ onDone }: { onDone?: () => void }) {
               <BranchAvatar branch={b} branches={branches} size="size-9" className="text-sm" />
               <span className="grid min-w-0 flex-1">
                 <span className="truncate text-[15px] font-semibold">{b ? branchLabel(b, names) : t("all")}</span>
-                {selected === id && <span className="text-[11px] text-muted-foreground">{t("current")}</span>}
+                {(selected === id || home === id) && (
+                  <span className="text-[11px] text-muted-foreground">{[home === id ? t("home") : "", selected === id ? t("current") : ""].filter(Boolean).join(" · ")}</span>
+                )}
               </span>
               {busy === id && !open ? (
                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
@@ -182,7 +195,7 @@ export function BranchGate({ children }: { children: ReactNode }) {
         </h1>
         <p className="text-sm text-muted-foreground">{t("hint")}</p>
       </div>
-      <BranchPicker onDone={() => setState("open")} />
+      <BranchPicker openHome onDone={() => setState("open")} />
     </section>
   );
 }

@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(204);
+select plan(207);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -427,6 +427,12 @@ select is(public.check_all_branches_pin('86420'), true, 'the right one passes');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select throws_like($$ select public.set_all_branches_pin('2222') $$, 'admin_only%', 'staff cannot set it');
 select throws_like($$ select public.check_all_branches_pin('86420') $$, 'admin_only%', 'nor use it');
+
+-- Each member's usual branch: only admins set it
+select throws_ok($$ update public.members set home_branch = '00000000-0000-0000-0000-0000000000b1' where user_id = auth.uid() $$, 'only admins can set home branches', 'staff cannot pick their own home branch');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select lives_ok($$ update public.members set home_branch = '00000000-0000-0000-0000-0000000000b1' where user_id = '00000000-0000-0000-0000-00000000000b' $$, 'an admin sets a staff member''s home branch');
+select is((select home_branch::text from public.members where user_id = '00000000-0000-0000-0000-00000000000b'), '00000000-0000-0000-0000-0000000000b1', 'and it is kept');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

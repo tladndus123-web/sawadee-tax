@@ -14,9 +14,11 @@ export interface Me {
   email: string;
   name: string;
   role: Role;
+  /** The branch an admin set as this person's usual one (first in the branch list after signing in) */
+  homeBranch: string | null;
 }
 
-const SIGNED_OUT: Me = { loaded: false, userId: null, email: "", name: "", role: "staff" };
+const SIGNED_OUT: Me = { loaded: false, userId: null, email: "", name: "", role: "staff", homeBranch: null };
 let me: Me = SIGNED_OUT;
 let started = false;
 const listeners = new Set<() => void>();
@@ -31,7 +33,7 @@ async function load() {
     me = { ...SIGNED_OUT, loaded: true };
     return emit();
   }
-  const { data } = await supabase.from("members").select("name, role, email").eq("user_id", user.id).maybeSingle();
+  const { data } = await supabase.from("members").select("name, role, email, home_branch").eq("user_id", user.id).maybeSingle();
   // Signed in but not an (active) member any more — e.g. an admin removed their access: sign out and say why
   if (!data && !/\/(login|auth)(\/|$)/.test(window.location.pathname)) {
     await supabase.auth.signOut();
@@ -45,6 +47,7 @@ async function load() {
     email: data?.email ?? user.email ?? "",
     name: data?.name ?? "",
     role: data?.role === "admin" ? "admin" : "staff",
+    homeBranch: (data?.home_branch as string | null) ?? null,
   };
   emit();
 }

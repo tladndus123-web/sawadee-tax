@@ -508,7 +508,11 @@
     "restore": "Restore access",
     "restored": "Access restored for {name}.",
     "self": "You can't remove your own access.",
-    "actions": "Manage {name}"
+    "actions": "Manage {name}",
+    "homeOf": "{name}'s home branch",
+    "noHome": "No home branch",
+    "homeHint": "After signing in it comes first in the branch list with its PIN box open",
+    "homeChanged": "Home branch changed."
   },
   "export": {
     "excel": "Excel",
@@ -1628,7 +1632,8 @@
     "enter": "Enter",
     "wrong": "That password is not right.",
     "wait": "Five wrong tries. Please try again in 10 minutes.",
-    "fail": "Could not open it now. Please try again shortly."
+    "fail": "Could not open it now. Please try again shortly.",
+    "home": "My branch"
   },
   "errorPage": {
     "title": "Something went wrong",
