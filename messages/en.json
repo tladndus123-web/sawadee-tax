@@ -218,7 +218,8 @@
     "loading": "Loading…",
     "retry": "Try again",
     "cancel": "Cancel",
-    "notFound": "Not found."
+    "notFound": "Not found.",
+    "pickDate": "Pick a date"
   },
   "photo": {
     "alt": "Original photo",

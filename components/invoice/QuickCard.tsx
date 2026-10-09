@@ -8,6 +8,7 @@ import { Calculator, ChevronDown, TriangleAlert } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { exportLang } from "@/lib/export";
 import { quickTotals, vatInside } from "@/lib/quick-totals";
@@ -28,6 +29,9 @@ export function QuickCard({ onJump, manual = false, onMemo }: { onJump: (path: s
   const t = useTranslations();
   const lang = exportLang(useLocale());
   const { control, register, setValue, getValues } = useFormContext<LedgerDoc>();
+  // The date fields draw their value in the screen language (components/ui/date-input)
+  const dateShown = String(useWatch({ control, name: "date" }) ?? "");
+  const paidDateShown = String(useWatch({ control, name: "paidDate" }) ?? "");
   const [seller, unclear, net, vat, paid, firstItem] = useWatch({ control, name: ["seller", "unclear", "totals.net", "totals.vat", "paid", "items.0"] });
   const unsure = new Set(unclear ?? []);
   const category = useWatch({ control, name: "category" });
@@ -100,7 +104,7 @@ export function QuickCard({ onJump, manual = false, onMemo }: { onJump: (path: s
           <Input className="mono h-10" aria-label={t("labels.docNo")} {...register("docNo")} />
         </Row>
         <Row label={t("labels.date")} path="date" unsure={unsure} onJump={onJump}>
-          <Input type="date" className="h-10" aria-label={t("labels.date")} {...register("date")} />
+          <DateInput className="h-10" aria-label={t("labels.date")} shown={dateShown} {...register("date")} />
         </Row>
         <Row label={t("labels.net")} path="totals.net" unsure={unsure} onJump={onJump}>
           <MoneyInput
@@ -169,7 +173,7 @@ export function QuickCard({ onJump, manual = false, onMemo }: { onJump: (path: s
             </label>
           )}
         />
-        {paid && <Input type="date" aria-label={t("app.paidOn")} className="h-10 w-40 max-w-full" {...register("paidDate")} />}
+        {paid && <DateInput aria-label={t("app.paidOn")} wrapClassName="w-40 max-w-full" className="h-10" shown={paidDateShown} {...register("paidDate")} />}
       </div>
 
       {/* A typed-in document keeps its one line above; a read one can have its lines changed here */}

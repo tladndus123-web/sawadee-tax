@@ -10,7 +10,6 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useScreenDate } from "@/components/ScreenDate";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Link } from "@/i18n/navigation";
 import { useCompany } from "@/lib/company-store";
 import { type AssetRow, assetRegister } from "@/lib/cost-split";
@@ -20,6 +19,7 @@ import { isMonthLocked } from "@/lib/month-lock-store";
 import { baht, fromSatang } from "@/lib/money";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
+import { DateInput } from "@/components/ui/date-input";
 
 export function AssetRegister() {
   const t = useTranslations("assets");
@@ -153,7 +153,7 @@ function AssetCard({ r }: { r: AssetRow }) {
         <div className="grid gap-2 rounded-2xl bg-muted/50 p-3">
           <p className="text-xs leading-relaxed text-muted-foreground">{t("askHint", { value: baht(fromSatang(r.bookValue)) })}</p>
           <div className="flex flex-wrap items-center gap-2">
-            <Input type="date" value={date} min={d.date || undefined} max={todayBangkok()} onChange={(e) => setDate(e.target.value)} className="h-10 w-auto bg-background" aria-label={t("date")} />
+            <DateInput value={date} min={d.date || undefined} max={todayBangkok()} onChange={(e) => setDate(e.target.value)} wrapClassName="w-40" className="h-10 bg-background" aria-label={t("date")} />
             <Button type="button" variant="ghost" className="rounded-full" disabled={busy} onClick={() => setAsking(false)}>
               {t("cancel")}
             </Button>

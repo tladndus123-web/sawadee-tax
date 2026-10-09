@@ -27,6 +27,7 @@ import { useMe } from "@/lib/role-store";
 import { todayBangkok } from "@/lib/thai-tax";
 import type { Category } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { DateInput } from "@/components/ui/date-input";
 
 export function CashBox() {
   const t = useTranslations("cash");
@@ -288,7 +289,7 @@ function Sheet({ draft, onDone }: { draft: CashDraft; onDone: () => void }) {
         <div className="grid grid-cols-2 gap-3">
           <label className="grid gap-1">
             <span className="text-sm font-medium">{t("day")}</span>
-            <Input type="date" value={d.day} max={todayBangkok()} onChange={(e) => setD({ ...d, day: e.target.value })} className="h-11" />
+            <DateInput value={d.day} max={todayBangkok()} onChange={(e) => setD({ ...d, day: e.target.value })} className="h-11" />
           </label>
           <label className="grid gap-1">
             <span className="text-sm font-medium">{d.kind === "count" ? t("counted") : t("amount")}</span>

@@ -22,6 +22,8 @@ import { todayBangkok } from "@/lib/thai-tax";
 import { deleteEmployee, saveEmployee, useBranchEmployees } from "@/lib/payroll-store";
 import { taxIdOk } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
+import { DateInput } from "@/components/ui/date-input";
+import { useScreenDate } from "@/components/ScreenDate";
 
 const blank = (branchId: string): Employee & { isNew: boolean } => ({
   id: "",
@@ -45,6 +47,7 @@ const blank = (branchId: string): Employee & { isNew: boolean } => ({
 
 export function EmployeesTab() {
   const t = useTranslations("pay");
+  const sd = useScreenDate();
   const names = useBranchName();
   const { branches } = useBranches();
   // The branch chosen at the top: its staff only ("all branches" = everyone, grouped by branch)
@@ -138,7 +141,7 @@ export function EmployeesTab() {
                     {e.nickname && <span className="ml-1.5 text-xs font-normal text-muted-foreground">({e.nickname})</span>}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {[e.position, maskId(e.nationalId), left ? t("left", { date: e.endDate }) : ""].filter(Boolean).join(" · ")}
+                    {[e.position, maskId(e.nationalId), left ? t("left", { date: sd(e.endDate) }) : ""].filter(Boolean).join(" · ")}
                   </span>
                 </span>
                 <span className="grid flex-none text-right">
@@ -278,11 +281,11 @@ function EmployeeForm({ draft, onChange, onDone }: { draft: Employee & { isNew?:
       <div className="grid grid-cols-2 gap-3">
         <label className="grid gap-1">
           <span className="text-xs text-muted-foreground">{t("start")}</span>
-          <Input type="date" value={draft.startDate} onChange={(e) => set("startDate", e.target.value)} className="h-10 bg-background" />
+          <DateInput value={draft.startDate} onChange={(e) => set("startDate", e.target.value)} className="h-10 bg-background" />
         </label>
         <label className="grid gap-1">
           <span className="text-xs text-muted-foreground">{t("end")}</span>
-          <Input type="date" value={draft.endDate} onChange={(e) => set("endDate", e.target.value)} className="h-10 bg-background" />
+          <DateInput value={draft.endDate} onChange={(e) => set("endDate", e.target.value)} className="h-10 bg-background" />
         </label>
       </div>
 
@@ -332,7 +335,7 @@ function EmployeeForm({ draft, onChange, onDone }: { draft: Employee & { isNew?:
         {draft.documents.map((d, i) => (
           <div key={i} className="grid grid-cols-[minmax(0,1fr)_9.5rem_auto] items-center gap-2">
             <Input value={d.name} maxLength={60} placeholder={t("documentName")} onChange={(e) => set("documents", draft.documents.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} className="h-10 bg-background" />
-            <Input type="date" value={d.expires} onChange={(e) => set("documents", draft.documents.map((x, j) => (j === i ? { ...x, expires: e.target.value } : x)))} className="h-10 bg-background" />
+            <DateInput value={d.expires} onChange={(e) => set("documents", draft.documents.map((x, j) => (j === i ? { ...x, expires: e.target.value } : x)))} className="h-10 bg-background" />
             <Button type="button" variant="ghost" size="icon" className="size-9" aria-label={t("delete")} onClick={() => set("documents", draft.documents.filter((_, j) => j !== i))}>
               <X className="size-4" />
             </Button>

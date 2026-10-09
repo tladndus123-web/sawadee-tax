@@ -18,6 +18,7 @@ import { CHANNELS, type Sale, saleVatOk, vatInsideSales } from "@/lib/sales";
 import { deleteSale, saveSale } from "@/lib/sales-store";
 import { cn } from "@/lib/utils";
 import { useChannelLabel } from "./channel-name";
+import { DateInput } from "@/components/ui/date-input";
 
 export type SaleDraft = Omit<Sale, "id" | "photoPath"> & { id?: string; photoPath?: string | null };
 
@@ -107,7 +108,7 @@ export function SaleSheet({
             )}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field on={un.has("date")} unsure={t("quick.unsure")} label={t("sales.date")}>
-                <Input type="date" className="h-10" value={s.date} onChange={(e) => set("date", e.target.value)} />
+                <DateInput className="h-10" value={s.date} onChange={(e) => set("date", e.target.value)} />
               </Field>
               <Field on={un.has("bills")} unsure={t("quick.unsure")} label={t("sales.bills")}>
                 <Input type="number" inputMode="numeric" min={0} className="h-10" value={s.bills || ""} onChange={(e) => set("bills", Number(e.target.value) || 0)} />

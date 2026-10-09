@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { isMonthLocked } from "@/lib/month-lock-store";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { type LedgerRef, runChecks } from "@/lib/checks";
@@ -39,6 +38,7 @@ import { QuickCard } from "./QuickCard";
 import { TranslateBadge } from "./TranslateBadge";
 import { VendorPicker } from "./VendorPicker";
 import { useCategoryOptions } from "@/components/vendors/CategoryIcon";
+import { DateInput } from "@/components/ui/date-input";
 
 // The zoomable photo (react-zoom-pan-pinch) loads after the form is on screen
 const PhotoViewer = dynamic(() => import("./PhotoViewer").then((m) => m.PhotoViewer), {
@@ -427,7 +427,7 @@ export function DocumentReview({
                 )}
               />
               {paid && (
-                <Input type="date" aria-label={t("app.paidOn")} className="h-10 w-40 max-w-full" {...form.register("paidDate")} />
+                <DateInput aria-label={t("app.paidOn")} wrapClassName="w-40 max-w-full" className="h-10" shown={watched.paidDate ?? ""} {...form.register("paidDate")} />
               )}
             </div>
             <div className="grid min-w-0 gap-2 sm:col-span-2 xl:col-span-3">

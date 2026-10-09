@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import type { LedgerDoc } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { MoneyInput, type NumKind } from "./fields";
+import { DateInput } from "@/components/ui/date-input";
 
 type Name = Path<LedgerDoc>;
 
@@ -40,8 +41,8 @@ export function TextIn({
 }
 
 export function DateIn({ name, label, className }: { name: string; label: string; className?: string }) {
-  const { register } = useFormContext<LedgerDoc>();
-  return <Input type="date" aria-label={label} className={cn("h-8 w-full sm:w-44", className)} {...register(name as Name)} />;
+  const { register, watch } = useFormContext<LedgerDoc>();
+  return <DateInput aria-label={label} wrapClassName={cn("w-full sm:w-44", className)} className="h-8" shown={String(watch(name as Name) ?? "")} {...register(name as Name)} />;
 }
 
 /** Money / quantity / whole-number input bound to the form (value updates as you type) */

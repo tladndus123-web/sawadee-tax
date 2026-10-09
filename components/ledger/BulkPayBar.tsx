@@ -19,6 +19,7 @@ import { type LedgerEntry, setPaidMany } from "@/lib/ledger-store";
 import { baht, fromSatang, toSatang } from "@/lib/money";
 import { todayBangkok } from "@/lib/thai-tax";
 import { useDocName } from "./doc-name";
+import { DateInput } from "@/components/ui/date-input";
 
 /**
  * Payment run: the chosen unpaid documents, their total, and one button to mark them all paid. The confirm
@@ -102,13 +103,7 @@ export function BulkPayBar({ chosen, onDone }: { chosen: LedgerEntry[]; onDone: 
             </ul>
             <label className="flex items-center justify-between gap-3 text-sm">
               <span className="font-medium">{t("date")}</span>
-              <input
-                type="date"
-                value={date}
-                max={todayBangkok()}
-                onChange={(e) => setDate(e.target.value)}
-                className="h-10 rounded-xl border bg-card px-3 text-sm"
-              />
+              <DateInput value={date} max={todayBangkok()} onChange={(e) => setDate(e.target.value)} wrapClassName="w-40" className="h-10 rounded-xl" />
             </label>
           </div>
           <AlertDialogFooter>
