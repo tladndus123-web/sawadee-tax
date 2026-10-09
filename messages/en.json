@@ -232,7 +232,6 @@
   "review": {
     "original": "Original photo",
     "invalid": "Some fields have the wrong format. Check the red fields.",
-    "notConnected": "Saving is connected in step 5 (Supabase).",
     "sampleTitle": "Sample document"
   },
   "settings": {
@@ -306,13 +305,7 @@
     "documentForm": "Organized form",
     "reviewHint": "Compare with the original and review the fields that need attention.",
     "originalHint": "Zoom or rotate to inspect. Select a review badge to jump to its location.",
-    "checksHint": "Start with the items that need attention.",
-    "workspaceTitle": "Clear documents. Considered decisions.",
-    "workspaceIntro": "Review the original beside its organized form, and check amounts and document details.",
-    "sampleIntro": "Explore a trilingual form, photo zoom, and automatic checks with the PANFOOD sample.",
-    "openSample": "Open sample document",
-    "settingsIntro": "Arrange blocks, choose visible fields, and rename labels with a live preview.",
-    "previewNotice": "Sample review and form settings are available now. Photo upload, ledger storage, and sign-in are still in development."
+    "checksHint": "Start with the items that need attention."
   },
   "batch": {
     "title": "Read documents from photos",

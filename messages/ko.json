@@ -232,7 +232,6 @@
   "review": {
     "original": "원본 사진",
     "invalid": "형식이 맞지 않는 칸이 있어요. 빨간 칸을 확인해 주세요.",
-    "notConnected": "저장 기능은 5단계(Supabase)에서 연결돼요.",
     "sampleTitle": "예시 서류"
   },
   "settings": {
@@ -306,13 +305,7 @@
     "documentForm": "정리된 양식",
     "reviewHint": "원본과 비교하고, 확인이 필요한 칸을 살펴보세요.",
     "originalHint": "확대하거나 돌려서 확인하세요. 확인 필요 배지를 누르면 해당 위치로 이동해요.",
-    "checksHint": "확인이 필요한 항목부터 살펴보세요.",
-    "workspaceTitle": "서류를 한눈에, 확인은 차분하게.",
-    "workspaceIntro": "원본 사진과 정리된 양식을 나란히 보고, 금액과 서류 정보를 확인하세요.",
-    "sampleIntro": "PANFOOD 예시로 3개 언어 양식, 사진 확대, 자동 확인을 살펴보세요.",
-    "openSample": "예시 서류 열기",
-    "settingsIntro": "블록 순서, 보일 칸, 칸 이름을 바꾸고 미리보기로 확인하세요.",
-    "previewNotice": "지금은 예시 서류와 양식 설정을 체험할 수 있어요. 사진 업로드, 장부 저장, 로그인은 준비 중이에요."
+    "checksHint": "확인이 필요한 항목부터 살펴보세요."
   },
   "batch": {
     "title": "사진으로 서류 읽기",

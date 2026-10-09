@@ -204,7 +204,7 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - **부드러운 스크롤:** PC(마우스·트랙패드)만 Lenis(`components/layout/smooth-scroll.tsx`), 휴대폰은 기본 스크롤.
 - **완전 삭제 (2026-09-26, 주인 결정):** 휴지통에서만, 관리자만, '삭제' 입력 후. 마감된 달의 저장 서류는 불가. `purge_document`(DB 함수)가 서류 · 줄 · 기록을 지우고 `document_purges`에 무엇을 · 왜 · 누가 지웠는지 남겨요(관리자만 읽기). 사진은 앱이 이어서 지워요(다른 서류가 같은 파일을 쓰면 남김).
 - **메뉴 스크롤 버그 수정:** 머리글 메뉴(테마 · 언어 · 계정)는 `modal={false}`, 닫힐 때 버튼으로 돌아가는 포커스는 `preventScroll`(components/ui/dropdown-menu.tsx). 언어를 바꿔도 페이지 위치 유지(`scroll: false`). Lenis는 `stop()`을 쓰지 않아요.
-- **백업 (2026-09-26):** `scripts/backup.ts`가 운영 DB의 모든 표(JSON)와 사진을 `문서\SawadeeTAX-backup`에 받아요(사진은 새 것만). Windows 작업 스케줄러 "Sawadee TAX backup"이 매주 월요일 10시(꺼져 있었으면 다음 켤 때) `scripts/backup.cmd`로 실행, 결과는 `backup.log`. 직접 실행: `npx.cmd tsx scripts/backup.ts`. 코드는 아직 GitHub에 없음(원격 저장소 없음) — 주인이 비공개 저장소를 만들면 `git remote add origin …` 후 push.
+- **백업 (2026-09-26):** `scripts/backup.ts`가 운영 DB의 모든 표(JSON)와 사진을 `문서\SawadeeTAX-backup`에 받아요(사진은 새 것만). Windows 작업 스케줄러 "Sawadee TAX backup"이 매주 월요일 10시(꺼져 있었으면 다음 켤 때) `scripts/backup.cmd`로 실행, 결과는 `backup.log`. 직접 실행: `npx.cmd tsx scripts/backup.ts`. 코드는 GitHub 비공개 저장소 `tladndus123-web/sawadee-tax`에 있고, `main`에 push하면 GitHub Actions가 검사 → DB 마이그레이션 → 배포까지 해요(CLAUDE.md).
 - **정리 (2026-09-26):** 안 쓰는 react-day-picker · date-fns 제거. 보안 경고 0개: package.json `overrides`로 postcss ≥8.5.23(Next 내부), uuid ≥11.1.1(exceljs). 기록 색인 `document_events (document_id, id desc)`, `documents (vendor_id)`.
 - **AI 읽기:** 이제 로그인한 직원만 (`/api/extract` 401/403), 요청 제한도 사람 기준.
 - **미들웨어:** next-intl + 세션 갱신 + 로그인 안 했으면 `/{locale}/login?next=…`로.
@@ -356,7 +356,7 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 - 삭제 애니메이션이 도는 동안 화면이 바뀌면 애니메이션이 끊겨요 — `StoredReview`의 `deleting` 상태가 그걸 막고 있어요.
 
 **작업 환경**
-- 이 폴더는 **git 저장소**예요 (2026-09-24 새로 시작, 원격 저장소 없음). 예전 원본 저장소 이력은 `review/git-log.txt`에만 있어요. 사용자가 요청할 때만 커밋해요.
+- 이 폴더는 **git 저장소**예요 (2026-09-24 새로 시작; 원격은 GitHub `tladndus123-web/sawadee-tax`, push하면 배포). 예전 원본 저장소 이력은 `review/git-log.txt`에만 있어요. 확인이 끝난 변경은 바로 커밋 · push해요(주인 요청, 2026-09-26).
 - UI 작업 전 코드 백업: 이 폴더 바깥 `work/backup-before-ui-v2/` (app · components · lib · messages · 옛 favicon).
 - 브라우저 확인 스크립트는 프로젝트 **바깥** `work/*.cjs`에 있어요 (`check-supabase-flow`, `check-step7`, `check-step8`, `check-line`, `check-print`, `check-report`, `check-responsive`, `check-members` 등 — 로컬 개발 서버 3130 + 로컬 Supabase + 설치된 Edge 기준, 결과 이미지는 `outputs/apple-ui-v2/`). 저장소 안 Playwright 테스트로 옮기면 좋아요.
 - 커밋 메시지 끝에는 `Co-Authored-By` 줄을 붙여 왔어요 (선택).

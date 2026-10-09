@@ -41,7 +41,6 @@
     "react-dom": "19.1.0",
     "react-hook-form": "^7.88.0",
     "react-zoom-pan-pinch": "^4.2.0",
-    "recharts": "^3.8.0",
     "shadcn": "^4.21.0",
     "sharp": "^0.35.4",
     "sonner": "^2.0.8",

@@ -66,10 +66,3 @@ export async function saveStock(c: StockCount) {
   if (error) throw error;
   await reload();
 }
-
-/** Admin only: take a count back out (the month then goes back to purchases only) */
-export async function deleteStock(branchId: string, month: string) {
-  const { error } = await supabaseBrowser().from("stock_counts").delete().eq("branch_id", branchId).eq("month", month);
-  if (error) throw error;
-  await reload();
-}

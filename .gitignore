@@ -45,5 +45,3 @@ public/_ref/
 # AI accuracy runs (scripts/eval-extract.ts)
 /eval-results/
 
-.vercel
-.env*
