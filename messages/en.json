@@ -980,6 +980,22 @@
       "closed": "Closed",
       "later": "Not yet",
       "before": "Before records"
+    },
+    "batch": {
+      "title": "Check {count} sales read",
+      "hint": "Check the date, channel and sales read from each photo, then save them together. Yellow fields are ones the AI was unsure of.",
+      "include": "Include",
+      "replaces": "Already there · replace",
+      "twice": "The same date and channel appear twice. Untick one or change its channel.",
+      "vatOff": "VAT does not match 7% of the sales. Please check.",
+      "check": "Please check the yellow fields.",
+      "picked": "{count} picked",
+      "save": "Save {count}",
+      "saved": "Saved {count} sales.",
+      "locked": "{count} are in a closed month and were not saved.",
+      "failed": "{count} could not be saved. Please try again.",
+      "max": "Up to {count} photos at a time.",
+      "progress": "Read {done} of {total}"
     }
   },
   "pos": {

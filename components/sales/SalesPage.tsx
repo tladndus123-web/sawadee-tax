@@ -30,6 +30,7 @@ import { monthFees } from "@/lib/app-fees";
 import { AppFeesCard } from "./AppFeesCard";
 import { PosImport } from "./PosImport";
 import { type SaleDraft, SaleSheet } from "./SaleSheet";
+import { type ReadPhoto, SalesReview } from "./SalesReview";
 import { useChannelLabel } from "./channel-name";
 import { CostCard } from "./CostCard";
 import { SaleCalendar } from "./SaleCalendar";
@@ -44,6 +45,8 @@ type Open = { draft: SaleDraft; photo?: File | null; preview?: string | null; un
 const blank = (date: string, branchId = ""): SaleDraft => ({ branchId, date, channel: "store", docFrom: "", docTo: "", bills: 0, gross: 0, vat: 0, exempt: 0, note: "", source: "manual" });
 
 const PAGE = 10;
+/** Closing reports read in one go */
+const MAX_PHOTOS = 10;
 const MORE = 20;
 
 export function SalesPage() {
@@ -71,6 +74,8 @@ export function SalesPage() {
   const [shown, setShown] = useState(PAGE);
   const [open, setOpen] = useState<Open | null>(null);
   const [reading, setReading] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [review, setReview] = useState<ReadPhoto[] | null>(null);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -89,28 +94,58 @@ export function SalesPage() {
   const days = useMemo(() => sales.filter((s) => saleMonth(s) === month), [sales, month]);
   const existingFor = (d: SaleDraft) => sales.find((x) => x.date === d.date && x.channel === d.channel && (x.branchId || "") === (d.branchId || "") && x.id !== d.id) ?? null;
 
-  // A closing report: prepare the picture, let the AI read it, then open the sheet to check and save
-  const readReport = async (file: File) => {
-    setReading(true);
+  // Closing reports: prepare each picture and let the AI read it (two at a time). One photo with one line opens the
+  // sheet as before; anything more is checked together in SalesReview.
+  const readOne = async (file: File): Promise<ReadPhoto> => {
+    const pdf = isPdf(file);
+    let prepared: File | null = null;
     try {
-      const pdf = isPdf(file);
-      const prepared = pdf ? file : await preparePhoto(file);
+      prepared = pdf ? file : await preparePhoto(file);
       const body = new FormData();
       body.append("file", prepared, pdf ? file.name : "report.jpg");
       const res = await fetch("/api/extract-sales", { method: "POST", body });
-      const json = (await res.json().catch(() => ({}))) as { reading?: SaleDraft & { unclear: string[] }; error?: string };
-      if (!res.ok || !json.reading) {
-        toast.error(json.error === "notReport" ? t("sales.notReport") : json.error === "rate" ? t("app.rateLimited") : t("sales.readFail"));
-        return;
+      const json = (await res.json().catch(() => ({}))) as { readings?: (SaleDraft & { unclear: string[] })[]; error?: string };
+      const preview = pdf ? null : URL.createObjectURL(prepared);
+      if (!res.ok || !json.readings?.length) {
+        const error = json.error === "notReport" ? t("sales.notReport") : json.error === "rate" ? t("app.rateLimited") : t("sales.readFail");
+        return { name: file.name, file: prepared, preview, lines: [], error };
       }
-      const { unclear, ...rest } = json.reading;
-      const draft: SaleDraft = { ...blank(rest.date || today, branchId), ...rest, source: "photo" };
-      setOpen({ draft, photo: prepared, preview: URL.createObjectURL(prepared), unclear });
+      const lines = json.readings.map(({ unclear, ...rest }) => ({ ...blank(rest.date || today, branchId), ...rest, source: "photo" as const, unclear: unclear ?? [] }));
+      return { name: file.name, file: prepared, preview, lines };
     } catch {
-      toast.error(t("sales.readFail"));
-    } finally {
-      setReading(false);
+      return { name: file.name, file: prepared, preview: null, lines: [], error: t("sales.readFail") };
     }
+  };
+
+  const readReports = async (picked: File[]) => {
+    const files = picked.slice(0, MAX_PHOTOS);
+    if (picked.length > MAX_PHOTOS) toast.message(t("sales.batch.max", { count: MAX_PHOTOS }));
+    setReading(true);
+    setProgress({ done: 0, total: files.length });
+    const out: ReadPhoto[] = new Array(files.length);
+    let next = 0;
+    await Promise.all(
+      [0, 1].map(async () => {
+        while (next < files.length) {
+          const i = next++;
+          out[i] = await readOne(files[i]);
+          setProgress((p) => (p ? { ...p, done: p.done + 1 } : p));
+        }
+      }),
+    );
+    setReading(false);
+    setProgress(null);
+    if (out.every((p) => p.error)) {
+      toast.error(out[0].error);
+      out.forEach((p) => p.preview && URL.revokeObjectURL(p.preview));
+      return;
+    }
+    if (out.length === 1 && out[0].lines.length === 1) {
+      const { unclear, ...draft } = out[0].lines[0];
+      setOpen({ draft, photo: out[0].file, preview: out[0].preview, unclear });
+      return;
+    }
+    setReview(out);
   };
 
   const openSale = async (s: Sale) => {
@@ -144,11 +179,12 @@ export function SalesPage() {
             ref={fileRef}
             type="file"
             accept="image/*,application/pdf,.pdf"
+            multiple
             hidden
             onChange={(e) => {
-              const f = e.target.files?.[0];
+              const files = [...(e.target.files ?? [])];
               e.target.value = "";
-              if (f) void readReport(f);
+              if (files.length) void readReports(files);
             }}
           />
         </div>
@@ -158,6 +194,7 @@ export function SalesPage() {
       {reading && (
         <div className="grid justify-items-center py-2" aria-live="polite">
           <ReadingLoader size={105} />
+          {progress && progress.total > 1 && <p className="text-sm font-medium text-muted-foreground tabular-nums">{t("sales.batch.progress", progress)}</p>}
         </div>
       )}
 
@@ -283,6 +320,17 @@ export function SalesPage() {
       </section>
 
       {importing && <PosImport existing={sales} onClose={() => setImporting(false)} />}
+      {review && (
+        <SalesReview
+          photos={review}
+          branchId={branchId}
+          existing={sales}
+          onClose={() => {
+            review.forEach((p) => p.preview && URL.revokeObjectURL(p.preview));
+            setReview(null);
+          }}
+        />
+      )}
       {open && (
         <SaleSheet
           key={open.draft.id ?? "new"}

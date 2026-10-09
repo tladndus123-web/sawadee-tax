@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
   try {
     const out = await readSalesReport(Buffer.from(await file.arrayBuffer()), (pdf ? "application/pdf" : file.type) as SourceType, req.signal);
-    if (out.ok) return Response.json({ reading: out.reading });
+    if (out.ok) return Response.json({ readings: out.readings });
     if (out.detail) console.error(`extract-sales: ${out.code}`, out.detail);
     return Response.json({ error: out.code }, { status: out.status });
   } catch {

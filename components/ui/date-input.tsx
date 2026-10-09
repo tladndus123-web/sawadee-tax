@@ -40,7 +40,7 @@ export function DateInput({
         }}
         className={cn("cursor-pointer text-transparent [&::-webkit-datetime-edit]:opacity-0", className)}
       />
-      <span aria-hidden className={cn("pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-base tabular-nums md:text-sm", !v && "text-muted-foreground")}>
+      <span aria-hidden className={cn("pointer-events-none absolute inset-y-0 right-8 left-2.5 flex items-center overflow-hidden text-base whitespace-nowrap tabular-nums md:text-sm", !v && "text-muted-foreground")}>
         {v ? sd(v) : t("pickDate")}
       </span>
     </span>
