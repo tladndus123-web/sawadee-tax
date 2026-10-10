@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (398) · `npm run db:test` (pgTAP 219 + STOCK 42) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (398) · `npm run db:test` (pgTAP 219 + STOCK 54) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -53,7 +53,8 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 - Every new UI string goes into all four `messages/{ko,th,en,ja}.json`.
 - Database rules live in `supabase/migrations` + `supabase/tests/rls.test.sql`; add a test with every rule.
 - **Sawadee STOCK** (separate app, `~/sawadee-stock`, same database, 2026-10-09): its tables are `stock_items`,
-  `stock_recipes`, `stock_movements`, `stock_suppliers`, `stock_external_refs` (migration `…001500_stock_app.sql`,
-  tests `supabase/tests/stock.test.sql`). It only reads TAX tables (branches, members, branch PINs via `can_see_branch()`);
-  `stock_counts` (month-end stock money) is TAX's own and unrelated.
+  `stock_recipes`, `stock_movements`, `stock_suppliers`, `stock_external_refs`, `stock_takes` (migrations `…001500_stock_app.sql`,
+  `…001600_stock_take.sql`; tests `supabase/tests/stock.test.sql`). It reads TAX tables (branches, members, branch PINs via
+  `can_see_branch()`) and writes one: `stock_counts` (month-end stock money), only from a confirmed stocktake
+  (`stock_take()`, note "Sawadee STOCK"), never in a closed month.
 - New migration → apply locally (`npx supabase migration up`), `npm run db:test`, then push to cloud.

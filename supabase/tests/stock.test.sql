@@ -1,7 +1,7 @@
 -- Sawadee STOCK rules (migration 20260929001500_stock_app.sql). Run: npm run db:test (everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(42);
+select plan(54);
 
 -- Fixtures: one admin (owner), one staff, one signed-in stranger; branch A open, branch B with a PIN
 insert into auth.users (id, email) values
@@ -78,7 +78,7 @@ select lives_ok($$ select public.stock_record('00000000-0000-0000-0000-000000000
 select is(pg_temp.qty('00000000-0000-0000-0000-0000000000a1', 'DONUT'), 100.000, 'products go up');
 select is(pg_temp.qty('00000000-0000-0000-0000-0000000000a1', 'FLOUR'), 2.500, 'flour goes down by 0.06 × 100');
 select is(pg_temp.qty('00000000-0000-0000-0000-0000000000a1', 'EGG'), 50.000, 'eggs go down by 0.5 × 100');
-select is((select count(*)::int from public.stock_movements where batch_id = (select batch_id from public.stock_movements where type = 'make')), 3,
+select is((select count(*)::int from public.stock_movements where batch_id = (select batch_id from public.stock_movements where type = 'make' and item_id = '00000000-0000-0000-0000-000000000f03')), 3,
   'the product and its two ingredients are one batch');
 select throws_ok($$ select public.stock_record('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-000000000f03', 'make', 50) $$,
   'not_enough', 'making more than the flour allows is refused');
@@ -108,6 +108,37 @@ select throws_ok($$ select public.stock_record('00000000-0000-0000-0000-00000000
   'no_access', 'nor record in it');
 select ok(public.unlock_branch('00000000-0000-0000-0000-0000000000b1', '4321'), 'staff open B with its PIN');
 select is((select count(*)::int from public.stock_movements where branch_id = '00000000-0000-0000-0000-0000000000b1'), 1, 'then B''s history shows');
+
+-- Stocktaking (20260929001600_stock_take.sql): staff count A; differences become adjustments; TAX month-end stock
+create function pg_temp.tax_stock(b uuid, m text) returns numeric language sql security definer as $$
+  select amount from public.stock_counts where branch_id = b and month = m
+$$;
+select throws_ok($$ select public.stock_take('00000000-0000-0000-0000-0000000000a1',
+  '[{"item_id":"00000000-0000-0000-0000-000000000f01","counted":-1}]') $$, 'bad_qty', 'a count cannot be negative');
+select throws_ok($$ select public.stock_take('00000000-0000-0000-0000-0000000000a1',
+  (select jsonb_build_array(jsonb_build_object('item_id', id, 'counted', 1)) from public.stock_items where branch_id = '00000000-0000-0000-0000-0000000000b1' limit 1)) $$,
+  'no_item', 'only items of the branch being counted');
+select is(pg_temp.qty('00000000-0000-0000-0000-0000000000a1', 'FLOUR'), 2.500, 'a refused count changes nothing');
+-- Book: flour 2.5 kg (48 ฿), eggs 30 (4.5 ฿), donuts 32 (38 ฿). Counted: flour 2, eggs 31; donuts not counted.
+select is((public.stock_take('00000000-0000-0000-0000-0000000000a1',
+  '[{"item_id":"00000000-0000-0000-0000-000000000f01","counted":2},{"item_id":"00000000-0000-0000-0000-000000000f02","counted":31}]',
+  '2026-09') ->> 'diff_value')::numeric, -19.50, 'staff record a count; the difference is −0.5 × 48 + 1 × 4.5 = −19.50 ฿');
+select is(pg_temp.qty('00000000-0000-0000-0000-0000000000a1', 'FLOUR'), 2.000, 'stock now matches the count (flour)');
+select is(pg_temp.qty('00000000-0000-0000-0000-0000000000a1', 'EGG'), 31.000, 'stock now matches the count (eggs)');
+select is(pg_temp.qty('00000000-0000-0000-0000-0000000000a1', 'DONUT'), 32.000, 'items not counted stay as they are');
+select is((select array_agg(type order by type)::text from public.stock_movements where type like 'adjust%' and branch_id = '00000000-0000-0000-0000-0000000000a1'), '{adjust_in,adjust_out}',
+  'the differences are adjustment movements');
+select is(pg_temp.tax_stock('00000000-0000-0000-0000-0000000000a1', '2026-09'), 1451.50,
+  'TAX month-end stock gets the whole stock value: 2 × 48 + 31 × 4.5 + 32 × 38');
+reset role;
+insert into public.month_locks (month) values ('2026-08');
+set local role authenticated;
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select is(public.stock_take('00000000-0000-0000-0000-0000000000a1',
+  '[{"item_id":"00000000-0000-0000-0000-000000000f01","counted":2}]', '2026-08') ->> 'tax', 'locked', 'a closed month is not changed');
+select is(pg_temp.tax_stock('00000000-0000-0000-0000-0000000000a1', '2026-08'), null, 'nothing went into the closed month');
+select throws_ok($$ insert into public.stock_takes (branch_id, items, diff_value, stock_value) values ('00000000-0000-0000-0000-0000000000a1', 0, 0, 0) $$,
+  '42501', NULL, 'stocktakes are written only by stock_take()');
 
 -- History is append-only, and strangers see nothing
 reset role;
