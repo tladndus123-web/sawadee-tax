@@ -1,7 +1,7 @@
 -- Sawadee STOCK rules (migration 20260929001500_stock_app.sql). Run: npm run db:test (everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(54);
+select plan(61);
 
 -- Fixtures: one admin (owner), one staff, one signed-in stranger; branch A open, branch B with a PIN
 insert into auth.users (id, email) values
@@ -139,6 +139,26 @@ select is(public.stock_take('00000000-0000-0000-0000-0000000000a1',
 select is(pg_temp.tax_stock('00000000-0000-0000-0000-0000000000a1', '2026-08'), null, 'nothing went into the closed month');
 select throws_ok($$ insert into public.stock_takes (branch_id, items, diff_value, stock_value) values ('00000000-0000-0000-0000-0000000000a1', 0, 0, 0) $$,
   '42501', NULL, 'stocktakes are written only by stock_take()');
+
+-- Item import (20260929001700_stock_import.sql): owners only; adds new skus, updates existing ones, keeps typed names
+select throws_ok($$ select public.stock_import_items('00000000-0000-0000-0000-0000000000a1', '[{"sku":"X1","unit":"bag"}]') $$,
+  'admin_only', 'staff cannot import items');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+update public.stock_items set name_i18n = '{"ja":"強力粉"}' where sku = 'FLOUR' and branch_id = '00000000-0000-0000-0000-0000000000a1';
+select throws_ok($$ select public.stock_import_items('00000000-0000-0000-0000-0000000000a1', '[{"sku":"X1","unit":"crate"}]') $$,
+  'bad_row', 'an unknown unit is refused');
+select is(public.stock_import_items('00000000-0000-0000-0000-0000000000a1', '[
+  {"sku":"TD01001","name":{"en":"Wheat Flour","th":"แป้งสาลี"},"unit":"bag","category":"food","supplier":"FOOD PROJECT","unit_cost":910,"vat":true,"pack_size":22500,"pack_unit":"g"},
+  {"sku":"FLOUR","name":{"en":"Bread flour"},"unit":"kg","category":"food","unit_cost":50}]'),
+  '{"added": 1, "updated": 1, "deactivated": 0}'::jsonb, 'the owner imports a list: one new item, one updated');
+select is((select name_i18n from public.stock_items where sku = 'FLOUR' and branch_id = '00000000-0000-0000-0000-0000000000a1'),
+  '{"ja":"強力粉","en":"Bread flour"}'::jsonb, 'a name typed before is kept, the new one added');
+select is((select array[unit, category, pack_size::text, pack_unit, s.name] from public.stock_items i join public.stock_suppliers s on s.id = i.supplier_id where sku = 'TD01001' and i.branch_id = '00000000-0000-0000-0000-0000000000a1'),
+  array['bag', 'food', '22500.000', 'g', 'FOOD PROJECT'], 'unit, category, pack size and supplier are saved');
+select is(public.stock_import_items('00000000-0000-0000-0000-0000000000a1', '[{"sku":"TD01001","unit":"bag"}]', true) ->> 'deactivated', '3',
+  'items not in the list can be hidden in one go');
+select is(pg_temp.qty('00000000-0000-0000-0000-0000000000a1', 'EGG'), 31.000, 'hiding an item keeps its stock and history');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 
 -- History is append-only, and strangers see nothing
 reset role;
