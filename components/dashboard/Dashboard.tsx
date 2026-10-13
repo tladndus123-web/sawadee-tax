@@ -2,7 +2,7 @@
 
 import { CalendarClock, ChevronDown, ChevronRight, CircleCheck, Clock, Inbox, Landmark, Loader2, Lock, QrCode, Receipt, TrendingUp, Undo2, Wallet, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { canPay, PayQr } from "@/components/vendors/PayQr";
+import { canPay } from "@/lib/vendors";
 import { amountToPay, hasWht, whtTax } from "@/lib/wht";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
@@ -49,6 +49,8 @@ const UncheckedList = dynamic(() => import("./UncheckedList").then((m) => m.Unch
 const VatCard = dynamic(() => import("./VatCard").then((m) => m.VatCard), { loading: () => later });
 const MonthCloseCard = dynamic(() => import("./MonthCloseCard").then((m) => m.MonthCloseCard), { loading: () => later });
 const TeamCard = dynamic(() => import("./TeamCard").then((m) => m.TeamCard));
+// The QR (and its drawing library) only when a bill is being paid
+const PayQr = dynamic(() => import("@/components/vendors/PayQr").then((m) => m.PayQr), { loading: () => later });
 
 
 /** Step 8 dashboard: the 4 summary tiles, bills due soon (mark paid here), 6-month trend, recent activity. */

@@ -13,7 +13,8 @@ import { bankName, promptPayKind, THAI_BANKS } from "@/lib/promptpay";
 import { useMe } from "@/lib/role-store";
 import { saveVendorPay } from "@/lib/vendor-store";
 import type { Vendor } from "@/lib/vendors";
-import { canPay, PayQr } from "./PayQr";
+import { PayQr } from "./PayQr";
+import { canPay } from "@/lib/vendors";
 
 export function VendorPayCard({ v, title }: { v: Vendor; title: string }) {
   const t = useTranslations("pay2");

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { normalize } from "./normalize";
 import { sampleDoc } from "./sample";
-import { applyHistory, applyRule, applyVendor, canAutoRegister, pickVendor, suggestRule, type Vendor, vendorCategory } from "./vendors";
+import { applyHistory, applyRule, applyVendor, canAutoRegister, canPay, pickVendor, suggestRule, type Vendor, vendorCategory } from "./vendors";
 
 const vendor: Vendor = {
   id: "v1",
@@ -134,5 +134,16 @@ describe("a vendor's icon category", () => {
   it("nothing known (or unknown values) → other", () => {
     expect(vendorCategory(null, [])).toBe("other");
     expect(vendorCategory("nope", ["??"])).toBe("other");
+  });
+});
+
+describe("canPay", () => {
+  const pay = (promptpay: string, account = "") => ({ promptpay, bank: "", account, name: "" });
+  it("needs a valid PromptPay ID or a bank account", () => {
+    expect(canPay(pay("081-234-5678"))).toBe(true);
+    expect(canPay(pay("0105551234567"))).toBe(true);
+    expect(canPay(pay("", "1234567890"))).toBe(true);
+    expect(canPay(pay("12345"))).toBe(false);
+    expect(canPay(pay(""))).toBe(false);
   });
 });

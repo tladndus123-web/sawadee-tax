@@ -33,6 +33,9 @@ export interface VendorPay {
   name: string;
 }
 
+/** Has something to pay with: a valid PromptPay ID or a bank account */
+export const canPay = (p: VendorPay) => /^(0\d{9}|\d{13}|\d{15})$/.test(p.promptpay.replace(/\D/g, "")) || !!p.account;
+
 export interface VendorRow {
   id: string;
   tax_id: string;

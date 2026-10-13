@@ -12,7 +12,6 @@ import { baht } from "@/lib/money";
 import { bankName, promptPayKind, promptPayPayload } from "@/lib/promptpay";
 import type { VendorPay } from "@/lib/vendors";
 
-export const canPay = (p: VendorPay) => !!promptPayKind(p.promptpay) || !!p.account;
 
 export function PayQr({ pay, amount, withheld }: { pay: VendorPay; amount?: number; withheld?: number }) {
   const t = useTranslations("pay2");
