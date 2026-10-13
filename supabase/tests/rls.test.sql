@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(226);
+select plan(231);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -470,6 +470,13 @@ set local role authenticated;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 select throws_ok($$ update public.employees set line_user_id = 'U-other' where id = '00000000-0000-0000-0000-0000000000e8' $$, 'LINE accounts are linked through the bot', 'an admin cannot set a LINE account by hand');
 select lives_ok($$ update public.employees set line_user_id = null where id = '00000000-0000-0000-0000-0000000000e8' $$, 'but may clear it');
+
+-- Visitors who are not signed in cannot call the owner-rights functions; nobody can call a trigger function
+select ok(not has_function_privilege('anon', 'public.unlock_branch(uuid,text)', 'execute'), 'a visitor cannot try branch PINs');
+select ok(not has_function_privilege('anon', 'public.set_branch_pin(uuid,text)', 'execute'), 'nor set one');
+select ok(has_function_privilege('authenticated', 'public.unlock_branch(uuid,text)', 'execute'), 'signed-in members still can');
+select ok(not has_function_privilege('authenticated', 'public.members_guard()', 'execute'), 'a trigger function is not an API function');
+select ok(has_function_privilege('anon', 'public.is_member()', 'execute'), 'the yes/no helpers the table rules use stay callable');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');
