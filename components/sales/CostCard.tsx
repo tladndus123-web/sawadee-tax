@@ -5,7 +5,7 @@
 // Admins can change the targets too.
 
 import { CalendarClock, ChefHat, ChevronDown, Info, Loader2, Package, Pencil, Users } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useBranchName } from "@/components/layout/branch-switcher";
@@ -24,6 +24,7 @@ import { type FixedLine, fixedForMonth } from "@/lib/fixed-costs";
 import { useLabor, saveLabor } from "@/lib/labor-store";
 import { prevMonth, stockChange } from "@/lib/stock";
 import { type CostTip, costTips, type TipAction } from "@/lib/cost-tips";
+import { type PriceRise, priceRises } from "@/lib/price-watch";
 import { saleMonth } from "@/lib/sales";
 import { useSales } from "@/lib/sales-store";
 import { todayBangkok } from "@/lib/thai-tax";
@@ -73,6 +74,8 @@ export function CostCard({ month, salesValue, purchases, fixed, fold }: { month:
     return costControl(prevSales, costs, foodKeys, monthLabor(lines, prev), targets);
   }, [month, sales, purchases, company.taxId, fixed, counts, foodKeys, lines, targets]);
   const today = todayBangkok();
+  // Items dearer than the last time the same vendor sold them
+  const rises = useMemo(() => priceRises(purchases, month), [purchases, month]);
   const tips = costTips({
     now: c,
     before,
@@ -165,6 +168,7 @@ export function CostCard({ month, salesValue, purchases, fixed, fold }: { month:
         isAdmin={isAdmin}
         onAction={(a) => (a === "labor" ? setLaborOpen(true) : a === "stock" ? setStockOpen(true) : undefined)}
       />
+      {rises.length > 0 && <Rises rises={rises} />}
       <p className="text-xs text-muted-foreground tabular-nums">{t("base", { sales: bahtWhole(salesValue) })}</p>
       </div>
 
@@ -176,6 +180,38 @@ export function CostCard({ month, salesValue, purchases, fixed, fold }: { month:
 }
 
 const DOT = { bad: "bg-risk-over", warn: "bg-risk-near", ok: "bg-risk-ok", info: "bg-primary" } as const;
+
+/** Food prices up this month (lib/price-watch): the three biggest, each a tap away from its document */
+function Rises({ rises }: { rises: PriceRise[] }) {
+  const t = useTranslations("cost.rises");
+  const locale = useLocale();
+  const vendor = (n: PriceRise["vendorName"]) => (locale === "ja" && n.ja) || n.th || n.en || n.ja;
+  return (
+    <div className="grid gap-2 rounded-2xl bg-warn-soft/60 p-3.5">
+      <p className="text-xs font-semibold text-warn">{t("title", { count: rises.length })}</p>
+      <ul className="grid gap-1.5">
+        {rises.slice(0, 3).map((r) => (
+          <li key={`${r.vendorTaxId}|${r.item}`} className="flex items-start gap-2 text-[13px] leading-snug">
+            <span className="mt-1.5 size-1.5 flex-none rounded-full bg-risk-near" aria-hidden />
+            <span className="min-w-0 flex-1">
+              <b className="font-semibold">{r.item}</b> <span className="text-muted-foreground">· {vendor(r.vendorName)}</span>
+              <br />
+              <span className="tabular-nums">
+                {baht(fromSatang(r.before))} → <b className="font-semibold text-warn">{baht(fromSatang(r.now))}</b> (+{r.pct}%)
+              </span>
+              {r.docId && (
+                <Link href={`/documents/${r.docId}`} className="ml-1.5 font-medium whitespace-nowrap text-primary hover:underline">
+                  {t("open")} →
+                </Link>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {rises.length > 3 && <p className="text-[11px] text-muted-foreground">{t("more", { count: rises.length - 3 })}</p>}
+    </div>
+  );
+}
 
 /** 원가 체크 포인트: a few sentences from the numbers, each with a button when there is something to enter */
 function Tips({ tips, isAdmin, onAction }: { tips: CostTip[]; isAdmin: boolean; onAction: (a: TipAction) => void }) {

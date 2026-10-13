@@ -115,6 +115,13 @@ async function linkAccount(event: webhook.MessageEvent, lineUser: string, code: 
   const { data: userId, error } = await admin.rpc("line_link", { p_code: code, p_line_user: lineUser });
   if (error) throw error;
   if (!userId) {
+    // Not a member's code: an employee's (payslips on LINE)?
+    const emp = await admin.rpc("employee_line_link", { p_code: code, p_line_user: lineUser });
+    if (emp.error) throw emp.error;
+    if (emp.data) {
+      const { data: e } = await admin.from("employees").select("name").eq("id", emp.data).maybeSingle();
+      return send(event, lineUser, [checking, text(say.employeeLinked(e?.name ?? ""))]);
+    }
     wrongCodeTries(lineUser, true);
     return send(event, lineUser, [checking, text(say.badCode)]);
   }

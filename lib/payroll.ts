@@ -40,6 +40,8 @@ export interface Employee {
   note: string;
   /** Work permit, visa, health certificate … with their expiry dates (lib/attendance) */
   documents: EmployeeDocument[];
+  /** LINE user linked through the bot (payslips go there); "" = not linked */
+  lineUserId: string;
 }
 
 export interface PeriodInput {

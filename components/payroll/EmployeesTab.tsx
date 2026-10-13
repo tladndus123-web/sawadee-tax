@@ -24,6 +24,7 @@ import { taxIdOk } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { DateInput } from "@/components/ui/date-input";
 import { useScreenDate } from "@/components/ScreenDate";
+import { EmployeeLineButton } from "./EmployeeLine";
 
 const blank = (branchId: string): Employee & { isNew: boolean } => ({
   id: "",
@@ -42,6 +43,7 @@ const blank = (branchId: string): Employee & { isNew: boolean } => ({
   whtFixed: null,
   note: "",
   documents: [],
+  lineUserId: "",
   isNew: true,
 });
 
@@ -164,6 +166,7 @@ export function EmployeesTab() {
                     ))}
                   </select>
                 )}
+                <EmployeeLineButton e={e} />
                 <Button type="button" variant="ghost" size="icon" className="size-9 flex-none" aria-label={t("edit")} onClick={() => setDraft({ ...e })}>
                   <Pencil className="size-4" />
                 </Button>

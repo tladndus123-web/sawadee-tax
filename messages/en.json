@@ -1356,7 +1356,12 @@
     },
     "about": "How to read this card",
     "more": "Food · labour · rent in detail",
-    "less": "Less"
+    "less": "Less",
+    "rises": {
+      "title": "{count} items dearer than last time",
+      "open": "Open",
+      "more": "and {count} more · up 5% or more from the same vendor's last price"
+    }
   },
   "pay": {
     "title": "Payroll",
@@ -1558,7 +1563,36 @@
       "noId": "No ID number (needed for filings)",
       "badId": "ID number is not 13 digits"
     },
-    "issueCount": "{count, plural, one {# person to check} other {# people to check}}"
+    "issueCount": "{count, plural, one {# person to check} other {# people to check}}",
+    "line": {
+      "title": "{name} · LINE",
+      "hint": "Once linked, their payslip goes straight to LINE. Photos they send are not saved to the ledger.",
+      "linked": "Linked on LINE",
+      "notLinked": "Not linked on LINE",
+      "unlink": "Unlink",
+      "unlinked": "LINE unlinked.",
+      "step1": "The employee adds the Sawadee TAX bot{bot} as a friend on LINE.",
+      "step2": "Tap 'Get code' below and give them the 6-digit code.",
+      "step3": "They send that code to the bot and they are linked.",
+      "getCode": "Get code",
+      "codeHint": "Valid for 10 minutes; get a new one after that.",
+      "fail": "That did not work."
+    },
+    "slips": {
+      "button": "Send payslips",
+      "title": "Send payslips",
+      "hint": "Employees linked on LINE get their payslip as a LINE message. Save a PDF for the rest.",
+      "linkedCount": "{linked} of {all} linked on LINE",
+      "send": "Send on LINE ({count})",
+      "pdf": "Save PDF",
+      "sentN": "Sent {count} payslips.",
+      "sentList": "Sent to {count}",
+      "notLinkedList": "Not linked on LINE",
+      "noPayList": "No pay this month",
+      "failedList": "Could not send",
+      "rate": "Too many sends. Try again in a minute.",
+      "fail": "Could not send."
+    }
   },
   "fixed": {
     "title": "Fixed costs (no invoice)",

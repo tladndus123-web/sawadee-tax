@@ -1356,7 +1356,12 @@
     },
     "about": "このカードの見方",
     "more": "食材・人件費・家賃をくわしく",
-    "less": "閉じる"
+    "less": "閉じる",
+    "rises": {
+      "title": "単価が上がった食材 {count}点",
+      "open": "書類を見る",
+      "more": "ほか{count}点 · 同じ仕入先の前回より5%以上上がった品目です"
+    }
   },
   "pay": {
     "title": "給与",
@@ -1558,7 +1563,36 @@
       "noId": "身分証番号なし（申告に必要）",
       "badId": "身分証番号が13桁ではありません"
     },
-    "issueCount": "確認する従業員 {count}人"
+    "issueCount": "確認する従業員 {count}人",
+    "line": {
+      "title": "{name} · LINE連携",
+      "hint": "連携すると給与明細をLINEですぐ送れます。従業員が写真を送っても帳簿には入りません。",
+      "linked": "LINE連携済み",
+      "notLinked": "LINE未連携",
+      "unlink": "連携を解除",
+      "unlinked": "LINE連携を解除しました。",
+      "step1": "従業員がLINEでSawadee TAXボット{bot}を友だち追加します。",
+      "step2": "下の「コードを取得」を押して、6桁のコードを従業員に伝えます。",
+      "step3": "従業員がそのコードをボットのトークに送ると連携されます。",
+      "getCode": "コードを取得",
+      "codeHint": "10分以内に送ってください。過ぎたら取得し直せます。",
+      "fail": "処理できませんでした。"
+    },
+    "slips": {
+      "button": "明細を送る",
+      "title": "給与明細を送る",
+      "hint": "LINE連携済みの従業員にはLINEメッセージで届きます。それ以外はPDFで保存して渡してください。",
+      "linkedCount": "LINE連携済み {linked}人 / {all}人",
+      "send": "LINEで送る（{count}人）",
+      "pdf": "PDFで保存",
+      "sentN": "給与明細を{count}件送りました。",
+      "sentList": "送信 {count}人",
+      "notLinkedList": "LINE未連携",
+      "noPayList": "今月の給与なし",
+      "failedList": "送信できず",
+      "rate": "送信が多すぎます。1分後にもう一度押してください。",
+      "fail": "送信できませんでした。"
+    }
   },
   "fixed": {
     "title": "固定費（領収書のない費用）",

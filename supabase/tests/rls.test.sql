@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(219);
+select plan(226);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -455,6 +455,21 @@ select throws_like($$ insert into public.cash_moves (day, kind, amount) values (
 select throws_like($$ delete from public.cash_moves where id = '00000000-0000-0000-0000-0000000000c5' $$, 'month_locked%', 'nor loses one');
 delete from public.month_locks where month = '2001-02';
 select lives_ok($$ delete from public.cash_moves where id = '00000000-0000-0000-0000-0000000000c5' $$, 'an admin deletes a cash line');
+
+-- Employees on LINE: an admin gets a code, only the bot links, an admin may only clear the link
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+insert into public.employees (id, name, pay_type, rate) values ('00000000-0000-0000-0000-0000000000e8', 'Linkee', 'monthly', 12000);
+select ok((select public.employee_line_code('00000000-0000-0000-0000-0000000000e8') ~ '^\d{6}$'), 'an admin gets a 6-digit LINE code for an employee');
+select is((select count(*)::int from public.employee_link_codes), 0, 'employee link codes are not readable in the app');
+select throws_ok($$ select public.employee_line_link('000000', 'U-emp') $$, '42501', NULL, 'only the bot links an employee');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select throws_like($$ select public.employee_line_code('00000000-0000-0000-0000-0000000000e8') $$, 'admin_only%', 'staff get no employee code');
+reset role;
+select is(public.employee_line_link((select code from public.employee_link_codes where employee_id = '00000000-0000-0000-0000-0000000000e8'), 'U-emp')::text, '00000000-0000-0000-0000-0000000000e8', 'the bot links the employee with the code');
+set local role authenticated;
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select throws_ok($$ update public.employees set line_user_id = 'U-other' where id = '00000000-0000-0000-0000-0000000000e8' $$, 'LINE accounts are linked through the bot', 'an admin cannot set a LINE account by hand');
+select lives_ok($$ update public.employees set line_user_id = null where id = '00000000-0000-0000-0000-0000000000e8' $$, 'but may clear it');
 
 -- A signed-in person who is not a member sees nothing
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

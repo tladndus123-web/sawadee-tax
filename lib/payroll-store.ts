@@ -29,6 +29,7 @@ type EmpRow = {
   wht_fixed: number | string | null;
   note: string;
   documents?: unknown;
+  line_user_id?: string | null;
 };
 
 const toEmployee = (r: EmpRow): Employee => ({
@@ -48,6 +49,7 @@ const toEmployee = (r: EmpRow): Employee => ({
   whtFixed: r.wht_fixed === null || r.wht_fixed === undefined ? null : Number(r.wht_fixed),
   note: r.note ?? "",
   documents: parseDocuments(r.documents),
+  lineUserId: r.line_user_id ?? "",
 });
 
 let employees: Employee[] = [];
@@ -112,6 +114,20 @@ export async function saveEmployee(e: Employee & { isNew?: boolean }) {
   const { data, error } = await q;
   if (error) throw error;
   if (!data?.length) throw new Error("not allowed");
+  await reload();
+}
+
+/** Admin: a one-time code the employee sends the LINE bot to link their account (10 minutes) */
+export async function employeeLineCode(id: string): Promise<string> {
+  const { data, error } = await supabaseBrowser().rpc("employee_line_code", { p_employee: id });
+  if (error) throw error;
+  return String(data);
+}
+
+/** Admin: forget the employee's LINE account (linking again needs a new code) */
+export async function unlinkEmployeeLine(id: string) {
+  const { error } = await supabaseBrowser().from("employees").update({ line_user_id: null }).eq("id", id);
+  if (error) throw error;
   await reload();
 }
 

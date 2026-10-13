@@ -47,6 +47,13 @@ export function PayrollPrint({ form, month }: { form: PayForm; month: string }) 
   const { employees, loaded, branch } = useBranchEmployees();
   const [lines, setLines] = useState<PayrollLineRow[] | null>(null);
   const [only, setOnly] = useState("");
+  const [autoPrint, setAutoPrint] = useState(false);
+  // Opened from the pay run ("PDF"): one employee and the print dialog straight away
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("only")) setOnly(q.get("only") ?? "");
+    if (q.get("print") === "1") setAutoPrint(true);
+  }, []);
 
   useEffect(() => {
     loadPayroll({ month, branch })
@@ -78,6 +85,12 @@ export function PayrollPrint({ form, month }: { form: PayForm; month: string }) 
       .filter((p): p is Person => !!p && p.gross > 0);
   }, [employees, lines]);
 
+  useEffect(() => {
+    if (!autoPrint || !people.length) return;
+    setAutoPrint(false);
+    const id = window.setTimeout(() => window.print(), 600);
+    return () => window.clearTimeout(id);
+  }, [autoPrint, people.length]);
   const period = new Intl.DateTimeFormat("th-TH", { month: "long", year: "numeric", timeZone: "UTC" }).format(monthDate(month));
   const title = `${TITLE[form]} · ${period}`;
   useEffect(() => {

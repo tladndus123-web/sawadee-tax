@@ -21,6 +21,7 @@ import { refreshLabor } from "@/lib/labor-store";
 import { fmt } from "@/lib/money";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
 import { daysNotEmployed, type Employee, employedInMonth, payIssues, EMPTY_PERIOD, type LineRates, lineRates, monthPay, payrollSettingsOf, type PeriodInput, sameRates, timesText } from "@/lib/payroll";
+import { SendSlipsButton } from "./SendSlips";
 import { loadAllowanceNames, loadPayroll, loadPayrollChecks, type PayrollCheck, type PayrollLineRow, savePayrollMonth, setPayrollCheck, setPayrollPaid, useBranchEmployees } from "@/lib/payroll-store";
 import { cn } from "@/lib/utils";
 import { OtSettings } from "./OtSettings";
@@ -238,6 +239,7 @@ export function PayRunTab({ month }: { month: string }) {
       {stale && !locked && <p className="rounded-2xl bg-warn-soft px-4 py-3 text-sm text-warn">{t("otStale")}</p>}
       <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
         <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">{t("checkHint")}</p>
+        {saved.size > 0 && <SendSlipsButton month={month} staff={staff.filter((e) => saved.has(e.id))} />}
         <span className="flex flex-wrap gap-1.5">
           <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums", checkedCount === staff.length ? "bg-ok-soft text-ok" : "bg-muted text-muted-foreground")}>
             {t("checkedCount", { done: checkedCount, all: staff.length })}
