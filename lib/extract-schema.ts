@@ -77,7 +77,8 @@ export type ExtractErrorCode = "rate" | "notDoc" | "badImage" | "aiFail" | "busy
 /** Added to the prototype prompt: the photo positions used to zoom into unclear fields. */
 export const FIELD_BOX_RULE = `- fieldBoxes: for each field you could locate on the photo (always include every path listed in "unclear"), give {"path": "<field path>", "box": [x, y, w, h]} where x, y are the top-left corner and w, h the size, all as fractions 0-1 of the image width and height. Omit fields you cannot locate.
 - If the image is not a receipt or invoice, set notDocument true and leave every other field empty.
-- The "seller" object MUST also contain "branch": {"th":"","en":"","ja":""} — the seller's head office or branch as printed near the seller's address or tax ID ("สำนักงานใหญ่" / "Head office" / "本社", or "สาขาที่ 00001" / "Branch 00001" / "支店 00001" with the 5-digit number). Put it there even when the same words also appear in the address; empty strings only if nothing is printed.
+- seller.branch: the seller's head office or branch as printed near the seller's address or tax ID ("สำนักงานใหญ่" / "Head office" / "本社", or "สาขาที่ 00001" / "Branch 00001" / "支店 00001" with the 5-digit number). Put it there even when the same words also appear in the address.
+- Write the JSON on one line. Leave out only a {"th","en","ja"} text object (or a text list) when nothing at all is printed for it — the app fills it in. Always give every date, number, amount, code, document / tax ID and true/false you can see (dueDate, creditDays, customer.code, item codes …), even when it seems minor. Tax IDs are 13 digits as text: keep a leading 0.
 - docTitle: only the document's name (e.g. "ใบกำกับภาษี/ใบส่งของ/ใบแจ้งหนี้"). Do not include "ต้นฉบับ"/"สำเนา"/"Original"/"Copy" — that belongs in copyKind.
 Reply with the single JSON object only (including "fieldBoxes"), no prose and no code fences.`;
 

@@ -30,6 +30,7 @@ const arg = (name: string) => {
 };
 const N = Math.max(1, Math.min(20, Number(arg("n") ?? 10)));
 const effort = arg("effort") as "low" | "medium" | "high" | undefined;
+const side = arg("side") ? Number(arg("side")) : undefined;
 const pickFrom = arg("ids")?.split(",");
 
 async function main() {
@@ -80,7 +81,7 @@ async function main() {
     }
     const photo = Buffer.from(await blob.arrayBuffer());
     const type = /\.png$/i.test(r.photo_path) ? "image/png" : /\.webp$/i.test(r.photo_path) ? "image/webp" : "image/jpeg";
-    const read = await extractDocument(photo, type, effort ? { effort } : {});
+    const read = await extractDocument(photo, type, { ...(effort ? { effort } : {}), ...(side ? { maxSide: side } : {}) });
     if (!read.ok) {
       console.log(`${i + 1}. reading failed: ${read.code}${"detail" in read && read.detail ? ` — ${String(read.detail).slice(0, 420)}` : ""}`);
       continue;
@@ -118,7 +119,7 @@ async function main() {
   console.log(`  without our own (often uncorrected) buyer fields: ${pct(total.fair)}%`);
   console.log(`  tokens: ${tokens.in} in (${tokens.cached} from cache) / ${tokens.out} out · about $${cost.toFixed(2)} for ${out.length} readings`);
   mkdirSync("eval-results", { recursive: true });
-  const file = path.join("eval-results", `real-${effort ?? "live"}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
+  const file = path.join("eval-results", `real-${effort ?? "live"}${side ? `-${side}px` : ""}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
   writeFileSync(file, JSON.stringify({ effort: effort ?? "live", results: out, total, byGroup, tokens, cost }, null, 2));
   console.log(`Saved ${file}`);
 }

@@ -55,10 +55,32 @@ export function ourCompanyFrom(docs: readonly LedgerDoc[], companyTaxId: string)
   return { taxId: id, name, addressByBranch };
 }
 
-/** A fresh reading whose buyer is us: our known name (and the branch's address, when known) replace what was read */
+/** The buyer's tax ID as read is ours, or ours misread by one digit or without its leading 0 */
+export function isOurTaxId(read: string, ours: string): boolean {
+  const d = digitsOnly(read);
+  if (!ours || !d) return false;
+  if (d === ours) return true;
+  if (d.length === ours.length - 1 && ours.endsWith(d) && ours.startsWith("0")) return true;
+  if (d.length !== ours.length) return false;
+  let diff = 0;
+  for (let i = 0; i < d.length; i++) if (d[i] !== ours[i]) diff++;
+  return diff === 1;
+}
+
+/** A fresh reading whose buyer is us: our tax ID and known name (and the branch's address, when known) replace what was read */
 export function applyOurCompany(doc: LedgerDoc, ours: OurCompany): LedgerDoc {
-  if (!ours.taxId || digitsOnly(doc.customer.taxId) !== ours.taxId) return doc;
+  if (!ours.taxId || !isOurTaxId(doc.customer.taxId, ours.taxId)) return doc;
   const merge = (read: Tri, known: Partial<Tri> | undefined): Tri => ({ th: known?.th || read.th, en: known?.en || read.en, ja: known?.ja || read.ja });
   const address = ours.addressByBranch[branchNo(doc.customer.branch)];
-  return { ...doc, customer: { ...doc.customer, name: merge(doc.customer.name, ours.name), address: merge(doc.customer.address, address) } };
+  return { ...doc, customer: { ...doc.customer, taxId: ours.taxId, name: merge(doc.customer.name, ours.name), address: merge(doc.customer.address, address) } };
+}
+
+/** For the reading instructions: who the buyer usually is, so the AI copies our name and tax ID instead of re-spelling them */
+export function ourCompanyHint(ours: OurCompany | null): string {
+  if (!ours?.taxId || !(ours.name.th || ours.name.en)) return "";
+  const branches = Object.keys(ours.addressByBranch).sort();
+  return [
+    `The buyer (customer) is usually this company: tax ID ${ours.taxId}, Thai name "${ours.name.th ?? ""}", English name "${ours.name.en ?? ""}"${branches.length ? `, billed at head office or branches ${branches.join(", ")}` : ""}.`,
+    "When the buyer on the photo is this company, copy that tax ID and those names exactly; still read the buyer's branch and address from the photo.",
+  ].join("\n");
 }

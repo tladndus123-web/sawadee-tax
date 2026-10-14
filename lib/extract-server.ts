@@ -9,7 +9,7 @@ import { normalize } from "./normalize";
 import { isSlip, tileRects } from "./slip-tiles";
 import { categoryPrompt } from "./category-prompt";
 import { serverCategories } from "./categories-server";
-import { applyOurCompany } from "./our-company";
+import { applyOurCompany, ourCompanyHint } from "./our-company";
 import { readingHints } from "./reading-hints-server";
 import type { LedgerDoc } from "./types";
 
@@ -96,7 +96,10 @@ export const loadSharp = () =>
       return null;
     }));
 
-async function photoBlocks(image: Buffer, type: ImageType): Promise<Anthropic.ContentBlockParam[]> {
+/** Long side a normal photo is sent at (tokens grow with the pixels: 2400 px ≈ 4,200 tokens, 1568 px ≈ 1,800) */
+export const readSide = () => Number(process.env.READ_MAX_SIDE) || 0;
+
+async function photoBlocks(image: Buffer, type: ImageType, maxSide = readSide()): Promise<Anthropic.ContentBlockParam[]> {
   const sharp = await loadSharp();
   if (!sharp) return [imageBlock(image, type)];
   try {
@@ -104,7 +107,13 @@ async function photoBlocks(image: Buffer, type: ImageType): Promise<Anthropic.Co
     const turned = (meta.orientation ?? 1) >= 5;
     const width = (turned ? meta.height : meta.width) ?? 0;
     const height = (turned ? meta.width : meta.height) ?? 0;
-    if (!width || !height || !isSlip(width, height)) return [imageBlock(image, type)];
+    if (!width || !height) return [imageBlock(image, type)];
+    if (!isSlip(width, height)) {
+      // A normal photo larger than the reading size is scaled down first: the same text for fewer tokens
+      if (!maxSide || Math.max(width, height) <= maxSide) return [imageBlock(image, type)];
+      const small = await sharp(image).rotate().resize({ width: maxSide, height: maxSide, fit: "inside" }).jpeg({ quality: 90 }).toBuffer();
+      return [imageBlock(small, "image/jpeg")];
+    }
     const upright = await sharp(image).rotate().toBuffer();
     const tiles = tileRects(width, height);
     const pieces = await Promise.all(
@@ -131,7 +140,7 @@ async function photoBlocks(image: Buffer, type: ImageType): Promise<Anthropic.Co
 export async function extractDocument(
   image: Buffer,
   type: SourceType,
-  opts: { signal?: AbortSignal; model?: string; effort?: Effort; cutOut?: boolean } = {},
+  opts: { signal?: AbortSignal; model?: string; effort?: Effort; cutOut?: boolean; maxSide?: number } = {},
 ): Promise<ExtractOutcome> {
   const model = opts.model || readingSetup().model;
   const effort = opts.effort || readingSetup().effort;
@@ -157,7 +166,9 @@ export async function extractDocument(
         // them (owner, 2026-10-14). The company's own part (categories, known sellers) is a second cached block.
         system: [
           { type: "text", text: getPrompt(), cache_control: { type: "ephemeral" } },
-          ...(extra || hints.vendors ? [{ type: "text" as const, text: [extra, hints.vendors].filter(Boolean).join("\n\n"), cache_control: { type: "ephemeral" as const } }] : []),
+          ...(extra || hints.vendors || hints.ours
+            ? [{ type: "text" as const, text: [extra, ourCompanyHint(hints.ours), hints.vendors].filter(Boolean).join("\n\n"), cache_control: { type: "ephemeral" as const } }]
+            : []),
         ],
         messages: [
           {
@@ -168,7 +179,7 @@ export async function extractDocument(
                     { type: "document" as const, source: { type: "base64" as const, media_type: "application/pdf" as const, data: image.toString("base64") } },
                     { type: "text" as const, text: "The document is attached as a PDF (often an e-Tax Invoice / e-Receipt) instead of a photo: read it the same way." },
                   ]
-                : await photoBlocks(image, type)),
+                : await photoBlocks(image, type, opts.maxSide ?? readSide())),
               ...(opts.cutOut ? [{ type: "text" as const, text: CUT_OUT_NOTE }] : []),
               { type: "text", text: "Read this document following the instructions." },
             ],
