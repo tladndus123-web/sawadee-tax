@@ -3,7 +3,7 @@
 // Sales: the month's result (sales − purchases), the days of sales by channel, and the two ways to add a day —
 // a photo / PDF of the POS closing report (the AI reads it) or typing it in. The sales tax report opens from here.
 
-import { Camera, ChevronDown, FileSpreadsheet, FileText, Keyboard, Loader2, Table2, TrendingUp } from "lucide-react";
+import { Camera, ChevronDown, FileSpreadsheet, FileText, Info, Keyboard, Loader2, Table2, TrendingUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -77,6 +77,9 @@ export function SalesPage() {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [review, setReview] = useState<ReadPhoto[] | null>(null);
   const [importing, setImporting] = useState(false);
+  // How the page and the result are worked out: one tap away, not always on screen
+  const [about, setAbout] = useState(false);
+  const [resultAbout, setResultAbout] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const purchases = useMemo(() => pick(entries, "ledger").map((e) => e.doc), [entries]);
@@ -159,8 +162,13 @@ export function SalesPage() {
     <div className="mx-auto grid w-full max-w-5xl gap-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
-          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("sales.title")}</h1>
-          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">{t("sales.intro")}</p>
+          <h1 className="flex items-center gap-1 text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">
+            {t("sales.title")}
+            <button type="button" onClick={() => setAbout((v) => !v)} aria-expanded={about} aria-label={t("cost.about")} className="press grid size-10 place-items-center rounded-full hover:bg-muted">
+              <Info className={cn("size-[18px]", about ? "text-primary" : "text-muted-foreground")} />
+            </button>
+          </h1>
+          {about && <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">{t("sales.intro")}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" className="h-11 rounded-full px-5 text-[15px]" disabled={reading} onClick={() => fileRef.current?.click()}>
@@ -198,8 +206,26 @@ export function SalesPage() {
         </div>
       )}
 
+      {/* The month is the heading and changes right there (as on the dashboard); the two reports beside it */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">{monthLabel(month)}</h2>
+        <span className="relative">
+          <select
+            value={month}
+            onChange={(e) => {
+              setMonth(e.target.value);
+              setShown(PAGE);
+            }}
+            aria-label={t("dash.month")}
+            className="press h-11 cursor-pointer appearance-none rounded-full bg-card py-0 pr-10 pl-4 text-xl font-bold tracking-tight shadow-[var(--shadow-soft)] ring-1 ring-border"
+          >
+            {months.map((m) => (
+              <option key={m} value={m}>
+                {monthLabel(m)}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        </span>
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/sales/pl" className="press inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-4 text-sm font-medium">
             <Table2 className="size-4 text-brand" aria-hidden />
@@ -209,25 +235,21 @@ export function SalesPage() {
             <FileText className="size-4 text-bad" aria-hidden />
             {t("sales.report")}
           </Link>
-          <select className="h-10 rounded-xl border bg-background px-3 text-sm" value={month} onChange={(e) => {
-            setMonth(e.target.value);
-            setShown(PAGE);
-          }} aria-label={t("dash.month")}>
-            {months.map((m) => (
-              <option key={m} value={m}>
-                {monthLabel(m)}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 
       {/* The month's result */}
       <section className="workspace-panel hover-lift [--lift:1.006] grid gap-4 p-5 sm:p-6" aria-label={t("sales.result")}>
-        <p className="flex items-center gap-2 text-sm font-semibold">
-          <TrendingUp className="size-4 text-brand" aria-hidden />
-          {t("sales.result")}
-        </p>
+        <div className="flex items-center gap-1">
+          <p className="flex flex-1 items-center gap-2 text-sm font-semibold">
+            <TrendingUp className="size-4 text-brand" aria-hidden />
+            {t("sales.result")}
+          </p>
+          <button type="button" onClick={() => setResultAbout((v) => !v)} aria-expanded={resultAbout} aria-label={t("cost.about")} className="press grid size-9 place-items-center rounded-full hover:bg-muted">
+            <Info className={cn("size-4", resultAbout ? "text-primary" : "text-muted-foreground")} />
+          </button>
+        </div>
+        {resultAbout && <p className="rounded-xl bg-muted/50 px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">{t("sales.resultNote")}</p>}
         <div className="grid gap-3 sm:grid-cols-3">
           <Fact label={t("sales.salesValue")} value={baht(r.salesValue)} sub={t("sales.salesSub", { gross: baht(r.salesGross), days: r.days })} />
           <Fact label={t("sales.cost")} value={baht(r.purchasesCost)} sub={[r.depreciation ? t("sales.costSubDep", { gross: baht(r.purchasesGross), dep: baht(r.depreciation) }) : t("sales.costSub", { gross: baht(r.purchasesGross) }), r.labor ? t("cost.laborIn", { labor: baht(r.labor) }) : ""].filter(Boolean).join(" · ")} />
@@ -255,7 +277,6 @@ export function SalesPage() {
             <b className={cn("tabular-nums", r.profit - fees.fee < 0 ? "text-bad" : "text-brand")}>{baht(r.profit - fees.fee)}</b>
           </p>
         )}
-        <p className="text-[11px] leading-relaxed text-muted-foreground">{t("sales.resultNote")}</p>
       </section>
 
       {/* Food cost, labour and rent against sales */}
@@ -354,7 +375,7 @@ function Fact({ label, value, sub, tone }: { label: string; value: string; sub: 
     <div className="grid gap-0.5 rounded-2xl bg-muted/60 px-4 py-3">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className={cn("text-[22px] font-semibold tracking-tight tabular-nums", tone === "brand" && "text-brand", tone === "bad" && "text-bad")}>{value}</span>
-      <span className="text-[11px] text-muted-foreground">{sub}</span>
+      <span className="text-xs text-muted-foreground">{sub}</span>
     </div>
   );
 }

@@ -565,7 +565,9 @@
     "saleDocs": "レシート番号",
     "bills": "件数",
     "gross": "売上（VAT込み）",
-    "saleNet": "売上（VAT抜き）"
+    "saleNet": "売上（VAT抜き）",
+    "menu": "書き出し",
+    "packShort": "Excel・写真・PDFを1つのファイルに"
   },
   "vendors": {
     "title": "取引先",

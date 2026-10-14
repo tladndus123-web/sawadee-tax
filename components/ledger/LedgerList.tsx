@@ -528,11 +528,14 @@ const DocRow = memo(function DocRow({
         <Thumb path={e.photoPath} />
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-baseline gap-2">
-            <span className="truncate text-[15px] font-semibold">{sellerOf(e, docName)}</span>
+            {/* Long vendor names wrap to a second line instead of being cut */}
+            <span className="line-clamp-2 text-[15px] leading-snug font-semibold break-words">{sellerOf(e, docName)}</span>
             {draft && <span className="flex-none rounded-full bg-warn-soft px-2 py-0.5 text-[11px] font-semibold text-warn">{t("archive.draftBadge")}</span>}
-            <span className="ml-auto flex-none text-[15px] font-semibold whitespace-nowrap tabular-nums">{baht(e.doc.totals.net)}</span>
+            {/* Wider screens: the amount beside the name; phones: on the line below, so the name has the width */}
+            <span className="ml-auto flex-none text-[15px] font-semibold whitespace-nowrap tabular-nums max-sm:hidden">{baht(e.doc.totals.net)}</span>
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs whitespace-nowrap text-muted-foreground">
+            <span className="text-[15px] font-semibold text-foreground tabular-nums sm:hidden">{baht(e.doc.totals.net)}</span>
             <span className="font-medium text-foreground/70">{t(`docTypeShort.${e.doc.docType}`)}</span>
             {e.doc.docNo && <span className="mono max-sm:hidden">{e.doc.docNo}</span>}
             <BranchTag id={e.doc.branchId} />
@@ -561,17 +564,17 @@ const DocRow = memo(function DocRow({
           )}
         </span>
       </Link>
-      {/* phones: a line break, so the button below gets a line of its own */}
-      {flagged && !draft && <span aria-hidden className="h-0 basis-full sm:hidden max-sm:order-last" />}
+      {/* "문제 없음": in the row itself — a round check on phones, with its words on wider screens */}
       {flagged && !draft && (
         <button
           type="button"
           onClick={() => void accept()}
-          className="press flex h-10 flex-none items-center gap-1 rounded-full border border-input bg-background px-3 text-xs pointer-fine:h-8 pointer-fine:px-2.5 font-medium hover:bg-muted max-sm:order-last max-sm:mb-2.5 max-sm:ml-[70px]"
+          aria-label={t("ack.button")}
+          className="press grid size-10 flex-none place-items-center rounded-full border border-input bg-background text-xs font-medium hover:bg-muted sm:flex sm:h-8 sm:w-auto sm:items-center sm:gap-1 sm:px-2.5"
           title={t("ack.hint")}
         >
-          <Check className="size-3.5" aria-hidden />
-          {t("ack.button")}
+          <Check className="size-4 text-ok sm:size-3.5 sm:text-current" aria-hidden />
+          <span className="max-sm:hidden">{t("ack.button")}</span>
         </button>
       )}
       <StickerPopover value={e.doc.stickers} onChange={setStickers} label={t("archive.stickerEdit")} />

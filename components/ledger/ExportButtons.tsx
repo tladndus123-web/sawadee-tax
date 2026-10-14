@@ -1,10 +1,11 @@
 "use client";
 
-import { FileArchive, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { ChevronDown, Download, FileArchive, FileSpreadsheet, FileText, Loader2, ReceiptText } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link } from "@/i18n/navigation";
 import { flagsFor } from "@/lib/checks";
 import { useCompany } from "@/lib/company-store";
@@ -166,25 +167,43 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
     }
   };
 
+  // One menu instead of four buttons; while a file is being made the button says so
+  const working = busy || !!packing;
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2 px-1 pb-1">
-      <Button type="button" variant="secondary" className="h-9 rounded-full px-4" onClick={() => void excel()} disabled={busy || !entries.length}>
-        {busy ? <Loader2 className="size-4 animate-spin" /> : <FileSpreadsheet className="size-4 text-ok" />}
-        {busy ? t("export.exporting") : t("export.excel")}
-      </Button>
-      <Button type="button" variant="secondary" className="h-9 rounded-full px-4" onClick={() => void pack()} disabled={busy || !entries.length} title={t("export.packHint")}>
-        {packing ? <Loader2 className="size-4 animate-spin" /> : <FileArchive className="size-4 text-brand" />}
-        {packing ? t("export.packing", { done: packing.done, total: packing.total }) : t("export.pack")}
-      </Button>
-      <Button asChild variant="secondary" className="h-9 rounded-full px-4">
-        <Link href={`/ledger/report/${month}?print=1`}>
-          <FileText className="size-4 text-bad" />
-          {t("export.pdf")}
-        </Link>
-      </Button>
-      <Button asChild variant="ghost" className="h-9 rounded-full px-3 text-muted-foreground">
-        <Link href={`/ledger/wht/${month}`}>{t("whtList.short")}</Link>
-      </Button>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="secondary" className="h-10 rounded-full px-4 pointer-fine:h-9" disabled={working}>
+          {working ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+          {packing ? t("export.packing", { done: packing.done, total: packing.total }) : busy ? t("export.exporting") : t("export.menu")}
+          {!working && <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden />}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64 rounded-xl">
+        <DropdownMenuItem disabled={!entries.length} onSelect={() => void excel()} className="gap-2 py-2.5">
+          <FileSpreadsheet className="size-4 text-ok" />
+          {t("export.excel")}
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!entries.length} onSelect={() => void pack()} className="items-start gap-2 py-2.5">
+          <FileArchive className="mt-0.5 size-4 text-brand" />
+          <span className="grid gap-0.5">
+            {t("export.pack")}
+            <span className="text-[11px] leading-snug text-muted-foreground">{t("export.packShort")}</span>
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="gap-2 py-2.5">
+          <Link href={`/ledger/report/${month}?print=1`}>
+            <FileText className="size-4 text-bad" />
+            {t("export.pdf")}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild className="gap-2 py-2.5">
+          <Link href={`/ledger/wht/${month}`}>
+            <ReceiptText className="size-4 text-muted-foreground" />
+            {t("whtList.short")}
+          </Link>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -565,7 +565,9 @@
     "saleDocs": "영수증 번호",
     "bills": "건수",
     "gross": "매출 (부가세 포함)",
-    "saleNet": "매출 (부가세 제외)"
+    "saleNet": "매출 (부가세 제외)",
+    "menu": "내보내기",
+    "packShort": "엑셀 · 사진 · PDF를 한 파일로"
   },
   "vendors": {
     "title": "거래처",

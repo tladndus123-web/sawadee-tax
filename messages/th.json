@@ -565,7 +565,9 @@
     "saleDocs": "เลขที่ใบเสร็จ",
     "bills": "จำนวนบิล",
     "gross": "ยอดขาย (รวม VAT)",
-    "saleNet": "ยอดขาย (ไม่รวม VAT)"
+    "saleNet": "ยอดขาย (ไม่รวม VAT)",
+    "menu": "ส่งออก",
+    "packShort": "Excel · รูป · PDF ในไฟล์เดียว"
   },
   "vendors": {
     "title": "ผู้ขาย",

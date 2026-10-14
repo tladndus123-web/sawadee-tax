@@ -565,7 +565,9 @@
     "saleDocs": "Receipt numbers",
     "bills": "Bills",
     "gross": "Sales (incl. VAT)",
-    "saleNet": "Sales (excl. VAT)"
+    "saleNet": "Sales (excl. VAT)",
+    "menu": "Export",
+    "packShort": "Excel, photos and PDFs in one file"
   },
   "vendors": {
     "title": "Vendors",
