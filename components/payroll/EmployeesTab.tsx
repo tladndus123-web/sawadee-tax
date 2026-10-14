@@ -138,15 +138,18 @@ export function EmployeesTab() {
                   <UserRound className="size-5" />
                 </span>
                 <span className="grid min-w-0 flex-1 gap-0.5">
-                  <span className="truncate text-[15px] font-semibold">
+                  <span className="line-clamp-2 text-[15px] leading-snug font-semibold break-words">
                     {e.name}
                     {e.nickname && <span className="ml-1.5 text-xs font-normal text-muted-foreground">({e.nickname})</span>}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">
                     {[e.position, maskId(e.nationalId), left ? t("left", { date: sd(e.endDate) }) : ""].filter(Boolean).join(" · ")}
                   </span>
+                  <span className="text-[13px] font-semibold tabular-nums sm:hidden">
+                    {baht(e.rate)} <span className="text-[11px] font-normal text-muted-foreground">{t(e.payType === "monthly" ? "perMonth" : "perDay")}</span>
+                  </span>
                 </span>
-                <span className="grid flex-none text-right">
+                <span className="grid flex-none text-right max-sm:hidden">
                   <span className="text-[15px] font-semibold tabular-nums">{baht(e.rate)}</span>
                   <span className="text-[11px] text-muted-foreground">{t(e.payType === "monthly" ? "perMonth" : "perDay")}</span>
                 </span>

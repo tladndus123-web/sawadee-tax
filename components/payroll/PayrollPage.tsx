@@ -3,6 +3,7 @@
 // Payroll (admins only): pay run per month, employees, filings. Staff never see salaries or ID numbers — the database
 // refuses them too (RLS).
 
+import { Info } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { monthDate } from "@/lib/archive";
@@ -20,10 +21,12 @@ const TABS: Tab[] = ["attendance", "run", "employees", "filing"];
 
 export function PayrollPage() {
   const t = useTranslations("pay");
+  const tc = useTranslations("cost");
   const locale = useLocale();
   const me = useMe();
   const { employees, loaded } = useBranchEmployees();
   const [tab, setTab] = useState<Tab | null>(null);
+  const [about, setAbout] = useState(false);
   const today = todayBangkok().slice(0, 7);
   const [month, setMonth] = useState(today);
   // A link can open the page at a month (/…?month=2026-08, from the closing checklist)
@@ -44,8 +47,13 @@ export function PayrollPage() {
   return (
     <div className={cn("mx-auto grid w-full gap-5", shown === "attendance" ? "max-w-6xl" : shown === "run" ? "max-w-4xl" : "max-w-3xl")}>
       <header className="grid gap-1">
-        <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("title")}</h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("intro")}</p>
+        <h1 className="flex items-center gap-1 text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">
+          {t("title")}
+          <button type="button" onClick={() => setAbout((v) => !v)} aria-expanded={about} aria-label={tc("about")} className="press grid size-10 place-items-center rounded-full hover:bg-muted">
+            <Info className={cn("size-[18px]", about ? "text-primary" : "text-muted-foreground")} />
+          </button>
+        </h1>
+        {about && <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("intro")}</p>}
       </header>
 
       <div className="flex flex-wrap items-center gap-2">

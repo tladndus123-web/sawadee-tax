@@ -35,7 +35,6 @@ import { useMonthLabel } from "@/components/ledger/Stickers";
 import { ContinuousCamera } from "./ContinuousCamera";
 import { MaxNotice } from "./MaxNotice";
 import { ReadingLoader } from "./ReadingLoader";
-import { UploadTips } from "./UploadTips";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,application/pdf,.pdf";
 
@@ -197,7 +196,6 @@ export function BatchUpload() {
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
       </div>
 
-      {items.length === 0 && <UploadTips />}
 
       {items.length > 0 && (
         <section className="grid gap-3" aria-label={t("batch.back")}>
