@@ -9,6 +9,8 @@ import { normalize } from "./normalize";
 import { isSlip, tileRects } from "./slip-tiles";
 import { categoryPrompt } from "./category-prompt";
 import { serverCategories } from "./categories-server";
+import { applyOurCompany } from "./our-company";
+import { readingHints } from "./reading-hints-server";
 import type { LedgerDoc } from "./types";
 
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -27,6 +29,8 @@ export type ExtractOutcome =
       model: string;
       effort: Effort;
       inputTokens: number;
+      /** Of inputTokens, read from the prompt cache (a tenth of the price) */
+      cachedTokens: number;
       outputTokens: number;
       ms: number;
       /** Fields in the reply that did not match extractSchema (normalize() still cleans them) */
@@ -138,8 +142,9 @@ export async function extractDocument(
   }
 
   const started = Date.now();
-  // The company's own categories (settings), added to the instructions
-  const extra = categoryPrompt(await serverCategories());
+  // The company's own categories (settings) and the sellers it already knows, added to the instructions
+  const [categories, hints] = await Promise.all([serverCategories(), readingHints()]);
+  const extra = categoryPrompt(categories);
   try {
     // Plain JSON by prompt (the prototype's proven approach). A structured-output schema this size is
     // rejected by the API ("compiled grammar is too large"), so the shape is checked with zod afterwards.
@@ -148,6 +153,12 @@ export async function extractDocument(
         model,
         max_tokens: 16000,
         output_config: { effort },
+        // The instructions go first and are cached: every photo after the first within 5 minutes pays a tenth for
+        // them (owner, 2026-10-14). The company's own part (categories, known sellers) is a second cached block.
+        system: [
+          { type: "text", text: getPrompt(), cache_control: { type: "ephemeral" } },
+          ...(extra || hints.vendors ? [{ type: "text" as const, text: [extra, hints.vendors].filter(Boolean).join("\n\n"), cache_control: { type: "ephemeral" as const } }] : []),
+        ],
         messages: [
           {
             role: "user",
@@ -159,8 +170,7 @@ export async function extractDocument(
                   ]
                 : await photoBlocks(image, type)),
               ...(opts.cutOut ? [{ type: "text" as const, text: CUT_OUT_NOTE }] : []),
-              { type: "text", text: extra ? `${getPrompt()}
-${extra}` : getPrompt() },
+              { type: "text", text: "Read this document following the instructions." },
             ],
           },
         ],
@@ -170,17 +180,19 @@ ${extra}` : getPrompt() },
     const text = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
     const parsed = parseReply(text);
     if (response.stop_reason === "refusal" || response.stop_reason === "max_tokens" || !parsed) {
-      return { ok: false, code: "aiFail", status: 502, detail: `stop_reason=${response.stop_reason}; ${parsed ? "" : "no JSON in reply"}` };
+      return { ok: false, code: "aiFail", status: 502, detail: `stop_reason=${response.stop_reason}; ${parsed ? "" : `no JSON in reply: ${text.slice(0, 300).replace(/\s+/g, " ")}`}` };
     }
     if (parsed.notDocument === true) return { ok: false, code: "notDoc", status: 422 };
     const check = extractSchema.safeParse(parsed);
     return {
       ok: true,
-      doc: normalize(extractedToRaw(parsed)),
+      // The buyer is usually us: our known name and branch address replace a misread (lib/our-company)
+      doc: hints.ours ? applyOurCompany(normalize(extractedToRaw(parsed)), hints.ours) : normalize(extractedToRaw(parsed)),
       schemaIssues: check.success ? [] : check.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`),
       model: response.model,
       effort,
-      inputTokens: response.usage.input_tokens,
+      inputTokens: response.usage.input_tokens + (response.usage.cache_read_input_tokens ?? 0) + (response.usage.cache_creation_input_tokens ?? 0),
+      cachedTokens: response.usage.cache_read_input_tokens ?? 0,
       outputTokens: response.usage.output_tokens,
       ms: Date.now() - started,
     };

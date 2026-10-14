@@ -47,3 +47,19 @@ describe("MaxNotice", () => {
     expect(src).toContain(`const MAX_QUEUE = ${MAX_QUEUE};`);
   });
 });
+
+describe("parseReply: an object closed one brace early", () => {
+  it("reads the object and the fields that trail it", () => {
+    const text = '{"docNo":"A-1","note":{"th":"x","en":"y"}},"fieldBoxes":[{"path":"docNo","box":[0.1,0.2,0.3,0.04]}]}';
+    expect(parseReply(text)).toEqual({ docNo: "A-1", note: { th: "x", en: "y" }, fieldBoxes: [{ path: "docNo", box: [0.1, 0.2, 0.3, 0.04] }] });
+  });
+  it("keeps the object when what trails it cannot be read", () => {
+    expect(parseReply('{"docNo":"A-1"},"fieldBoxes":[{"path":"x"},]}')).toEqual({ docNo: "A-1" });
+    // and an extra brace before the trailing fields
+    expect(parseReply('{"docNo":"A-1"}},"memo":"m"}')).toEqual({ docNo: "A-1", memo: "m" });
+  });
+  it("still gives up on a reply that is not JSON at all", () => {
+    expect(parseReply("Sorry, I cannot read this.")).toBeNull();
+    expect(parseReply('{"docNo": oops}')).toBeNull();
+  });
+});

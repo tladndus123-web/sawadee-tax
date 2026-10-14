@@ -86,11 +86,28 @@ export function parseReply(text: string): Record<string, unknown> | null {
   const a = text.indexOf("{");
   const b = text.lastIndexOf("}");
   if (a < 0 || b <= a) return null;
+  const s = text.slice(a, b + 1);
+  const asObject = (v: unknown) => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
   try {
-    const v: unknown = JSON.parse(text.slice(a, b + 1));
-    return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
-  } catch {
-    return null;
+    return asObject(JSON.parse(s));
+  } catch (error) {
+    // The model sometimes closes the object one brace early and puts the last fields after it:
+    // {"docNo": …}},"fieldBoxes":[…]}  → read the object, then the fields that trail it
+    const at = Number(/position (\d+)/.exec(String(error))?.[1] ?? -1);
+    if (at <= 0) return null;
+    try {
+      const main = asObject(JSON.parse(s.slice(0, at)));
+      if (!main) return null;
+      const rest = s.slice(at).replace(/^[\s}]+/, "");
+      if (!rest.startsWith(",")) return main;
+      try {
+        return { ...main, ...(asObject(JSON.parse(`{${rest.slice(1)}`)) ?? {}) };
+      } catch {
+        return main;
+      }
+    } catch {
+      return null;
+    }
   }
 }
 
