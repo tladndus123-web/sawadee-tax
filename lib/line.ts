@@ -213,6 +213,46 @@ export function vatReminder(v: VatReminder, url: string, opts: { force?: boolean
   );
 }
 
+export interface WhtReminder {
+  /** Month the payments were made in, YYYY-MM */
+  month: string;
+  due: string;
+  daysLeft: number;
+  pnd53: { count: number; tax: number };
+  pnd3: { count: number; tax: number };
+}
+
+/**
+ * The withholding returns on payments to suppliers (ภ.ง.ด.53 companies, ภ.ง.ด.3 people), owner 2026-10-15: due like
+ * ภ.ง.ด.1 (paper the 7th, online the 15th of the next month), on the same reminder days, only when tax was withheld.
+ */
+export function whtReminder(v: WhtReminder, url: string, opts: { force?: boolean } = {}): string | null {
+  if (!opts.force && !VAT_REMIND_DAYS.includes(v.daysLeft)) return null;
+  if (!v.pnd53.count && !v.pnd3.count) return null;
+  const [y, m] = v.month.split("-");
+  const forms = [v.pnd53.count ? "ภ.ง.ด.53" : "", v.pnd3.count ? "ภ.ง.ด.3" : ""].filter(Boolean).join(" / ");
+  return both(
+    [
+      `แจ้งเตือนยื่น ${forms}`,
+      `เดือนที่จ่าย ${m}/${Number(y) + 543} · ยื่นภายใน ${dmy(v.due)} (อีก ${v.daysLeft} วัน)`,
+      "",
+      ...(v.pnd53.count ? [`ภ.ง.ด.53 (นิติบุคคล): ${v.pnd53.count} ราย · ภาษี ${baht(v.pnd53.tax)}`] : []),
+      ...(v.pnd3.count ? [`ภ.ง.ด.3 (บุคคลธรรมดา): ${v.pnd3.count} ราย · ภาษี ${baht(v.pnd3.tax)}`] : []),
+      "",
+      url,
+    ].join("\n"),
+    [
+      "源泉徴収（仕入先）申告のお知らせ",
+      `${y}年${Number(m)}月の支払い分 · 期限 ${dmy(v.due)}（あと${v.daysLeft}日）`,
+      "",
+      ...(v.pnd53.count ? [`ภ.ง.ด.53（法人）：${v.pnd53.count}件 · 税額 ${baht(v.pnd53.tax)}`] : []),
+      ...(v.pnd3.count ? [`ภ.ง.ด.3（個人）：${v.pnd3.count}件 · 税額 ${baht(v.pnd3.tax)}`] : []),
+      "",
+      url,
+    ].join("\n"),
+  );
+}
+
 export interface PayrollReminder {
   /** Pay month being filed, YYYY-MM */
   month: string;

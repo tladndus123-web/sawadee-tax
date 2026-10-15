@@ -57,6 +57,25 @@ describe("VAT return reminder (LINE)", async () => {
   });
 });
 
+describe("withholding return reminder (LINE)", async () => {
+  const { whtReminder } = await import("./line");
+  const base = { month: "2026-09", due: "2026-10-15", pnd53: { count: 2, tax: 450 }, pnd3: { count: 0, tax: 0 } };
+  it("is sent 3 days and 1 day before the deadline, only when tax was withheld", () => {
+    expect(whtReminder({ ...base, daysLeft: 5 }, "https://x")).toBeNull();
+    expect(whtReminder({ ...base, daysLeft: 3 }, "https://x")).not.toBeNull();
+    expect(whtReminder({ ...base, daysLeft: 1, pnd53: { count: 0, tax: 0 } }, "https://x")).toBeNull();
+  });
+  it("names the forms, the month, the deadline and the tax", () => {
+    const text = whtReminder({ ...base, daysLeft: 1, pnd3: { count: 1, tax: 30 } }, "https://x/ledger/wht/2026-09")!;
+    expect(text).toContain("แจ้งเตือนยื่น ภ.ง.ด.53 / ภ.ง.ด.3");
+    expect(text).toContain("09/2569");
+    expect(text).toContain("15/10/2026");
+    expect(text).toContain("ภ.ง.ด.53 (นิติบุคคล): 2 ราย · ภาษี ฿ 450.00");
+    expect(text).toContain("2026年9月の支払い分");
+    expect(text.endsWith("https://x/ledger/wht/2026-09")).toBe(true);
+  });
+});
+
 describe("phone notification made from a reminder", async () => {
   const { toPush } = await import("./push-server");
   it("first line is the title, the next two the body; the link line is dropped", () => {

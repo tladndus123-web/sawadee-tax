@@ -4,12 +4,14 @@
 // - the VAT return (ภ.พ.30): what is left to check and the input VAT that can be claimed, on its reminder days
 //   while the month is open (or always, for a test);
 // - payroll filings (ภ.ง.ด.1, สปส.1-10): withholding and social security of last month's saved payroll, likewise;
+// - withholding on payments to suppliers (ภ.ง.ด.53 / ภ.ง.ด.3) of last month, on the same days, when tax was withheld;
 // - employee documents (work permit, visa …) that expire within 30 days.
 
 import { monthKey } from "./archive";
 import { type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
 import { summarize, vatFiling } from "./dashboard";
-import { documentReminder, payrollReminder, vatReminder } from "./line";
+import { documentReminder, payrollReminder, vatReminder, whtReminder } from "./line";
+import { buildWhtList } from "./wht";
 import { appUrl } from "./line-bot";
 import { serverCategories } from "./categories-server";
 import { expiringDocuments, parseDocuments } from "./attendance";
@@ -58,6 +60,22 @@ export async function reminderTexts(admin: Admin, today: string, opts: { test?: 
     const sum = (k: "wht" | "ss_employee" | "ss_employer") => lines.data.reduce((a, r) => a + Math.round(Number(r[k]) * 100), 0) / 100;
     pay = payrollReminder({ ...pf, wht: sum("wht"), ss: sum("ss_employee") + sum("ss_employer") }, `${url}payroll`, { force: opts.test });
   }
+  // Withholding on suppliers paid last month: same deadlines as ภ.ง.ด.1, only while the month is open
+  let wht: string | null = null;
+  if (!payLock.data || opts.test) {
+    const w = buildWhtList(saved, pf.month);
+    wht = whtReminder(
+      {
+        month: pf.month,
+        due: pf.due,
+        daysLeft: pf.daysLeft,
+        pnd53: { count: w.pnd53.length, tax: w.totals.pnd53.tax },
+        pnd3: { count: w.pnd3.length, tax: w.totals.pnd3.tax },
+      },
+      `${url}ledger/wht/${pf.month}`,
+      { force: opts.test },
+    );
+  }
   // Employee documents (work permit, visa …) running out: 30 / 7 / 1 / 0 days before, and every day once expired
   const { data: staff } = await admin.from("employees").select("id, name, nickname, end_date, documents");
   const expiring = expiringDocuments(
@@ -69,5 +87,5 @@ export async function reminderTexts(admin: Admin, today: string, opts: { test?: 
     `${url}payroll`,
     { force: opts.test },
   );
-  return [vat, pay, docTexts].filter((x): x is string => !!x);
+  return [vat, pay, wht, docTexts].filter((x): x is string => !!x);
 }
