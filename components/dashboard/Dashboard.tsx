@@ -273,10 +273,10 @@ function Tile({
   tone?: "brand" | "bad" | "warn";
 }) {
   return (
-    <div className="workspace-panel hover-lift grid content-start gap-1.5 p-4 sm:p-5">
-      <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        <Icon className="size-3.5" aria-hidden />
-        {label}
+    <div className="workspace-panel hover-lift row-span-3 grid min-w-0 grid-rows-subgrid gap-2 p-4 sm:p-5">
+      <span className="flex items-start gap-2 text-[13px] leading-5 font-medium text-muted-foreground">
+        <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <span>{label}</span>
       </span>
       <span
         // A new value (another month) remounts the number, so it rolls in
@@ -284,7 +284,7 @@ function Tile({
         className={cn(
           // Whole baht here (the ledger keeps the satang); shrinks with the screen to stay on one line
           "num-in text-[clamp(1.25rem,5.6vw,1.75rem)] leading-tight font-semibold tracking-tight whitespace-nowrap tabular-nums",
-          value === 0 && "text-muted-foreground/60",
+          value === 0 && "text-muted-foreground",
           value !== 0 && tone === "brand" && "text-brand",
           value !== 0 && tone === "bad" && "text-bad",
           value !== 0 && tone === "warn" && "text-warn",
@@ -292,7 +292,7 @@ function Tile({
       >
         {value === 0 ? "฿0" : bahtWhole(value)}
       </span>
-      {note && <span className="text-xs leading-snug text-muted-foreground">{note}</span>}
+      {note && <span className="mt-1 border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">{note}</span>}
     </div>
   );
 }
