@@ -34,6 +34,13 @@ export function signedInAt(accessToken: string): number | null {
   return times.length ? Math.min(...times) * 1000 : null;
 }
 
+/** How this session signed in (the token's amr methods, e.g. "otp", "magiclink", "passkey") */
+export function signInMethods(accessToken: string): string[] {
+  const amr = payload(accessToken)?.amr;
+  if (!Array.isArray(amr)) return [];
+  return amr.map((a) => (a && typeof a === "object" ? String((a as { method?: unknown }).method ?? "") : "")).filter(Boolean);
+}
+
 /** When the sign-in stops being valid (ms), or null when the token carries no sign-in time. */
 export function sessionEndsAt(accessToken: string, hours: number = SESSION_HOURS): number | null {
   const at = signedInAt(accessToken);

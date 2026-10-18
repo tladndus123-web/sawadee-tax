@@ -86,6 +86,33 @@ jobs:
           npx supabase db push --linked --password "$SUPABASE_DB_PASSWORD" --yes
           npx supabase test db --linked
 
+      # Face ID / fingerprint sign-in (passkeys) on the cloud project, for the site's own address (2026-10-18).
+      # Changed only when it differs; a failure to change it stops the deploy (the site's passkey buttons need it).
+      - name: Passkey sign-in
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::warning::SUPABASE_ACCESS_TOKEN is not set: passkey sign-in settings not checked."
+            exit 0
+          fi
+          ENV=.vercel/.env.production.local
+          REF=$(grep -E '^NEXT_PUBLIC_SUPABASE_URL=' "$ENV" | sed -E 's#.*https://([a-z0-9]+)\.supabase\.co.*#\1#')
+          SITE=$(grep -E '^NEXT_PUBLIC_APP_URL=' "$ENV" | sed -E 's/^[^=]*=//; s/^"//; s/"$//; s#/+$##')
+          case "$SITE" in https://*) ;; *) SITE=https://thai-receipt-ledger.vercel.app ;; esac
+          HOST=${SITE#https://}
+          API="https://api.supabase.com/v1/projects/$REF/config/auth"
+          if ! CUR=$(curl -fsS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" "$API"); then
+            echo "::warning::Could not read the auth settings: passkey sign-in not checked."
+            exit 0
+          fi
+          OK=$(echo "$CUR" | jq -r --arg h "$HOST" --arg o "$SITE" '.passkey_enabled == true and .webauthn_rp_id == $h and .webauthn_rp_origins == $o')
+          if [ "$OK" = "true" ]; then
+            echo "Passkey sign-in is on for $SITE"
+            exit 0
+          fi
+          BODY=$(jq -n --arg h "$HOST" --arg o "$SITE" '{passkey_enabled: true, webauthn_rp_display_name: "Sawadee TAX", webauthn_rp_id: $h, webauthn_rp_origins: $o}')
+          curl -fsS -X PATCH -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" -d "$BODY" "$API" > /dev/null
+          echo "Passkey sign-in turned on for $SITE"
+
       - name: Build and deploy
         run: |
           npx --yes vercel@61 build --prod --token="$VERCEL_TOKEN"

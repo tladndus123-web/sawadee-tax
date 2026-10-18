@@ -1,4 +1,4 @@
-import { Bell, CalendarClock, FileText, MessageCircle, Shapes, Smartphone, Store, Tag, UserPlus } from "lucide-react";
+import { Bell, CalendarClock, FileText, MessageCircle, ScanFace, Shapes, Smartphone, Store, Tag, UserPlus } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FormSettings } from "@/components/settings/FormSettings";
 import { AccountCard, CompanyCard } from "@/components/settings/AccountSettings";
@@ -9,6 +9,7 @@ import { BranchCard } from "@/components/settings/BranchCard";
 import { CategoryCard } from "@/components/settings/CategoryCard";
 import { FixedCostCard } from "@/components/settings/FixedCostCard";
 import { InstallCard } from "@/components/settings/InstallCard";
+import { PasskeyCard } from "@/components/settings/PasskeyCard";
 import { PushCard } from "@/components/settings/PushCard";
 import { FoldAllButton, SettingsFold } from "@/components/settings/SettingsFold";
 import type { Locale } from "@/i18n/routing";
@@ -37,6 +38,9 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
         </SettingsFold>
         <SettingsFold icon={<CalendarClock className="text-brand" />} title={t("fixed.title")}>
           <FixedCostCard />
+        </SettingsFold>
+        <SettingsFold icon={<ScanFace className="text-brand" />} title={t("passkey.title")}>
+          <PasskeyCard />
         </SettingsFold>
         <SettingsFold icon={<Smartphone className="text-brand" />} title={t("install.title")}>
           <InstallCard />

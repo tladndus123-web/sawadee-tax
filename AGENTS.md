@@ -36,7 +36,7 @@ the prompts, caching and accuracy tests are built around Claude models).
 | Install | `npm ci` |
 | Types | `npx tsc --noEmit` |
 | Lint | `npx eslint .` |
-| Unit tests | `npx vitest run` (419 tests) |
+| Unit tests | `npx vitest run` (422 tests) |
 | Build | `npx next build` |
 | Database rules | `npm run db:test` (pgTAP 231 + STOCK 61) — needs Docker + `npx supabase start`; if Docker is not available, say so: the deploy workflow runs them on the cloud before going live |
 

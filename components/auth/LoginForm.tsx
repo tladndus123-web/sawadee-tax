@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { CODE_LENGTH, pickCode, readClipboard } from "@/lib/auth/otp-code";
+import { passkeyHere, passkeySupported } from "@/lib/auth/passkey";
 import { SESSION_HOURS } from "@/lib/auth/session-limit";
 import { supabaseBrowser, supabaseLinkSender } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { OrRule, PasskeySignIn } from "./PasskeySignIn";
 
 /** Local Supabase keeps sent mail in Mailpit instead of delivering it */
 const LOCAL_MAIL = "http://127.0.0.1:54324";
@@ -48,6 +50,11 @@ export function LoginForm() {
   const codeBox = useRef<HTMLInputElement>(null);
   // The last code sent for checking: a wrong one is not sent again by itself
   const tried = useRef("");
+  // Face ID sign-in: offered where the device can do it; first when this device registered a passkey
+  const [passkey, setPasskey] = useState<"none" | "offer" | "first">("none");
+  useEffect(() => {
+    void passkeySupported().then((ok) => setPasskey(!ok ? "none" : passkeyHere() ? "first" : "offer"));
+  }, []);
 
   // A wrong or unknown address gives the field a short shake, like a wrong password on a Mac
   useEffect(() => {
@@ -209,6 +216,12 @@ export function LoginForm() {
                   {t("expired", { hours: SESSION_HOURS })}
                 </p>
               )}
+              {passkey === "first" && (
+                <>
+                  <PasskeySignIn primary />
+                  <OrRule />
+                </>
+              )}
               <label ref={emailBox} className="group relative block">
                 <span className="sr-only">{t("email")}</span>
                 <Mail className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden />
@@ -217,7 +230,7 @@ export function LoginForm() {
                   required
                   autoComplete="email"
                   inputMode="email"
-                  autoFocus
+                  autoFocus={passkey !== "first"}
                   placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -230,11 +243,17 @@ export function LoginForm() {
                   {error}
                 </p>
               )}
-              <Button type="submit" className="group h-[52px] rounded-2xl text-[16px] font-semibold" disabled={state === "sending" || !email.trim()}>
+              <Button type="submit" variant={passkey === "first" ? "secondary" : "default"} className="group h-[52px] rounded-2xl text-[16px] font-semibold" disabled={state === "sending" || !email.trim()}>
                 {state === "sending" ? <Loader2 className="size-4 animate-spin" /> : null}
                 {t("send")}
                 {state !== "sending" && <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />}
               </Button>
+              {passkey === "offer" && (
+                <>
+                  <OrRule />
+                  <PasskeySignIn primary={false} />
+                </>
+              )}
               <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                 <Lock className="size-3.5" aria-hidden />
                 {t("inviteOnly")}

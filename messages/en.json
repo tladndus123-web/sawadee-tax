@@ -1782,5 +1782,31 @@
     "delete": "Delete",
     "deleteSure": "Delete?",
     "deleted": "Deleted."
+  },
+  "passkey": {
+    "signIn": "Sign in with Face ID",
+    "signInHint": "Face ID · fingerprint · Windows Hello",
+    "or": "or",
+    "cancelled": "If this device has no Face ID sign-in yet, sign in with your email.",
+    "fail": "Couldn't sign in with Face ID. Please sign in with your email.",
+    "offerTitle": "Sign in with Face ID next time",
+    "offerBody": "Register this device to sign in with Face ID or your fingerprint instead of opening an email. Signing in again every 12 hours is just a glance.",
+    "register": "Register",
+    "later": "Later",
+    "registered": "Registered. Next time, sign in with Face ID.",
+    "alreadyHere": "This device is already registered.",
+    "registerFail": "Couldn't register this device.",
+    "title": "Sign in with Face ID",
+    "hint": "Registered devices sign in with Face ID, fingerprint or Windows Hello instead of email. If you lose a device, remove it here.",
+    "none": "No devices registered yet.",
+    "thisDevice": "This device",
+    "added": "Added {date}",
+    "lastUsed": "Last used {date}",
+    "addThis": "Register this device",
+    "remove": "Remove",
+    "removeAsk": "Remove “{name}”? That device can no longer sign in with Face ID (email still works).",
+    "removed": "Removed.",
+    "unsupported": "This device (browser) can't sign in with Face ID.",
+    "count": "{count} devices"
   }
 }
