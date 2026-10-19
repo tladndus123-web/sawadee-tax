@@ -1786,6 +1786,7 @@
   "passkey": {
     "signIn": "Sign in with Face ID",
     "signInHint": "Face ID · fingerprint · Windows Hello",
+    "firstTimeHint": "Works on registered devices only. On a new device, sign in with your email first, then tap Register.",
     "or": "or",
     "cancelled": "If this device has no Face ID sign-in yet, sign in with your email.",
     "fail": "Couldn't sign in with Face ID. Please sign in with your email.",

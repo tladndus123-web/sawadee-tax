@@ -45,7 +45,8 @@ export function PasskeySignIn({ primary }: { primary: boolean }) {
         {busy ? <Loader2 className="size-5 animate-spin" /> : <ScanFace className="size-5" aria-hidden />}
         {t("signIn")}
       </Button>
-      <p className="text-center text-xs text-muted-foreground">{t("signInHint")}</p>
+      {/* Not registered here yet: the system sheet would only say "no passkeys", so say what to do first */}
+      <p className="text-center text-xs leading-relaxed text-pretty text-muted-foreground">{primary ? t("signInHint") : t("firstTimeHint")}</p>
       {note && (
         <p role={note.bad ? "alert" : "status"} className={cn("text-center text-sm", note.bad ? "text-bad" : "text-muted-foreground")}>
           {note.text}
