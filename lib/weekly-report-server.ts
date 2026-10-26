@@ -13,8 +13,11 @@ import { profileLang } from "./line-menu";
 import { priceRises } from "./price-watch";
 import { nextWorkingDay } from "./thai-holidays";
 
-/** Mondays (Bangkok date "YYYY-MM-DD") */
-export const isReportDay = (today: string) => new Date(`${today}T00:00:00Z`).getUTCDay() === 1;
+/** First day a report may go out: owner 2026-10-26, "not today" (the report is being reworked) */
+export const REPORTS_FROM = "2026-10-27";
+
+/** Mondays (Bangkok date "YYYY-MM-DD"), from REPORTS_FROM on */
+export const isReportDay = (today: string) => today >= REPORTS_FROM && new Date(`${today}T00:00:00Z`).getUTCDay() === 1;
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
