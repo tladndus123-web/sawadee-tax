@@ -205,7 +205,7 @@ async function monthEndAction(event: { replyToken?: string }, lineUser: string, 
   const view = lines.map((l) => ({ name: lineBranchLabel(l, lang), base: l.base, target: l.target }));
   if (!q.has("goalset")) return send(event, lineUser, [goalCard(month, view, lang, appUrl())]);
   if (!lines.some((l) => l.target > 0)) return send(event, lineUser, [goalCard(month, view, lang, appUrl())]);
-  await setGoals(admin, lines);
+  await setGoals(admin, month, lines, member.user_id);
   await send(event, lineUser, [text(goalSetText(month, lines.reduce((a, l) => a + l.target, 0), lang))]);
 }
 

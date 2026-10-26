@@ -67,3 +67,29 @@ describe("notices as cards", () => {
     expect(noticeMessage([text], "REMINDER", "ko").contents.type).toBe("bubble");
   });
 });
+
+describe("targets are without VAT", () => {
+  it("the forecast compares the sales without VAT with the target", async () => {
+    const { forecastTip } = await import("./line-tips");
+    const p = { sales: 1_070_000, salesValue: 1_000_000, daysDone: 20, daysInMonth: 31, target: 1_800_000, lastMonthSales: 0, month: "2026-10" };
+    const t = forecastTip(p, "ko")!;
+    expect(t.main).toContain("(목표의 86%)"); // 1,550,000 ÷ 1,800,000 — not 92% from the sales with VAT
+    expect(t.note).toContain("VAT 제외");
+  });
+  it("the summary card's bar too", async () => {
+    const { summaryCard } = await import("./line-dash");
+    const base = { month: "2026-10", asOf: "09:00", today: "2026-10-26", target: 1_000_000, lastMonthSales: 0, purchases: 0, count: 0, claimableVat: 0, unpaid: 0, unpaidCount: 0, overdueCount: 0, toCheck: 0 };
+    expect(JSON.stringify(summaryCard({ ...base, sales: 535_000, salesValue: 500_000 }, "ko", "u"))).toContain("목표의 50%");
+  });
+});
+
+describe("a month's own target", async () => {
+  const { targetFor } = await import("./branches");
+  it("that month's own target, else the standing one", () => {
+    const b = { salesTarget: 1_000_000, monthTargets: { "2026-11": 1_160_000 } };
+    expect(targetFor(b, "2026-11")).toBe(1_160_000);
+    expect(targetFor(b, "2026-12")).toBe(1_000_000);
+    expect(targetFor({}, "2026-11")).toBe(0);
+    expect(targetFor({ salesTarget: 5, monthTargets: { "2026-11": 0 } }, "2026-11")).toBe(0); // 0 set for a month = no target that month
+  });
+});

@@ -1,11 +1,12 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(242);
+select plan(247);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
 select is((select public from storage.buckets where id = 'line-exports'), false, 'the LINE Excel bucket is private');
+select ok((select 'application/zip' = any(allowed_mime_types) from storage.buckets where id = 'line-exports'), 'it also keeps the accountant''s photo ZIPs');
 select is((select count(*)::int from pg_policies where schemaname = 'storage' and (qual like '%line-exports%' or with_check like '%line-exports%')), 0, 'and no signed-in user can reach it (server only)');
 -- The LINE AI assistant: server-only tables, and the monthly limit of the long analyses
 select is((select count(*)::int from pg_policies where tablename in ('assistant_turns', 'assistant_usage')), 0, 'the assistant tables have no policies (server only)');
@@ -499,5 +500,16 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');
 select throws_ok($$ select public.line_link_code() $$, 'members only', 'non-members get no link code');
 select is((select count(*)::int from public.documents), 0, 'non-members see no documents');
 
+reset role;
+-- Monthly targets per branch: admins set them, staff cannot
+set local role authenticated;
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
+select lives_ok($$ insert into public.branch_targets (branch_id, month, amount) values (public.head_branch(), '2001-11', 500000) $$, 'an admin sets a month''s target');
+select throws_ok($$ insert into public.branch_targets (branch_id, month, amount) values (public.head_branch(), '2001-11-01', 1) $$, '23514', NULL, 'the month is YYYY-MM');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select throws_ok($$ insert into public.branch_targets (branch_id, month, amount) values (public.head_branch(), '2001-12', 1) $$, '42501', NULL, 'staff cannot set targets');
+with u as (update public.branch_targets set amount = 1 where month = '2001-11' returning 1)
+select is((select count(*)::int from u), 0, 'nor change one');
+reset role;
 select * from finish();
 rollback;

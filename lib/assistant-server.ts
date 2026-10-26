@@ -32,13 +32,17 @@ export async function booksContext(admin: Admin, today: string, deep: boolean, a
   const month = today.slice(0, 7);
   const months = Array.from({ length: deep ? 6 : 3 }, (_, i) => shiftMonth(month, -i)).reverse();
   const first = `${months[0]}-01`;
-  const [{ saved, taxId, company }, sales, branches, cats, payroll] = await Promise.all([
+  const [{ saved, taxId, company }, sales, branches, cats, payroll, ownTargets] = await Promise.all([
     ledger(admin),
     salesOf(admin, first, today),
     admin.from("branches").select("id, no, name, sales_target").order("sort"),
     serverCategories(),
     admin.from("payroll_lines").select("month, gross, net, wht, ss_employee, ss_employer").in("month", months),
+    admin.from("branch_targets").select("branch_id, amount").eq("month", month),
   ]);
+  // This month's target per branch: its own for the month, else the standing one (sales without VAT)
+  const targetOf = (b: { id: unknown; sales_target: unknown }) =>
+    Number((ownTargets.data ?? []).find((t) => t.branch_id === b.id)?.amount ?? b.sales_target) || 0;
   const docs = saved.map((d) => d.doc);
   const catName = (k: string) => {
     const c = cats.find((x) => x.key === k);
@@ -50,7 +54,7 @@ export async function booksContext(admin: Admin, today: string, deep: boolean, a
   };
 
   const lines: string[] = [`# ${company || "Our company"} — books as of ${today} (Bangkok)`];
-  lines.push(`Branches: ${(branches.data ?? []).map((b) => `${branchName(b.id as string)}${Number(b.sales_target) ? ` (monthly target ${r0(Number(b.sales_target))})` : ""}`).join(", ") || "one"}`);
+  lines.push(`Branches: ${(branches.data ?? []).map((b) => `${branchName(b.id as string)}${targetOf(b) ? ` (target this month ${r0(targetOf(b))} without VAT)` : ""}`).join(", ") || "one"}`);
 
   lines.push("", "## By month (sales gross incl. VAT; purchases = documents' net totals)");
   for (const m of months) {

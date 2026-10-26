@@ -247,6 +247,8 @@ export interface SummaryData {
   today: string;
   /** Gross sales of the month so far; null = the company keeps no sales */
   sales: number | null;
+  /** The same without VAT (what the target is compared with) */
+  salesValue?: number | null;
   /** Monthly sales target of all branches (0 = none) */
   target: number;
   /** Gross sales of all of last month (for the bar when there is no target) */
@@ -260,17 +262,20 @@ export interface SummaryData {
   toCheck: number;
 }
 
-/** Bar under the sales: against the target, or else against last month's whole month */
-function salesBar(sales: number, target: number, lastMonth: number, w: Words): { bar: number | null; left: string; right: string } {
-  if (target > 0) return { bar: sales / target, left: w.ofTarget(Math.round((sales / target) * 100)), right: `${w.target} ${baht(target)}` };
-  if (lastMonth > 0) return { bar: sales / lastMonth, left: w.ofLastMonth(Math.round((sales / lastMonth) * 100)), right: `${w.lastMonth} ${baht(lastMonth)}` };
+/**
+ * Bar under the sales: against the target — set without VAT, so the sales without VAT, as the app's dashboard does —
+ * or else the sales (with VAT) against last month's whole month
+ */
+function salesBar(gross: number, value: number, target: number, lastMonth: number, w: Words): { bar: number | null; left: string; right: string } {
+  if (target > 0) return { bar: value / target, left: w.ofTarget(Math.round((value / target) * 100)), right: `${w.target} ${baht(target)}` };
+  if (lastMonth > 0) return { bar: gross / lastMonth, left: w.ofLastMonth(Math.round((gross / lastMonth) * 100)), right: `${w.lastMonth} ${baht(lastMonth)}` };
   return { bar: null, left: "", right: "" };
 }
 
 export function summaryCard(d: SummaryData, lang: LineLang, url: string, extra: CardExtra = {}): messagingApi.FlexMessage {
   const w = W[lang];
   const top = head(w.summary, w.month(d.month), `${dmy(d.today)} ${d.asOf} ${w.asOf}`);
-  const b = d.sales === null ? null : salesBar(d.sales, d.target, d.lastMonthSales, w);
+  const b = d.sales === null ? null : salesBar(d.sales, d.salesValue ?? d.sales, d.target, d.lastMonthSales, w);
   const middle: Comp[] = [
     ...(d.sales !== null && b ? [hero(w.sales, baht(d.sales), b.bar, b.left, b.right)] : []),
     rows([
@@ -426,6 +431,8 @@ export interface FiveDayData {
   purchases: number;
   month: string;
   monthSales: number;
+  /** The month's sales without VAT (against the target) */
+  monthSalesValue?: number;
   target: number;
   lastMonthSales: number;
   monthPurchases: number;
@@ -473,7 +480,7 @@ export function fiveDayMessage(d: FiveDayData, tips: Tip[], odd: AnomalyLine[], 
   ).contents as messagingApi.FlexBubble;
 
   // ② the month so far and where it ends
-  const b = salesBar(d.monthSales, d.target, d.lastMonthSales, w);
+  const b = salesBar(d.monthSales, d.monthSalesValue ?? d.monthSales, d.target, d.lastMonthSales, w);
   const second = bubble(
     f.month,
     head(w.monthNow(d.month), f.month),

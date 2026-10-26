@@ -65,10 +65,14 @@ export async function keepsSales(admin: Admin) {
   return (count ?? 0) > 0;
 }
 
-/** All branches' monthly sales targets together (0 = none set) */
-export async function salesTarget(admin: Admin) {
-  const { data } = await admin.from("branches").select("sales_target");
-  return sumOf(data ?? [], "sales_target");
+/** All branches' sales targets for a month together, without VAT: each month's own, else the standing one (0 = none) */
+export async function salesTarget(admin: Admin, month: string) {
+  const [{ data: branches }, { data: own }] = await Promise.all([
+    admin.from("branches").select("id, sales_target"),
+    admin.from("branch_targets").select("branch_id, amount").eq("month", month),
+  ]);
+  const mine = new Map((own ?? []).map((t) => [t.branch_id as string, Number(t.amount) || 0]));
+  return Math.round((branches ?? []).reduce((a, b) => a + (mine.get(b.id as string) ?? (Number(b.sales_target) || 0)) * 100, 0)) / 100;
 }
 
 const hhmm = () => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit" }).format(new Date());
@@ -77,7 +81,7 @@ const hhmm = () => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Bangkok", 
 export async function askAnswer(admin: Admin, ask: Ask, appUrl: string, lang: LineLang, today = todayBangkok()): Promise<messagingApi.Message[]> {
   const month = today.slice(0, 7);
   if (ask === "summary") {
-    const [{ saved, taxId }, hasSales, target] = await Promise.all([ledger(admin), keepsSales(admin), salesTarget(admin)]);
+    const [{ saved, taxId }, hasSales, target] = await Promise.all([ledger(admin), keepsSales(admin), salesTarget(admin, month)]);
     const s = summarize(saved, month, taxId, today);
     const last = shiftMonth(month, -1);
     const [now, before] = hasSales ? await Promise.all([salesOf(admin, `${month}-01`, lastDay(month)), salesOf(admin, `${last}-01`, lastDay(last))]) : [[], []];
@@ -90,7 +94,7 @@ export async function askAnswer(admin: Admin, ask: Ask, appUrl: string, lang: Li
       return (lang === "th" ? c?.name?.th : lang === "ja" ? c?.name?.ja : c?.name?.en) || (ja.category as Record<string, string>)[k] || k;
     };
     const tip = hasSales
-      ? forecastTip({ sales: sumOf(now, "gross"), daysDone: Number(today.slice(8, 10)) - 1, daysInMonth: Number(lastDay(month).slice(8, 10)), target, lastMonthSales: sumOf(before, "gross"), month }, lang)
+      ? forecastTip({ sales: sumOf(now, "gross"), salesValue: sumOf(now, "gross") - sumOf(now, "vat"), daysDone: Number(today.slice(8, 10)) - 1, daysInMonth: Number(lastDay(month).slice(8, 10)), target, lastMonthSales: sumOf(before, "gross"), month }, lang)
       : costTip(costs.length && costSum ? { name: catName(costs[0][0]), share: costs[0][1] / costSum } : null, lang);
     return [
       summaryCard(
@@ -99,6 +103,7 @@ export async function askAnswer(admin: Admin, ask: Ask, appUrl: string, lang: Li
           asOf: hhmm(),
           today,
           sales: hasSales ? sumOf(now, "gross") : null,
+          salesValue: hasSales ? Math.round((sumOf(now, "gross") - sumOf(now, "vat")) * 100) / 100 : null,
           target,
           lastMonthSales: sumOf(before, "gross"),
           purchases: s.total,
@@ -245,7 +250,9 @@ async function excelFiles(admin: Admin, today: string) {
   const { saved, taxId } = await ledger(admin);
   // Earlier links' files are not kept
   const old = await admin.storage.from(BUCKET).list("", { limit: 100 });
-  if (old.data?.length) await admin.storage.from(BUCKET).remove(old.data.map((f) => f.name));
+  // (only the Excel files at the top; the accountant links' photo ZIPs live under share/)
+  const oldXlsx = (old.data ?? []).filter((f) => f.name.endsWith(".xlsx"));
+  if (oldXlsx.length) await admin.storage.from(BUCKET).remove(oldXlsx.map((f) => f.name));
 
   // This month; in the first half of a month also last month (the one the accountant is working on).
   // A month without documents is left out (unless every one is empty: then this month's empty file)

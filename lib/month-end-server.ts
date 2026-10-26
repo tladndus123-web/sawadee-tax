@@ -6,7 +6,7 @@ import crypto from "node:crypto";
 import { cashCostLines, type CashMove } from "./petty-cash";
 import { monthLabor, type LaborLine } from "./cost-control";
 import { fixedForMonth, type FixedLine } from "./fixed-costs";
-import { ledger, shiftMonth, sumOf, type Admin } from "./line-ask-server";
+import { ledger, salesTarget, shiftMonth, sumOf, type Admin } from "./line-ask-server";
 import { CHANNELS, type Channel, monthResult, type MonthResult, type Sale } from "./sales";
 import { stockChange, type StockCount } from "./stock";
 import { buildWhtList } from "./wht";
@@ -83,10 +83,10 @@ export interface MonthBooks {
 }
 
 export async function monthBooks(admin: Admin, month: string): Promise<MonthBooks> {
-  const [{ saved, taxId, company }, inputs, branches, payroll] = await Promise.all([
+  const [{ saved, taxId, company }, inputs, target, payroll] = await Promise.all([
     ledger(admin),
     costInputs(admin),
-    admin.from("branches").select("sales_target"),
+    salesTarget(admin, month),
     admin.from("payroll_lines").select("wht, ss_employee, ss_employer").eq("month", month),
   ]);
   const docs = saved.map((d) => d.doc);
@@ -98,7 +98,7 @@ export async function monthBooks(admin: Admin, month: string): Promise<MonthBook
     company,
     result: resultOf(month),
     previous: resultOf(shiftMonth(month, -1)),
-    target: sumOf(branches.data ?? [], "sales_target"),
+    target,
     whtSuppliers: Math.round((wht.totals.pnd53.tax + wht.totals.pnd3.tax) * 100) / 100,
     whtPayroll: sumOf(payroll.data ?? [], "wht"),
     socialSecurity: Math.round((sumOf(payroll.data ?? [], "ss_employee") + sumOf(payroll.data ?? [], "ss_employer")) * 100) / 100,
@@ -158,10 +158,10 @@ export async function goalSuggestion(admin: Admin, month: string, raisePct: numb
   return suggestGoals((branches ?? []) as { id: string; no: string; name: string }[], inputs.sales, month, raisePct);
 }
 
-/** Save the suggested targets (the branches' monthly sales target, as on the settings screen) */
-export async function setGoals(admin: Admin, lines: GoalLine[]) {
-  for (const l of lines) {
-    const { error } = await admin.from("branches").update({ sales_target: l.target }).eq("id", l.branchId);
-    if (error) throw error;
-  }
+/** Save the targets for that month only (public.branch_targets); other months keep theirs or the standing target */
+export async function setGoals(admin: Admin, month: string, lines: GoalLine[], userId: string) {
+  const { error } = await admin
+    .from("branch_targets")
+    .upsert(lines.map((l) => ({ branch_id: l.branchId, month, amount: l.target, updated_at: new Date().toISOString(), updated_by: userId })), { onConflict: "branch_id,month" });
+  if (error) throw error;
 }

@@ -41,7 +41,7 @@ export async function reportData(admin: Admin, today: string): Promise<{ data: F
   const from = shiftDay(today, -5);
   const month = to.slice(0, 7);
   const lastMonth = shiftMonth(month, -1);
-  const [{ saved, taxId, company }, hasSales, target, branches] = await Promise.all([ledger(admin), keepsSales(admin), salesTarget(admin), admin.from("branches").select("id")]);
+  const [{ saved, taxId, company }, hasSales, target, branches] = await Promise.all([ledger(admin), keepsSales(admin), salesTarget(admin, month), admin.from("branches").select("id")]);
   if (!saved.length && !hasSales) return null;
   const [days, before, monthRows, lastMonthRows, recent] = await Promise.all([
     salesOf(admin, from, to),
@@ -70,6 +70,7 @@ export async function reportData(admin: Admin, today: string): Promise<{ data: F
     purchases: Math.round(came.reduce((a, d) => a + d.doc.totals.net * 100, 0)) / 100,
     month,
     monthSales: sumOf(monthRows, "gross"),
+    monthSalesValue: Math.round((sumOf(monthRows, "gross") - sumOf(monthRows, "vat")) * 100) / 100,
     target,
     lastMonthSales: sumOf(lastMonthRows, "gross"),
     monthPurchases: s.total,
@@ -184,7 +185,7 @@ export async function sendReport(admin: Admin, appUrl: string, today: string, to
     };
     const d = made.data;
     const tip = d.hasSales
-      ? forecastTip({ sales: d.monthSales, daysDone: Number(d.to.slice(8, 10)), daysInMonth: Number(lastDay(d.month).slice(8, 10)), target: d.target, lastMonthSales: d.lastMonthSales, month: d.month }, lang)
+      ? forecastTip({ sales: d.monthSales, salesValue: d.monthSalesValue, daysDone: Number(d.to.slice(8, 10)), daysInMonth: Number(lastDay(d.month).slice(8, 10)), target: d.target, lastMonthSales: d.lastMonthSales, month: d.month }, lang)
       : null;
     try {
       await lineClient().pushMessage({

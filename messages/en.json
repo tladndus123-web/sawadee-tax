@@ -1152,8 +1152,8 @@
     "closedDays": "Regular closing days",
     "closedHint": "These weekdays are not counted as missing shop sales.",
     "closedShort": "Closed {days}",
-    "salesTarget": "Monthly sales target (excl. VAT)",
-    "salesTargetHint": "0 = no target. The dashboard shows the progress.",
+    "salesTarget": "Standing monthly sales target (excl. VAT)",
+    "salesTargetHint": "0 = no target. A month with its own target (set from the month-end LINE report) uses that one.",
     "staffSwitchHint": "Switching closes the current branch. Branches with 🔒 need their password.",
     "pinTitle": "Branch password",
     "pinSet": "Set",
@@ -1838,6 +1838,8 @@
     "sales": "Daily sales",
     "gross": "Sales",
     "noSales": "No sales recorded for this month",
-    "note": "These are the figures as kept in the bookkeeping app. Please tell the company about anything to correct."
+    "note": "These are the figures as kept in the bookkeeping app. Please tell the company about anything to correct.",
+    "photos": "Download all photos (zip, {n})",
+    "photosHint": "The number in each photo's file name is its row in the Excel file. It can take about a minute to make."
   }
 }

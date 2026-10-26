@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { Link } from "@/i18n/navigation";
 import { breakEven, openDaysLeft, progress } from "@/lib/break-even";
-import { ALL } from "@/lib/branches";
+import { ALL, targetFor } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
 import { useCategories } from "@/lib/category-store";
 import { useCompany } from "@/lib/company-store";
@@ -54,7 +54,7 @@ export function GoalBars({ month, today, salesValue }: { month: string; today: s
     return breakEven(costs, food, lab, baseSales);
   }, [current, month, entries, stock, company.taxId, fixed, labor, sales, categories]);
 
-  const goal = Math.round(shown.reduce((a, b) => a + (b.salesTarget || 0), 0) * 100);
+  const goal = Math.round(shown.reduce((a, b) => a + targetFor(b, month), 0) * 100);
   // A day counts as closed only when every shown branch closes on it
   const closed = useMemo(() => [0, 1, 2, 3, 4, 5, 6].filter((d) => shown.length > 0 && shown.every((b) => (b.closedDays ?? []).includes(d))), [shown]);
   const daysLeft = current ? openDaysLeft(month, today, closed) : 0;

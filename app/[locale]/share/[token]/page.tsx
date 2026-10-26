@@ -76,10 +76,17 @@ export default async function SharePage({ params }: { params: Promise<{ locale: 
             </div>
           ))}
         </dl>
-        <a href={`${base}/xlsx`} className="mt-1 inline-flex h-11 w-fit items-center gap-2 rounded-full bg-primary px-5 text-[14px] font-semibold text-primary-foreground">
-          <Download className="size-4" aria-hidden />
-          {t("excel")}
-        </a>
+        <div className="mt-1 flex flex-wrap gap-2">
+          <a href={`${base}/xlsx`} className="inline-flex h-11 w-fit items-center gap-2 rounded-full bg-primary px-5 text-[14px] font-semibold text-primary-foreground">
+            <Download className="size-4" aria-hidden />
+            {t("excel")}
+          </a>
+          <a href={`${base}/photos`} className="inline-flex h-11 w-fit items-center gap-2 rounded-full bg-secondary px-5 text-[14px] font-semibold text-secondary-foreground">
+            <FileImage className="size-4" aria-hidden />
+            {t("photos", { n: docs.length })}
+          </a>
+        </div>
+        <p className="text-xs text-muted-foreground">{t("photosHint")}</p>
       </section>
 
       <section className="workspace-panel grid gap-3 p-5">

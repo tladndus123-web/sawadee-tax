@@ -82,7 +82,7 @@ const sgn = (n: number) => `${n >= 0 ? "+" : "−"}${Math.abs(Math.round(n))}%`;
 
 /** Month so far → where it ends at this pace (against the target, else against last month) */
 export function forecastTip(
-  p: { sales: number; daysDone: number; daysInMonth: number; target: number; lastMonthSales: number; month: string },
+  p: { sales: number; salesValue?: number; daysDone: number; daysInMonth: number; target: number; lastMonthSales: number; month: string },
   lang: LineLang,
 ): CardTip | null {
   if (p.sales <= 0 || p.daysDone <= 0) return null;
@@ -90,9 +90,14 @@ export function forecastTip(
   const fc = Math.round(((p.sales / p.daysDone) * p.daysInMonth) / 1000) * 1000;
   const left = p.daysInMonth - p.daysDone;
   const m = Number(p.month.slice(5, 7));
-  const vsTarget = p.target > 0 ? Math.round((fc / p.target) * 100) : null;
+  // The target is without VAT: compare it with the sales without VAT (as the app's dashboard does)
+  const value = p.salesValue ?? p.sales;
+  const fcValue = (value / p.daysDone) * p.daysInMonth;
+  const vsTarget = p.target > 0 ? Math.round((fcValue / p.target) * 100) : null;
   const vsLast = p.lastMonthSales > 0 ? ((fc - p.lastMonthSales) / p.lastMonthSales) * 100 : null;
-  const perDay = p.target > fc && left > 0 ? Math.round((p.target - p.sales) / left) : null;
+  const perDay = p.target > fcValue && left > 0 ? Math.round((p.target - value) / left) : null;
+  const avg = Math.round(value / p.daysDone);
+  const exVat = { ko: "VAT 제외", ja: "VAT抜き", th: "ไม่รวม VAT", en: "excl. VAT" }[lang];
   const main = {
     ko: `지금 속도면 ${m}월 매출은 약 ${baht(fc)}${vsTarget !== null ? ` (목표의 ${vsTarget}%)` : vsLast !== null ? ` (지난달 ${sgn(vsLast)})` : ""}예요.`,
     ja: `このペースだと${m}月の売上は約${baht(fc)}${vsTarget !== null ? `（目標の${vsTarget}%）` : vsLast !== null ? `（先月比 ${sgn(vsLast)}）` : ""}です。`,
@@ -101,10 +106,10 @@ export function forecastTip(
   }[lang];
   const note = perDay
     ? {
-        ko: `남은 ${left}일 동안 하루 ${baht(perDay)}이면 목표 달성 (지금 평균 ${baht(Math.round(p.sales / p.daysDone))})`,
-        ja: `残り${left}日、1日${baht(perDay)}で目標達成（今の平均 ${baht(Math.round(p.sales / p.daysDone))}）`,
-        th: `อีก ${left} วัน ขายวันละ ${baht(perDay)} จะถึงเป้า (เฉลี่ยตอนนี้ ${baht(Math.round(p.sales / p.daysDone))})`,
-        en: `${baht(perDay)} a day for the last ${left} days reaches the target (now ${baht(Math.round(p.sales / p.daysDone))} a day)`,
+        ko: `남은 ${left}일 동안 하루 ${baht(perDay)}이면 목표 달성 (지금 평균 ${baht(avg)}, ${exVat})`,
+        ja: `残り${left}日、1日${baht(perDay)}で目標達成（今の平均 ${baht(avg)}、${exVat}）`,
+        th: `อีก ${left} วัน ขายวันละ ${baht(perDay)} จะถึงเป้า (เฉลี่ยตอนนี้ ${baht(avg)}, ${exVat})`,
+        en: `${baht(perDay)} a day for the last ${left} days reaches the target (now ${baht(avg)} a day, ${exVat})`,
       }[lang]
     : undefined;
   return { title: T.forecast[lang], main, note };

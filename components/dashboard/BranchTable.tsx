@@ -10,7 +10,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { RANK_BY, type RankBy, rankBranches } from "@/lib/branch-rank";
 import { BranchAvatar, useBranchName } from "@/components/layout/branch-switcher";
-import { BRANCH_COLORS, branchLabel, branchSummaries, colorOf } from "@/lib/branches";
+import { BRANCH_COLORS, branchLabel, branchSummaries, colorOf, targetFor } from "@/lib/branches";
 import { setBranch, useBranches } from "@/lib/branch-store";
 import { useCategories } from "@/lib/category-store";
 import { useCompany } from "@/lib/company-store";
@@ -74,12 +74,12 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
           profit: r.result.profit,
           margin: r.result.margin,
           fl: r.cost.fl.pct,
-          target: r.branch.salesTarget || 0,
+          target: targetFor(r.branch, month),
           days: r.result.days,
         })),
         by,
       ),
-    [rows, by],
+    [rows, by, month],
   );
   if (branches.length < 2) return null;
   const pct = (v: number) => `${Math.round(v * 1000) / 10}%`;

@@ -33,9 +33,19 @@ const toBranch = (r: { id: string; no: string; name: string; sort: number; color
 });
 
 async function reload() {
-  const { data, error } = await supabaseBrowser().from("branches").select("id, no, name, sort, color, closed_days, sales_target");
+  const [{ data, error }, targets] = await Promise.all([
+    supabaseBrowser().from("branches").select("id, no, name, sort, color, closed_days, sales_target"),
+    supabaseBrowser().from("branch_targets").select("branch_id, month, amount"),
+  ]);
   if (error) throw error;
-  branches = sortBranches((data ?? []).map(toBranch));
+  // Each branch's own month targets (set from the month-end LINE report); none readable = only the standing target
+  const byBranch = new Map<string, Record<string, number>>();
+  for (const t of targets.data ?? []) {
+    const m = byBranch.get(t.branch_id as string) ?? {};
+    m[t.month as string] = Number(t.amount) || 0;
+    byBranch.set(t.branch_id as string, m);
+  }
+  branches = sortBranches((data ?? []).map((r) => ({ ...toBranch(r), monthTargets: byBranch.get(r.id) ?? {} })));
   // A branch that was removed on another device
   if (selected !== ALL && !branches.some((b) => b.id === selected)) setBranch(ALL);
   loaded = true;

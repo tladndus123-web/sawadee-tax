@@ -19,9 +19,14 @@ export interface Branch {
   color: string;
   /** Regular closing weekdays, 0 = Sunday … 6 = Saturday */
   closedDays?: number[];
-  /** Monthly sales target without VAT, baht (0 = none) */
+  /** Standing monthly sales target without VAT, baht (0 = none): for months without their own */
   salesTarget?: number;
+  /** A month's own target (public.branch_targets), "YYYY-MM" → baht */
+  monthTargets?: Record<string, number>;
 }
+
+/** The branch's sales target for a month (without VAT): that month's own, else the standing one (0 = none) */
+export const targetFor = (b: Pick<Branch, "salesTarget" | "monthTargets">, month: string): number => b.monthTargets?.[month] ?? b.salesTarget ?? 0;
 
 /** Colours a branch can wear in the switcher: name → [dot / text, soft background] */
 export const BRANCH_COLORS = {
