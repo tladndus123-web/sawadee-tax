@@ -213,7 +213,7 @@ export function LoginForm() {
               {params.get("expired") && !params.get("removed") && (
                 <p role="status" className="flex items-start gap-2 rounded-2xl bg-muted px-4 py-3 text-left text-sm text-foreground">
                   <ShieldCheck className="mt-0.5 size-4 flex-none text-primary" aria-hidden />
-                  {t("expired", { hours: SESSION_HOURS })}
+                  {t("expired", { hours: SESSION_HOURS ?? 12 })}
                 </p>
               )}
               {passkey === "first" && (
@@ -258,7 +258,7 @@ export function LoginForm() {
                 <Lock className="size-3.5" aria-hidden />
                 {t("inviteOnly")}
               </p>
-              <p className="-mt-2 text-center text-xs text-muted-foreground">{t("keepSigned", { hours: SESSION_HOURS })}</p>
+              <p className="-mt-2 text-center text-xs text-muted-foreground">{SESSION_HOURS ? t("keepSigned", { hours: SESSION_HOURS }) : t("keepSignedOn")}</p>
             </form>
           )}
         </div>

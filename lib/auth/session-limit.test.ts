@@ -11,28 +11,30 @@ const refreshed = token({ iat: SIGN_IN + 11 * 3600, amr: [{ method: "otp", times
 const H = 3_600_000;
 
 describe("session limit", () => {
-  it("defaults to 12 hours", () => {
-    expect(SESSION_HOURS).toBe(12);
+  it("has no limit by default: a sign-in stays until signing out", () => {
+    expect(SESSION_HOURS).toBeNull();
+    expect(sessionEndsAt(fresh)).toBeNull();
+    expect(isSessionExpired(fresh, SIGN_IN * 1000 + 1000 * H)).toBe(false);
   });
 
   it("reads the sign-in time from amr, not from iat", () => {
     expect(signedInAt(fresh)).toBe(SIGN_IN * 1000);
     expect(signedInAt(refreshed)).toBe(SIGN_IN * 1000);
-    expect(sessionEndsAt(refreshed)).toBe(SIGN_IN * 1000 + 12 * H);
+    expect(sessionEndsAt(refreshed, 12)).toBe(SIGN_IN * 1000 + 12 * H);
   });
 
-  it("is valid until exactly 12 hours after sign-in, then expired", () => {
+  it("with a 12-hour limit: valid until exactly 12 hours after sign-in, then expired", () => {
     const start = SIGN_IN * 1000;
-    expect(isSessionExpired(refreshed, start)).toBe(false);
-    expect(isSessionExpired(refreshed, start + 11 * H + 59 * 60_000)).toBe(false);
-    expect(isSessionExpired(refreshed, start + 12 * H - 1)).toBe(false);
-    expect(isSessionExpired(refreshed, start + 12 * H)).toBe(true);
-    expect(isSessionExpired(refreshed, start + 30 * H)).toBe(true);
+    expect(isSessionExpired(refreshed, start, 12)).toBe(false);
+    expect(isSessionExpired(refreshed, start + 11 * H + 59 * 60_000, 12)).toBe(false);
+    expect(isSessionExpired(refreshed, start + 12 * H - 1, 12)).toBe(false);
+    expect(isSessionExpired(refreshed, start + 12 * H, 12)).toBe(true);
+    expect(isSessionExpired(refreshed, start + 30 * H, 12)).toBe(true);
   });
 
   it("a token refresh does not extend the limit", () => {
     const later = token({ iat: SIGN_IN + 13 * 3600, amr: [{ method: "otp", timestamp: SIGN_IN }] });
-    expect(isSessionExpired(later, (SIGN_IN + 13 * 3600) * 1000)).toBe(true);
+    expect(isSessionExpired(later, (SIGN_IN + 13 * 3600) * 1000, 12)).toBe(true);
   });
 
   it("uses the earliest entry when there are several", () => {

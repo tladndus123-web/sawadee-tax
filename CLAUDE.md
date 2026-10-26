@@ -50,8 +50,8 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   for long analyses — at most 10 a month for the whole company (`assistant_claim()`, tables `assistant_turns` (last 24 h
   sent along, kept 30 days) / `assistant_usage`, server only, `…002100_assistant.sql`). Staff messages stay unanswered.
 - Admin: suhojayu4@gmail.com (pppyu).
-- UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; sign-in lasts 12 h per
-  device, then a security message and a new sign-in. Sign-in links work in any browser (implicit flow).
+- UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
+  (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).
   The sign-in email carries a 6-digit code too (entered on the login page) — HANDOFF §7-6.
 - On this PC PowerShell blocks `npx` (execution policy): use `npx.cmd …` instead; don't change the policy.
 - After `npx supabase db reset` the local storage container may lose its unique index (uploads fail with 42P10): `docker exec supabase_db_thai-receipt-ledger psql -U supabase_admin -d postgres -c "create unique index if not exists bucketid_objname on storage.objects (bucket_id, name)"` then bootstrap again.

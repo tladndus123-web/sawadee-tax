@@ -1,12 +1,14 @@
-// Sign-in lasts a fixed time per device (default 12 hours), even across browser restarts.
+// Sign-in stays until the person signs out (owner 2026-10-26: no more signing in again every 12 hours — opening the
+// app from LINE kept asking). A limit can still be set with NEXT_PUBLIC_SESSION_HOURS; it then lasts a fixed time per
+// device, even across browser restarts.
 // The clock starts at the sign-in itself: Supabase puts that moment in the access token's `amr` claim
 // ({ method, timestamp }) and keeps it unchanged when the token is refreshed, so a refresh never extends it.
 // Each device has its own session, so signing in on a phone does not reset or end the PC's session.
 
-/** Hours a sign-in stays valid. NEXT_PUBLIC_SESSION_HOURS can override it (e.g. a short value for testing). */
-export const SESSION_HOURS: number = (() => {
+/** Hours a sign-in stays valid; null = until signing out. NEXT_PUBLIC_SESSION_HOURS sets a limit. */
+export const SESSION_HOURS: number | null = (() => {
   const n = Number(process.env.NEXT_PUBLIC_SESSION_HOURS);
-  return Number.isFinite(n) && n > 0 ? n : 12;
+  return Number.isFinite(n) && n > 0 ? n : null;
 })();
 
 /** JWT payload without verifying it — only call on a token the auth server has already accepted. */
@@ -41,8 +43,9 @@ export function signInMethods(accessToken: string): string[] {
   return amr.map((a) => (a && typeof a === "object" ? String((a as { method?: unknown }).method ?? "") : "")).filter(Boolean);
 }
 
-/** When the sign-in stops being valid (ms), or null when the token carries no sign-in time. */
-export function sessionEndsAt(accessToken: string, hours: number = SESSION_HOURS): number | null {
+/** When the sign-in stops being valid (ms), or null when there is no limit or the token carries no sign-in time. */
+export function sessionEndsAt(accessToken: string, hours: number | null = SESSION_HOURS): number | null {
+  if (hours == null) return null;
   const at = signedInAt(accessToken);
   return at == null ? null : at + hours * 3_600_000;
 }
@@ -51,7 +54,7 @@ export function sessionEndsAt(accessToken: string, hours: number = SESSION_HOURS
  * true once `hours` have passed since sign-in. A token without a sign-in time is not treated as expired:
  * its validity is still checked by Supabase itself (getUser), this only adds the time limit.
  */
-export function isSessionExpired(accessToken: string, now: number = Date.now(), hours: number = SESSION_HOURS): boolean {
+export function isSessionExpired(accessToken: string, now: number = Date.now(), hours: number | null = SESSION_HOURS): boolean {
   const end = sessionEndsAt(accessToken, hours);
   return end != null && now >= end;
 }

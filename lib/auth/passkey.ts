@@ -1,5 +1,5 @@
 // Passkey sign-in (owner's request 2026-10-18): Face ID / Touch ID / fingerprint / Windows Hello instead of the
-// email each time. The 12-hour limit stays (lib/auth/session-limit): a passkey sign-in is a new sign-in, so it just
+// email each time. A sign-in limit, if one is set, stays (lib/auth/session-limit): a passkey sign-in is a new sign-in, so it just
 // makes signing in again one tap. The first sign-in on a device is by email; then the app offers to register the
 // device (PasskeyOffer), and the login page shows "sign in with Face ID". Email sign-in always stays.
 // This device remembers which passkey it registered (localStorage), only to put the passkey button first and not

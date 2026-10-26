@@ -460,7 +460,8 @@
     "retry1": "Open the sign-in page with the button below.",
     "retry2": "Type the email you were invited with and tap \"Send sign-in link\".",
     "retry3": "Enter the 6-digit code at the start of the email's subject.",
-    "getCode": "Get a code on the sign-in page"
+    "getCode": "Get a code on the sign-in page",
+    "keepSignedOn": "Sign in once and you stay signed in on this device until you sign out."
   },
   "members": {
     "title": "Members",

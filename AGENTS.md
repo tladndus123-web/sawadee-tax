@@ -70,4 +70,4 @@ the prompts, caching and accuracy tests are built around Claude models).
 ## Production facts
 - Site https://thai-receipt-ledger.vercel.app · Supabase project INC (Singapore) · LINE bot `@136udmem`
   (replies in Thai + Japanese) · daily cron 02:00 UTC.
-- Sign-up is closed (invite only); sign-in by email link or 6-digit code; a session lasts 12 h.
+- Sign-up is closed (invite only); sign-in by email link or 6-digit code; a sign-in stays until signing out (no time limit since 2026-10-26).
