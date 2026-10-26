@@ -2060,5 +2060,32 @@
       "big": "Far above this person's usual claim ({amount})",
       "noPhoto": "No receipt photo"
     }
+  },
+  "aiPanel": {
+    "title": "AI assistant",
+    "sub": "Answers from your books, calendar and claims",
+    "open": "Open the AI assistant",
+    "close": "Close",
+    "newChat": "New chat",
+    "placeholder": "Ask anything…",
+    "send": "Send",
+    "keys": "Enter to send · Shift+Enter new line · Ctrl+K open/close",
+    "thinking": "Looking at your books…",
+    "fail": "It couldn't answer right now. Please try again in a moment.",
+    "rate": "Too many questions at once. Please wait a moment.",
+    "noKey": "No AI key, so it can't answer.",
+    "hello": "Ask anything",
+    "helloSub": "This week's bills, VAT, sales, staff claims… answered from your books and calendar, and it can add dates for you.",
+    "s1": "📅 Bills this week",
+    "s2": "🧾 How much VAT?",
+    "s3": "📈 Profit this month",
+    "s4": "✅ Before filing",
+    "eventAsk": "Add to the calendar?",
+    "date": "Date",
+    "amount": "Amount",
+    "remind": "Reminder",
+    "save": "Save",
+    "edit": "Change",
+    "saved": "Added to the calendar"
   }
 }

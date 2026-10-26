@@ -60,6 +60,52 @@ export const deepSystem = (context: string) =>
 
 ${context}`;
 
+/**
+ * The assistant inside the app (owner, 2026-10-27: "앱 안 AI 비서, 소넷 5.5"): Sonnet answers every question, with
+ * the same card and books as on LINE plus the calendar; when asked to put a date in the calendar it proposes it
+ * ("event"), and the app saves it only after the person taps Save.
+ */
+export const APP_MODEL = DEEP_MODEL;
+
+export const appSystem = (context: string, today: string) =>
+  `${RULES.replace("talking with its owner or an admin in LINE", "talking with its owner or an admin inside the Sawadee TAX app")}
+- Short questions get a short card; a question that needs an analysis (comparisons, causes, a plan, a forecast) gets
+  summary = the conclusion in two or three sentences, tiles and rows with the key numbers, sections for the reasons
+  and concrete next steps.
+- Today is ${today} (Bangkok). When the person asks to add, remember or schedule a date (rent, a licence renewal, a
+  meeting, a payment), add "event" to the card: {"title": "short name", "date": "YYYY-MM-DD, the first time it falls
+  on or after today", "repeat": "none|monthly|yearly", "remindDays": 0|3|7|30, "amount": the baht amount as a number
+  or null, "note": ""}, and say in the summary that it is saved once they tap Save. Never claim it is already saved.
+  Without such a request, no "event".
+
+${context}`;
+
+/** A date the assistant proposes for the calendar (saved by the app only after the person taps Save) */
+export interface AiEvent {
+  title: string;
+  date: string;
+  repeat: "none" | "monthly" | "yearly";
+  remindDays: number;
+  /** Baht, or null */
+  amount: number | null;
+  note: string;
+}
+
+const REMIND_DAYS = [0, 3, 7, 30];
+
+/** The card's "event", checked: a real date, a known repeat, a reminder the calendar offers, a sane amount */
+export function parseEvent(v: unknown): AiEvent | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const title = str(o.title, 120);
+  const date = typeof o.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(o.date) && !Number.isNaN(Date.parse(`${o.date}T00:00:00Z`)) ? o.date : "";
+  if (!title || !date || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date) return null;
+  const repeat = o.repeat === "monthly" || o.repeat === "yearly" ? o.repeat : "none";
+  const remind = Number(o.remindDays);
+  const amount = typeof o.amount === "number" && Number.isFinite(o.amount) && o.amount > 0 && o.amount < 1e10 ? Math.round(o.amount * 100) / 100 : null;
+  return { title, date, repeat, remindDays: REMIND_DAYS.includes(remind) ? remind : 7, amount, note: str(o.note, 300) };
+}
+
 /** Haiku asked for the long analysis */
 export const wantsDeep = (reply: string) => reply.trim().startsWith(DEEP_MARK);
 
@@ -106,6 +152,8 @@ export interface AiCard {
   links: { label: string; url: string }[];
   tip: { title: string; main: string; note?: string } | null;
   next: string[];
+  /** In the app only: a date to put in the calendar once the person taps Save */
+  event?: AiEvent | null;
 }
 export type Tone = "up" | "down" | "warn" | "neutral";
 
@@ -158,6 +206,7 @@ export function parseCard(reply: string, appUrl: string): AiCard | null {
       .map((q) => str(q, 60))
       .filter(Boolean)
       .slice(0, 4),
+    event: parseEvent(o.event),
   };
 }
 
@@ -172,6 +221,7 @@ export function cardText(c: AiCard): string {
     ...c.sections.flatMap((s) => [s.title, ...s.items.map((i) => `• ${i}`)]),
     ...c.links.map((l) => `${l.label}: ${l.url}`),
     c.tip ? `TIP ${c.tip.title}: ${c.tip.main} ${c.tip.note ?? ""}`.trim() : "",
+    c.event ? `Proposed calendar date (not saved until Save is tapped): ${c.event.title} ${c.event.date} ${c.event.repeat}${c.event.amount ? ` ${c.event.amount}` : ""}` : "",
   ]
     .filter(Boolean)
     .join("\n");

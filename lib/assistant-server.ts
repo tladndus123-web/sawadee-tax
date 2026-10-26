@@ -4,6 +4,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { isUnpaid, monthKey } from "./archive";
 import {
+  APP_MODEL,
+  appSystem,
   DEEP_MARK,
   DEEP_MODEL,
   DEEP_PER_MONTH,
@@ -19,6 +21,9 @@ import {
   parseCard,
 } from "./assistant";
 import { serverCategories } from "./categories-server";
+import { parseDocuments } from "./attendance";
+import { calendarItems, type CalEvent, daysTo } from "./company-calendar";
+import { rowToClaim } from "./expenses";
 import { monthCosts } from "./cost-split";
 import { summarize, vatFiling } from "./dashboard";
 import { foodCostPct, ledger, salesOf, shiftMonth, sumOf, type Admin } from "./line-ask-server";
@@ -219,4 +224,88 @@ export async function answer(admin: Admin, userId: string, question: string, onD
   // Older than 30 days: gone
   await admin.from("assistant_turns").delete().lt("created_at", new Date(Date.now() - 30 * 86_400_000).toISOString());
   return { card, text, model, deepCount, deepUsedUp };
+}
+
+// ── The assistant inside the app (owner, 2026-10-27): Sonnet 5.5, the books + the calendar ────────────────────────
+
+/** What is coming (45 days), what was missed, staff expense claims, drafts and days without sales */
+export async function calendarContext(admin: Admin, today: string): Promise<string> {
+  const to = new Date(Date.parse(`${today}T00:00:00Z`) + 45 * 86_400_000).toISOString().slice(0, 10);
+  const from = new Date(Date.parse(`${today}T00:00:00Z`) - 30 * 86_400_000).toISOString().slice(0, 10);
+  const [{ saved, drafts }, ev, dn, staff, claims, sales] = await Promise.all([
+    ledger(admin),
+    admin.from("calendar_events").select("id, title, date, repeat, remind_days, note, amount"),
+    admin.from("calendar_done").select("key"),
+    admin.from("employees").select("id, name, end_date, documents"),
+    admin.from("expense_claims").select("*"),
+    salesOf(admin, `${today.slice(0, 7)}-01`, today),
+  ]);
+  const events: CalEvent[] = (ev.data ?? []).map((r) => ({ id: r.id as string, title: r.title as string, date: r.date as string, repeat: r.repeat as CalEvent["repeat"], remindDays: Number(r.remind_days) || 0, note: (r.note as string) ?? "", amount: r.amount === null ? null : Number(r.amount) }));
+  const items = calendarItems({
+    from,
+    to,
+    vatRegistered: null,
+    payroll: (staff.data ?? []).length > 0,
+    employees: (staff.data ?? []).map((e) => ({ id: e.id as string, name: e.name as string, endDate: (e.end_date as string | null) ?? "", documents: parseDocuments(e.documents) })),
+    bills: saved.filter((d) => isUnpaid(d.doc) && d.doc.dueDate).map((d) => ({ id: d.id, seller: d.doc.seller.name.en || d.doc.seller.name.th || "?", dueDate: d.doc.dueDate, net: d.doc.totals.net })),
+    events,
+    done: new Set((dn.data ?? []).map((r) => r.key as string)),
+  }).filter((i) => !i.done && (i.date >= today || i.kind !== "bill"));
+  const lines = ["", `## Calendar (${from} – ${to}; not yet done; dates already moved to working days)`];
+  for (const i of items) {
+    const left = daysTo(today, i.date);
+    const what = i.kind === "event" ? `company date: ${i.title}` : i.kind === "bill" ? `bill to pay: ${i.title}` : i.kind === "doc" ? `staff paper expires: ${i.title}` : `tax filing ${i.kind}${i.period ? ` for ${i.period}` : ""}`;
+    lines.push(`${i.date} (${left < 0 ? `${-left} days late` : left === 0 ? "today" : `in ${left} days`}) ${what}${i.amount ? ` ${r0(i.amount)}` : ""}`);
+  }
+  if (!items.length) lines.push("Nothing due.");
+  const cs = (claims.data ?? []).map((r) => rowToClaim(r as Record<string, unknown>));
+  const pending = cs.filter((c) => c.status === "pending");
+  const owed = cs.filter((c) => c.status === "approved");
+  lines.push(
+    "",
+    "## Staff expense claims (app page /expenses)",
+    `Waiting for approval: ${pending.length} (${r0(pending.reduce((a, c) => a + c.amount, 0) / 100)}) · approved, to pay back: ${owed.length} (${r0(owed.reduce((a, c) => a + c.amount, 0) / 100)})`,
+    ...pending.slice(0, 10).map((c) => `- ${c.name}: ${c.seller || "—"} ${r0(c.amount / 100)} on ${c.day}`),
+  );
+  const days = new Set(sales.map((r) => r.sale_date as string));
+  const missing: string[] = [];
+  for (let d = `${today.slice(0, 7)}-01`; d < today; d = new Date(Date.parse(`${d}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)) if (!days.has(d)) missing.push(d.slice(5));
+  lines.push("", "## To tidy up", `Draft documents not saved yet: ${drafts.length}`, `Days this month without sales entered (before today): ${missing.length ? missing.join(", ") : "none"}`);
+  return lines.join("\n");
+}
+
+export interface AppAnswer {
+  card: AiCard | null;
+  text: string;
+}
+
+/** One answer inside the app (admins): Sonnet, with the conversation of the last day (shared with LINE) */
+export async function answerInApp(admin: Admin, userId: string, question: string, appUrl: string, today = todayBangkok()): Promise<AppAnswer> {
+  client ??= new Anthropic({ maxRetries: 2 });
+  const { data: n, error } = await admin.rpc("assistant_claim", { p_month: today.slice(0, 7), p_model: APP_MODEL, p_limit: DEEP_PER_MONTH });
+  if (error) throw error;
+  if (!(Number(n) > 0)) throw new Error("used up");
+  const since = new Date(Date.now() - HISTORY_HOURS * 3_600_000).toISOString();
+  const [{ data: turns }, books, cal] = await Promise.all([
+    admin.from("assistant_turns").select("role, content").eq("user_id", userId).gte("created_at", since).order("created_at", { ascending: false }).limit(HISTORY_TURNS),
+    booksContext(admin, today, true, appUrl),
+    calendarContext(admin, today),
+  ]);
+  const history = ((turns ?? []) as { role: "user" | "assistant"; content: string }[]).reverse();
+  while (history.length && history[0].role !== "user") history.shift();
+  const res = await client.messages.create({
+    model: APP_MODEL,
+    max_tokens: 6000,
+    output_config: { effort: "low" },
+    system: [{ type: "text", text: appSystem(books + "\n" + cal, today), cache_control: { type: "ephemeral" } }],
+    messages: [...history.map((t) => ({ role: t.role, content: t.content })), { role: "user", content: question }],
+  });
+  const raw = reply(res);
+  const card = parseCard(raw, appUrl);
+  const text = card ? cardText(card) : chatText(raw);
+  await admin.from("assistant_turns").insert([
+    { user_id: userId, role: "user", content: question.slice(0, 8000) },
+    { user_id: userId, role: "assistant", content: text.slice(0, 8000), model: APP_MODEL },
+  ]);
+  return { card, text };
 }

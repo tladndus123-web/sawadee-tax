@@ -1244,3 +1244,11 @@ html.print-fit .invoice-paper {
 @keyframes num-in {
   from { opacity: 0; translate: 0 0.35em; filter: blur(3px); }
 }
+
+/* The AI assistant's panel on PC (components/assistant/AssistantPanel): the page makes room for it */
+@media (min-width: 768px) {
+  html[data-ai-open] #main-content,
+  html[data-ai-open] body > div > footer {
+    padding-right: calc(420px + 1.5rem);
+  }
+}

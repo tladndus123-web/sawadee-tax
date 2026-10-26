@@ -353,7 +353,7 @@ const REMIND = [0, 3, 7, 30];
 /** How early a date read from a document is reminded of */
 const REMIND_FOR: Record<FoundDate["kind"], number> = { expiry: 30, renewal: 30, notice: 7, payment: 3, other: 7 };
 
-function EventDialog({ initial, onClose }: { initial: Partial<CalEvent>; onClose: () => void }) {
+export function EventDialog({ initial, onClose }: { initial: Partial<CalEvent>; onClose: () => void }) {
   const t = useTranslations("calendar");
   const locale = useLocale();
   const [e, setE] = useState({ title: initial.title ?? "", date: initial.date ?? todayBangkok(), repeat: initial.repeat ?? "none", remindDays: initial.remindDays ?? 7, note: initial.note ?? "", amount: initial.amount ?? null, source: initial.source ?? "typed" });

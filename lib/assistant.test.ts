@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assistantSay, chatText, DEEP_MARK, DEEP_MODEL, DEEP_PER_MONTH, deepSystem, QUICK_MODEL, quickSystem, wantsDeep } from "./assistant";
+import { APP_MODEL, appSystem, assistantSay, cardText, chatText, DEEP_MARK, DEEP_MODEL, DEEP_PER_MONTH, deepSystem, parseCard, parseEvent, QUICK_MODEL, quickSystem, wantsDeep } from "./assistant";
 import { inLang } from "./line-lang";
 
 describe("LINE AI assistant", () => {
@@ -70,5 +70,31 @@ describe("the assistant's answer as a dashboard card", async () => {
     expect(flex).toContain("https://app.example/sales/report/2026-09");
     expect(flex).not.toContain("evil");
     expect(cardText(c)).toContain("2일 (화): ฿39,500");
+  });
+});
+
+describe("AI assistant inside the app", () => {
+  it("Sonnet 5.5 answers, knows today, proposes dates without saving them", () => {
+    expect(APP_MODEL).toBe("claude-sonnet-5-5");
+    const s = appSystem("BOOKS", "2026-10-27");
+    expect(s).toContain("BOOKS");
+    expect(s).toContain("2026-10-27");
+    expect(s).toContain("inside the Sawadee TAX app");
+    expect(s).toContain("Never claim it is already saved");
+    expect(s).not.toContain(DEEP_MARK);
+  });
+  it("checks a proposed date", () => {
+    expect(parseEvent({ title: "가게 임대료", date: "2026-11-05", repeat: "monthly", remindDays: 3, amount: 45000, note: "" })).toEqual({ title: "가게 임대료", date: "2026-11-05", repeat: "monthly", remindDays: 3, amount: 45000, note: "" });
+    // a date that does not exist, no title, odd values
+    expect(parseEvent({ title: "x", date: "2026-02-30" })).toBeNull();
+    expect(parseEvent({ title: "", date: "2026-11-05" })).toBeNull();
+    expect(parseEvent({ title: "x", date: "next month" })).toBeNull();
+    expect(parseEvent({ title: "x", date: "2026-11-05", repeat: "weekly", remindDays: 5, amount: -3 })).toEqual({ title: "x", date: "2026-11-05", repeat: "none", remindDays: 7, amount: null, note: "" });
+  });
+  it("the card carries the proposal, and its text says it is not saved yet", () => {
+    const c = parseCard(JSON.stringify({ title: "Rent", summary: "Tap Save.", event: { title: "Rent", date: "2026-11-05", repeat: "monthly", remindDays: 3, amount: 45000 } }), "https://app.test")!;
+    expect(c.event?.date).toBe("2026-11-05");
+    expect(cardText(c)).toContain("not saved until Save is tapped");
+    expect(parseCard(JSON.stringify({ title: "Sales", summary: "ok" }), "https://app.test")!.event).toBeNull();
   });
 });

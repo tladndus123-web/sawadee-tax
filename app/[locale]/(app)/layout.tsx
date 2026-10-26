@@ -4,6 +4,7 @@ import { StoredFormConfig } from "@/components/invoice/StoredFormConfig";
 import { AppHeader } from "@/components/layout/app-header";
 import { BranchGate } from "@/components/auth/BranchGate";
 import { PasskeyOffer } from "@/components/auth/PasskeyOffer";
+import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslations("app");
@@ -19,6 +20,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <StoredFormConfig>{children}</StoredFormConfig>
         </BranchGate>
       </main>
+      {/* The AI assistant (admins): a sheet on phones, a panel on the right on PC */}
+      <AssistantPanel />
       {/* Bottom padding clears the mobile tab bar */}
       <footer className="mx-auto w-full max-w-[1440px] px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] text-center text-[11px] leading-relaxed text-muted-foreground sm:px-6 md:pb-10 lg:px-8">{t("foot")}</footer>
     </div>
