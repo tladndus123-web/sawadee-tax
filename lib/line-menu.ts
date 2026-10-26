@@ -11,17 +11,15 @@
 import type { messagingApi } from "@line/bot-sdk";
 import { type Ask, askData } from "./line-ask";
 import { lineClient } from "./line";
+import { LINE_LANGS, lineLang, type LineLang } from "./line-lang";
 
-export const MENU_LANGS = ["ko", "ja", "th", "en"] as const;
-export type MenuLang = (typeof MENU_LANGS)[number];
+export const MENU_LANGS = LINE_LANGS;
+export type MenuLang = LineLang;
 export const MENU_SIZE = { width: 2500, height: 1686 } as const;
 export const menuAlias = (lang: MenuLang) => `sawadee-admin-${lang}`;
 
-/** LINE profile language ("ja", "th", "ko", "en", "zh-TW" …) → the menu's language */
-export function menuLang(profile: string | undefined | null): MenuLang {
-  const base = (profile ?? "").toLowerCase().split("-")[0];
-  return (MENU_LANGS as readonly string[]).includes(base) ? (base as MenuLang) : "en";
-}
+/** LINE profile language → the menu's language (English for any other) */
+export const menuLang = lineLang;
 
 /** Postback of the upload card: the bot answers with camera / photo buttons (a menu cannot open the camera itself) */
 export const UPLOAD_DATA = "do=upload";

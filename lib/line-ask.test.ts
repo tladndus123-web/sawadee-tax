@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { askData, askFromData, askFromText, dueText, excelText, salesText, summaryText, uploadPrompt, vatText } from "./line-ask";
-import { splitLangs } from "./line";
+import { askData, askFromData, askFromText, uploadPrompt } from "./line-ask";
+import { dueCard, excelCard, salesCard, summaryCard, vatCard, weeklyCard } from "./line-dash";
 import { MENU_SIZE, menuDefinition, menuLang, UPLOAD_DATA } from "./line-menu";
 
 describe("what the admin asks", () => {
@@ -28,62 +28,82 @@ describe("what the admin asks", () => {
   });
 });
 
-describe("answers", () => {
-  it("month summary: purchases, claimable VAT, sales, warnings, unpaid — Thai then Japanese", () => {
-    const t = summaryText(
-      { month: "2026-10", count: 42, total: 120000, claimableVat: 7000, toCheck: 3, sales: 300000, unpaid: 20000, unpaidCount: 5, overdueCount: 1 },
-      "https://x/",
-    );
-    const [th, ja] = splitLangs(t);
-    expect(th).toContain("สรุปเดือน 10/2569");
-    expect(th).toContain("฿ 120,000.00 (42 ใบ)");
-    expect(th).toContain("ยอดขาย ฿ 300,000.00");
-    expect(th).toContain("เลยกำหนด 1");
-    expect(ja).toContain("2026年10月のまとめ");
-    expect(ja).toContain("要確認 3件");
-    expect(ja.endsWith("https://x/")).toBe(true);
+describe("dashboard cards", () => {
+  const j = (m: unknown) => JSON.stringify(m);
+  const summary = { month: "2026-10", asOf: "09:12", today: "2026-10-26", sales: 1284500, target: 1890000, lastMonthSales: 1500000, purchases: 612300, count: 184, claimableVat: 38140, unpaid: 64200, unpaidCount: 3, overdueCount: 1, toCheck: 2 };
+  it("month summary: sales against the target, purchases, VAT, unpaid, warnings", () => {
+    const ko = j(summaryCard(summary, "ko", "https://app/"));
+    expect(ko).toContain("10월 요약");
+    expect(ko).toContain("฿ 1,284,500.00");
+    expect(ko).toContain("목표의 68%");
+    expect(ko).toContain('"width":"68%"');
+    expect(ko).toContain("매입 (184장)");
+    expect(ko).toContain("미지급 3건 · 기한 지남 1건");
+    expect(ko).toContain("확인이 필요한 영수증 2장");
+    expect(ko).toContain("https://app/");
   });
-  it("summary leaves out sales, warnings and unpaid when there are none", () => {
-    const [th] = splitLangs(summaryText({ month: "2026-10", count: 0, total: 0, claimableVat: 0, toCheck: 0, sales: null, unpaid: 0, unpaidCount: 0, overdueCount: 0 }, "u"));
+  it("no target: the bar compares with last month; no sales kept: no sales block", () => {
+    expect(j(summaryCard({ ...summary, target: 0 }, "ja", "u"))).toContain("先月全体の86%");
+    const th = j(summaryCard({ ...summary, sales: null }, "th", "u"));
     expect(th).not.toContain("ยอดขาย");
-    expect(th).not.toContain("รอตรวจ");
-    expect(th).not.toContain("ค้างจ่าย");
+    expect(th).toContain("สรุปเดือน 10/2569");
   });
-  it("bills to pay: total, overdue first as given, at most 10 listed", () => {
-    const bills = Array.from({ length: 12 }, (_, i) => ({ vendorTh: `ร้าน ${i}`, vendorJa: "", amount: 100.5, due: "2026-10-28", days: i - 1 }));
-    const [th, ja] = splitLangs(dueText(bills, "u"));
-    expect(th).toContain("12 ใบ ฿ 1,206.00");
-    expect(th).toContain("เลยกำหนด 1 วัน");
-    expect(th).toContain("และอีก 2 ใบ");
-    expect(ja).toContain("ร้าน 0"); // no Japanese name: the Thai one
+  it("each card is in one language only", () => {
+    const th = j(summaryCard(summary, "th", "u"));
+    expect(th).not.toMatch(/[぀-ヿ가-힣]/);
+    const en = j(summaryCard(summary, "en", "u"));
+    expect(en).toContain("October 2026 summary");
+    expect(en).not.toMatch(/[ก-ฺเ-๛぀-ヿ가-힣]/);
+  });
+  it("bills to pay: total, names in the reader's language, overdue in orange, at most 8 listed", () => {
+    const bills = Array.from({ length: 10 }, (_, i) => ({ vendor: { th: `ร้าน ${i}`, en: `Shop ${i}`, ja: "" }, amount: 100.5, due: "2026-10-28", days: i - 1 }));
+    const ja = j(dueCard(bills, "ja", "u"));
+    expect(ja).toContain("今週の支払い 10件");
+    expect(ja).toContain("฿ 1,005.00");
+    expect(ja).toContain("Shop 0"); // no Japanese name: English
     expect(ja).toContain("1日超過");
-    expect(splitLangs(dueText([], "u"))[0]).toContain("ไม่มีบิล");
+    expect(ja).toContain("ほか2件");
+    expect(j(dueCard([], "ko", "u"))).toContain("7일 안에 낼 돈이 없어요");
   });
-  it("VAT return: deadline, output − claimable", () => {
-    const v = { month: "2026-09", due: "2026-10-15", daysLeft: 3, onlineOnly: false, claimableVat: 7000, salesVat: 19600, toCheck: 2, drafts: 1 };
-    const [th, ja] = splitLangs(vatText(v, "u"));
-    expect(th).toContain("ภ.พ.30 เดือน 09/2569");
-    expect(th).toContain("ต้องชำระประมาณ ฿ 12,600.00");
-    expect(ja).toContain("納付見込み ฿ 12,600.00");
-    expect(ja).toContain("下書き 1件");
-    expect(splitLangs(vatText({ ...v, salesVat: 5000 }, "u"))[1]).toContain("還付・繰越見込み ฿ 2,000.00");
-    expect(splitLangs(vatText({ ...v, salesVat: null }, "u"))[0]).not.toContain("ต้องชำระ");
+  it("VAT: deadline, output − claimable", () => {
+    const v = { month: "2026-09", due: "2026-10-15", daysLeft: 3, onlineOnly: false, claimableVat: 7000, salesVat: 19600, toCheck: 0, drafts: 1 };
+    const ko = j(vatCard(v, "ko", "u"));
+    expect(ko).toContain("9월분 부가세 신고");
+    expect(ko).toContain("15/10/2026");
+    expect(ko).toContain("낼 부가세 (예상)");
+    expect(ko).toContain("฿ 12,600.00");
+    expect(j(vatCard({ ...v, salesVat: 5000 }, "en", "u"))).toContain("Estimated refund");
+    expect(j(vatCard({ ...v, salesVat: null }, "th", "u"))).not.toContain("ต้องชำระ");
   });
   it("yesterday's sales: total, branches when there are several", () => {
-    const one = splitLangs(salesText({ date: "2026-10-25", branches: [{ th: "สำนักงานใหญ่", ja: "本店", gross: 15000, bills: 80 }] }, "u"));
-    expect(one[0]).toContain("25/10/2026: ฿ 15,000.00 (80 บิล)");
-    expect(one[0]).not.toContain("• ");
-    const two = splitLangs(
-      salesText({ date: "2026-10-25", branches: [{ th: "A", ja: "A店", gross: 1000, bills: 0 }, { th: "B", ja: "B店", gross: 500.25, bills: 0 }] }, "u"),
-    );
-    expect(two[1]).toContain("฿ 1,500.25");
-    expect(two[1]).toContain("• B店 ฿ 500.25");
-    expect(splitLangs(salesText({ date: "2026-10-25", branches: [] }, "u"))[1]).toContain("まだ入っていません");
+    const one = j(salesCard({ date: "2026-10-25", branches: [{ name: { th: "สำนักงานใหญ่", ja: "本店", ko: "본점", en: "Head office" }, gross: 15000, bills: 80 }] }, "th", "u"));
+    expect(one).toContain("฿ 15,000.00");
+    expect(one).toContain("80 บิล");
+    const two = j(salesCard({ date: "2026-10-25", branches: [{ name: { th: "A", ja: "A店", ko: "A점", en: "A" }, gross: 1000, bills: 0 }, { name: { th: "B", ja: "B店", ko: "B점", en: "B" }, gross: 500.25, bills: 0 }] }, "ko", "u"));
+    expect(two).toContain("฿ 1,500.25");
+    expect(two).toContain("B점");
+    expect(j(salesCard({ date: "2026-10-25", branches: [] }, "ja", "u"))).toContain("まだありません");
   });
-  it("Excel: one link per month", () => {
-    const [th, ja] = splitLangs(excelText([{ month: "2026-09", count: 40, url: "https://a" }, { month: "2026-10", count: 3, url: "https://b" }]));
-    expect(th).toContain("เดือน 09/2569 · 40 ใบ\nhttps://a");
-    expect(ja).toContain("2026年10月 · 3件\nhttps://b");
+  it("Excel: one download button per month", () => {
+    const m = j(excelCard([{ month: "2026-09", count: 40, url: "https://a" }, { month: "2026-10", count: 3, url: "https://b" }], "ko"));
+    expect(m).toContain("2026년 9월");
+    expect(m).toContain("https://a");
+    expect(m).toContain("https://b");
+  });
+  it("weekly report: month so far, week vs last week, food cost, purchases, VAT, AI tips, Excel asks the bot", () => {
+    const d = { from: "2026-10-19", to: "2026-10-25", company: "Sawadee Ramen", branchCount: 3, month: "2026-10", monthSales: 1284500, target: 0, lastMonthSales: 1500000, weekSales: 312400, prevWeekSales: 289000, foodCost: 33.8, foodCostLastMonth: 31.7, purchases: 612300, receipts: 184, vatEstimate: 41860, vatDue: "2026-11-17" };
+    const tips = [{ title: "채소 매입가가 올랐어요", body: "다른 거래처 단가를 비교해 보세요." }];
+    const ko = j(weeklyCard(d, tips, "ko", "https://app/"));
+    expect(ko).toContain("이번 주 AI 비서 리포트");
+    expect(ko).toContain("WEEKLY · 19/10 – 25/10");
+    expect(ko).toContain("지점 3곳");
+    expect(ko).toContain("▲ 8% 지난주보다");
+    expect(ko).toContain("33.8%");
+    expect(ko).toContain("▲ 2.1%p 지난달보다");
+    expect(ko).toContain("17/11/2026까지 신고");
+    expect(ko).toContain("채소 매입가가 올랐어요");
+    expect(ko).toContain('"data":"ask=excel"');
+    expect(j(weeklyCard(d, [], "en", "u"))).not.toContain("This week's suggestions");
   });
 });
 

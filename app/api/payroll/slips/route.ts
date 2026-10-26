@@ -4,6 +4,7 @@
 
 import { endIfExpired } from "@/lib/auth/session-guard";
 import { lineClient } from "@/lib/line";
+import { profileLang } from "@/lib/line-menu";
 import { payslipText, type SlipHalf } from "@/lib/payslip-text";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
       continue;
     }
     const any = mine[0];
-    const text = payslipText({ company: companyName, employee: e.name, month, payType: any.pay_type, rate: n(any.rate), first, second });
+    const text = payslipText({ company: companyName, employee: e.name, month, payType: any.pay_type, rate: n(any.rate), first, second }, await profileLang(e.line_user_id));
     try {
       await client.pushMessage({ to: e.line_user_id, messages: [{ type: "text", text }] });
       sent.push(e.name);

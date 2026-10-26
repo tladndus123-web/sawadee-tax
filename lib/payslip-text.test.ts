@@ -29,4 +29,14 @@ describe("payslipText", () => {
     expect(t).toContain("▪ 16–28");
     expect(t).toContain("ค่าจ้างรายวัน / Day rate: 400.00");
   });
+
+  it("in one language for the employee's phone", () => {
+    const slip = { company: "", employee: "Somchai", month: "2026-10", payType: "monthly" as const, rate: 18000, first: null, second: { gross: 9000, ssEmployee: 750, wht: 0, otherDeduction: 0, net: 8250, paidOn: "" } };
+    const th = payslipText(slip, "th");
+    expect(th).toContain("ใบแจ้งเงินเดือน · ตุลาคม 2569");
+    expect(th).not.toContain("Payslip");
+    expect(payslipText(slip, "ja")).toContain("給与明細 · 2026年10月");
+    expect(payslipText(slip, "ko")).toContain("실수령액: 8,250.00");
+    expect(payslipText(slip, "en")).toContain("Payslip · October 2026");
+  });
 });

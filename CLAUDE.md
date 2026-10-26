@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (435) · `npm run db:test` (pgTAP 233 + STOCK 61) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (438) · `npm run db:test` (pgTAP 233 + STOCK 61) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -37,11 +37,14 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 - https://thai-receipt-ledger.vercel.app — Vercel team `tladndus123-webs-projects`, project `thai-receipt-ledger`,
   region sin1. Env vars live in Vercel (12: + VAPID keys for phone notifications). Daily cron 02:00 UTC → `/api/cron/due-reminders`.
 - Supabase project **INC** (Singapore). Sign-up disabled (invite only), Gmail SMTP, 4-language auth emails.
-- LINE bot **TDB** (`@136udmem`), webhook `/api/line/webhook`. Replies in Thai + Japanese.
-  Admins get a 6-button menu in their phone's LINE language (owner's pictures `docs/line-menu/{ko,ja,th,en}.png`,
-  aliases `sawadee-admin-<lang>`, layout in `lib/line-menu.ts`; remake with `npx.cmd tsx scripts/line-menu.ts`):
-  month summary · bills due in 7 days · VAT return / yesterday's sales · Excel (1-hour signed link, private bucket
-  `line-exports`) · upload (camera buttons). Short words ("요약", "売上" …) work too (`lib/line-ask.ts`).
+- LINE bot **TDB** (`@136udmem`), webhook `/api/line/webhook`. **Every message is in the reader's phone LINE language**
+  (profile language → ko / ja / th / en, else English; `lib/line-lang.ts`; texts carry 4 parts th · ja · ko · en, the
+  sender keeps one). Admins get a 6-button menu in that language (owner's pictures `docs/line-menu/{ko,ja,th,en}.png`,
+  aliases `sawadee-admin-<lang>`, layout `lib/line-menu.ts`; remake: `npx.cmd tsx scripts/line-menu.ts`): month summary ·
+  bills due in 7 days · VAT return / yesterday's sales · Excel (1-hour signed link, private bucket `line-exports`) ·
+  upload (camera buttons). Answers are dashboard cards (`lib/line-dash.ts`, navy / blue / lime like the menu). Short words
+  ("요약", "売上" …) work too (`lib/line-ask.ts`). Mondays the daily cron also pushes the weekly AI report card
+  (`lib/weekly-report-server.ts`: month so far, week vs week, food cost, purchases, VAT estimate, 3 Claude tips).
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; sign-in lasts 12 h per
   device, then a security message and a new sign-in. Sign-in links work in any browser (implicit flow).

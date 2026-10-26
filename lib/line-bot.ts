@@ -18,7 +18,8 @@ import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
 import { type Ask, askFromData, askFromText, askSay, uploadPrompt } from "./line-ask";
 import { askAnswer } from "./line-ask-server";
 import { linkAdminMenu, profileLang, unlinkMenu, UPLOAD_DATA } from "./line-menu";
-import { imageType, lineBlobClient, lineClient, receiptCard, say, branchButtons, lineBranchLabel, salesBranchButtons, splitLangs } from "./line";
+import { branchButtons, branchWords, imageType, lineBlobClient, lineClient, receiptCard, salesBranchButtons, say } from "./line";
+import { inLang, type LineLang } from "./line-lang";
 import { aggregate, applySavedColumns, findHeader, posColumnsOf } from "./pos-import";
 import { isPosFileName, readPosBuffer } from "./pos-read-server";
 import { assignBranch, type Branch, branchFromPhoto, sortBranches } from "./branches";
@@ -53,10 +54,21 @@ export function appUrl(): string {
   return (process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3100")).replace(/\/$/, "");
 }
 
-/** Reply if the token is still good (it expires ~1 minute after the event), otherwise push */
+// The reader's phone language (LINE profile), remembered for an hour
+const langs = new Map<string, { lang: LineLang; at: number }>();
+async function langOf(lineUser: string): Promise<LineLang> {
+  const hit = langs.get(lineUser);
+  if (hit && Date.now() - hit.at < 3_600_000) return hit.lang;
+  const lang = await profileLang(lineUser);
+  langs.set(lineUser, { lang, at: Date.now() });
+  return lang;
+}
+
+/** Reply if the token is still good (it expires ~1 minute after the event), otherwise push — in the reader's language */
 async function send(event: { replyToken?: string }, to: string, given: messagingApi.Message[]) {
   const client = lineClient();
-  const messages = splitMessages(given);
+  const lang = await langOf(to);
+  const messages = given.map((m) => (m.type === "text" ? { ...m, text: inLang((m as messagingApi.TextMessage).text, lang) } : m)).slice(-5);
   if (event.replyToken) {
     try {
       await client.replyMessage({ replyToken: event.replyToken, messages });
@@ -68,22 +80,6 @@ async function send(event: { replyToken?: string }, to: string, given: messaging
   await client.pushMessage({ to, messages });
 }
 const text = (t: string): messagingApi.TextMessage => ({ type: "text", text: t });
-
-/** A text in two languages becomes two messages, Thai then Japanese; quick-reply buttons stay on the last one (max 5) */
-function splitMessages(messages: messagingApi.Message[]): messagingApi.Message[] {
-  const out: messagingApi.Message[] = [];
-  for (const m of messages) {
-    if (m.type !== "text") {
-      out.push(m);
-      continue;
-    }
-    const t = m as messagingApi.TextMessage;
-    const parts = splitLangs(t.text);
-    const { quickReply, ...rest } = t;
-    parts.forEach((p, i) => out.push({ ...rest, text: p, ...(i === parts.length - 1 && quickReply ? { quickReply } : {}) }));
-  }
-  return out.slice(-5);
-}
 
 async function memberFor(lineUser: string) {
   const { data } = await supabaseAdmin().from("members").select("user_id, name, email, role, disabled_at").eq("line_user_id", lineUser).maybeSingle();
@@ -147,7 +143,7 @@ async function linkAccount(event: webhook.MessageEvent, lineUser: string, code: 
 /** The menu's upload card: camera / photo buttons, in the person's LINE language */
 async function uploadButtons(event: { replyToken?: string }, lineUser: string) {
   if (!(await memberFor(lineUser))) return send(event, lineUser, [text(say.welcome)]);
-  await send(event, lineUser, [uploadPrompt(await profileLang(lineUser))]);
+  await send(event, lineUser, [uploadPrompt(await langOf(lineUser))]);
 }
 
 /**
@@ -166,7 +162,7 @@ async function answerAsk(event: { replyToken?: string }, lineUser: string, ask: 
   await lineClient()
     .showLoadingAnimation({ chatId: lineUser, loadingSeconds: ask === "excel" ? 20 : 5 })
     .catch(() => undefined);
-  await send(event, lineUser, [text(await askAnswer(supabaseAdmin(), ask, appUrl()))]);
+  await send(event, lineUser, await askAnswer(supabaseAdmin(), ask, appUrl(), await langOf(lineUser)));
 }
 
 /**
@@ -291,8 +287,9 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   if (saved.error) throw saved.error;
 
   // No locale in the link: the app picks the reader's language
-  const card = receiptCard(doc, checks, `${appUrl()}/documents/${id}`);
-  await send(later, lineUser, ask ? [card, { ...text(say.branchAsk), quickReply: branchButtons(id, branches) }] : [card]);
+  const lang = await langOf(lineUser);
+  const card = receiptCard(doc, checks, `${appUrl()}/documents/${id}`, lang);
+  await send(later, lineUser, ask ? [card, { ...text(say.branchAsk), quickReply: branchButtons(id, branches, lang) }] : [card]);
   console.log(`[line] saved ${id}: AI ${(aiMs / 1000).toFixed(1)}s, total ${((Date.now() - started) / 1000).toFixed(1)}s`);
 }
 
@@ -305,7 +302,7 @@ async function salesFile(event: webhook.MessageEvent, lineUser: string, messageI
   if (limited(`file:${member.user_id}`, 5, 60_000)) return send(event, lineUser, [text(say.rate)]);
   const branches = await usableBranches(member.user_id);
   if (!branches.length) return send(event, lineUser, [text(say.noBranch)]);
-  if (branches.length > 1) return send(event, lineUser, [{ ...text(say.fileBranchAsk), quickReply: salesBranchButtons(messageId, fileName, branches) }]);
+  if (branches.length > 1) return send(event, lineUser, [{ ...text(say.fileBranchAsk), quickReply: salesBranchButtons(messageId, fileName, branches, await langOf(lineUser)) }]);
   await importSales(event, lineUser, member.user_id, messageId, fileName, branches[0] ?? null);
 }
 
@@ -368,7 +365,7 @@ async function importSales(event: { replyToken?: string }, lineUser: string, use
           vat: sum("vat"),
           locked: valid.length - open.length,
           invalid: days.length - valid.length,
-          branch: branch ? { th: lineBranchLabel(branch, "th"), ja: lineBranchLabel(branch, "ja") } : null,
+          branch: branch ? branchWords(branch) : null,
         },
         `${appUrl()}/sales`,
       ),
@@ -403,7 +400,7 @@ async function pickBranch(event: webhook.PostbackEvent, lineUser: string, data: 
   const { error } = await admin.from("documents").update({ branch_id: branchId }).eq("id", docId);
   if (error) throw error;
   const named = b as { no: string; name: string };
-  await send(event, lineUser, [text(say.branchSet(lineBranchLabel(named, "th"), lineBranchLabel(named, "ja")))]);
+  await send(event, lineUser, [text(say.branchSet(branchWords(named)))]);
 }
 
 async function readStream(stream: NodeJS.ReadableStream): Promise<Buffer> {

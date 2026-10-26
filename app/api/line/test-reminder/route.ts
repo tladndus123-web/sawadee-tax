@@ -3,6 +3,7 @@
 
 import { endIfExpired } from "@/lib/auth/session-guard";
 import { langMessages, lineClient, lineConfig } from "@/lib/line";
+import { profileLang } from "@/lib/line-menu";
 import { reminderTexts } from "@/lib/reminders-server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -36,7 +37,7 @@ export async function POST() {
   if (!texts.length) return Response.json({ sent: 0 });
   await lineClient().pushMessage({
     to: member.line_user_id as string,
-    messages: langMessages(texts, `🧪 TEST\n`),
+    messages: langMessages(texts, await profileLang(member.line_user_id as string), `🧪 TEST\n`),
   });
   return Response.json({ sent: texts.length });
 }
