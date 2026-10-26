@@ -8,8 +8,11 @@ import { four } from "./line-lang";
 
 export const QUICK_MODEL = "claude-haiku-5-5";
 export const DEEP_MODEL = "claude-sonnet-5-5";
-/** Long analyses (Sonnet) per month, whole company */
-export const DEEP_PER_MONTH = 10;
+/**
+ * Long analyses (Sonnet) per month, whole company. The owner lifted the first limit of 10 on 2026-10-26 ("it is our
+ * own shop"); the uses are still counted, and this cap only stops a runaway.
+ */
+export const DEEP_PER_MONTH = 1000;
 /** Earlier turns sent along, and how old they may be */
 export const HISTORY_TURNS = 8;
 export const HISTORY_HOURS = 24;
@@ -70,10 +73,10 @@ export function chatText(reply: string): string {
 export const assistantSay = {
   thinking: (n: number) =>
     four(
-      `🔬 กำลังวิเคราะห์อย่างละเอียด (เดือนนี้ครั้งที่ ${n}/${DEEP_PER_MONTH}) อาจใช้เวลาสักครู่`,
-      `🔬 詳しく分析しています（今月 ${n}/${DEEP_PER_MONTH}回目）。少しお待ちください。`,
-      `🔬 자세히 분석하고 있어요 (이번 달 ${n}/${DEEP_PER_MONTH}번째). 잠시만 기다려 주세요.`,
-      `🔬 Working on an in-depth analysis (${n}/${DEEP_PER_MONTH} this month). One moment.`,
+      `🔬 กำลังวิเคราะห์อย่างละเอียด (ครั้งที่ ${n} ของเดือนนี้) อาจใช้เวลาสักครู่`,
+      `🔬 詳しく分析しています（今月${n}回目）。少しお待ちください。`,
+      `🔬 자세히 분석하고 있어요 (이번 달 ${n}번째). 잠시만 기다려 주세요.`,
+      `🔬 Working on an in-depth analysis (#${n} this month). One moment.`,
     ),
   deepUsedUp: four(
     `(การวิเคราะห์ละเอียด ${DEEP_PER_MONTH} ครั้งของเดือนนี้ใช้หมดแล้ว จึงตอบแบบย่อ)`,

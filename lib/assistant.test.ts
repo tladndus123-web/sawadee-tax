@@ -3,10 +3,10 @@ import { assistantSay, chatText, DEEP_MARK, DEEP_MODEL, DEEP_PER_MONTH, deepSyst
 import { inLang } from "./line-lang";
 
 describe("LINE AI assistant", () => {
-  it("Haiku answers, Sonnet 5.5 takes the long analyses, 10 a month", () => {
+  it("Haiku answers, Sonnet 5.5 takes the long analyses (no real monthly limit since 2026-10-26)", () => {
     expect(QUICK_MODEL).toBe("claude-haiku-5-5");
     expect(DEEP_MODEL).toBe("claude-sonnet-5-5");
-    expect(DEEP_PER_MONTH).toBe(10);
+    expect(DEEP_PER_MONTH).toBeGreaterThanOrEqual(1000);
   });
   it("Haiku hands over only with the mark alone at the start", () => {
     expect(wantsDeep(DEEP_MARK)).toBe(true);
@@ -26,8 +26,8 @@ describe("LINE AI assistant", () => {
     expect(chatText("a".repeat(6000))).toHaveLength(4800);
   });
   it("its notices come in every language", () => {
-    expect(inLang(assistantSay.thinking(3), "ko")).toContain("3/10");
-    expect(inLang(assistantSay.deepUsedUp, "ja")).toContain("10回");
+    expect(inLang(assistantSay.thinking(3), "ko")).toContain("이번 달 3번째");
+    expect(inLang(assistantSay.thinking(3), "ko")).not.toContain("/");
     expect(inLang(assistantSay.failed, "th")).toMatch(/[ก-๛]/);
     expect(inLang(assistantSay.rate, "en")).toContain("Too many");
   });

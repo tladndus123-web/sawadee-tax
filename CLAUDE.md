@@ -47,7 +47,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   (`lib/weekly-report-server.ts`: month so far, week vs week, food cost, purchases, VAT estimate, 3 Claude tips).
   **AI assistant** (2026-10-26): any other text from an active admin is answered from the books (`lib/assistant.ts`,
   `lib/assistant-server.ts` builds a compact text of the books): Haiku 5.5 answers, and hands over by itself to Sonnet 5.5
-  for long analyses — at most 10 a month for the whole company (`assistant_claim()`, tables `assistant_turns` (last 24 h
+  for long analyses — no monthly limit since the owner lifted it 2026-10-26 (counted; cap 1000 against a runaway) (`assistant_claim()`, tables `assistant_turns` (last 24 h
   sent along, kept 30 days) / `assistant_usage`, server only, `…002100_assistant.sql`). Staff messages stay unanswered.
   Its answers are dashboard cards too: the model fills a small JSON card (`AiCard`, `parseCard` — app links only),
   `aiCard()` in `lib/line-dash.ts` draws it; plain text only if the model ever answers without one.
