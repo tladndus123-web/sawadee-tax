@@ -3,11 +3,18 @@
 // Pure: the numbers come from lib/line-ask-server.ts and lib/weekly-report-server.ts.
 
 import type { messagingApi } from "@line/bot-sdk";
+import en from "@/messages/en.json";
+import ja from "@/messages/ja.json";
+import ko from "@/messages/ko.json";
+import th from "@/messages/th.json";
 import type { AiCard, Tone } from "./assistant";
+import type { CheckResult } from "./checks";
+import { inLang } from "./line-lang";
 import type { LineLang } from "./line-lang";
+import type { CardExtra, CardTip } from "./line-tips";
 import { baht } from "./money";
 import { dmy } from "./thai-tax";
-import type { Tri } from "./types";
+import type { LedgerDoc, Tri } from "./types";
 
 type Box = messagingApi.FlexBox;
 type Comp = messagingApi.FlexComponent;
@@ -179,9 +186,34 @@ const button = (label: string, to: string | { data: string }, primary = true): B
   contents: [txt(label, { size: "sm", weight: "bold", align: "center", color: primary ? C.bg : C.white })],
 });
 
-const bubble = (alt: string, top: Box, middle: Comp[], buttons: Box[]): messagingApi.FlexMessage => ({
+/** 💡 TIP: one line of advice for the situation, and a smaller line under it */
+const tipBox = (t: CardTip): Box => ({
+  type: "box",
+  layout: "vertical",
+  margin: "md",
+  backgroundColor: C.card,
+  borderColor: "#5a6b2a",
+  borderWidth: "1px",
+  cornerRadius: "16px",
+  paddingAll: "14px",
+  spacing: "sm",
+  contents: [
+    txt(`💡 TIP · ${t.title}`, { size: "xs", weight: "bold", color: C.lime }),
+    txt(t.main, { size: "sm" }),
+    ...(t.note ? [txt(t.note, { size: "xs", color: C.soft })] : []),
+  ],
+});
+
+/** Next questions as buttons above the keyboard: tapping sends the words, the AI assistant answers */
+export const nextQuestions = (next: string[] | undefined): messagingApi.QuickReply | undefined =>
+  next?.length
+    ? { items: next.slice(0, 13).map((q) => ({ type: "action", action: { type: "message", label: [...q].slice(0, 20).join(""), text: q } })) }
+    : undefined;
+
+const bubble = (alt: string, top: Box, middle: Comp[], buttons: Box[], extra: CardExtra = {}): messagingApi.FlexMessage => ({
   type: "flex",
   altText: alt.slice(0, 400),
+  ...(extra.next?.length ? { quickReply: nextQuestions(extra.next) } : {}),
   contents: {
     type: "bubble",
     size: "mega",
@@ -192,7 +224,14 @@ const bubble = (alt: string, top: Box, middle: Comp[], buttons: Box[]): messagin
       paddingAll: "0px",
       contents: [
         top,
-        { type: "box", layout: "vertical", paddingStart: "14px", paddingEnd: "14px", paddingBottom: "14px", contents: [...middle, ...(buttons.length ? [{ type: "box", layout: "horizontal", spacing: "sm", margin: "lg", contents: buttons } satisfies Box] : [])] },
+        {
+          type: "box",
+          layout: "vertical",
+          paddingStart: "14px",
+          paddingEnd: "14px",
+          paddingBottom: "14px",
+          contents: [...middle, ...(extra.tip ? [tipBox(extra.tip)] : []), ...(buttons.length ? [{ type: "box", layout: "horizontal", spacing: "sm", margin: "lg", contents: buttons } satisfies Box] : [])],
+        },
       ],
     },
   },
@@ -227,7 +266,7 @@ function salesBar(sales: number, target: number, lastMonth: number, w: Words): {
   return { bar: null, left: "", right: "" };
 }
 
-export function summaryCard(d: SummaryData, lang: LineLang, url: string): messagingApi.FlexMessage {
+export function summaryCard(d: SummaryData, lang: LineLang, url: string, extra: CardExtra = {}): messagingApi.FlexMessage {
   const w = W[lang];
   const top = head(w.summary, w.month(d.month), `${dmy(d.today)} ${d.asOf} ${w.asOf}`);
   const b = d.sales === null ? null : salesBar(d.sales, d.target, d.lastMonthSales, w);
@@ -240,7 +279,7 @@ export function summaryCard(d: SummaryData, lang: LineLang, url: string): messag
     ]),
     ...(d.toCheck ? [warn(w.toCheck(d.toCheck))] : []),
   ];
-  return bubble(d.sales === null ? w.month(d.month) : `${w.month(d.month)} · ${w.sales} ${baht(d.sales)}`, top, middle, [button(w.details, url)]);
+  return bubble(d.sales === null ? w.month(d.month) : `${w.month(d.month)} · ${w.sales} ${baht(d.sales)}`, top, middle, [button(w.details, url)], extra);
 }
 
 export interface DueBill {
@@ -253,9 +292,9 @@ export interface DueBill {
 /** At most this many bills are listed; the rest are counted */
 export const DUE_LIST_MAX = 8;
 
-export function dueCard(bills: DueBill[], lang: LineLang, url: string): messagingApi.FlexMessage {
+export function dueCard(bills: DueBill[], lang: LineLang, url: string, extra: CardExtra = {}): messagingApi.FlexMessage {
   const w = W[lang];
-  if (!bills.length) return bubble(w.noneDue, head(w.due, w.noneDue), [], [button(w.details, url)]);
+  if (!bills.length) return bubble(w.noneDue, head(w.due, w.noneDue), [], [button(w.details, url)], extra);
   const total = bills.reduce((a, b) => a + Math.round(b.amount * 100), 0) / 100;
   const shown = bills.slice(0, DUE_LIST_MAX);
   const when = (d: number) => (d < 0 ? w.daysOver(-d) : d === 0 ? w.today : w.daysLeft(d));
@@ -275,6 +314,7 @@ export function dueCard(bills: DueBill[], lang: LineLang, url: string): messagin
     head(w.due, w.dueTitle(bills.length)),
     [hero(w.due, baht(total), null, "", ""), rows(list), ...(more > 0 ? [txt(w.more(more), { size: "xs", color: C.muted, margin: "sm" })] : [])],
     [button(w.details, url)],
+    extra,
   );
 }
 
@@ -290,7 +330,7 @@ export interface VatData {
   drafts: number;
 }
 
-export function vatCard(v: VatData, lang: LineLang, url: string): messagingApi.FlexMessage {
+export function vatCard(v: VatData, lang: LineLang, url: string, extra: CardExtra = {}): messagingApi.FlexMessage {
   const w = W[lang];
   const net = v.salesVat === null ? null : Math.round(v.salesVat * 100 - v.claimableVat * 100) / 100;
   const middle: Comp[] = [
@@ -303,7 +343,7 @@ export function vatCard(v: VatData, lang: LineLang, url: string): messagingApi.F
     ...(v.toCheck ? [warn(w.toCheck(v.toCheck))] : []),
     ...(v.drafts ? [txt(w.drafts(v.drafts), { size: "xs", color: C.muted, margin: "sm" })] : []),
   ];
-  return bubble(`${w.vatTitle(v.month)} · ${dmy(v.due)}`, head(w.vat, w.vatTitle(v.month)), middle, [button(w.details, url)]);
+  return bubble(`${w.vatTitle(v.month)} · ${dmy(v.due)}`, head(w.vat, w.vatTitle(v.month)), middle, [button(w.details, url)], extra);
 }
 
 export interface SalesDay {
@@ -311,9 +351,9 @@ export interface SalesDay {
   branches: { name: Record<LineLang, string>; gross: number; bills: number }[];
 }
 
-export function salesCard(s: SalesDay, lang: LineLang, url: string): messagingApi.FlexMessage {
+export function salesCard(s: SalesDay, lang: LineLang, url: string, extra: CardExtra = {}): messagingApi.FlexMessage {
   const w = W[lang];
-  if (!s.branches.length) return bubble(w.noSales(dmy(s.date)), head(w.yesterday, w.noSales(dmy(s.date))), [], [button(w.details, url)]);
+  if (!s.branches.length) return bubble(w.noSales(dmy(s.date)), head(w.yesterday, w.noSales(dmy(s.date))), [], [button(w.details, url)], extra);
   const total = s.branches.reduce((a, b) => a + Math.round(b.gross * 100), 0) / 100;
   const bills = s.branches.reduce((a, b) => a + b.bills, 0);
   return bubble(
@@ -324,6 +364,7 @@ export function salesCard(s: SalesDay, lang: LineLang, url: string): messagingAp
       ...(s.branches.length > 1 ? [rows(s.branches.map((b) => row(b.name[lang], baht(b.gross))))] : []),
     ],
     [button(w.details, url)],
+    extra,
   );
 }
 
@@ -333,7 +374,7 @@ export interface ExcelLink {
   url: string;
 }
 
-export function excelCard(files: ExcelLink[], lang: LineLang): messagingApi.FlexMessage {
+export function excelCard(files: ExcelLink[], lang: LineLang, extra: CardExtra = {}): messagingApi.FlexMessage {
   const w = W[lang];
   const monthName = (m: string) => (lang === "th" ? thM(m) : lang === "en" ? enM(m) : lang === "ja" ? `${m.slice(0, 4)}年${Number(m.slice(5, 7))}月` : `${m.slice(0, 4)}년 ${Number(m.slice(5, 7))}월`);
   return bubble(
@@ -356,6 +397,7 @@ export function excelCard(files: ExcelLink[], lang: LineLang): messagingApi.Flex
       }),
     ),
     [],
+    extra,
   );
 }
 
@@ -389,7 +431,7 @@ export interface Tip {
 
 const change = (now: number, before: number) => (before > 0 ? ((now - before) / before) * 100 : null);
 
-export function weeklyCard(d: WeeklyData, tips: Tip[], lang: LineLang, url: string): messagingApi.FlexMessage {
+export function weeklyCard(d: WeeklyData, tips: Tip[], lang: LineLang, url: string, extra: CardExtra = {}): messagingApi.FlexMessage {
   const w = W[lang];
   const b = salesBar(d.monthSales, d.target, d.lastMonthSales, w);
   const wk = change(d.weekSales, d.prevWeekSales);
@@ -441,6 +483,7 @@ export function weeklyCard(d: WeeklyData, tips: Tip[], lang: LineLang, url: stri
     head(`${w.weekly} · ${dmy(d.from).slice(0, 5)} – ${dmy(d.to).slice(0, 5)}`, w.weeklyTitle, `${d.company}${d.branchCount > 1 ? ` · ${w.branches(d.branchCount)}` : ""}`),
     middle,
     [button(w.openDash, url), button(w.excelButton, { data: "ask=excel" }, false)],
+    extra,
   );
 }
 
@@ -481,5 +524,96 @@ export function aiCard(c: AiCard): messagingApi.FlexMessage {
     head(c.eyebrow || "AI", c.title, c.summary || undefined),
     middle,
     c.links.map((l, i) => button(l.label, l.url, i === 0)),
+    { tip: c.tip, next: c.next },
   );
+}
+
+// ── The receipt card (a photo saved from LINE) ──────────────────────────────────────────────────────────────────
+
+const CARD: Record<LineLang, { toCheck: (n: number) => string; ok: string; saved: string; vat: string; due: string; total: string; open: string; alt: string }> = {
+  th: { toCheck: (n) => `ต้องตรวจ ${n} รายการ`, ok: "ตรวจอัตโนมัติผ่าน", saved: "บันทึกลงสมุดบัญชีแล้ว", vat: "VAT", due: "ครบกำหนด", total: "ยอดสุทธิ", open: "เปิดในแอป", alt: "บันทึกแล้ว" },
+  ja: { toCheck: (n) => `要確認 ${n}件`, ok: "自動チェックOK", saved: "台帳に登録しました", vat: "消費税", due: "支払期限", total: "合計", open: "アプリで開く", alt: "登録しました" },
+  ko: { toCheck: (n) => `확인 필요 ${n}건`, ok: "자동 확인 통과", saved: "장부에 저장했어요", vat: "부가세", due: "지급 기한", total: "합계", open: "앱에서 열기", alt: "저장했어요" },
+  en: { toCheck: (n) => `${n} to check`, ok: "Automatic checks passed", saved: "Saved to the ledger", vat: "VAT", due: "Due", total: "Total", open: "Open in the app", alt: "Saved" },
+};
+const CHECK_NAMES: Record<LineLang, Record<string, string>> = { th: th.checks, ja: ja.checks, ko: ko.checks, en: en.checks };
+
+/** The reply for a saved document: who, how much, what the automatic checks found, and a link to it */
+export function receiptCard(doc: LedgerDoc, checks: CheckResult[], url: string, lang: LineLang): messagingApi.FlexMessage {
+  const L = CARD[lang];
+  const seller = nameIn(doc.seller.name, lang);
+  const problems = checks.filter((c) => !c.na && !c.ok);
+  const meta = [doc.docNo, doc.date && dmy(doc.date)].filter(Boolean).join(" · ") || " ";
+  const net = baht(doc.totals.net);
+  const status: Box = problems.length
+    ? {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: C.warnBg,
+        cornerRadius: "12px",
+        paddingAll: "12px",
+        margin: "md",
+        spacing: "xs",
+        contents: [
+          txt(`⚠️ ${L.toCheck(problems.length)}`, { size: "xs", weight: "bold", color: C.orange }),
+          ...problems.slice(0, 3).map((c) => txt(`• ${CHECK_NAMES[lang][c.key] ?? c.key}`, { size: "xxs", color: C.orange })),
+        ],
+      }
+    : { type: "box", layout: "vertical", backgroundColor: C.card, cornerRadius: "12px", paddingAll: "12px", margin: "md", contents: [txt(`✓ ${L.ok}`, { size: "xs", weight: "bold", color: C.lime })] };
+  return bubble(
+    `${L.alt} ${net} ${seller}`,
+    head("RECEIPT", seller, `${L.saved} · ${meta}`),
+    [
+      hero(L.total, net, null, `${L.vat} ${baht(doc.totals.vat)}`, doc.dueDate && !doc.paid ? `${L.due} ${dmy(doc.dueDate)}` : ""),
+      status,
+    ],
+    [button(L.open, url)],
+  );
+}
+
+// ── Notices (morning reminders, a sales file saved …) as cards ──────────────────────────────────────────────────
+
+const OPEN: Record<LineLang, string> = { ko: "열기", ja: "開く", th: "เปิด", en: "Open" };
+
+/**
+ * A bot text in the reader's language as a card: the first line is the title, the second the line under it, the
+ * other lines become rows ("label: value") or a list, and a last line with a link becomes the button.
+ */
+export function noticeBubble(text: string, eyebrow: string, lang: LineLang): messagingApi.FlexBubble {
+  const lines = text.split("\n").map((l) => l.trim());
+  const url = lines.length && /^https?:\/\//.test(lines[lines.length - 1]) ? lines.pop()! : "";
+  const [title = " ", second = "", ...rest] = lines;
+  const body: Box[] = [];
+  const pairs: Box[] = [];
+  const items: string[] = [];
+  for (const l of rest.filter(Boolean)) {
+    const m = /^(.+?)\s*[:：]\s*(.{1,26})$/.exec(l);
+    if (m && !l.startsWith("•")) pairs.push(row(m[1].replace(/^[•✓]\s*/, ""), m[2]));
+    else items.push(l);
+  }
+  if (pairs.length) body.push(rows(pairs));
+  if (items.length)
+    body.push({
+      type: "box",
+      layout: "vertical",
+      margin: "md",
+      backgroundColor: C.card,
+      borderColor: C.line,
+      borderWidth: "1px",
+      cornerRadius: "16px",
+      paddingAll: "14px",
+      spacing: "sm",
+      contents: items.map((i) => txt(i, { size: "xs", color: i.startsWith("✓") ? C.lime : C.soft })),
+    });
+  return bubble(title, head(eyebrow, title, second || undefined), body, url ? [button(OPEN[lang], url)] : []).contents as messagingApi.FlexBubble;
+}
+
+/** Several bot texts (each in four languages) as one message in the reader's language: a card, or swipeable cards */
+export function noticeMessage(texts: string[], eyebrow: string, lang: LineLang, prefix = ""): messagingApi.FlexMessage {
+  const parts = texts.map((t) => `${prefix}${inLang(t, lang)}`);
+  const bubbles = parts.slice(0, 12).map((t) => noticeBubble(t, eyebrow, lang));
+  const alt = parts.map((t) => t.split("\n")[0]).join(" · ").slice(0, 400) || eyebrow;
+  return bubbles.length === 1
+    ? { type: "flex", altText: alt, contents: bubbles[0] }
+    : { type: "flex", altText: alt, contents: { type: "carousel", contents: bubbles } };
 }

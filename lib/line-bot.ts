@@ -18,7 +18,7 @@ import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
 import { assistantSay } from "./assistant";
 import { answer } from "./assistant-server";
-import { aiCard } from "./line-dash";
+import { aiCard, noticeMessage } from "./line-dash";
 import { type Ask, askFromData, askFromText, askSay, uploadPrompt } from "./line-ask";
 import { askAnswer } from "./line-ask-server";
 import { linkAdminMenu, profileLang, unlinkMenu, UPLOAD_DATA } from "./line-menu";
@@ -391,8 +391,8 @@ async function importSales(event: { replyToken?: string }, lineUser: string, use
   const dates = open.map((d) => d.date).sort();
   const sum = (k: "gross" | "vat") => open.reduce((a, d) => a + Math.round(d[k] * 100), 0) / 100;
   await send(event, lineUser, [
-    text(
-      say.salesSaved(
+    noticeMessage(
+      [say.salesSaved(
         {
           days: new Set(dates).size,
           from: dates[0] ?? "",
@@ -404,7 +404,9 @@ async function importSales(event: { replyToken?: string }, lineUser: string, use
           branch: branch ? branchWords(branch) : null,
         },
         `${appUrl()}/sales`,
-      ),
+      )],
+      "SALES",
+      await langOf(lineUser),
     ),
   ]);
   console.log(`[line] sales file ${fileName}: ${open.length} lines`);

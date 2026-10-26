@@ -4,7 +4,8 @@
 // Nothing is sent on days with nothing to say, so the monthly LINE message quota is barely touched.
 // Every LINE message is in the reader's phone language (2026-10-26). Mondays also bring the weekly AI report card.
 
-import { langMessages, lineClient, lineConfig } from "@/lib/line";
+import { lineClient, lineConfig } from "@/lib/line";
+import { noticeMessage } from "@/lib/line-dash";
 import { appUrl } from "@/lib/line-bot";
 import { inLang } from "@/lib/line-lang";
 import { profileLang } from "@/lib/line-menu";
@@ -36,8 +37,8 @@ export async function GET(req: Request) {
   let failed = 0;
   if (lineConfig().channelAccessToken && to.length) {
     const client = lineClient();
-    // One message with every reminder, in the reader's language
-    const results = await Promise.allSettled(to.map(async (id) => client.pushMessage({ to: id, messages: langMessages(texts, await profileLang(id)) })));
+    // One message with every reminder as a card (swipe for more), in the reader's language
+    const results = await Promise.allSettled(to.map(async (id) => client.pushMessage({ to: id, messages: [noticeMessage(texts, "REMINDER", await profileLang(id))] })));
     const bad = results.filter((r) => r.status === "rejected");
     bad.forEach((r) => console.error("[cron] reminder push failed", (r as PromiseRejectedResult).reason));
     line = to.length - bad.length;

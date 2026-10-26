@@ -34,11 +34,17 @@ Reply with ONLY one JSON object — a dashboard card shown in LINE — and nothi
  "tiles": [{"label": "", "value": "", "note": "", "tone": "up|down|warn|neutral"}],
  "rows": [{"label": "", "value": "", "tone": "up|down|warn|neutral"}],
  "sections": [{"title": "", "items": ["one short line each"]}],
- "links": [{"label": "", "url": "one of the app pages listed in the books"}]}
+ "links": [{"label": "", "url": "one of the app pages listed in the books"}],
+ "tip": {"title": "2–3 words, e.g. 'Month-end forecast'", "main": "one useful insight with a number", "note": "one smaller line: what to do"},
+ "next": ["2 or 3 short follow-up questions the person may ask next, each at most 18 characters, starting with an emoji"]}
 Only "title" and "summary" are required; leave out what does not help. hero = the one number that answers the question
 ("bar" 0–1 only for progress against a target). tiles = 2 or 4 key figures side by side. rows = up to 12 lines such as
 days, branches, suppliers or bills with their amounts. sections = up to 4 short lists (reasons, next steps, tips).
-tone "up" = good (green), "down" or "warn" = needs attention (orange). No markdown anywhere; plain words, a few emoji at most.`;
+tone "up" = good (green), "down" or "warn" = needs attention (orange). No markdown anywhere; plain words, a few emoji at most.
+Always add a "tip": the most useful thing the numbers show beyond the question — e.g. the month-end forecast at the
+current pace, a price rise, cash for the bills due, VAT that cannot be claimed, a weekday pattern, how far to
+break-even, labour cost share, a deadline coming up, something unusual (a receipt twice, a spend far above usual),
+a branch that differs. Always add "next" questions (forecast, comparisons, causes, plans) in the person's language.`;
 
 export const quickSystem = (context: string) =>
   `${RULES}
@@ -98,6 +104,8 @@ export interface AiCard {
   rows: { label: string; value: string; tone: Tone }[];
   sections: { title: string; items: string[] }[];
   links: { label: string; url: string }[];
+  tip: { title: string; main: string; note?: string } | null;
+  next: string[];
 }
 export type Tone = "up" | "down" | "warn" | "neutral";
 
@@ -141,6 +149,15 @@ export function parseCard(reply: string, appUrl: string): AiCard | null {
     links: list(o.links, 2)
       .map((l) => ({ label: str(l.label, 20), url: typeof l.url === "string" ? l.url.trim() : "" }))
       .filter((l) => l.label && appUrl && l.url.startsWith(`${appUrl}/`)),
+    tip: (() => {
+      const t = o.tip && typeof o.tip === "object" ? (o.tip as Record<string, unknown>) : null;
+      const main = t ? str(t.main, 200) : "";
+      return t && main ? { title: str(t.title, 30) || "TIP", main, note: str(t.note, 200) || undefined } : null;
+    })(),
+    next: (Array.isArray(o.next) ? o.next : [])
+      .map((q) => str(q, 60))
+      .filter(Boolean)
+      .slice(0, 4),
   };
 }
 
@@ -154,6 +171,7 @@ export function cardText(c: AiCard): string {
     ...c.rows.map((r) => `${r.label}: ${r.value}`),
     ...c.sections.flatMap((s) => [s.title, ...s.items.map((i) => `• ${i}`)]),
     ...c.links.map((l) => `${l.label}: ${l.url}`),
+    c.tip ? `TIP ${c.tip.title}: ${c.tip.main} ${c.tip.note ?? ""}`.trim() : "",
   ]
     .filter(Boolean)
     .join("\n");

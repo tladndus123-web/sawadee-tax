@@ -6,7 +6,8 @@ import type { messagingApi } from "@line/bot-sdk";
 import ja from "@/messages/ja.json";
 import { invoiceMonth, monthKey } from "./archive";
 import { serverCategories } from "./categories-server";
-import { flagsFor } from "./checks";
+import { claimable, flagsFor } from "./checks";
+import { cashTip, claimTip, costTip, excelTip, forecastTip, NEXT, weekdayTip } from "./line-tips";
 import { monthCosts } from "./cost-split";
 import { daysUntil, summarize, upcoming, vatFiling } from "./dashboard";
 import { type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
@@ -79,6 +80,17 @@ export async function askAnswer(admin: Admin, ask: Ask, appUrl: string, lang: Li
     const s = summarize(saved, month, taxId, today);
     const last = shiftMonth(month, -1);
     const [now, before] = hasSales ? await Promise.all([salesOf(admin, `${month}-01`, lastDay(month)), salesOf(admin, `${last}-01`, lastDay(last))]) : [[], []];
+    // TIP: where the month ends at this pace (sales are in up to yesterday); without sales, where the money went
+    const costs = [...monthCosts(saved.map((d) => d.doc), month, taxId).byCategory.entries()].sort((a, b) => b[1] - a[1]);
+    const costSum = costs.reduce((a, [, v]) => a + v, 0);
+    const cats = await serverCategories();
+    const catName = (k: string) => {
+      const c = cats.find((x) => x.key === k);
+      return (lang === "th" ? c?.name?.th : lang === "ja" ? c?.name?.ja : c?.name?.en) || (ja.category as Record<string, string>)[k] || k;
+    };
+    const tip = hasSales
+      ? forecastTip({ sales: sumOf(now, "gross"), daysDone: Number(today.slice(8, 10)) - 1, daysInMonth: Number(lastDay(month).slice(8, 10)), target, lastMonthSales: sumOf(before, "gross"), month }, lang)
+      : costTip(costs.length && costSum ? { name: catName(costs[0][0]), share: costs[0][1] / costSum } : null, lang);
     return [
       summaryCard(
         {
@@ -98,15 +110,20 @@ export async function askAnswer(admin: Admin, ask: Ask, appUrl: string, lang: Li
         },
         lang,
         `${appUrl}/`,
+        { tip, next: NEXT.summary[lang] },
       ),
     ];
   }
   if (ask === "due") {
-    const { saved } = await ledger(admin);
+    const [{ saved }, hasSales] = await Promise.all([ledger(admin), keepsSales(admin)]);
     const bills = upcoming(saved, today)
       .filter((d) => d.state === "overdue" || d.state === "soon")
       .map((d) => ({ vendor: d.doc.seller.name, amount: d.doc.totals.net, due: d.doc.dueDate, days: daysUntil(d.doc.dueDate, today) }));
-    return [dueCard(bills, lang, `${appUrl}/ledger`)];
+    const total = (list: typeof bills) => list.reduce((a, b) => a + Math.round(b.amount * 100), 0) / 100;
+    const overdue = bills.filter((b) => b.days < 0);
+    const last7 = hasSales ? sumOf(await salesOf(admin, shiftDay(today, -7), shiftDay(today, -1)), "gross") : null;
+    const tip = cashTip({ dueTotal: total(bills), overdue: overdue.length, overdueTotal: total(overdue), last7Sales: last7 }, lang);
+    return [dueCard(bills, lang, `${appUrl}/ledger`, { tip, next: NEXT.due[lang] })];
   }
   if (ask === "vat") {
     const f = vatFiling(today);
@@ -127,12 +144,23 @@ export async function askAnswer(admin: Admin, ask: Ask, appUrl: string, lang: Li
         },
         lang,
         `${appUrl}/ledger/report/${f.month}`,
+        {
+          // TIP: VAT paid on purchases of that month that cannot be claimed
+          tip: (() => {
+            const lost = saved.filter((d) => monthKey(d.doc) === f.month && d.doc.totals.vat > 0 && !claimable(d.doc, taxId));
+            return claimTip({ lostCount: lost.length, lostVat: lost.reduce((a, d) => a + Math.round(d.doc.totals.vat * 100), 0) / 100, toCheck: s.toCheck }, lang);
+          })(),
+          next: NEXT.vat[lang],
+        },
       ),
     ];
   }
   if (ask === "sales") {
     const day = shiftDay(today, -1);
-    const [rows, branches] = await Promise.all([salesOf(admin, day, day), admin.from("branches").select("id, no, name, sort").order("sort")]);
+    const [rows, branches, before] = await Promise.all([salesOf(admin, day, day), admin.from("branches").select("id, no, name, sort").order("sort"), salesOf(admin, shiftDay(day, -28), shiftDay(day, -7))]);
+    // TIP: against the same weekday of the 4 weeks before
+    const sameDays = [7, 14, 21, 28].map((n) => shiftDay(day, -n)).map((d) => before.filter((r) => r.sale_date === d)).filter((r) => r.length);
+    const usual = sameDays.length ? sameDays.reduce((a, r) => a + sumOf(r, "gross"), 0) / sameDays.length : null;
     const list = (branches.data ?? []) as { id: string; no: string; name: string }[];
     const by = new Map<string, { gross: number; bills: number }>();
     for (const r of rows) {
@@ -153,10 +181,11 @@ export async function askAnswer(admin: Admin, ask: Ask, appUrl: string, lang: Li
         },
         lang,
         `${appUrl}/sales`,
+        { tip: weekdayTip({ date: day, total: sumOf(rows, "gross"), usual: usual === null ? null : Math.round(usual) }, lang), next: NEXT.sales[lang] },
       ),
     ];
   }
-  return [excelCard(await excelFiles(admin, today), lang)];
+  return [excelCard(await excelFiles(admin, today), lang, { tip: excelTip(lang), next: NEXT.excel[lang] })];
 }
 
 /** Food purchases (categories marked as food cost) ÷ sales without VAT, % — null without sales */

@@ -10,6 +10,7 @@ import { type Tip, weeklyCard, type WeeklyData } from "./line-dash";
 import { lineClient } from "./line";
 import type { LineLang } from "./line-lang";
 import { profileLang } from "./line-menu";
+import { NEXT } from "./line-tips";
 import { priceRises } from "./price-watch";
 import { nextWorkingDay } from "./thai-holidays";
 
@@ -124,7 +125,7 @@ export async function sendWeeklyReport(admin: Admin, appUrl: string, today: stri
     const lang = await profileLang(id);
     if (!tips.has(lang)) tips.set(lang, await weeklyTips(made.facts, lang));
     try {
-      await lineClient().pushMessage({ to: id, messages: [weeklyCard(made.data, tips.get(lang)!, lang, `${appUrl}/`)] });
+      await lineClient().pushMessage({ to: id, messages: [weeklyCard(made.data, tips.get(lang)!, lang, `${appUrl}/`, { next: NEXT.weekly[lang] })] });
       sent += 1;
     } catch (e) {
       console.error("[weekly] push failed", e instanceof Error ? e.message : e);

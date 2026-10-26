@@ -3,15 +3,9 @@
 // text carries Thai · Japanese · Korean · English joined by LANG_SPLIT, and the sender keeps the reader's part.
 
 import { messagingApi } from "@line/bot-sdk";
-import en from "@/messages/en.json";
-import ja from "@/messages/ja.json";
-import ko from "@/messages/ko.json";
-import th from "@/messages/th.json";
-import type { CheckResult } from "./checks";
 import { baht } from "./money";
 import { dmy } from "./thai-tax";
 import { four, inLang, LANG_SPLIT, type LineLang, type Words } from "./line-lang";
-import type { LedgerDoc } from "./types";
 
 // Keys never contain whitespace; a line break or space pasted into .env makes LINE refuse some calls
 const key = (v: string | undefined) => (v ?? "").replace(/\s+/g, "");
@@ -400,125 +394,5 @@ export function imageType(b: Buffer): "image/jpeg" | "image/png" | "image/webp" 
   return null;
 }
 
-// Card colours: the app's system blue and status colours, white card, hairline separators
-const INK = "#1d1d1f";
-const MUTED = "#6e6e73";
-const BLUE = "#0071e3";
-
-const row = (label: string, value: string, strong = false): messagingApi.FlexBox => ({
-  type: "box",
-  layout: "horizontal",
-  contents: [
-    { type: "text", text: label, size: strong ? "sm" : "xs", color: strong ? INK : MUTED, weight: strong ? "bold" : "regular", flex: 3, wrap: true, gravity: "center" },
-    { type: "text", text: value, size: strong ? "xl" : "sm", color: INK, weight: strong ? "bold" : "regular", align: "end", flex: 4, gravity: "center" },
-  ],
-});
-
-const CARD: Record<LineLang, { toCheck: (n: number) => string; ok: string; saved: string; vat: string; due: string; total: string; open: string; alt: string }> = {
-  th: { toCheck: (n) => `ต้องตรวจ ${n} รายการ`, ok: "ตรวจอัตโนมัติผ่าน", saved: "บันทึกลงสมุดบัญชีแล้ว", vat: "VAT", due: "ครบกำหนด", total: "ยอดสุทธิ", open: "เปิดในแอป", alt: "บันทึกแล้ว" },
-  ja: { toCheck: (n) => `要確認 ${n}件`, ok: "自動チェックOK", saved: "台帳に登録しました", vat: "消費税", due: "支払期限", total: "合計", open: "アプリで開く", alt: "登録しました" },
-  ko: { toCheck: (n) => `확인 필요 ${n}건`, ok: "자동 확인 통과", saved: "장부에 저장했어요", vat: "부가세", due: "지급 기한", total: "합계", open: "앱에서 열기", alt: "저장했어요" },
-  en: { toCheck: (n) => `${n} to check`, ok: "Automatic checks passed", saved: "Saved to the ledger", vat: "VAT", due: "Due", total: "Total", open: "Open in the app", alt: "Saved" },
-};
-const CHECK_NAMES: Record<LineLang, Record<string, string>> = { th: th.checks, ja: ja.checks, ko: ko.checks, en: en.checks };
-
-/** The reply for a saved document: who, how much, what the automatic checks found, and a link to it */
-export function receiptCard(doc: LedgerDoc, checks: CheckResult[], url: string, lang: LineLang): messagingApi.FlexMessage {
-  const L = CARD[lang];
-  const names = doc.seller.name;
-  const seller = (lang === "ja" ? names.ja || names.en || names.th : lang === "th" ? names.th || names.en || names.ja : names.en || names.th || names.ja) || "—";
-  const problems = checks.filter((c) => !c.na && !c.ok);
-  const meta = [doc.docNo, doc.date && dmy(doc.date)].filter(Boolean).join(" · ") || "—";
-  const net = baht(doc.totals.net);
-
-  const status: messagingApi.FlexBox = problems.length
-    ? {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: "#fff4e5",
-        cornerRadius: "12px",
-        paddingAll: "12px",
-        spacing: "xs",
-        contents: [
-          { type: "text", text: L.toCheck(problems.length), size: "xs", weight: "bold", color: "#b25000" },
-          ...problems.slice(0, 3).map(
-            (c): messagingApi.FlexText => ({
-              type: "text",
-              text: `• ${CHECK_NAMES[lang][c.key] ?? c.key}`,
-              size: "xxs",
-              color: "#8a4b00",
-              wrap: true,
-            }),
-          ),
-        ],
-      }
-    : {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: "#e9f7ee",
-        cornerRadius: "12px",
-        paddingAll: "12px",
-        contents: [{ type: "text", text: L.ok, size: "xs", weight: "bold", color: "#1a7f37" }],
-      };
-
-  return {
-    type: "flex",
-    altText: `${L.alt} ${net} ${seller}`,
-    contents: {
-      type: "bubble",
-      size: "mega",
-      body: {
-        type: "box",
-        layout: "vertical",
-        paddingAll: "0px",
-        contents: [
-          // The Apple Intelligence spectrum, as a hairline accent only
-          {
-            type: "box",
-            layout: "vertical",
-            height: "4px",
-            contents: [],
-            background: { type: "linearGradient", angle: "90deg", startColor: "#0894ff", centerColor: "#c959dd", endColor: "#ff9004" },
-          },
-          {
-            type: "box",
-            layout: "vertical",
-            paddingAll: "20px",
-            spacing: "md",
-            contents: [
-              { type: "text", text: L.saved, size: "xxs", color: MUTED, weight: "bold", wrap: true },
-              {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  { type: "text", text: seller, size: "md", weight: "bold", color: INK, wrap: true },
-                  { type: "text", text: meta, size: "xs", color: MUTED, margin: "xs", wrap: true },
-                ],
-              },
-              { type: "separator", color: "#e5e5ea" },
-              row(L.vat, baht(doc.totals.vat)),
-              ...(doc.dueDate && !doc.paid ? [row(L.due, dmy(doc.dueDate))] : []),
-              row(L.total, net, true),
-              status,
-            ],
-          },
-        ],
-      },
-      footer: {
-        type: "box",
-        layout: "vertical",
-        paddingAll: "16px",
-        paddingTop: "0px",
-        contents: [
-          {
-            type: "button",
-            style: "primary",
-            color: BLUE,
-            height: "sm",
-            action: { type: "uri", label: L.open, uri: url },
-          },
-        ],
-      },
-    },
-  };
-}
+// The receipt card is drawn with the other dashboard cards (navy / blue / lime)
+export { receiptCard } from "./line-dash";
