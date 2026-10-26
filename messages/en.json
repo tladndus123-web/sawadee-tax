@@ -1800,7 +1800,7 @@
     "cancelled": "If this device has no Face ID sign-in yet, sign in with your email.",
     "fail": "Couldn't sign in with Face ID. Please sign in with your email.",
     "offerTitle": "Sign in with Face ID next time",
-    "offerBody": "Register this device to sign in with Face ID or your fingerprint instead of opening an email. Signing in again every 12 hours is just a glance.",
+    "offerBody": "Register this device to sign in with Face ID or your fingerprint instead of opening an email.",
     "register": "Register",
     "later": "Later",
     "registered": "Registered. Next time, sign in with Face ID.",

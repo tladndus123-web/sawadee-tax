@@ -23,7 +23,7 @@ import { useSales } from "@/lib/sales-store";
 import { type CalEvent, type CalItem, type CalKind, calendarItems, daysTo, TAX_KINDS } from "@/lib/company-calendar";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { useMonthLocks } from "@/lib/month-lock-store";
-import { baht, fromSatang, toSatang } from "@/lib/money";
+import { baht, bahtWhole, fromSatang, toSatang } from "@/lib/money";
 import { useEmployees } from "@/lib/payroll-store";
 import { useMe } from "@/lib/role-store";
 import { THAI_HOLIDAYS } from "@/lib/thai-holidays";
@@ -131,7 +131,16 @@ export function CompanyCalendar() {
   const weekdays = Array.from({ length: 7 }, (_, i) => new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(new Date(Date.UTC(2026, 10, 1 + i))));
 
   const list = day ? byDay.get(day) ?? [] : items.filter((i) => i.date >= today || (!i.done && i.kind !== "bill" && daysTo(today, i.date) >= -30));
-  const upcoming = list.filter((i) => i.date <= addDays(today, 60) || day);
+  const seen = new Set<string>();
+  const upcoming = list.filter((i) => {
+    if (!day && i.date > addDays(today, 60)) return false;
+    // A repeating company date: only its next time in the list (the month grid still shows each one)
+    if (!day && i.kind === "event" && i.eventId && i.date >= today) {
+      if (seen.has(i.eventId)) return false;
+      seen.add(i.eventId);
+    }
+    return true;
+  });
   const soon = upcoming.filter((i) => i.date <= addDays(today, 14));
   const shown = day || all ? upcoming : soon.length >= 5 ? soon : upcoming.slice(0, 5);
   const hidden = upcoming.length - shown.length;
@@ -180,7 +189,7 @@ export function CompanyCalendar() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[1.35fr_1fr]">
         {/* Month grid */}
-        <section className="workspace-panel grid gap-3 p-4 sm:p-5" aria-label={monthName(month)}>
+        <section className="workspace-panel grid gap-2 p-3 sm:gap-3 sm:p-5" aria-label={monthName(month)}>
           <div className="flex items-center justify-between">
             <Button type="button" variant="ghost" size="icon" className="size-10 rounded-full" onClick={() => setMonth(shiftMonth(month, -1))} aria-label={t("prev")}>
               <ChevronLeft className="size-5" />
@@ -212,7 +221,7 @@ export function CompanyCalendar() {
                   aria-pressed={day === d}
                   aria-label={`${dateText(d)} ${its.length ? `· ${its.length}` : ""}`}
                   className={cn(
-                    "grid min-h-16 content-start gap-1 rounded-xl p-1.5 text-left transition-colors sm:min-h-20",
+                    "grid min-h-11 content-start justify-items-center gap-1 rounded-xl p-1 text-left transition-colors sm:min-h-20 sm:justify-items-stretch sm:p-1.5",
                     day === d ? "bg-primary/10 ring-2 ring-primary/40" : "hover:bg-muted/60",
                   )}
                 >
@@ -237,7 +246,7 @@ export function CompanyCalendar() {
               );
             })}
           </div>
-          <p className="text-xs text-muted-foreground">{t("note")}</p>
+          <p className="text-xs text-muted-foreground max-sm:hidden">{t("note")}</p>
         </section>
 
         {/* The list */}
@@ -304,8 +313,8 @@ export function CompanyCalendar() {
                           </span>
                         )}
                         <span className="flex-none">{dateText(i.date)}</span>
-                        {i.amount !== undefined && <span className="truncate font-semibold text-foreground tabular-nums">· {baht(i.amount)}</span>}
-                        {vat !== null && <span className="truncate font-semibold text-foreground tabular-nums">· {vat < 0 ? t("vatCredit", { amount: baht(-vat) }) : t("vatPay", { amount: baht(vat) })}</span>}
+                        {i.amount !== undefined && <span className="truncate font-semibold text-foreground tabular-nums">· {bahtWhole(i.amount)}</span>}
+                        {vat !== null && <span className="truncate font-semibold text-foreground tabular-nums">· {vat < 0 ? t("vatCredit", { amount: bahtWhole(-vat) }) : t("vatPay", { amount: bahtWhole(vat) })}</span>}
                       </p>
                     </div>
                     {isAdmin && ev ? (
