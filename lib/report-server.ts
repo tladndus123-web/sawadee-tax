@@ -4,7 +4,11 @@
 // ④ 🔍 anything unusual (lib/anomalies.ts).
 
 import Anthropic from "@anthropic-ai/sdk";
+import en from "@/messages/en.json";
 import ja from "@/messages/ja.json";
+import ko from "@/messages/ko.json";
+import th from "@/messages/th.json";
+import { monthExpenses, rowToClaim } from "./expenses";
 import { type Anomaly, findAnomalies } from "./anomalies";
 import { monthKey } from "./archive";
 import { serverCategories } from "./categories-server";
@@ -21,6 +25,8 @@ import { monthEndMessage } from "./line-dash";
 import { bahtWhole as baht } from "./money";
 import { priceRises } from "./price-watch";
 import { nextWorkingDay } from "./thai-holidays";
+
+const CATEGORY = { ja: ja.category, th: th.category, en: en.category, ko: ko.category } as const;
 
 /** First day a report may go out (owner 2026-10-26: "not today") */
 export const REPORTS_FROM = "2026-10-27";
@@ -207,6 +213,10 @@ export async function sendMonthEnd(admin: Admin, appUrl: string, today: string, 
   const b = await monthBooks(admin, month);
   if (!b.documents && !b.hasSales) return 0;
   const r = b.result;
+  const [claims, cats] = await Promise.all([admin.from("expense_claims").select("*"), admin.from("categories").select("key, name")]);
+  const ex = monthExpenses((claims.data ?? []).map((c) => rowToClaim(c as Record<string, unknown>)), month);
+  const catName = (key: string, lang: LineLang) =>
+    ((cats.data ?? []).find((c) => c.key === key)?.name as Record<string, string> | undefined)?.[lang]?.trim() || (CATEGORY[lang] as Record<string, string>)[key] || key;
   let sent = 0;
   for (const id of to) {
     const lang = await profileLang(id);
@@ -230,6 +240,7 @@ export async function sendMonthEnd(admin: Admin, appUrl: string, today: string, 
               socialSecurity: b.socialSecurity,
               target: b.target,
               documents: b.documents,
+              expenses: { ...ex, categories: ex.categories.map((c) => ({ name: catName(c.category, lang), amount: c.amount })) },
             },
             lang,
             appUrl,

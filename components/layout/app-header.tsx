@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Building2, LayoutGrid, Settings, TrendingUp, WalletCards } from "lucide-react";
+import { BookOpen, Building2, CalendarDays, HandCoins, LayoutGrid, Settings, TrendingUp, WalletCards } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
@@ -18,6 +18,8 @@ const NAV = [
   { href: "/ledger", key: "ledger", icon: BookOpen },
   { href: "/sales", key: "sales", icon: TrendingUp },
   { href: "/vendors", key: "vendors", icon: Building2 },
+  { href: "/calendar", key: "calendar", icon: CalendarDays, admin: true },
+  { href: "/expenses", key: "expenses", icon: HandCoins },
   { href: "/payroll", key: "payroll", icon: WalletCards, admin: true },
   { href: "/settings", key: "settings", icon: Settings },
 ] as const;
@@ -27,7 +29,7 @@ export function AppHeader() {
   const t = useTranslations();
   const pathname = usePathname();
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
-  // Payroll is for admins only
+  // Payroll and the tax calendar are for admins only
   const isAdmin = useMe().role === "admin";
   const nav = NAV.filter((n) => !("admin" in n) || isAdmin);
   // Phones: five tabs fit; with more, the bar scrolls sideways (the next tab peeks in at the edge)

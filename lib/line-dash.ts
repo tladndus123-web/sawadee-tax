@@ -12,6 +12,7 @@ import type { CheckResult } from "./checks";
 import { inLang } from "./line-lang";
 import type { LineLang } from "./line-lang";
 import type { CardExtra, CardTip } from "./line-tips";
+import { expenseWords } from "./expense-line";
 // Cards show whole baht (the exact figure is one tap away in the app)
 import { bahtWhole as baht } from "./money";
 import { dmy } from "./thai-tax";
@@ -704,7 +705,16 @@ export interface MonthEndData {
   socialSecurity: number;
   target: number;
   documents: number;
+  /** Expense claims approved or paid back in the month (satang; category names already in the reader's language) */
+  expenses?: { count: number; total: number; prevTotal: number; people: { name: string; amount: number }[]; categories: { name: string; amount: number }[] };
 }
+
+const EXP: Record<LineLang, Record<string, string>> = {
+  ko: { title: "{m} 경비 청구", sub: "승인·지급 {n}건", total: "직원 경비 합계", vsPrev: "지난달 {p}", people: "많이 쓴 사람", cats: "용도", open: "경비 화면 열기" },
+  ja: { title: "{m}の経費申請", sub: "承認・精算 {n}件", total: "立替経費の合計", vsPrev: "先月 {p}", people: "多かった人", cats: "用途", open: "経費画面を開く" },
+  th: { title: "เบิกค่าใช้จ่าย {m}", sub: "อนุมัติ/จ่ายแล้ว {n} รายการ", total: "ยอดเบิกรวม", vsPrev: "เดือนก่อน {p}", people: "เบิกมากที่สุด", cats: "ใช้สำหรับ", open: "เปิดหน้าเบิกค่าใช้จ่าย" },
+  en: { title: "{m} expense claims", sub: "{n} approved or paid back", total: "Staff expenses", vsPrev: "Last month {p}", people: "Top claimers", cats: "For", open: "Open expenses" },
+};
 
 const ME: Record<LineLang, Record<string, string>> = {
   ko: { eyebrow: "MONTH-END", title: "{m} 마감", left: "남은 돈", vsPrev: "{p} 지난달보다", hit: "목표 달성 ✓", ofTarget: "목표의 {p}%", sales: "매출 (VAT 제외)", costs: "비용 (매입)", labor: "인건비", vat: "낼 부가세", wht: "원천세", ss: "사회보험", share: "📤 회계사에게 보내기", goal: "📊 {m} 목표 정하기", files: "{m} 자료", docs: "매입 서류 {n}장", excel: "엑셀 받기", salesReport: "매출 보고서", ledgerReport: "매입 보고서", shareTitle: "{m} 자료 링크", shareSub: "회계사가 로그인 없이 {m} 자료만 볼 수 있어요. {d}까지 열려요.", sendLine: "LINE으로 보내기", preview: "미리 보기", settings: "앱에서 정하기", shareText: "{c} {m} 장부 자료입니다 (로그인 없이 보기, {d}까지): {u}", goalTitle: "{m} 목표", goalSub: "지난 3달 매출(VAT 제외) 중 높은 쪽을 기준으로 정했어요.", total: "합계", setAs: "이대로 정하기", goalSet: "✓ {m} 목표를 정했어요 · 합계 {t}", setHint: "누르면 바로 저장돼요 (✓ +5% 추천). 앱 설정에서도 바꿀 수 있어요.", goalNone: "목표를 정할 매출 기록이 없어요. 앱 설정에서 직접 정해 주세요." },
@@ -753,10 +763,24 @@ export function monthEndMessage(d: MonthEndData, lang: LineLang, appUrl: string,
     ],
     [],
   ).contents as messagingApi.FlexBubble;
+  // Staff expense claims of the month, when there were any
+  const x = d.expenses;
+  const e = EXP[lang];
+  const third = x?.count
+    ? (bubble(
+        fill(e.title, { m }),
+        head("EXPENSES", fill(e.title, { m }), fill(e.sub, { n: x.count })),
+        [
+          hero(e.total, baht(x.total / 100), null, fill(e.vsPrev, { p: baht(x.prevTotal / 100) }), ""),
+          rows([...x.people.map((p) => row(p.name || "—", baht(p.amount / 100))), ...x.categories.map((c) => row(`${e.cats} · ${c.name}`, baht(c.amount / 100)))]),
+        ],
+        [button(e.open, `${appUrl}/expenses`, false)],
+      ).contents as messagingApi.FlexBubble)
+    : null;
   return {
     type: "flex",
     altText: `${fill(t.title, { m })} · ${t.left} ${baht(d.profit)}`.slice(0, 400),
-    contents: { type: "carousel", contents: [first, second] },
+    contents: { type: "carousel", contents: third ? [first, second, third] : [first, second] },
     ...(extra.next?.length ? { quickReply: nextQuestions(extra.next) } : {}),
   };
 }
@@ -800,3 +824,43 @@ export function goalCard(month: string, lines: GoalLineView[], lang: LineLang, a
 }
 
 export const goalSetText = (month: string, total: number, lang: LineLang) => fill(ME[lang].goalSet, { m: monthWord(month, lang), t: baht(total) });
+
+// ── Expense claims (ported 2026-10-27): the card admins approve or reject from ─────────────────────────────────────
+
+export interface ClaimCardData {
+  id: string;
+  name: string;
+  day: string;
+  seller: string;
+  /** Satang */
+  amount: number;
+  /** The category's name in the reader's language */
+  what: string;
+  note: string;
+  /** Satang, this person's claims this month (this one included) */
+  monthTotal: number;
+  photoUrl: string | null;
+  appUrl: string;
+  /** Warnings for the admin, already worded (lib/expense-line flagTexts) */
+  flags?: string[];
+}
+
+export function claimCard(c: ClaimCardData, lang: LineLang): messagingApi.FlexMessage {
+  const w = expenseWords(lang);
+  const amount = baht(c.amount / 100);
+  const msg = bubble(
+    `${w.head} · ${c.name} ${amount}`,
+    head("EXPENSE", w.head, `${w.who}: ${c.name} · ${dmy(c.day)}`),
+    [
+      hero(w.what, amount, null, [c.what, c.seller].filter(Boolean).join(" · "), ""),
+      rows([...(c.note ? [row(w.note, c.note)] : []), row(w.month, baht(c.monthTotal / 100))]),
+      ...(c.flags?.length ? [warn(c.flags.map((f) => `⚠️ ${f}`).join("\n"))] : []),
+      ...(c.photoUrl ? [{ ...button(w.photo, c.photoUrl, false), flex: 0, margin: "md" } satisfies Box] : []),
+    ],
+    [button(w.approve, { data: `expense=approve&id=${c.id}` }), button(w.reject, { data: `expense=reject&id=${c.id}` }, false)],
+  );
+  const b = msg.contents as messagingApi.FlexBubble;
+  // The receipt on top, tap to see it whole
+  if (c.photoUrl) b.hero = { type: "image", url: c.photoUrl, size: "full", aspectRatio: "4:3", aspectMode: "cover", action: { type: "uri", label: w.photo, uri: c.photoUrl } };
+  return msg;
+}

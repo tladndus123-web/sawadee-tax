@@ -4,6 +4,8 @@
 //   menu button / short word ("요약", "売上" …) → admins only: the ledger's own numbers (lib/line-ask.ts)
 //   any other text            → admins: the AI assistant answers (lib/assistant*.ts); others: no reply
 //   sticker …                 → no reply
+//   "경비" / "เบิก" / "経費" / "expense" → members: expense mode for 10 minutes (lib/expense-line-server.ts)
+//   image in expense mode → a claim of the sender (not a ledger document); admins get the approve / reject card
 //   image             → linked members only: AI reading → vendor dictionary → saved to the ledger
 //                       (status "reviewed", as that member) → receipt card with the automatic checks
 //   file .xlsx / .csv → linked members only: a POS sales export, read with the columns the app remembered from an
@@ -17,6 +19,8 @@ import { docToRow } from "./db-map";
 import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
 import { assistantSay } from "./assistant";
+import { isExpenseWord } from "./expense-line";
+import { claimFromLine, expenseButton, inExpenseMode, notifyNewClaim, startExpenseMode } from "./expense-line-server";
 import { answer } from "./assistant-server";
 import { aiCard, goalCard, goalSetText, noticeMessage, shareCard } from "./line-dash";
 import { createShare, goalSuggestion, setGoals } from "./month-end-server";
@@ -105,6 +109,10 @@ export async function handleLineEvent(event: webhook.Event): Promise<void> {
     const data = event.postback.data;
     if (data === UPLOAD_DATA) return uploadButtons(event, lineUser);
     if (/^(share|goal|goalset)=/.test(data)) return monthEndAction(event, lineUser, data);
+    if (data.startsWith("expense=")) {
+      await expenseButton(lineUser, data, (m) => send(event, lineUser, m));
+      return;
+    }
     const ask = askFromData(data);
     return ask ? answerAsk(event, lineUser, ask, true) : pickBranch(event, lineUser, data);
   }
@@ -113,6 +121,7 @@ export async function handleLineEvent(event: webhook.Event): Promise<void> {
 
   // A 6-digit code, also as "123 456" or "123-456"
   if (message.type === "text" && /^\s*\d{3}[\s-]?\d{3}\s*$/.test(message.text ?? "")) return linkAccount(event, lineUser, digitsOnly(message.text));
+  if (message.type === "text" && isExpenseWord(message.text ?? "")) return startExpenseMode(lineUser, (m) => send(event, lineUser, m));
   if (message.type === "text") {
     const ask = askFromText(message.text ?? "");
     if (ask) return answerAsk(event, lineUser, ask, false);
@@ -264,6 +273,8 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   }
   // Only the branches this member may use (staff: open one in the app with its PIN first) — before any AI cost
   const branches = await usableBranches(member.user_id);
+  // Expense mode: the photo is the member's own claim (their branch, else the database's head branch)
+  if (!member.disabled_at && (await inExpenseMode(lineUser))) return expensePhoto(event, lineUser, member.user_id, messageId, branches[0]?.id ?? null);
   if (!branches.length) return send(event, lineUser, [text(say.noBranch)]);
   if (limited(`photo:${member.user_id}`, 10, 60_000)) return send(event, lineUser, [text(say.rate)]);
 
@@ -360,6 +371,25 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   const card = receiptCard(doc, checks, `${appUrl()}/documents/${id}`, lang);
   await send(later, lineUser, ask ? [card, { ...text(say.branchAsk), quickReply: branchButtons(id, branches, lang) }] : [card]);
   console.log(`[line] saved ${id}: AI ${(aiMs / 1000).toFixed(1)}s, total ${((Date.now() - started) / 1000).toFixed(1)}s`);
+}
+
+/** A receipt photo in expense mode → a claim; the admins are told on LINE */
+async function expensePhoto(event: webhook.MessageEvent, lineUser: string, userId: string, messageId: string, branchId: string | null) {
+  if (limited(`photo:${userId}`, 10, 60_000)) return send(event, lineUser, [text(say.rate)]);
+  await lineClient()
+    .showLoadingAnimation({ chatId: lineUser, loadingSeconds: 30 })
+    .catch(() => undefined);
+  const photo = await readStream(await lineBlobClient().getMessageContent(messageId));
+  const type = imageType(photo);
+  if (!type) return send(event, lineUser, [text(say.unreadable)]);
+  if (photo.length > MAX_IMAGE_BYTES) return send(event, lineUser, [text(say.tooBig)]);
+  const r = await claimFromLine(lineUser, photo, type, await photoHashServer(photo), branchId, async (p) => {
+    const read = await extractDocument(p, type);
+    if (!read.ok && read.detail) console.error(`[line] expense extract: ${read.code}`, read.detail);
+    return read.ok ? { ok: true, doc: read.doc } : { ok: false };
+  });
+  await send(event, lineUser, [text(r.text)]);
+  if (r.ok && r.pending) await notifyNewClaim(r.id, appUrl()).catch((e) => console.error("[line] expense notify", e instanceof Error ? e.message : e));
 }
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;

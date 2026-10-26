@@ -5,7 +5,9 @@
 //   while the month is open (or always, for a test);
 // - payroll filings (ภ.ง.ด.1, สปส.1-10): withholding and social security of last month's saved payroll, likewise;
 // - withholding on payments to suppliers (ภ.ง.ด.53 / ภ.ง.ด.3) of last month, on the same days, when tax was withheld;
-// - employee documents (work permit, visa …) that expire within 30 days.
+// - employee documents (work permit, visa …) that expire within 30 days;
+// - the tax calendar (2026-10-27): the company's own dates and the yearly filings only (lib/calendar-remind) — the
+//   monthly ones above are never repeated.
 
 import { monthKey } from "./archive";
 import { type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
@@ -16,6 +18,8 @@ import { appUrl } from "./line-bot";
 import { serverCategories } from "./categories-server";
 import { expiringDocuments, parseDocuments } from "./attendance";
 import { payrollFiling } from "./payroll";
+import { calendarItems, type CalEvent } from "./company-calendar";
+import { dueToday, reminderMessage } from "./calendar-remind";
 import type { supabaseAdmin } from "./supabase/admin";
 
 type Admin = ReturnType<typeof supabaseAdmin>;
@@ -87,5 +91,14 @@ export async function reminderTexts(admin: Admin, today: string, opts: { test?: 
     `${url}payroll`,
     { force: opts.test },
   );
-  return [vat, pay, wht, docTexts].filter((x): x is string => !!x);
+  // The tax calendar: company dates and yearly filings due to be reminded today (ticked-off ones left out)
+  const [ev, dn] = await Promise.all([admin.from("calendar_events").select("id, title, date, repeat, remind_days, note, amount"), admin.from("calendar_done").select("key")]);
+  let cal: string | null = null;
+  if (!ev.error && !dn.error) {
+    const to = new Date(Date.parse(`${today}T00:00:00Z`) + 31 * 86_400_000).toISOString().slice(0, 10);
+    const events: CalEvent[] = (ev.data ?? []).map((r) => ({ id: r.id as string, title: r.title as string, date: r.date as string, repeat: r.repeat as CalEvent["repeat"], remindDays: Number(r.remind_days) || 0, note: (r.note as string) ?? "", amount: r.amount === null ? null : Number(r.amount) }));
+    const items = calendarItems({ from: today, to, vatRegistered: null, payroll: (staff ?? []).length > 0, events, done: new Set((dn.data ?? []).map((r) => r.key as string)) });
+    cal = reminderMessage(dueToday(items, today), today, appUrl());
+  }
+  return [vat, pay, wht, docTexts, cal].filter((x): x is string => !!x);
 }

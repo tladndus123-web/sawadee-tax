@@ -91,6 +91,9 @@ export async function knownPhotos(): Promise<KnownPhoto[]> {
   return known;
 }
 
+/** After something outside the ledger screens wrote documents (an expense claim paid back) */
+export const reloadLedger = () => reload();
+
 /** Screens opened within this time reuse the copy in memory instead of downloading the whole ledger again */
 const FRESH_MS = 30_000;
 

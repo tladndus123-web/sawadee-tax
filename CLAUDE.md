@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (473) · `npm run db:test` (pgTAP 247 + STOCK 61) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (501) · `npm run db:test` (328 in 3 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -67,6 +67,12 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   own `tip` / `next`. Question buttons are LINE quick replies that send their words → the AI answers (labels ≤ 20 chars,
   tested). Morning reminders, the test button and the POS-file reply are cards too (`noticeMessage`: title / rows / list /
   link button, several = carousel); the receipt card moved to `line-dash.ts` in the same navy design.
+- **Tax calendar + expense claims** (2026-10-27, ported from the for-sale version; HANDOFF "세무 달력 · 경비 청구"):
+  `/calendar` admins only (Thai deadlines on working days, staff papers, bills due, company dates; `calendar_events`,
+  `calendar_done`; morning LINE reminder adds only company dates + yearly filings, never the VAT / payroll / WHT / papers
+  ones again). `/expenses` for members with an app account: claim → approve / reject → paid back = a paid ledger document
+  with the claim's id (`expense_claims`, guard trigger, `autoUnder`). LINE: "경비" = 10-minute expense mode
+  (`line_modes`), approve / reject card to every admin with LINE (`expense=approve&id=`), expense card in the month-end report.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

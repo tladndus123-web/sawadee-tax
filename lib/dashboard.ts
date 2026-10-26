@@ -149,6 +149,9 @@ const deadlines = (month: string) => {
   return { due: nextWorkingDay(`${next}-15`), dueOnline: nextWorkingDay(`${next}-23`) };
 };
 
+/** A tax month's VAT return deadlines (paper, e-filing), for the tax calendar */
+export const vatDeadlines = (month: string) => deadlines(month);
+
 /** Which VAT return to prepare today: last month's until its e-filing date has passed, then this month's */
 export function vatFiling(today: string): VatFiling {
   const last = shiftMonth(today.slice(0, 7), -1);
