@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(238);
+select plan(242);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -13,6 +13,11 @@ select ok((select bool_and(relrowsecurity) from pg_class where relname in ('assi
 select is((select public.assistant_claim('2001-01', 'test-model', 2)), 1, 'a use is counted');
 select is((select public.assistant_claim('2001-01', 'test-model', 2) + public.assistant_claim('2001-01', 'test-model', 2)), 1, 'the limit stops the next one (2, then -1)');
 select ok(not has_function_privilege('authenticated', 'public.assistant_claim(text, text, int)', 'execute'), 'signed-in users cannot take uses themselves');
+-- Accountant share links: server only, short-lived, a real random token
+select is((select count(*)::int from pg_policies where tablename = 'accountant_shares'), 0, 'share links have no policies (server only)');
+select ok(not has_table_privilege('anon', 'public.accountant_shares', 'select'), 'signed-out visitors cannot list share links');
+select throws_ok($$ insert into public.accountant_shares (token, month) values ('short', '2001-01') $$, '23514', NULL, 'a share token must be long and random-looking');
+select throws_ok($$ insert into public.accountant_shares (token, month, expires_at) values ('abcdefghijklmnopqrstuvwxyz0123456789', '2001-01', now() + interval '1 year') $$, '23514', NULL, 'a share link lasts at most 90 days');
 
 
 -- Fixtures: one admin, one staff, one signed-in stranger (no membership)

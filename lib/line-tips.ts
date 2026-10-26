@@ -196,3 +196,24 @@ export const excelTip = (lang: LineLang): CardTip => ({
     en: "Forward this link to your accountant as it is; it stops working after an hour.",
   }[lang],
 });
+
+/** Month-end: how much of each sale was left, against the month before */
+export function marginTip(p: { salesValue: number; profit: number; prevSalesValue: number; prevProfit: number }, lang: LineLang): CardTip | null {
+  if (p.salesValue <= 0) return null;
+  const now = Math.round((p.profit / p.salesValue) * 1000) / 10;
+  const before = p.prevSalesValue > 0 ? Math.round((p.prevProfit / p.prevSalesValue) * 1000) / 10 : null;
+  const per100 = Math.round(now);
+  return {
+    title: { ko: "이익률", ja: "利益率", th: "อัตรากำไร", en: "Margin" }[lang],
+    main: {
+      ko: `매출 ฿100마다 ฿${per100}이 남았어요 (이익률 ${now}%${before !== null ? `, 지난달 ${before}%` : ""}).`,
+      ja: `売上฿100ごとに฿${per100}が残りました（利益率${now}%${before !== null ? `、先月${before}%` : ""}）。`,
+      th: `ทุกยอดขาย ฿100 เหลือ ฿${per100} (อัตรากำไร ${now}%${before !== null ? `, เดือนก่อน ${before}%` : ""})`,
+      en: `฿${per100} was left from every ฿100 of sales (margin ${now}%${before !== null ? `, last month ${before}%` : ""}).`,
+    }[lang],
+    note:
+      before !== null && now < before
+        ? { ko: "비용이 매출보다 빨리 늘었어요. '원가율 줄이려면?'을 눌러 보세요.", ja: "費用が売上より早く増えました。「原価率を下げるには？」を押してみてください。", th: "ต้นทุนโตเร็วกว่ายอดขาย ลองกด 'ลดต้นทุนอย่างไร'", en: "Costs grew faster than sales — try 'Cut food cost'." }[lang]
+        : undefined,
+  };
+}

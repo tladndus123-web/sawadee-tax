@@ -3,14 +3,14 @@
 // linked it, and as a phone notification to every device an admin turned notifications on for.
 // Nothing is sent on days with nothing to say, so the monthly LINE message quota is barely touched.
 // Every LINE message is in the reader's phone language (2026-10-26). On the 5th, 10th, 15th, 20th and 25th the
-// 5-day report (four cards) goes out too.
+// 5-day report (four cards) goes out too, and on the 1st last month's month-end report.
 
 import { lineClient, lineConfig } from "@/lib/line";
 import { noticeMessage } from "@/lib/line-dash";
 import { appUrl } from "@/lib/line-bot";
 import { inLang } from "@/lib/line-lang";
 import { profileLang } from "@/lib/line-menu";
-import { isReportDay, sendReport } from "@/lib/report-server";
+import { isMonthEndDay, isReportDay, sendMonthEnd, sendReport } from "@/lib/report-server";
 import { sendPush, toPush } from "@/lib/push-server";
 import { reminderTexts } from "@/lib/reminders-server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -31,7 +31,9 @@ export async function GET(req: Request) {
 
   // The 5-day report (its own message, whatever else there is to say)
   const report = lineConfig().channelAccessToken && isReportDay(today) ? await sendReport(admin, appUrl(), today, to).catch((e) => (console.error("[cron] 5-day report failed", e), 0)) : 0;
-  if (!texts.length) return Response.json({ sent: 0, report });
+  // The 1st: last month's month-end report
+  const monthEnd = lineConfig().channelAccessToken && isMonthEndDay(today) ? await sendMonthEnd(admin, appUrl(), today, to).catch((e) => (console.error("[cron] month-end report failed", e), 0)) : 0;
+  if (!texts.length) return Response.json({ sent: 0, report, monthEnd });
 
   // LINE
   let line = 0;
@@ -54,5 +56,5 @@ export async function GET(req: Request) {
     texts.map((t) => toPush(inLang(t, "ja"), `${appUrl()}/`)),
   ).catch((e) => (console.error("[cron] phone notifications failed", e), 0));
 
-  return Response.json({ sent: line, failed, devices, messages: texts.length, report });
+  return Response.json({ sent: line, failed, devices, messages: texts.length, report, monthEnd });
 }

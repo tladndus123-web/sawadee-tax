@@ -18,11 +18,12 @@ import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
 import { assistantSay } from "./assistant";
 import { answer } from "./assistant-server";
-import { aiCard, noticeMessage } from "./line-dash";
+import { aiCard, goalCard, goalSetText, noticeMessage, shareCard } from "./line-dash";
+import { createShare, goalSuggestion, setGoals } from "./month-end-server";
 import { type Ask, askFromData, askFromText, askSay, uploadPrompt } from "./line-ask";
 import { askAnswer } from "./line-ask-server";
 import { linkAdminMenu, profileLang, unlinkMenu, UPLOAD_DATA } from "./line-menu";
-import { branchButtons, branchWords, imageType, lineBlobClient, lineClient, receiptCard, salesBranchButtons, say } from "./line";
+import { branchButtons, branchWords, imageType, lineBlobClient, lineBranchLabel, lineClient, receiptCard, salesBranchButtons, say } from "./line";
 import { inLang, type LineLang } from "./line-lang";
 import { aggregate, applySavedColumns, findHeader, posColumnsOf } from "./pos-import";
 import { isPosFileName, readPosBuffer } from "./pos-read-server";
@@ -103,6 +104,7 @@ export async function handleLineEvent(event: webhook.Event): Promise<void> {
   if (event.type === "postback") {
     const data = event.postback.data;
     if (data === UPLOAD_DATA) return uploadButtons(event, lineUser);
+    if (/^(share|goal|goalset)=/.test(data)) return monthEndAction(event, lineUser, data);
     const ask = askFromData(data);
     return ask ? answerAsk(event, lineUser, ask, true) : pickBranch(event, lineUser, data);
   }
@@ -174,6 +176,37 @@ async function chat(event: { replyToken?: string }, lineUser: string, question: 
     console.error("[line] assistant failed", e instanceof Error ? e.message : e);
     await send(later, lineUser, [text(assistantSay.failed)]);
   }
+}
+
+/**
+ * Buttons of the month-end report, admins only: "share=YYYY-MM" makes the accountant link, "goal=YYYY-MM" suggests next
+ * month's target, "goalset=YYYY-MM&p=5" saves it (worked out again here, never taken from the button).
+ */
+async function monthEndAction(event: { replyToken?: string }, lineUser: string, data: string) {
+  const member = await memberFor(lineUser);
+  if (!member) return send(event, lineUser, [text(say.welcome)]);
+  if (member.role !== "admin" || member.disabled_at) return send(event, lineUser, [text(askSay.adminOnly)]);
+  if (limited(`month-end:${member.user_id}`, 10, 60_000)) return send(event, lineUser, [text(say.rate)]);
+  const q = new URLSearchParams(data);
+  const month = q.get("share") ?? q.get("goal") ?? q.get("goalset") ?? "";
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return;
+  const admin = supabaseAdmin();
+  const lang = await langOf(lineUser);
+  if (q.has("share")) {
+    const { token, expiresAt } = await createShare(admin, member.user_id, month);
+    const { data: settings } = await admin.from("company_settings").select("name").eq("id", 1).maybeSingle();
+    const name = (settings?.name ?? {}) as { th?: string; en?: string };
+    // The accountant reads Thai: the page opens in Thai (it has every language's words)
+    return send(event, lineUser, [shareCard({ month, url: `${appUrl()}/th/share/${token}`, expires: expiresAt, company: name.th || name.en || "" }, lang)]);
+  }
+  const raise = q.has("goalset") ? Number(q.get("p")) : 5;
+  if (![0, 5, 10].includes(raise)) return;
+  const lines = await goalSuggestion(admin, month, raise);
+  const view = lines.map((l) => ({ name: lineBranchLabel(l, lang), base: l.base, target: l.target }));
+  if (!q.has("goalset")) return send(event, lineUser, [goalCard(month, view, lang, appUrl())]);
+  if (!lines.some((l) => l.target > 0)) return send(event, lineUser, [goalCard(month, view, lang, appUrl())]);
+  await setGoals(admin, lines);
+  await send(event, lineUser, [text(goalSetText(month, lines.reduce((a, l) => a + l.target, 0), lang))]);
 }
 
 /** The menu's upload card: camera / photo buttons, in the person's LINE language */

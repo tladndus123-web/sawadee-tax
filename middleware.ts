@@ -6,8 +6,8 @@ import { routing } from "./i18n/routing";
 
 const intl = createMiddleware(routing);
 
-/** Pages that work without signing in: the login form and the magic-link landing page */
-const PUBLIC = new Set(["login", "auth"]);
+/** Pages that work without signing in: the login form, the magic-link landing page, an accountant's month link */
+const PUBLIC = new Set(["login", "auth", "share"]);
 
 export default async function middleware(req: NextRequest) {
   // Language: the one the person picked before (cookie), otherwise Japanese — not the browser's language.

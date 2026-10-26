@@ -209,11 +209,11 @@ const EXPORT_COLS = [
 ] as const;
 const BUCKET = "line-exports";
 
-async function excelFiles(admin: Admin, today: string) {
-  const { saved, taxId } = await ledger(admin);
+/** The Excel labels (Japanese, with the Thai names beside — as the app's export) */
+async function excelLabels(): Promise<XlsxLabels> {
   const cats = await serverCategories();
   const L = ja.export as Record<string, string>;
-  const labels: XlsxLabels = {
+  return {
     sheetLedger: L.sheetLedger,
     sheetItems: L.sheetItems,
     cols: Object.fromEntries(EXPORT_COLS.map((k) => [k, L[k]])),
@@ -228,6 +228,21 @@ async function excelFiles(admin: Admin, today: string) {
     sheetCosts: L.sheetCosts,
     cost: L.cost,
   };
+}
+
+/** One month's purchase ledger as an Excel file */
+export async function monthXlsx(saved: { doc: LedgerDoc }[], month: string, taxId: string): Promise<{ file: Buffer; count: number }> {
+  const docs = saved.filter((d) => monthKey(d.doc) === month);
+  const data = buildMonthExport(
+    docs.map((d) => ({ doc: d.doc, flags: flagsFor(d.doc, { companyTaxId: taxId }).filter((f) => f !== "unclear").length })),
+    "ja",
+    taxId,
+  );
+  return { file: Buffer.from(await buildMonthXlsx(data, true, await excelLabels())), count: docs.length };
+}
+
+async function excelFiles(admin: Admin, today: string) {
+  const { saved, taxId } = await ledger(admin);
   // Earlier links' files are not kept
   const old = await admin.storage.from(BUCKET).list("", { limit: 100 });
   if (old.data?.length) await admin.storage.from(BUCKET).remove(old.data.map((f) => f.name));
@@ -239,19 +254,13 @@ async function excelFiles(admin: Admin, today: string) {
   const months = wanted.filter((m) => saved.some((d) => monthKey(d.doc) === m));
   const files = [];
   for (const m of months.length ? months : [month]) {
-    const docs = saved.filter((d) => monthKey(d.doc) === m);
-    const data = buildMonthExport(
-      docs.map((d) => ({ doc: d.doc, flags: flagsFor(d.doc, { companyTaxId: taxId }).filter((f) => f !== "unclear").length })),
-      "ja",
-      taxId,
-    );
-    const buf = await buildMonthXlsx(data, true, labels);
+    const { file, count } = await monthXlsx(saved, m, taxId);
     const path = `${crypto.randomUUID()}.xlsx`;
-    const up = await admin.storage.from(BUCKET).upload(path, Buffer.from(buf), { contentType: XLSX_TYPE });
+    const up = await admin.storage.from(BUCKET).upload(path, file, { contentType: XLSX_TYPE });
     if (up.error) throw up.error;
     const signed = await admin.storage.from(BUCKET).createSignedUrl(path, EXCEL_LINK_SECONDS, { download: `purchase-ledger-${m}.xlsx` });
     if (signed.error || !signed.data) throw signed.error ?? new Error("no signed url");
-    files.push({ month: m, count: docs.length, url: signed.data.signedUrl });
+    files.push({ month: m, count, url: signed.data.signedUrl });
   }
   return files;
 }

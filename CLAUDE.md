@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (463) · `npm run db:test` (pgTAP 238 + STOCK 61) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (470) · `npm run db:test` (pgTAP 242 + STOCK 61) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -46,6 +46,12 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   ("요약", "売上" …) work too (`lib/line-ask.ts`). On the 5th / 10th / 15th / 20th / 25th the daily cron also pushes the **5-day report** (`lib/report-server.ts`,
   four cards to swipe: last 5 days · month so far + forecast TIP · ✨ 3 Claude suggestions · 🔍 anything unusual from
   `lib/anomalies.ts` — receipt twice, ≥3× the usual of its category (≥ ฿5,000), new supplier + tax ID check).
+  On the 1st the **month-end report** (`sendMonthEnd`, `lib/month-end-server.ts` — the P&L screen's numbers: what was
+  left vs last month, target, costs, labour, VAT, withholding, social security; files card; margin TIP). Its buttons:
+  `share=YYYY-MM` → **accountant link** `/{locale}/share/<token>` (no sign-in, that month only, 30 days; table
+  `accountant_shares`, server only; Excel `/api/share/<token>/xlsx`, photos `/api/share/<token>/photo/<id>`; "share" is
+  a public section in middleware), `goal=YYYY-MM` → target suggestion per branch (better of last month / 3-month avg,
+  +5 %, rounded up to ฿10,000; `suggestGoals`), `goalset=…&p=0|5|10` → saves `branches.sales_target` (recomputed).
   **AI assistant** (2026-10-26): any other text from an active admin is answered from the books (`lib/assistant.ts`,
   `lib/assistant-server.ts` builds a compact text of the books): Haiku 5.5 answers, and hands over by itself to Sonnet 5.5
   for long analyses — no monthly limit since the owner lifted it 2026-10-26 (counted; cap 1000 against a runaway) (`assistant_claim()`, tables `assistant_turns` (last 24 h

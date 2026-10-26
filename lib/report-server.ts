@@ -14,7 +14,9 @@ import { type AnomalyLine, fiveDayMessage, type FiveDayData, nameIn, type Tip } 
 import { lineClient } from "./line";
 import type { LineLang } from "./line-lang";
 import { profileLang } from "./line-menu";
-import { forecastTip, NEXT } from "./line-tips";
+import { forecastTip, marginTip, NEXT } from "./line-tips";
+import { monthBooks } from "./month-end-server";
+import { monthEndMessage } from "./line-dash";
 import { baht } from "./money";
 import { priceRises } from "./price-watch";
 import { nextWorkingDay } from "./thai-holidays";
@@ -26,6 +28,9 @@ export const REPORT_DAYS = [5, 10, 15, 20, 25];
 
 /** Bangkok date "YYYY-MM-DD" */
 export const isReportDay = (today: string) => today >= REPORTS_FROM && REPORT_DAYS.includes(Number(today.slice(8, 10)));
+
+/** The 1st of a month: last month's month-end report */
+export const isMonthEndDay = (today: string) => today >= REPORTS_FROM && today.endsWith("-01");
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -188,6 +193,51 @@ export async function sendReport(admin: Admin, appUrl: string, today: string, to
       sent += 1;
     } catch (e) {
       console.error("[report] push failed", e instanceof Error ? e.message : e);
+    }
+  }
+  return sent;
+}
+
+/** The month-end report (the 1st): last month's result, files, the accountant link and next month's target */
+export async function sendMonthEnd(admin: Admin, appUrl: string, today: string, to: string[]): Promise<number> {
+  if (!to.length) return 0;
+  const month = shiftMonth(today.slice(0, 7), -1);
+  const b = await monthBooks(admin, month);
+  if (!b.documents && !b.hasSales) return 0;
+  const r = b.result;
+  let sent = 0;
+  for (const id of to) {
+    const lang = await profileLang(id);
+    const tip = marginTip({ salesValue: r.salesValue, profit: r.profit, prevSalesValue: b.previous.salesValue, prevProfit: b.previous.profit }, lang);
+    try {
+      await lineClient().pushMessage({
+        to: id,
+        messages: [
+          monthEndMessage(
+            {
+              month,
+              company: b.company,
+              hasSales: b.hasSales,
+              salesValue: r.salesValue,
+              costs: r.purchasesCost,
+              labor: r.labor,
+              profit: r.profit,
+              previousProfit: b.previous.profit,
+              vatPayable: r.vatPayable,
+              wht: Math.round((b.whtSuppliers + b.whtPayroll) * 100) / 100,
+              socialSecurity: b.socialSecurity,
+              target: b.target,
+              documents: b.documents,
+            },
+            lang,
+            appUrl,
+            { tip, next: NEXT.summary[lang] },
+          ),
+        ],
+      });
+      sent += 1;
+    } catch (e) {
+      console.error("[month-end] push failed", e instanceof Error ? e.message : e);
     }
   }
   return sent;

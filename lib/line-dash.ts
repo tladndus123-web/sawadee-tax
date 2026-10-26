@@ -679,3 +679,112 @@ export function noticeMessage(texts: string[], eyebrow: string, lang: LineLang, 
     ? { type: "flex", altText: alt, contents: bubbles[0] }
     : { type: "flex", altText: alt, contents: { type: "carousel", contents: bubbles } };
 }
+
+// ── Month-end report (the 1st), the accountant link, next month's target ─────────────────────────────────────────
+
+export interface MonthEndData {
+  month: string;
+  company: string;
+  hasSales: boolean;
+  salesValue: number;
+  costs: number;
+  labor: number;
+  profit: number;
+  previousProfit: number;
+  vatPayable: number;
+  wht: number;
+  socialSecurity: number;
+  target: number;
+  documents: number;
+}
+
+const ME: Record<LineLang, Record<string, string>> = {
+  ko: { eyebrow: "MONTH-END", title: "{m} 마감", left: "남은 돈", vsPrev: "{p} 지난달보다", hit: "목표 달성 ✓", ofTarget: "목표의 {p}%", sales: "매출 (VAT 제외)", costs: "비용 (매입)", labor: "인건비", vat: "낼 부가세", wht: "원천세", ss: "사회보험", share: "📤 회계사에게 보내기", goal: "📊 {m} 목표 정하기", files: "{m} 자료", docs: "매입 서류 {n}장", excel: "엑셀 받기", salesReport: "매출 보고서", ledgerReport: "매입 보고서", shareTitle: "{m} 자료 링크", shareSub: "회계사가 로그인 없이 {m} 자료만 볼 수 있어요. {d}까지 열려요.", sendLine: "LINE으로 보내기", preview: "미리 보기", settings: "앱에서 정하기", shareText: "{c} {m} 장부 자료입니다 (로그인 없이 보기, {d}까지): {u}", goalTitle: "{m} 목표", goalSub: "지난 3달 매출(VAT 제외) 중 높은 쪽을 기준으로 정했어요.", total: "합계", setAs: "이대로 정하기", goalSet: "✓ {m} 목표를 정했어요 · 합계 {t}", goalNone: "목표를 정할 매출 기록이 없어요. 앱 설정에서 직접 정해 주세요." },
+  ja: { eyebrow: "MONTH-END", title: "{m}の締め", left: "残ったお金", vsPrev: "先月比 {p}", hit: "目標達成 ✓", ofTarget: "目標の{p}%", sales: "売上（VAT抜き）", costs: "費用（仕入）", labor: "人件費", vat: "納付するVAT", wht: "源泉税", ss: "社会保険", share: "📤 会計士に送る", goal: "📊 {m}の目標を決める", files: "{m}の資料", docs: "仕入書類 {n}件", excel: "Excel出力", salesReport: "売上レポート", ledgerReport: "仕入レポート", shareTitle: "{m}の資料リンク", shareSub: "会計士がログインなしで{m}の資料だけ見られます。{d}まで有効です。", sendLine: "LINEで送る", preview: "プレビュー", settings: "アプリで決める", shareText: "{c} {m}の帳簿資料です（ログイン不要、{d}まで）: {u}", goalTitle: "{m}の目標", goalSub: "直近3か月の売上（VAT抜き）の高い方を基準にしました。", total: "合計", setAs: "これで決める", goalSet: "✓ {m}の目標を決めました · 合計 {t}", goalNone: "目標を決める売上記録がありません。アプリの設定で決めてください。" },
+  th: { eyebrow: "MONTH-END", title: "ปิดเดือน {m}", left: "กำไร", vsPrev: "{p} จากเดือนก่อน", hit: "ถึงเป้าแล้ว ✓", ofTarget: "{p}% ของเป้า", sales: "ยอดขาย (ไม่รวม VAT)", costs: "ค่าใช้จ่าย (ซื้อ)", labor: "ค่าแรง", vat: "VAT ที่ต้องชำระ", wht: "ภาษีหัก ณ ที่จ่าย", ss: "ประกันสังคม", share: "📤 ส่งให้นักบัญชี", goal: "📊 ตั้งเป้า {m}", files: "เอกสาร {m}", docs: "เอกสารซื้อ {n} ใบ", excel: "ดาวน์โหลด Excel", salesReport: "รายงานยอดขาย", ledgerReport: "รายงานซื้อ", shareTitle: "ลิงก์เอกสาร {m}", shareSub: "นักบัญชีดูเอกสารเดือน {m} ได้โดยไม่ต้องเข้าสู่ระบบ ใช้ได้ถึง {d}", sendLine: "ส่งทาง LINE", preview: "ดูตัวอย่าง", settings: "ตั้งในแอป", shareText: "เอกสารบัญชีเดือน {m} ของ {c} (ดูได้ไม่ต้องเข้าสู่ระบบ ถึง {d}): {u}", goalTitle: "เป้า {m}", goalSub: "ตั้งจากยอดขาย (ไม่รวม VAT) ที่สูงกว่าระหว่างเดือนก่อนกับค่าเฉลี่ย 3 เดือน", total: "รวม", setAs: "ตั้งตามนี้", goalSet: "✓ ตั้งเป้า {m} แล้ว · รวม {t}", goalNone: "ยังไม่มียอดขายพอจะตั้งเป้า กรุณาตั้งในแอป" },
+  en: { eyebrow: "MONTH-END", title: "{m} closed", left: "What was left", vsPrev: "{p} vs last month", hit: "Target reached ✓", ofTarget: "{p}% of target", sales: "Sales (excl. VAT)", costs: "Costs (purchases)", labor: "Labour", vat: "VAT to pay", wht: "Withholding tax", ss: "Social security", share: "📤 Send to accountant", goal: "📊 Set {m} target", files: "{m} files", docs: "{n} purchase documents", excel: "Download Excel", salesReport: "Sales report", ledgerReport: "Purchase report", shareTitle: "{m} link for your accountant", shareSub: "Your accountant can see {m} without signing in, until {d}.", sendLine: "Send by LINE", preview: "Preview", settings: "Set in the app", shareText: "{c} books for {m} (no sign-in, until {d}): {u}", goalTitle: "{m} target", goalSub: "Based on the higher of last month and the 3-month average (sales excl. VAT).", total: "Total", setAs: "Set it", goalSet: "✓ {m} target set · total {t}", goalNone: "Not enough sales to suggest a target. Please set it in the app." },
+};
+const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
+const monthWord = (m: string, lang: LineLang) => (lang === "th" ? thM(m) : lang === "en" ? enM(m) : lang === "ja" ? `${Number(m.slice(5, 7))}月` : `${Number(m.slice(5, 7))}월`);
+const nextMonthOf = (m: string) => {
+  const [y, mo] = m.split("-").map(Number);
+  return new Date(Date.UTC(y, mo, 1)).toISOString().slice(0, 7);
+};
+
+export function monthEndMessage(d: MonthEndData, lang: LineLang, appUrl: string, extra: CardExtra = {}): messagingApi.FlexMessage {
+  const t = ME[lang];
+  const m = monthWord(d.month, lang);
+  const next = nextMonthOf(d.month);
+  const ch = d.previousProfit !== 0 ? ((d.profit - d.previousProfit) / Math.abs(d.previousProfit)) * 100 : null;
+  const right = d.target > 0 && d.hasSales ? (d.salesValue >= d.target ? t.hit : fill(t.ofTarget, { p: Math.round((d.salesValue / d.target) * 100) })) : "";
+  const first = bubble(
+    fill(t.title, { m }),
+    head(t.eyebrow, fill(t.title, { m }), d.company || undefined),
+    [
+      hero(t.left, baht(d.profit), null, ch === null ? "" : fill(t.vsPrev, { p: `${sign(ch)} ${pct(ch)}` }), right),
+      rows([
+        ...(d.hasSales ? [row(t.sales, baht(d.salesValue))] : []),
+        row(t.costs, baht(d.costs)),
+        ...(d.labor ? [row(t.labor, baht(d.labor))] : []),
+        row(t.vat, baht(Math.max(0, d.vatPayable)), d.vatPayable > 0 ? C.orange : C.white),
+        ...(d.wht ? [row(t.wht, baht(d.wht), C.orange)] : []),
+        ...(d.socialSecurity ? [row(t.ss, baht(d.socialSecurity))] : []),
+      ]),
+    ],
+    [button(t.share, { data: `share=${d.month}` })],
+    { tip: extra.tip },
+  ).contents as messagingApi.FlexBubble;
+  const second = bubble(
+    fill(t.files, { m }),
+    head("FILES", fill(t.files, { m }), fill(t.docs, { n: d.documents })),
+    [
+      { ...button(t.excel, { data: "ask=excel" }), flex: 0 } satisfies Box,
+      { ...button(t.salesReport, `${appUrl}/sales/report/${d.month}`, false), flex: 0, margin: "sm" } satisfies Box,
+      { ...button(t.ledgerReport, `${appUrl}/ledger/report/${d.month}`, false), flex: 0, margin: "sm" } satisfies Box,
+      { ...button(fill(t.goal, { m: monthWord(next, lang) }), { data: `goal=${next}` }, false), flex: 0, margin: "sm" } satisfies Box,
+    ],
+    [],
+  ).contents as messagingApi.FlexBubble;
+  return {
+    type: "flex",
+    altText: `${fill(t.title, { m })} · ${t.left} ${baht(d.profit)}`.slice(0, 400),
+    contents: { type: "carousel", contents: [first, second] },
+    ...(extra.next?.length ? { quickReply: nextQuestions(extra.next) } : {}),
+  };
+}
+
+/** The accountant link, with a button to forward it by LINE */
+export function shareCard(p: { month: string; url: string; expires: string; company: string }, lang: LineLang): messagingApi.FlexMessage {
+  const t = ME[lang];
+  const m = monthWord(p.month, lang);
+  const d = dmy(p.expires.slice(0, 10));
+  const text = fill(t.shareText, { c: p.company, m, d, u: p.url });
+  return bubble(
+    fill(t.shareTitle, { m }),
+    head("ACCOUNTANT", fill(t.shareTitle, { m }), fill(t.shareSub, { m, d })),
+    [{ type: "box", layout: "vertical", backgroundColor: C.card, cornerRadius: "12px", paddingAll: "12px", contents: [txt(p.url, { size: "xxs", color: C.soft })] } satisfies Box],
+    [button(t.sendLine, `https://line.me/R/share?text=${encodeURIComponent(text)}`), button(t.preview, p.url, false)],
+  );
+}
+
+export interface GoalLineView {
+  name: string;
+  base: number;
+  target: number;
+}
+
+/** Next month's target per branch, and buttons to set it raised by 5 %, as it is, or by 10 % */
+export function goalCard(month: string, lines: GoalLineView[], lang: LineLang, appUrl: string): messagingApi.FlexMessage {
+  const t = ME[lang];
+  const m = monthWord(month, lang);
+  const total = lines.reduce((a, l) => a + l.target, 0);
+  if (!total) return bubble(t.goalNone, head("GOAL", fill(t.goalTitle, { m }), t.goalNone), [], [button(t.settings, `${appUrl}/settings`, false)]);
+  return bubble(
+    `${fill(t.goalTitle, { m })} ${baht(total)}`,
+    head("GOAL", fill(t.goalTitle, { m }), t.goalSub),
+    [hero(t.total, baht(total), null, "+5%", ""), ...(lines.length > 1 ? [rows(lines.map((l) => row(l.name, baht(l.target))))] : [])],
+    [button(`${t.setAs} +5%`, { data: `goalset=${month}&p=5` }), button("+0%", { data: `goalset=${month}&p=0` }, false), button("+10%", { data: `goalset=${month}&p=10` }, false)],
+  );
+}
+
+export const goalSetText = (month: string, total: number, lang: LineLang) => fill(ME[lang].goalSet, { m: monthWord(month, lang), t: baht(total) });
