@@ -52,7 +52,7 @@ export async function ledger(admin: Admin) {
 }
 
 export async function salesOf(admin: Admin, from: string, to: string) {
-  const { data, error } = await admin.from("sales").select("branch_id, sale_date, gross, vat, bills").gte("sale_date", from).lte("sale_date", to);
+  const { data, error } = await admin.from("sales").select("branch_id, sale_date, channel, gross, vat, bills").gte("sale_date", from).lte("sale_date", to);
   if (error) throw error;
   return data ?? [];
 }

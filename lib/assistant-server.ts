@@ -18,14 +18,14 @@ import {
 import { serverCategories } from "./categories-server";
 import { monthCosts } from "./cost-split";
 import { summarize, vatFiling } from "./dashboard";
-import { foodCostPct, ledger, salesOf, shiftDay, shiftMonth, sumOf, type Admin } from "./line-ask-server";
+import { foodCostPct, ledger, salesOf, shiftMonth, sumOf, type Admin } from "./line-ask-server";
 import { priceRises } from "./price-watch";
 import { todayBangkok } from "./thai-tax";
 
 const r0 = (n: number) => Math.round(n);
 
 /** The books as short lines of text: last months, recent days, branches, unpaid bills, vendors, price rises, VAT, payroll */
-export async function booksContext(admin: Admin, today: string, deep: boolean): Promise<string> {
+export async function booksContext(admin: Admin, today: string, deep: boolean, appUrl = ""): Promise<string> {
   const month = today.slice(0, 7);
   const months = Array.from({ length: deep ? 6 : 3 }, (_, i) => shiftMonth(month, -i)).reverse();
   const first = `${months[0]}-01`;
@@ -63,13 +63,24 @@ export async function booksContext(admin: Admin, today: string, deep: boolean): 
     );
   }
 
-  const days = deep ? 45 : 14;
+  // Day by day from the start of last month (long analyses: three months), with the sales channels per month
+  const since = `${shiftMonth(month, deep ? -2 : -1)}-01`;
   const recent = new Map<string, number>();
-  for (const r of sales.filter((x) => String(x.sale_date) >= shiftDay(today, -days))) recent.set(r.sale_date as string, (recent.get(r.sale_date as string) ?? 0) + Number(r.gross));
+  for (const r of sales.filter((x) => String(x.sale_date) >= since)) recent.set(r.sale_date as string, (recent.get(r.sale_date as string) ?? 0) + Number(r.gross));
   if (recent.size) {
     const wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    lines.push("", `## Daily sales, last ${days} days`, [...recent.entries()].sort().map(([d, g]) => `${d.slice(5)} ${wd[new Date(`${d}T00:00:00Z`).getUTCDay()]} ${r0(g)}`).join(" · "));
+    lines.push("", `## Daily sales since ${since} (gross)`, [...recent.entries()].sort().map(([d, g]) => `${d.slice(5)} ${wd[new Date(`${d}T00:00:00Z`).getUTCDay()]} ${r0(g)}`).join(" · "));
   }
+  const byChannel = new Map<string, Map<string, number>>();
+  sales.forEach((r) => {
+    const m = String(r.sale_date).slice(0, 7);
+    const ch = String(r.channel ?? "store");
+    const mm = byChannel.get(m) ?? new Map<string, number>();
+    mm.set(ch, (mm.get(ch) ?? 0) + Number(r.gross));
+    byChannel.set(m, mm);
+  });
+  if ([...byChannel.values()].some((m) => m.size > 1))
+    lines.push("", "## Sales by channel (store, delivery apps)", ...[...byChannel.entries()].sort().map(([m, chs]) => `${m}: ${[...chs.entries()].map(([c, v]) => `${c} ${r0(v)}`).join(", ")}`));
 
   const byBranch = new Map<string, number>();
   for (const r of sales.filter((x) => String(x.sale_date).startsWith(month))) {
@@ -103,6 +114,17 @@ export async function booksContext(admin: Admin, today: string, deep: boolean): 
     `VAT return ภ.พ.30 for ${f.month}: due ${f.onlineOnly ? f.dueOnline : f.due} (${f.daysLeft} days), output VAT ${r0(sumOf(fSales, "vat"))}, claimable input VAT ${r0(fs.claimableVat)}, documents with warnings ${fs.toCheck}.`,
     `Payroll / withholding returns (ภ.ง.ด.1, ภ.ง.ด.3/53, สปส.1-10) for last month are due on the 7th (paper) / 15th (online).`,
   );
+  if (appUrl) {
+    const last = shiftMonth(month, -1);
+    lines.push(
+      "",
+      "## App pages (give the link when someone asks for a list, a report or a file)",
+      `Sales report, day by day, printable / Excel: ${appUrl}/sales/report/${last} (last month), ${appUrl}/sales/report/${month} (this month)`,
+      `Purchase ledger report (VAT): ${appUrl}/ledger/report/${last} (last month), ${appUrl}/ledger/report/${month} (this month)`,
+      `Profit and loss: ${appUrl}/sales/pl · Ledger: ${appUrl}/ledger · Withholding list: ${appUrl}/ledger/wht/${last} · Payroll: ${appUrl}/payroll`,
+      `The purchase ledger Excel also comes in this chat with the word "엑셀" / "Excel".`,
+    );
+  }
   return lines.join("\n");
 }
 
@@ -122,7 +144,7 @@ export interface AssistantAnswer {
  * One answer. `onDeep` runs before a long analysis starts (to tell the person it takes a moment).
  * The conversation of the last day goes along so follow-up questions make sense.
  */
-export async function answer(admin: Admin, userId: string, question: string, onDeep: (n: number) => Promise<void>, today = todayBangkok()): Promise<AssistantAnswer> {
+export async function answer(admin: Admin, userId: string, question: string, onDeep: (n: number) => Promise<void>, appUrl = "", today = todayBangkok()): Promise<AssistantAnswer> {
   client ??= new Anthropic({ maxRetries: 2 });
   const since = new Date(Date.now() - HISTORY_HOURS * 3_600_000).toISOString();
   const { data: turns } = await admin
@@ -137,7 +159,7 @@ export async function answer(admin: Admin, userId: string, question: string, onD
   while (history.length && history[0].role !== "user") history.shift();
   const messages: Anthropic.MessageParam[] = [...history.map((t) => ({ role: t.role, content: t.content })), { role: "user", content: question }];
 
-  const quickContext = await booksContext(admin, today, false);
+  const quickContext = await booksContext(admin, today, false, appUrl);
   const quick = await client.messages.create({
     model: QUICK_MODEL,
     max_tokens: 1500,
@@ -159,7 +181,7 @@ export async function answer(admin: Admin, userId: string, question: string, onD
         model: DEEP_MODEL,
         max_tokens: 6000,
         output_config: { effort: "medium" },
-        system: deepSystem(await booksContext(admin, today, true)),
+        system: deepSystem(await booksContext(admin, today, true, appUrl)),
         messages,
       });
       text = reply(deep);

@@ -24,6 +24,13 @@ describe("what the admin asks", () => {
   it("leaves ordinary chat alone", () => {
     expect(askFromText("สวัสดีครับ")).toBeNull();
     expect(askFromText("오늘 매출이 좋아서 다들 수고했다고 전해 주세요")).toBeNull();
+  });
+  it("a question that only mentions a word goes to the AI assistant, not to a card", () => {
+    expect(askFromText("저번달 매출내역 보내줘")).toBeNull();
+    expect(askFromText("先月の売上は？")).toBeNull();
+    expect(askFromText("부가세 얼마 내야 해?")).toBeNull();
+    expect(askFromText("💸 今週の支払い")).toBe("due");
+    expect(askFromText("📈 Yesterday's sales")).toBe("sales");
     expect(askFromText("")).toBeNull();
   });
 });

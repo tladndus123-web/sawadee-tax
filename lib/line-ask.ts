@@ -15,23 +15,23 @@ export function askFromData(data: string): Ask | null {
   return (ASKS as readonly string[]).includes(v ?? "") ? (v as Ask) : null;
 }
 
-// Words people type instead of tapping (Korean, Japanese, Thai, English). Only short messages count, so ordinary
-// chat in the room never sets the bot off.
+// Shortcuts people type instead of tapping: only a message that is exactly one of these (a menu card's words or a
+// single word) gets the card. Anything longer is a question for the AI assistant — "저번달 매출내역 보내줘" asked
+// about last month and got yesterday's sales card while any message containing "매출" counted (owner, 2026-10-26).
 const WORDS: Record<Ask, string[]> = {
-  summary: ["요약", "이번달", "まとめ", "今月", "サマリー", "สรุป", "เดือนนี้", "summary"],
-  due: ["낼돈", "지급", "갚을", "支払", "払う", "ต้องจ่าย", "ค้างจ่าย", "จ่ายเงิน", "due", "bills", "pay"],
-  vat: ["부가세", "vat", "消費税", "付加価値税", "ภพ30", "ภาษีมูลค่าเพิ่ม", "ภาษีซื้อ"],
-  sales: ["매출", "売上", "ยอดขาย", "sales"],
-  excel: ["엑셀", "excel", "エクセル", "xlsx", "เอ็กเซล"],
+  summary: ["요약", "이번달요약", "まとめ", "今月のまとめ", "สรุป", "สรุปเดือนนี้", "summary", "monthlysummary"],
+  due: ["낼돈", "이번주낼돈", "支払い", "今週の支払い", "ต้องจ่าย", "ต้องจ่ายสัปดาห์นี้", "due", "duethisweek"],
+  vat: ["부가세", "부가세마감", "vat", "vat申告期限", "ภพ30", "กำหนดยื่นvat", "vatdeadline"],
+  sales: ["매출", "어제매출", "売上", "昨日の売上", "ยอดขาย", "ยอดขายเมื่อวาน", "sales", "yesterdayssales", "yesterday'ssales"],
+  excel: ["엑셀", "엑셀받기", "excel", "excel出力", "ดาวน์โหลดexcel", "downloadexcel"],
 };
-const MAX_ASK_LENGTH = 16;
 
-/** A short message asking for one of the answers, or null (anything else stays unanswered, as before) */
+/** A message that is just a card's name, or null (then it goes to the AI assistant) */
 export function askFromText(text: string): Ask | null {
   // Emoji, spaces and punctuation out; "ภ.พ.30" → "ภพ30"
   const t = text.toLowerCase().replace(/[\s.·・、。!?！？]|\p{Extended_Pictographic}|️/gu, "");
-  if (!t || t.length > MAX_ASK_LENGTH) return null;
-  for (const a of ASKS) if (WORDS[a].some((w) => t.includes(w))) return a;
+  if (!t) return null;
+  for (const a of ASKS) if (WORDS[a].includes(t)) return a;
   return null;
 }
 

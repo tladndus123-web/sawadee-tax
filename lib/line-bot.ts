@@ -166,7 +166,7 @@ async function chat(event: { replyToken?: string }, lineUser: string, question: 
       await send(later, lineUser, [text(assistantSay.thinking(n))]);
       later = {};
       await typing();
-    });
+    }, appUrl());
     await send(later, lineUser, [text(a.text), ...(a.deepUsedUp ? [text(assistantSay.deepUsedUp)] : [])]);
     console.log(`[line] assistant ${a.model}${a.deepCount ? ` (${a.deepCount} this month)` : ""}`);
   } catch (e) {
