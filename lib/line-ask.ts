@@ -212,3 +212,24 @@ export function excelText(files: ExcelLink[]): string {
     line("📎 仕入帳のExcel（リンクの有効期限は1時間）", ...files.flatMap((f) => ["", `${jaMonth(f.month)} · ${f.count}件`, f.url])),
   );
 }
+
+/** The upload card: a menu cannot open the camera, so the bot answers with camera / photo buttons */
+const UPLOAD_TEXT: Record<"ko" | "ja" | "th" | "en", [string, string, string]> = {
+  ko: ["영수증 사진을 보내 주세요. 여러 장도 한 번에 돼요.", "카메라", "사진 고르기"],
+  ja: ["領収書の写真を送ってください。複数枚まとめてもOKです。", "カメラ", "写真を選ぶ"],
+  th: ["ส่งรูปใบเสร็จมาได้เลย ส่งหลายรูปพร้อมกันก็ได้", "กล้อง", "เลือกรูป"],
+  en: ["Send a photo of the receipt — several at once is fine.", "Camera", "Choose photos"],
+};
+export function uploadPrompt(lang: "ko" | "ja" | "th" | "en") {
+  const [msg, camera, roll] = UPLOAD_TEXT[lang];
+  return {
+    type: "text" as const,
+    text: `📷 ${msg}`,
+    quickReply: {
+      items: [
+        { type: "action" as const, action: { type: "camera" as const, label: camera } },
+        { type: "action" as const, action: { type: "cameraRoll" as const, label: roll } },
+      ],
+    },
+  };
+}

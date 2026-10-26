@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { askData, askFromData, askFromText, dueText, excelText, salesText, summaryText, vatText } from "./line-ask";
+import { askData, askFromData, askFromText, dueText, excelText, salesText, summaryText, uploadPrompt, vatText } from "./line-ask";
 import { splitLangs } from "./line";
-import { MENU_SIZE, menuDefinition } from "./line-menu";
+import { MENU_SIZE, menuDefinition, menuLang, UPLOAD_DATA } from "./line-menu";
 
 describe("what the admin asks", () => {
   it("menu buttons carry their question", () => {
@@ -88,17 +88,33 @@ describe("answers", () => {
 });
 
 describe("the admins' LINE menu", () => {
-  it("6 buttons that cover the whole 2500 × 1686 picture without overlap", () => {
-    const areas = menuDefinition("https://app").areas ?? [];
+  it("6 taps that cover the whole 2500 × 1686 picture without overlap", () => {
+    const areas = menuDefinition("ko").areas ?? [];
     expect(areas).toHaveLength(6);
     const area = areas.reduce((a, x) => a + x.bounds!.width! * x.bounds!.height!, 0);
     expect(area).toBe(MENU_SIZE.width * MENU_SIZE.height);
-    expect(areas[0].bounds).toMatchObject({ x: 0, y: 0 });
-    expect(areas[5].bounds).toMatchObject({ x: 1667, y: 843, width: 833, height: 843 });
+    for (const row of [0, 843]) {
+      const inRow = areas.filter((a) => a.bounds!.y === row);
+      expect(inRow.reduce((a, x) => a + x.bounds!.width!, 0)).toBe(MENU_SIZE.width);
+    }
   });
-  it("five ask the ledger, the last opens the app", () => {
-    const areas = menuDefinition("https://app").areas ?? [];
-    expect(areas.slice(0, 5).map((a) => (a.action as { data: string }).data)).toEqual(["ask=summary", "ask=due", "ask=vat", "ask=sales", "ask=excel"]);
-    expect(areas[5].action).toMatchObject({ type: "uri", uri: "https://app/" });
+  it("follows the owner's picture: wide summary top left, wide upload bottom right", () => {
+    const areas = menuDefinition("ja").areas ?? [];
+    expect(areas.map((a) => (a.action as { data: string }).data)).toEqual(["ask=summary", "ask=due", "ask=vat", "ask=sales", "ask=excel", UPLOAD_DATA]);
+    expect(areas[0].bounds).toMatchObject({ x: 0, y: 0, width: 1250 });
+    expect(areas[5].bounds).toMatchObject({ x: 1250, y: 843, width: 1250 });
+    expect(areas[0].action).toMatchObject({ displayText: "📊 今月のまとめ" });
+  });
+  it("speaks the phone's LINE language, English otherwise", () => {
+    expect(menuLang("ko")).toBe("ko");
+    expect(menuLang("ja")).toBe("ja");
+    expect(menuLang("th")).toBe("th");
+    expect(menuLang("zh-TW")).toBe("en");
+    expect(menuLang(undefined)).toBe("en");
+    expect(menuDefinition("th").chatBarText).toBe("เมนู");
+  });
+  it("the upload card answers with camera and photo buttons", () => {
+    const m = uploadPrompt("ko");
+    expect(m.quickReply.items.map((i) => i.action.type)).toEqual(["camera", "cameraRoll"]);
   });
 });

@@ -15,9 +15,9 @@ import { type LedgerRef, runChecks } from "./checks";
 import { docToRow } from "./db-map";
 import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
-import { type Ask, askFromData, askFromText, askSay } from "./line-ask";
+import { type Ask, askFromData, askFromText, askSay, uploadPrompt } from "./line-ask";
 import { askAnswer } from "./line-ask-server";
-import { linkAdminMenu, unlinkMenu } from "./line-menu";
+import { linkAdminMenu, profileLang, unlinkMenu, UPLOAD_DATA } from "./line-menu";
 import { imageType, lineBlobClient, lineClient, receiptCard, say, branchButtons, lineBranchLabel, salesBranchButtons, splitLangs } from "./line";
 import { aggregate, applySavedColumns, findHeader, posColumnsOf } from "./pos-import";
 import { isPosFileName, readPosBuffer } from "./pos-read-server";
@@ -101,8 +101,10 @@ export async function handleLineEvent(event: webhook.Event): Promise<void> {
     return;
   }
   if (event.type === "postback") {
-    const ask = askFromData(event.postback.data);
-    return ask ? answerAsk(event, lineUser, ask, true) : pickBranch(event, lineUser, event.postback.data);
+    const data = event.postback.data;
+    if (data === UPLOAD_DATA) return uploadButtons(event, lineUser);
+    const ask = askFromData(data);
+    return ask ? answerAsk(event, lineUser, ask, true) : pickBranch(event, lineUser, data);
   }
   if (event.type !== "message") return;
   const message = event.message;
@@ -140,6 +142,12 @@ async function linkAccount(event: webhook.MessageEvent, lineUser: string, code: 
   await send(event, lineUser, [checking, text(say.linked(m?.name || m?.email || ""))]);
   // Admins get the menu with the ledger buttons at the bottom of the chat
   if (m?.role === "admin") await linkAdminMenu(lineUser);
+}
+
+/** The menu's upload card: camera / photo buttons, in the person's LINE language */
+async function uploadButtons(event: { replyToken?: string }, lineUser: string) {
+  if (!(await memberFor(lineUser))) return send(event, lineUser, [text(say.welcome)]);
+  await send(event, lineUser, [uploadPrompt(await profileLang(lineUser))]);
 }
 
 /**

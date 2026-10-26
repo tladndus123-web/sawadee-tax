@@ -1,53 +1,78 @@
-// The admins' LINE menu (rich menu, owner 2026-10-26): 6 buttons at the bottom of the chat, 3 on top and 3 below.
-// Only admins get it (it is linked per person; staff and employees keep the plain chat). The picture comes from the
-// owner; scripts/line-menu.ts uploads it and makes the menu. The bot finds the menu by its alias.
+// The admins' LINE menu (rich menu, owner 2026-10-26): the owner's pictures in docs/line-menu/{ko,ja,th,en}.png.
+// Only admins get it (linked per person; staff and employees keep the plain chat), in the language their phone's
+// LINE is set to (LINE profile "language"), English for any other. scripts/line-menu.ts uploads the four menus.
+//
+//  ┌──────────────────────┬───────────┬───────────┐
+//  │ 📊 month summary      │ 💸 due     │ 🧾 VAT     │   top row: wide card + 2
+//  ├──────────┬───────────┼───────────┴───────────┤
+//  │ 📈 sales  │ 📎 Excel   │ 📷 upload a receipt    │   bottom row: 2 + wide card
+//  └──────────┴───────────┴───────────────────────┘
 
 import type { messagingApi } from "@line/bot-sdk";
 import { type Ask, askData } from "./line-ask";
 import { lineClient } from "./line";
 
-export const MENU_ALIAS = "sawadee-admin";
+export const MENU_LANGS = ["ko", "ja", "th", "en"] as const;
+export type MenuLang = (typeof MENU_LANGS)[number];
 export const MENU_SIZE = { width: 2500, height: 1686 } as const;
+export const menuAlias = (lang: MenuLang) => `sawadee-admin-${lang}`;
 
-type Cell = { ask: Ask; label: string } | { url: string; label: string };
-
-/** Left to right, top row first — the picture must show the buttons in this order */
-export function menuCells(appUrl: string): Cell[] {
-  return [
-    { ask: "summary", label: "📊 今月のまとめ · สรุปเดือนนี้" },
-    { ask: "due", label: "💸 今週の支払い · ต้องจ่ายสัปดาห์นี้" },
-    { ask: "vat", label: "🧾 VAT申告 · ภ.พ.30" },
-    { ask: "sales", label: "📈 昨日の売上 · ยอดขายเมื่อวาน" },
-    { ask: "excel", label: "📎 Excel" },
-    { url: `${appUrl}/`, label: "🌐 App" },
-  ];
+/** LINE profile language ("ja", "th", "ko", "en", "zh-TW" …) → the menu's language */
+export function menuLang(profile: string | undefined | null): MenuLang {
+  const base = (profile ?? "").toLowerCase().split("-")[0];
+  return (MENU_LANGS as readonly string[]).includes(base) ? (base as MenuLang) : "en";
 }
 
-/** The menu definition: a 3 × 2 grid over the 2500 × 1686 picture */
-export function menuDefinition(appUrl: string): messagingApi.RichMenuRequest {
-  const cols = [0, 833, 1667, MENU_SIZE.width];
-  const rows = [0, 843, MENU_SIZE.height];
+/** Postback of the upload card: the bot answers with camera / photo buttons (a menu cannot open the camera itself) */
+export const UPLOAD_DATA = "do=upload";
+
+type Button = Ask | "upload";
+
+/** Where each card is on the picture (pixels of the 2500 × 1686 original), in the order of the drawing above */
+const CELLS: { button: Button; x: number; y: number; width: number; height: number }[] = [
+  { button: "summary", x: 0, y: 0, width: 1250, height: 843 },
+  { button: "due", x: 1250, y: 0, width: 612, height: 843 },
+  { button: "vat", x: 1862, y: 0, width: 638, height: 843 },
+  { button: "sales", x: 0, y: 843, width: 637, height: 843 },
+  { button: "excel", x: 637, y: 843, width: 613, height: 843 },
+  { button: "upload", x: 1250, y: 843, width: 1250, height: 843 },
+];
+
+/** What the chat shows for a tap (the words on the picture) */
+export const MENU_LABELS: Record<MenuLang, Record<Button, string>> = {
+  ko: { summary: "📊 이번 달 요약", due: "💸 이번 주 낼 돈", vat: "🧾 부가세 마감", sales: "📈 어제 매출", excel: "📎 엑셀 받기", upload: "📷 영수증 올리기" },
+  ja: { summary: "📊 今月のまとめ", due: "💸 今週の支払い", vat: "🧾 VAT申告期限", sales: "📈 昨日の売上", excel: "📎 Excel出力", upload: "📷 領収書を送る" },
+  th: { summary: "📊 สรุปเดือนนี้", due: "💸 ต้องจ่ายสัปดาห์นี้", vat: "🧾 กำหนดยื่น VAT", sales: "📈 ยอดขายเมื่อวาน", excel: "📎 ดาวน์โหลด Excel", upload: "📷 ส่งใบเสร็จ" },
+  en: { summary: "📊 Monthly summary", due: "💸 Due this week", vat: "🧾 VAT deadline", sales: "📈 Yesterday's sales", excel: "📎 Download Excel", upload: "📷 Upload receipt" },
+};
+
+const CHAT_BAR: Record<MenuLang, string> = { ko: "메뉴", ja: "メニュー", th: "เมนู", en: "Menu" };
+
+export function menuDefinition(lang: MenuLang): messagingApi.RichMenuRequest {
   return {
     size: MENU_SIZE,
     selected: true,
-    name: "Sawadee TAX admin",
-    chatBarText: "メニュー · เมนู",
-    areas: menuCells(appUrl).map((c, i) => {
-      const x = cols[i % 3];
-      const y = rows[Math.floor(i / 3)];
-      return {
-        bounds: { x, y, width: cols[(i % 3) + 1] - x, height: rows[Math.floor(i / 3) + 1] - y },
-        // A button shows its name in the chat (displayText) so everyone sees what was asked
-        action: "ask" in c ? { type: "postback", data: askData(c.ask), displayText: c.label } : { type: "uri", uri: c.url, label: "App" },
-      };
-    }),
+    name: `Sawadee TAX admin ${lang}`,
+    chatBarText: CHAT_BAR[lang],
+    areas: CELLS.map(({ button, ...bounds }) => ({
+      bounds,
+      action: { type: "postback", data: button === "upload" ? UPLOAD_DATA : askData(button), displayText: MENU_LABELS[lang][button] },
+    })),
   };
 }
 
-/** Give an admin the menu (quietly does nothing until scripts/line-menu.ts has made it) */
+/** The person's LINE language (best effort: English when LINE does not say) */
+export async function profileLang(lineUser: string): Promise<MenuLang> {
+  const p = await lineClient()
+    .getProfile(lineUser)
+    .catch(() => null);
+  return menuLang(p?.language);
+}
+
+/** Give an admin the menu in their language (quietly does nothing until scripts/line-menu.ts has made the menus) */
 export async function linkAdminMenu(lineUser: string) {
   try {
-    const { richMenuId } = await lineClient().getRichMenuAlias(MENU_ALIAS);
+    const { richMenuId } = await lineClient().getRichMenuAlias(menuAlias(await profileLang(lineUser)));
     await lineClient().linkRichMenuIdToUser(lineUser, richMenuId);
   } catch (e) {
     console.warn("[line] admin menu not linked", e instanceof Error ? e.message : e);
