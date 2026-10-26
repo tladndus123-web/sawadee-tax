@@ -43,7 +43,7 @@ describe("month-end report", () => {
     const j = JSON.stringify(m);
     expect((m.contents as { type: string }).type).toBe("carousel");
     expect(j).toContain("10월 마감");
-    expect(j).toContain("฿ 521,400.00");
+    expect(j).toContain("฿521,400");
     expect(j).toContain("▲ 8% 지난달보다");
     expect(j).toContain("목표 달성 ✓");
     expect(j).toContain('"data":"share=2026-10"');
@@ -89,10 +89,10 @@ describe("next month's target", () => {
   it("card: the total, each branch, and +5% / +0% / +10% buttons; a message once set", () => {
     const j = JSON.stringify(goalCard("2026-11", [{ name: "본점", base: 1, target: 1_160_000 }, { name: "Silom", base: 1, target: 420_000 }], "ko", "https://app"));
     expect(j).toContain("11월 목표");
-    expect(j).toContain("฿ 1,580,000.00");
+    expect(j).toContain("฿1,580,000");
     expect(j).toContain('"data":"goalset=2026-11&p=5"');
     expect(j).toContain('"data":"goalset=2026-11&p=10"');
     expect(JSON.stringify(goalCard("2026-11", [], "en", "https://app"))).toContain("Not enough sales");
-    expect(goalSetText("2026-11", 1_580_000, "ko")).toBe("✓ 11월 목표를 정했어요 · 합계 ฿ 1,580,000.00");
+    expect(goalSetText("2026-11", 1_580_000, "ko")).toBe("✓ 11월 목표를 정했어요 · 합계 ฿1,580,000");
   });
 });

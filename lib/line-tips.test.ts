@@ -7,8 +7,8 @@ describe("💡 TIP under the cards", () => {
   it("month-end forecast at the current pace, against the target and what it takes a day", () => {
     const t = forecastTip({ sales: 1_000_000, daysDone: 20, daysInMonth: 31, target: 1_800_000, lastMonthSales: 1_400_000, month: "2026-10" }, "ko")!;
     expect(t.title).toBe("월말 예상");
-    expect(t.main).toContain("10월 매출은 약 ฿ 1,550,000.00 (목표의 86%)");
-    expect(t.note).toContain("남은 11일 동안 하루 ฿ 72,727.00");
+    expect(t.main).toContain("10월 매출은 약 ฿1,550,000 (목표의 86%)");
+    expect(t.note).toContain("남은 11일 동안 하루 ฿72,727");
     const noTarget = forecastTip({ sales: 1_000_000, daysDone: 20, daysInMonth: 31, target: 0, lastMonthSales: 1_400_000, month: "2026-10" }, "en")!;
     expect(noTarget.main).toContain("+11% vs last month");
     expect(noTarget.note).toBeUndefined();
@@ -25,12 +25,12 @@ describe("💡 TIP under the cards", () => {
     expect(cashTip({ dueTotal: 0, overdue: 0, overdueTotal: 0, last7Sales: 1000 }, "en")).toBeNull();
   });
   it("VAT that cannot be claimed, else ready to file", () => {
-    expect(claimTip({ lostCount: 11, lostVat: 4200, toCheck: 0 }, "ko").main).toContain("11장 (부가세 ฿ 4,200.00)");
+    expect(claimTip({ lostCount: 11, lostVat: 4200, toCheck: 0 }, "ko").main).toContain("11장 (부가세 ฿4,200)");
     expect(claimTip({ lostCount: 0, lostVat: 0, toCheck: 2 }, "ja").main).toContain("2件");
     expect(claimTip({ lostCount: 0, lostVat: 0, toCheck: 0 }, "en").main).toContain("ready to file");
   });
   it("yesterday against the same weekday", () => {
-    expect(weekdayTip({ date: "2026-10-25", total: 11200, usual: 10000 }, "ko")!.main).toBe("평소 일요일 평균 ฿ 10,000.00보다 +12%예요.");
+    expect(weekdayTip({ date: "2026-10-25", total: 11200, usual: 10000 }, "ko")!.main).toBe("평소 일요일 평균 ฿10,000보다 +12%예요.");
     expect(weekdayTip({ date: "2026-10-25", total: 0, usual: 10000 }, "ko")).toBeNull();
   });
   it("every question button fits LINE (20 characters) in every language", () => {
@@ -50,7 +50,7 @@ describe("💡 TIP under the cards", () => {
 });
 
 describe("notices as cards", () => {
-  const text = four("ไทย\nบรรทัด 2\n\nยอด: ฿ 1.00\nhttps://x/a", "日本\n2行目\n\n控除できる仕入VAT：฿ 100.00\n要確認 2件 · 下書き 1件 — 申告前に整理してください\nhttps://x/a", "한국\n둘째 줄\n\n공제받을 매입 부가세: ฿ 100.00\nhttps://x/a", "EN\nline 2\n\nTotal: ฿ 1.00\nhttps://x/a");
+  const text = four("ไทย\nบรรทัด 2\n\nยอด: ฿1\nhttps://x/a", "日本\n2行目\n\n控除できる仕入VAT：฿100\n要確認 2件 · 下書き 1件 — 申告前に整理してください\nhttps://x/a", "한국\n둘째 줄\n\n공제받을 매입 부가세: ฿100\nhttps://x/a", "EN\nline 2\n\nTotal: ฿1\nhttps://x/a");
   it("title, the line under it, label: value rows, a list, the link as a button", () => {
     const j = JSON.stringify(noticeMessage([text], "REMINDER", "ja"));
     expect(j).toContain('"text":"日本"');

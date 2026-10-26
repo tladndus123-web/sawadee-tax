@@ -41,7 +41,7 @@ describe("dashboard cards", () => {
   it("month summary: sales against the target, purchases, VAT, unpaid, warnings", () => {
     const ko = j(summaryCard(summary, "ko", "https://app/"));
     expect(ko).toContain("10월 요약");
-    expect(ko).toContain("฿ 1,284,500.00");
+    expect(ko).toContain("฿1,284,500");
     expect(ko).toContain("목표의 68%");
     expect(ko).toContain('"width":"68%"');
     expect(ko).toContain("매입 (184장)");
@@ -66,7 +66,7 @@ describe("dashboard cards", () => {
     const bills = Array.from({ length: 10 }, (_, i) => ({ vendor: { th: `ร้าน ${i}`, en: `Shop ${i}`, ja: "" }, amount: 100.5, due: "2026-10-28", days: i - 1 }));
     const ja = j(dueCard(bills, "ja", "u"));
     expect(ja).toContain("今週の支払い 10件");
-    expect(ja).toContain("฿ 1,005.00");
+    expect(ja).toContain("฿1,005");
     expect(ja).toContain("Shop 0"); // no Japanese name: English
     expect(ja).toContain("1日超過");
     expect(ja).toContain("ほか2件");
@@ -78,16 +78,16 @@ describe("dashboard cards", () => {
     expect(ko).toContain("9월분 부가세 신고");
     expect(ko).toContain("15/10/2026");
     expect(ko).toContain("낼 부가세 (예상)");
-    expect(ko).toContain("฿ 12,600.00");
+    expect(ko).toContain("฿12,600");
     expect(j(vatCard({ ...v, salesVat: 5000 }, "en", "u"))).toContain("Estimated refund");
     expect(j(vatCard({ ...v, salesVat: null }, "th", "u"))).not.toContain("ต้องชำระ");
   });
   it("yesterday's sales: total, branches when there are several", () => {
     const one = j(salesCard({ date: "2026-10-25", branches: [{ name: { th: "สำนักงานใหญ่", ja: "本店", ko: "본점", en: "Head office" }, gross: 15000, bills: 80 }] }, "th", "u"));
-    expect(one).toContain("฿ 15,000.00");
+    expect(one).toContain("฿15,000");
     expect(one).toContain("80 บิล");
     const two = j(salesCard({ date: "2026-10-25", branches: [{ name: { th: "A", ja: "A店", ko: "A점", en: "A" }, gross: 1000, bills: 0 }, { name: { th: "B", ja: "B店", ko: "B점", en: "B" }, gross: 500.25, bills: 0 }] }, "ko", "u"));
-    expect(two).toContain("฿ 1,500.25");
+    expect(two).toContain("฿1,500");
     expect(two).toContain("B점");
     expect(j(salesCard({ date: "2026-10-25", branches: [] }, "ja", "u"))).toContain("まだありません");
   });
@@ -100,7 +100,7 @@ describe("dashboard cards", () => {
   it("5-day report: four cards to swipe — the 5 days, the month, AI suggestions, anything unusual", () => {
     const d = { from: "2026-10-20", to: "2026-10-24", company: "Sawadee Ramen", branchCount: 3, hasSales: true, sales: 420000, salesBefore: 400000, bestDay: { date: "2026-10-24", gross: 98000 }, receipts: 31, purchases: 102300, month: "2026-10", monthSales: 1284500, target: 0, lastMonthSales: 1500000, monthPurchases: 612300, foodCost: 33.8, vatEstimate: 41860, vatDue: "2026-11-17" };
     const tips = [{ title: "채소 매입가가 올랐어요", body: "다른 거래처 단가를 비교해 보세요." }];
-    const odd = [{ level: "red" as const, title: "같은 영수증이 두 번 올라왔어요", detail: "PANFOOD · IV-1 · ฿ 64,200.00", url: "https://app/documents/x" }];
+    const odd = [{ level: "red" as const, title: "같은 영수증이 두 번 올라왔어요", detail: "PANFOOD · IV-1 · ฿64,200", url: "https://app/documents/x" }];
     const m = fiveDayMessage(d, tips, odd, "ko", "https://app", { tip: { title: "월말 예상", main: "M" }, next: ["📈 다음 달 매출 예상은?"] });
     const c = m.contents as { type: string; contents: unknown[] };
     expect(c.type).toBe("carousel");

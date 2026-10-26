@@ -23,8 +23,8 @@ describe("5-day LINE report", () => {
       () => "수리비",
     );
     expect(lines[0]).toMatchObject({ level: "red", title: "같은 영수증이 두 번 올라왔어요", url: "https://app/documents/a" });
-    expect(lines[1].title).toBe("평소보다 3.2배 큰 지출 ฿ 45,000.00");
-    expect(lines[1].detail).toBe("수리비 평균 ฿ 14,000.00 · Shop");
+    expect(lines[1].title).toBe("평소보다 3.2배 큰 지출 ฿45,000");
+    expect(lines[1].detail).toBe("수리비 평균 ฿14,000 · Shop");
     expect(lines[2]).toMatchObject({ level: "orange" });
     expect(lines[2].detail).toContain("세금번호 확인 필요");
   });

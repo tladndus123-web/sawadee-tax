@@ -3,7 +3,8 @@
 // A question button sends its words as a message, so the AI assistant answers it with a card.
 
 import type { LineLang } from "./line-lang";
-import { baht } from "./money";
+// Cards show whole baht (the exact figure is one tap away in the app)
+import { bahtWhole as baht } from "./money";
 
 export interface CardTip {
   /** e.g. "Month-end forecast" */
@@ -85,7 +86,8 @@ export function forecastTip(
   lang: LineLang,
 ): CardTip | null {
   if (p.sales <= 0 || p.daysDone <= 0) return null;
-  const fc = Math.round((p.sales / p.daysDone) * p.daysInMonth);
+  // A forecast, not a figure: to the nearest ฿1,000
+  const fc = Math.round(((p.sales / p.daysDone) * p.daysInMonth) / 1000) * 1000;
   const left = p.daysInMonth - p.daysDone;
   const m = Number(p.month.slice(5, 7));
   const vsTarget = p.target > 0 ? Math.round((fc / p.target) * 100) : null;

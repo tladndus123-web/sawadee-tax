@@ -17,7 +17,8 @@ import { profileLang } from "./line-menu";
 import { forecastTip, marginTip, NEXT } from "./line-tips";
 import { monthBooks } from "./month-end-server";
 import { monthEndMessage } from "./line-dash";
-import { baht } from "./money";
+// Cards show whole baht (the exact figure is one tap away in the app)
+import { bahtWhole as baht } from "./money";
 import { priceRises } from "./price-watch";
 import { nextWorkingDay } from "./thai-holidays";
 
