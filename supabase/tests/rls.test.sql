@@ -1,10 +1,12 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(231);
+select plan(233);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
+select is((select public from storage.buckets where id = 'line-exports'), false, 'the LINE Excel bucket is private');
+select is((select count(*)::int from pg_policies where schemaname = 'storage' and (qual like '%line-exports%' or with_check like '%line-exports%')), 0, 'and no signed-in user can reach it (server only)');
 
 
 -- Fixtures: one admin, one staff, one signed-in stranger (no membership)

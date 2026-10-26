@@ -1,6 +1,7 @@
 // LINE bot: what happens for each webhook event (server only — uses the service-role client).
 //   follow            → how to link
 //   text "123456"     → "checking the code" + the result: link this LINE account to the member who got that code
+//   menu button / short word ("요약", "売上" …) → admins only: the ledger's own numbers (lib/line-ask.ts)
 //   any other text / sticker … → no reply (people chat here; the bot only speaks when it has something to say)
 //   image             → linked members only: AI reading → vendor dictionary → saved to the ledger
 //                       (status "reviewed", as that member) → receipt card with the automatic checks
@@ -14,6 +15,9 @@ import { type LedgerRef, runChecks } from "./checks";
 import { docToRow } from "./db-map";
 import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
+import { type Ask, askFromData, askFromText, askSay } from "./line-ask";
+import { askAnswer } from "./line-ask-server";
+import { linkAdminMenu, unlinkMenu } from "./line-menu";
 import { imageType, lineBlobClient, lineClient, receiptCard, say, branchButtons, lineBranchLabel, salesBranchButtons, splitLangs } from "./line";
 import { aggregate, applySavedColumns, findHeader, posColumnsOf } from "./pos-import";
 import { isPosFileName, readPosBuffer } from "./pos-read-server";
@@ -82,8 +86,8 @@ function splitMessages(messages: messagingApi.Message[]): messagingApi.Message[]
 }
 
 async function memberFor(lineUser: string) {
-  const { data } = await supabaseAdmin().from("members").select("user_id, name, email").eq("line_user_id", lineUser).maybeSingle();
-  return data as { user_id: string; name: string; email: string } | null;
+  const { data } = await supabaseAdmin().from("members").select("user_id, name, email, role, disabled_at").eq("line_user_id", lineUser).maybeSingle();
+  return data as { user_id: string; name: string; email: string; role: string; disabled_at: string | null } | null;
 }
 
 export async function handleLineEvent(event: webhook.Event): Promise<void> {
@@ -96,12 +100,19 @@ export async function handleLineEvent(event: webhook.Event): Promise<void> {
     await send(event, lineUser, [text(m ? say.linked(m.name || m.email) : say.welcome)]);
     return;
   }
-  if (event.type === "postback") return pickBranch(event, lineUser, event.postback.data);
+  if (event.type === "postback") {
+    const ask = askFromData(event.postback.data);
+    return ask ? answerAsk(event, lineUser, ask, true) : pickBranch(event, lineUser, event.postback.data);
+  }
   if (event.type !== "message") return;
   const message = event.message;
 
   // A 6-digit code, also as "123 456" or "123-456"
   if (message.type === "text" && /^\s*\d{3}[\s-]?\d{3}\s*$/.test(message.text ?? "")) return linkAccount(event, lineUser, digitsOnly(message.text));
+  if (message.type === "text") {
+    const ask = askFromText(message.text ?? "");
+    if (ask) return answerAsk(event, lineUser, ask, false);
+  }
   if (message.type === "image") return saveReceipt(event, lineUser, message.id);
   if (message.type === "file" && isPosFileName(message.fileName ?? "")) return salesFile(event, lineUser, message.id, message.fileName ?? "");
   // Anything else (ordinary chat, stickers …): no automatic reply
@@ -127,6 +138,27 @@ async function linkAccount(event: webhook.MessageEvent, lineUser: string, code: 
   }
   const m = await memberFor(lineUser);
   await send(event, lineUser, [checking, text(say.linked(m?.name || m?.email || ""))]);
+  // Admins get the menu with the ledger buttons at the bottom of the chat
+  if (m?.role === "admin") await linkAdminMenu(lineUser);
+}
+
+/**
+ * A menu button or a short word: the ledger's numbers, for active admins only. A word typed by someone who is not a
+ * member stays unanswered (people chat here); a button always gets an answer.
+ */
+async function answerAsk(event: { replyToken?: string }, lineUser: string, ask: Ask, tapped: boolean) {
+  const member = await memberFor(lineUser);
+  if (!member) return tapped ? send(event, lineUser, [text(say.welcome)]) : undefined;
+  if (member.role !== "admin" || member.disabled_at) {
+    // Not (or no longer) an admin: the menu goes away
+    if (tapped) await unlinkMenu(lineUser);
+    return send(event, lineUser, [text(askSay.adminOnly)]);
+  }
+  if (limited(`ask:${member.user_id}`, 10, 60_000)) return send(event, lineUser, [text(say.rate)]);
+  await lineClient()
+    .showLoadingAnimation({ chatId: lineUser, loadingSeconds: ask === "excel" ? 20 : 5 })
+    .catch(() => undefined);
+  await send(event, lineUser, [text(await askAnswer(supabaseAdmin(), ask, appUrl()))]);
 }
 
 /**

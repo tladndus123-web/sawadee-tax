@@ -1,5 +1,3 @@
-"use client";
-
 // Excel file for one month (step 7). exceljs is loaded only when someone downloads.
 // Plain tables starting at row 1 (easy to import into accounting software), money as numbers
 // with a 2-decimal format, a bold totals row, frozen header and filters.
