@@ -5,7 +5,7 @@
 // Admins only (owner's choice: money owed and staff visas); they tick items off and add, change or remove company
 // dates; a closed month's VAT return shows as done by itself.
 
-import { BadgeCheck, CalendarPlus, Camera, ChevronLeft, ChevronRight, CircleCheck, FileText, Landmark, Loader2, Pencil, Receipt, Repeat, Sparkles, Trash2, Users, X } from "lucide-react";
+import { BadgeCheck, CalendarPlus, Camera, ChevronDown, ChevronLeft, ChevronRight, Circle, CircleCheck, FileText, Landmark, Loader2, Pencil, Receipt, Repeat, Sparkles, Trash2, Users, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -62,6 +62,8 @@ export function CompanyCalendar() {
   const [day, setDay] = useState<string | null>(null);
   const [show, setShow] = useState<Record<Group, boolean>>({ tax: true, doc: true, bill: true, event: true });
   const [editing, setEditing] = useState<(Partial<CalEvent> & { open: true }) | null>(null);
+  // The list: what is late and the next two weeks first (at least 5), the rest (to 60 days) behind "more"
+  const [all, setAll] = useState(false);
 
   // Everything from the month shown to 60 days ahead of today
   const from = `${shiftMonth(month, 0)}-01`;
@@ -130,6 +132,9 @@ export function CompanyCalendar() {
 
   const list = day ? byDay.get(day) ?? [] : items.filter((i) => i.date >= today || (!i.done && i.kind !== "bill" && daysTo(today, i.date) >= -30));
   const upcoming = list.filter((i) => i.date <= addDays(today, 60) || day);
+  const soon = upcoming.filter((i) => i.date <= addDays(today, 14));
+  const shown = day || all ? upcoming : soon.length >= 5 ? soon : upcoming.slice(0, 5);
+  const hidden = upcoming.length - shown.length;
 
   const toggle = async (i: CalItem) => {
     try {
@@ -240,11 +245,18 @@ export function CompanyCalendar() {
           <div className="flex items-center justify-between gap-2">
             <h2 id="cal-list" className="text-[18px] font-semibold">
               {day ? dateText(day) : t("upcoming")}
+              {!day && !all && hidden > 0 && <span className="ml-2 text-[13px] font-medium text-muted-foreground">{t("twoWeeks")}</span>}
             </h2>
-            {day && (
+            {day ? (
               <Button type="button" variant="ghost" className="h-9 rounded-full text-primary" onClick={() => setDay(null)}>
                 {t("showUpcoming")}
               </Button>
+            ) : (
+              all && (
+                <Button type="button" variant="ghost" className="h-9 rounded-full text-primary" onClick={() => setAll(false)}>
+                  {t("less")}
+                </Button>
+              )
             )}
           </div>
           {!loaded ? null : upcoming.length === 0 ? (
@@ -253,88 +265,71 @@ export function CompanyCalendar() {
               {t("nothing")}
             </p>
           ) : (
-            <ul className="grid gap-2">
-              {upcoming.map((i) => {
+            <ul className="workspace-panel divide-y divide-border/60 overflow-hidden">
+              {shown.map((i) => {
                 const g = groupOf(i.kind);
                 const Icon = i.kind === "doc" ? FileText : TONE[g].icon;
                 const left = daysTo(today, i.date);
                 const href = HREF[i.kind];
+                const vat = i.kind === "vat" && !i.done && i.period ? vatEstimate(i.period) : null;
+                const ev = i.kind === "event" ? events.find((e) => e.id === i.eventId) : undefined;
                 return (
-                  <li key={i.key} className={cn("workspace-panel flex items-start gap-3 p-4", i.done && "opacity-60")}>
-                    <span className={cn("grid size-10 flex-none place-items-center rounded-xl", TONE[g].chip)}>
-                      <Icon className="size-5" aria-hidden />
-                    </span>
-                    <div className="grid min-w-0 flex-1 gap-1">
-                      <p className={cn("text-[15px] leading-snug font-semibold", i.done && "line-through")}>{title(i)}</p>
-                      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
-                        <span>{dateText(i.date)}</span>
+                  <li key={i.key} className={cn("flex min-h-14 items-center gap-2.5 px-3 py-2.5", i.done && "opacity-55")}>
+                    {/* Tick off (not bills: they are done by paying them in the ledger) */}
+                    {isAdmin && i.kind !== "bill" ? (
+                      <button
+                        type="button"
+                        onClick={() => void toggle(i)}
+                        aria-pressed={i.done}
+                        aria-label={i.done ? t("undo") : t("markDone")}
+                        title={i.done ? t("undo") : t("markDone")}
+                        className="grid size-9 flex-none place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {i.done ? <CircleCheck className="size-6 text-ok" aria-hidden /> : <Circle className="size-6 text-muted-foreground/50" aria-hidden />}
+                      </button>
+                    ) : (
+                      <span className={cn("grid size-9 flex-none place-items-center rounded-full", TONE[g].chip)}>
+                        <Icon className="size-4" aria-hidden />
+                      </span>
+                    )}
+                    <div className="grid min-w-0 flex-1 gap-0.5">
+                      <p className={cn("flex min-w-0 items-baseline gap-1.5 text-[15px] leading-snug font-semibold", i.done && "line-through")} title={i.kind === "pnd50" || i.kind === "pnd51" ? tc("note") : (i.sub ?? undefined)}>
+                        <span className={cn("size-2 flex-none -translate-y-px rounded-full", TONE[g].dot)} aria-hidden />
+                        <span className="line-clamp-2 [overflow-wrap:anywhere]">{title(i)}</span>
+                      </p>
+                      <p className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
                         {!i.done && (
-                          <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", left < 0 ? "bg-bad-soft text-bad" : left <= 3 ? "bg-warn-soft text-warn" : "bg-muted")}>
+                          <span className={cn("flex-none rounded-full px-1.5 py-px text-[11px] font-bold tabular-nums", left < 0 ? "bg-bad-soft text-bad" : left <= 3 ? "bg-warn-soft text-warn" : "bg-muted")}>
                             {left === 0 ? t("today") : left < 0 ? t("late", { n: -left }) : t("dDay", { n: left })}
                           </span>
                         )}
-                        {i.done && (
-                          <span className="flex items-center gap-1 text-ok">
-                            <BadgeCheck className="size-3.5" aria-hidden />
-                            {t("done")}
-                          </span>
-                        )}
-                        {i.amount !== undefined && <span className="font-semibold text-foreground tabular-nums">{baht(i.amount)}</span>}
-                        {i.kind === "vat" && !i.done && i.period && (() => {
-                          const v = vatEstimate(i.period);
-                          return v === null ? null : <span className="font-semibold text-foreground tabular-nums">{v < 0 ? t("vatCredit", { amount: baht(-v) }) : t("vatPay", { amount: baht(v) })}</span>;
-                        })()}
-                        {i.online && <span>{t("online", { date: dateText(i.online) })}</span>}
+                        <span className="flex-none">{dateText(i.date)}</span>
+                        {i.amount !== undefined && <span className="truncate font-semibold text-foreground tabular-nums">· {baht(i.amount)}</span>}
+                        {vat !== null && <span className="truncate font-semibold text-foreground tabular-nums">· {vat < 0 ? t("vatCredit", { amount: baht(-vat) }) : t("vatPay", { amount: baht(vat) })}</span>}
                       </p>
-                      {i.kind === "event" && i.sub && <p className="text-[13px] text-muted-foreground">{i.sub}</p>}
-                      {(i.kind === "pnd50" || i.kind === "pnd51") && <p className="text-[12px] text-muted-foreground">{tc("note")}</p>}
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {href && (
-                          <Button asChild variant="ghost" className="h-8 rounded-full px-3 text-[13px] text-primary">
-                            <Link href={href}>{t("open")}</Link>
-                          </Button>
-                        )}
-                        {isAdmin && i.kind !== "bill" && (
-                          <Button type="button" variant="ghost" className="h-8 rounded-full px-3 text-[13px]" onClick={() => void toggle(i)}>
-                            <CircleCheck className="size-4" />
-                            {i.done ? t("undo") : t("markDone")}
-                          </Button>
-                        )}
-                        {isAdmin && i.kind === "event" && (
-                          <>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 rounded-full"
-                              aria-label={t("edit")}
-                              onClick={() => {
-                                const ev = events.find((e) => e.id === i.eventId);
-                                if (ev) setEditing({ ...ev, open: true });
-                              }}
-                            >
-                              <Pencil className="size-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 rounded-full text-bad"
-                              aria-label={t("remove")}
-                              onClick={async () => {
-                                if (!window.confirm(t("removeAsk"))) return;
-                                await removeEvent(i.eventId!).catch(() => toast.error(t("fail")));
-                              }}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
                     </div>
+                    {isAdmin && ev ? (
+                      <Button type="button" variant="ghost" size="icon" className="size-9 flex-none rounded-full text-muted-foreground" aria-label={t("edit")} onClick={() => setEditing({ ...ev, open: true })}>
+                        <Pencil className="size-4" />
+                      </Button>
+                    ) : href ? (
+                      <Button asChild variant="ghost" size="icon" className="size-9 flex-none rounded-full text-muted-foreground">
+                        <Link href={href} aria-label={t("open")}>
+                          <ChevronRight className="size-5" />
+                        </Link>
+                      </Button>
+                    ) : null}
                   </li>
                 );
               })}
+              {hidden > 0 && (
+                <li>
+                  <button type="button" onClick={() => setAll(true)} className="flex min-h-12 w-full items-center justify-center gap-1 text-[14px] font-semibold text-primary hover:bg-muted/50">
+                    {t("more", { n: hidden })}
+                    <ChevronDown className="size-4" aria-hidden />
+                  </button>
+                </li>
+              )}
             </ul>
           )}
         </section>
@@ -489,7 +484,27 @@ function EventDialog({ initial, onClose }: { initial: Partial<CalEvent>; onClose
             <span className="text-sm font-semibold">{t("fNote")}</span>
             <Textarea value={e.note} maxLength={500} rows={3} onChange={(x) => setE({ ...e, note: x.target.value })} />
           </label>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
+            {initial.id && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="rounded-full text-bad sm:mr-auto"
+                disabled={busy}
+                onClick={async () => {
+                  if (!window.confirm(t("removeAsk"))) return;
+                  try {
+                    await removeEvent(initial.id!);
+                    onClose();
+                  } catch {
+                    toast.error(t("fail"));
+                  }
+                }}
+              >
+                <Trash2 className="size-4" />
+                {t("remove")}
+              </Button>
+            )}
             <Button type="button" variant="ghost" className="rounded-full" onClick={onClose}>
               {t("cancel")}
             </Button>

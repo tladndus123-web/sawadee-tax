@@ -300,7 +300,13 @@
       "wht": "원천징수 줄"
     },
     "expandAll": "모두 펼치기",
-    "collapseAll": "모두 접기"
+    "collapseAll": "모두 접기",
+    "group": {
+      "books": "장부 · 회사",
+      "team": "팀",
+      "notify": "알림 · LINE",
+      "device": "이 기기 · 로그인"
+    }
   },
   "ui": {
     "skipToContent": "본문으로 건너뛰기",
@@ -1941,7 +1947,10 @@
       "dDay": "D-{n}",
       "note": "법인세 날짜는 12월 결산 회사 기준이에요. 전자신고는 보통 며칠 더 여유가 있어요."
     },
-    "adminOnly": "일정은 관리자만 볼 수 있어요."
+    "adminOnly": "일정은 관리자만 볼 수 있어요.",
+    "more": "{n}건 더 보기",
+    "less": "접기",
+    "twoWeeks": "2주 안"
   },
   "expenses": {
     "title": "경비 청구",

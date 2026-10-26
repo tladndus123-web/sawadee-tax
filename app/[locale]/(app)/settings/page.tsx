@@ -11,7 +11,7 @@ import { FixedCostCard } from "@/components/settings/FixedCostCard";
 import { InstallCard } from "@/components/settings/InstallCard";
 import { PasskeyCard } from "@/components/settings/PasskeyCard";
 import { PushCard } from "@/components/settings/PushCard";
-import { FoldAllButton, SettingsFold } from "@/components/settings/SettingsFold";
+import { FoldAllButton, SettingsFold, SettingsGroup } from "@/components/settings/SettingsFold";
 import type { Locale } from "@/i18n/routing";
 
 export default async function SettingsPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -25,41 +25,49 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
         <AccountCard />
         <CompanyCard />
       </div>
-      {/* Everything else folded to one row each: the whole list fits on a phone screen */}
-      <div className="grid gap-3">
-        <div className="-mb-1 flex justify-end">
+      {/* Everything else folded to one row each, in four groups (owner 2026-10-27): the whole list fits on a phone screen */}
+      <div className="grid gap-6">
+        <div className="-mb-4 flex justify-end">
           <FoldAllButton />
         </div>
-        <SettingsFold icon={<Store className="text-brand" />} title={t("branch.title")}>
-          <BranchCard />
-        </SettingsFold>
-        <SettingsFold icon={<Shapes className="text-brand" />} title={t("cats.title")}>
-          <CategoryCard />
-        </SettingsFold>
-        <SettingsFold icon={<CalendarClock className="text-brand" />} title={t("fixed.title")}>
-          <FixedCostCard />
-        </SettingsFold>
-        <SettingsFold icon={<ScanFace className="text-brand" />} title={t("passkey.title")}>
-          <PasskeyCard />
-        </SettingsFold>
-        <SettingsFold icon={<Smartphone className="text-brand" />} title={t("install.title")}>
-          <InstallCard />
-        </SettingsFold>
-        <SettingsFold icon={<Bell className="text-brand" />} title={t("push.title")}>
-          <PushCard />
-        </SettingsFold>
-        <SettingsFold icon={<MessageCircle className="text-[#06c755]" />} title={t("line.title")}>
-          <LineCard />
-        </SettingsFold>
-        <SettingsFold icon={<UserPlus className="text-primary" />} title={t("members.title")}>
-          <MembersCard />
-        </SettingsFold>
-        <SettingsFold icon={<Tag className="text-primary" />} title={t("archive.stickerNames")}>
-          <StickerNameSettings />
-        </SettingsFold>
-        <SettingsFold icon={<FileText className="text-primary" />} title={t("settings.formTitle")}>
-          <FormSettings />
-        </SettingsFold>
+        <SettingsGroup title={t("settings.group.books")}>
+          <SettingsFold icon={<Store className="text-brand" />} title={t("branch.title")}>
+            <BranchCard />
+          </SettingsFold>
+          <SettingsFold icon={<Shapes className="text-brand" />} title={t("cats.title")}>
+            <CategoryCard />
+          </SettingsFold>
+          <SettingsFold icon={<CalendarClock className="text-brand" />} title={t("fixed.title")}>
+            <FixedCostCard />
+          </SettingsFold>
+          <SettingsFold icon={<Tag className="text-brand" />} title={t("archive.stickerNames")}>
+            <StickerNameSettings />
+          </SettingsFold>
+          <SettingsFold icon={<FileText className="text-brand" />} title={t("settings.formTitle")}>
+            <FormSettings />
+          </SettingsFold>
+        </SettingsGroup>
+        <SettingsGroup title={t("settings.group.team")}>
+          <SettingsFold icon={<UserPlus className="text-primary" />} title={t("members.title")}>
+            <MembersCard />
+          </SettingsFold>
+        </SettingsGroup>
+        <SettingsGroup title={t("settings.group.notify")}>
+          <SettingsFold icon={<MessageCircle className="text-[#06c755]" />} title={t("line.title")}>
+            <LineCard />
+          </SettingsFold>
+          <SettingsFold icon={<Bell className="text-primary" />} title={t("push.title")}>
+            <PushCard />
+          </SettingsFold>
+        </SettingsGroup>
+        <SettingsGroup title={t("settings.group.device")}>
+          <SettingsFold icon={<ScanFace className="text-primary" />} title={t("passkey.title")}>
+            <PasskeyCard />
+          </SettingsFold>
+          <SettingsFold icon={<Smartphone className="text-primary" />} title={t("install.title")}>
+            <InstallCard />
+          </SettingsFold>
+        </SettingsGroup>
       </div>
     </div>
   );

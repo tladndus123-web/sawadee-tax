@@ -141,6 +141,16 @@ export function SettingsFold({
   );
 }
 
+/** A heading over a few folded rows; hidden when none of its rows has anything to show (staff) */
+export function SettingsGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="grid gap-2.5 [&:not(:has([data-fold-body]:not(:empty)))]:hidden">
+      <h2 className="px-1 text-[13px] font-semibold tracking-wide text-muted-foreground uppercase">{title}</h2>
+      <div className="grid gap-3">{children}</div>
+    </section>
+  );
+}
+
 /** Open or close every section at once */
 export function FoldAllButton() {
   const t = useTranslations("settings");

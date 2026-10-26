@@ -300,7 +300,13 @@
       "wht": "Withholding tax line"
     },
     "expandAll": "Expand all",
-    "collapseAll": "Collapse all"
+    "collapseAll": "Collapse all",
+    "group": {
+      "books": "Books & company",
+      "team": "Team",
+      "notify": "Notifications · LINE",
+      "device": "This device · sign-in"
+    }
   },
   "ui": {
     "skipToContent": "Skip to content",
@@ -1941,7 +1947,10 @@
       "dDay": "{n} days",
       "note": "Corporate tax dates are for companies closing their year in December. Filing online usually gives a few more days."
     },
-    "adminOnly": "Only admins can see the calendar."
+    "adminOnly": "Only admins can see the calendar.",
+    "more": "Show {n} more",
+    "less": "Show less",
+    "twoWeeks": "Next 2 weeks"
   },
   "expenses": {
     "title": "Expense claims",

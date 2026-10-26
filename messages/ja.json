@@ -300,7 +300,13 @@
       "wht": "源泉徴収の行"
     },
     "expandAll": "すべて開く",
-    "collapseAll": "すべて閉じる"
+    "collapseAll": "すべて閉じる",
+    "group": {
+      "books": "帳簿・会社",
+      "team": "チーム",
+      "notify": "通知・LINE",
+      "device": "この端末・ログイン"
+    }
   },
   "ui": {
     "skipToContent": "本文へスキップ",
@@ -1941,7 +1947,10 @@
       "dDay": "あと{n}日",
       "note": "法人税の日付は12月決算の会社の場合です。電子申告は通常数日の猶予があります。"
     },
-    "adminOnly": "予定は管理者だけが見られます。"
+    "adminOnly": "予定は管理者だけが見られます。",
+    "more": "あと{n}件を表示",
+    "less": "閉じる",
+    "twoWeeks": "2週間以内"
   },
   "expenses": {
     "title": "経費精算",
