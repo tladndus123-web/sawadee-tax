@@ -32,3 +32,43 @@ describe("LINE AI assistant", () => {
     expect(inLang(assistantSay.rate, "en")).toContain("Too many");
   });
 });
+
+describe("the assistant's answer as a dashboard card", async () => {
+  const { parseCard, cardText } = await import("./assistant");
+  const { aiCard } = await import("./line-dash");
+  const reply = JSON.stringify({
+    title: "9월 매출",
+    eyebrow: "sales",
+    summary: "9월 매출은 ฿1,284,500으로 8월보다 8% 늘었어요.",
+    hero: { label: "9월 매출 합계", value: "฿1,284,500", note: "8월보다 +8%", bar: 1.4 },
+    tiles: [{ label: "매장", value: "฿900,000", tone: "up" }, { label: "배달", value: "฿384,500", note: "-3%", tone: "down" }, { label: "x" }],
+    rows: [{ label: "1일 (월)", value: "฿41,000" }, { label: "2일 (화)", value: "฿39,500", tone: "warn" }],
+    sections: [{ title: "다음에 할 일", items: ["**주말** 인력 확인", ""] }],
+    links: [{ label: "매출 보고서", url: "https://app.example/sales/report/2026-09" }, { label: "elsewhere", url: "https://evil.example/x" }],
+  });
+  it("reads the card and keeps it safe: clamps the bar, drops empty parts and links outside the app", () => {
+    const c = parseCard(`Here it is:\n${reply}`, "https://app.example")!;
+    expect(c.title).toBe("9월 매출");
+    expect(c.eyebrow).toBe("SALES");
+    expect(c.hero).toMatchObject({ value: "฿1,284,500", bar: 1 });
+    expect(c.tiles).toHaveLength(2);
+    expect(c.rows[1]).toMatchObject({ tone: "warn" });
+    expect(c.sections[0].items).toEqual(["주말 인력 확인"]);
+    expect(c.links).toEqual([{ label: "매출 보고서", url: "https://app.example/sales/report/2026-09" }]);
+  });
+  it("not a card: null, so the text goes as it is", () => {
+    expect(parseCard("Sales were ฿1,000.", "https://app.example")).toBeNull();
+    expect(parseCard("{broken", "https://app.example")).toBeNull();
+    expect(parseCard("{}", "https://app.example")).toBeNull();
+  });
+  it("is drawn like the other cards and kept as plain lines for the next question", () => {
+    const c = parseCard(reply, "https://app.example")!;
+    const flex = JSON.stringify(aiCard(c));
+    expect(flex).toContain("9월 매출");
+    expect(flex).toContain("฿1,284,500");
+    expect(flex).toContain("#0d121c");
+    expect(flex).toContain("https://app.example/sales/report/2026-09");
+    expect(flex).not.toContain("evil");
+    expect(cardText(c)).toContain("2일 (화): ฿39,500");
+  });
+});

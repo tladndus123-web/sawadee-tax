@@ -1,6 +1,8 @@
 // The LINE AI assistant (owner, 2026-10-26): admins write to the bot like to a secretary. Haiku answers; when a
 // question needs a long, in-depth analysis it hands over to Sonnet 5.5, at most 10 times a month for the whole
-// company ("fully automatic" — the owner's choice). Pure parts here; the server part is lib/assistant-server.ts.
+// company ("fully automatic" — the owner's choice). Every answer is a dashboard card like the menu's (owner: "모든 것을
+// 대시보드로"): the model fills a small JSON card (AiCard), lib/line-dash.ts draws it. Pure parts here; the server part
+// is lib/assistant-server.ts.
 
 import { four } from "./line-lang";
 
@@ -17,21 +19,35 @@ export const DEEP_MARK = "<<DEEP>>";
 const RULES = `You are the AI secretary of a small restaurant company in Thailand, talking with its owner or an admin in LINE.
 You answer from the company's own books below (purchases from tax invoices and receipts, sales, payroll, VAT). Amounts are Thai baht.
 - Answer in the language the person writes in.
-- Plain text for a chat app: no markdown, no tables, no headings, no asterisks. Short lines; "• " for lists; a few emoji at most.
 - Use only the numbers given. If something is not in the data, say so and say where in the app to find or enter it. Never invent figures.
 - Tax: explain Thai rules (VAT ภ.พ.30, withholding ภ.ง.ด.1/3/53, social security) plainly, but for a final decision say to confirm with their accountant.
-- Be warm and brief, like a capable secretary.`;
+- Be warm and brief, like a capable secretary.
+
+Reply with ONLY one JSON object — a dashboard card shown in LINE — and nothing before or after it:
+{"title": "short title, e.g. 'September sales'",
+ "eyebrow": "ONE OR TWO UPPERCASE ENGLISH WORDS, e.g. SALES, MONTHLY, VAT, COSTS, BILLS, ADVICE",
+ "summary": "the answer in one or two plain sentences",
+ "hero": {"label": "", "value": "the key number, formatted like ฿1,234,567", "note": "", "bar": 0.68},
+ "tiles": [{"label": "", "value": "", "note": "", "tone": "up|down|warn|neutral"}],
+ "rows": [{"label": "", "value": "", "tone": "up|down|warn|neutral"}],
+ "sections": [{"title": "", "items": ["one short line each"]}],
+ "links": [{"label": "", "url": "one of the app pages listed in the books"}]}
+Only "title" and "summary" are required; leave out what does not help. hero = the one number that answers the question
+("bar" 0–1 only for progress against a target). tiles = 2 or 4 key figures side by side. rows = up to 12 lines such as
+days, branches, suppliers or bills with their amounts. sections = up to 4 short lists (reasons, next steps, tips).
+tone "up" = good (green), "down" or "warn" = needs attention (orange). No markdown anywhere; plain words, a few emoji at most.`;
 
 export const quickSystem = (context: string) =>
   `${RULES}
-- Keep answers short (a few sentences, at most about 12 lines).
+- Keep the card short: a summary, a hero or a few tiles, and rows only when they help.
 - If the question really needs a long, in-depth analysis — comparing many months, finding causes, a plan, a forecast, a detailed report — reply with exactly ${DEEP_MARK} and nothing else. Quick facts, numbers, how-to and short advice you answer yourself.
 
 ${context}`;
 
 export const deepSystem = (context: string) =>
   `${RULES}
-- This is an in-depth analysis: be thorough but organised — first the answer in two or three lines, then the reasons with numbers, then concrete next steps. At most about 60 lines.
+- This is an in-depth analysis: summary = the conclusion in two or three sentences; tiles and rows with the key numbers;
+  sections for the reasons (with numbers) and concrete next steps.
 
 ${context}`;
 
@@ -68,3 +84,74 @@ export const assistantSay = {
   failed: four("ตอนนี้ AI ตอบไม่ได้ กรุณาลองใหม่ภายหลัง", "今はAIが答えられません。しばらくしてからもう一度お試しください。", "지금은 AI가 답하지 못해요. 잠시 뒤에 다시 물어봐 주세요.", "The AI can't answer right now. Please try again later."),
   rate: four("ถามถี่เกินไป กรุณารอสักครู่", "質問が多すぎます。少し待ってからどうぞ。", "질문이 너무 많아요. 잠시 뒤에 다시 물어봐 주세요.", "Too many questions at once. Please wait a moment."),
 };
+
+/** The card the model fills (all text already in the asker's language) */
+export interface AiCard {
+  title: string;
+  eyebrow: string;
+  summary: string;
+  hero: { label: string; value: string; note: string; bar: number | null } | null;
+  tiles: { label: string; value: string; note: string; tone: Tone }[];
+  rows: { label: string; value: string; tone: Tone }[];
+  sections: { title: string; items: string[] }[];
+  links: { label: string; url: string }[];
+}
+export type Tone = "up" | "down" | "warn" | "neutral";
+
+const str = (v: unknown, max: number) => (typeof v === "string" ? chatText(v).replace(/\s*\n\s*/g, " ").slice(0, max) : "");
+const list = (v: unknown, max: number): Record<string, unknown>[] => (Array.isArray(v) ? v.filter((x) => x && typeof x === "object").slice(0, max) : []);
+const tone = (v: unknown): Tone => (v === "up" || v === "down" || v === "warn" ? v : "neutral");
+
+/**
+ * The model's reply as a card, or null when it is not one (then the text is sent as it is). Links only to the app
+ * itself, so a card never points somewhere else.
+ */
+export function parseCard(reply: string, appUrl: string): AiCard | null {
+  const a = reply.indexOf("{");
+  const b = reply.lastIndexOf("}");
+  if (a < 0 || b <= a) return null;
+  let o: Record<string, unknown>;
+  try {
+    o = JSON.parse(reply.slice(a, b + 1)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  const title = str(o.title, 60);
+  const summary = str(o.summary, 400);
+  if (!title && !summary) return null;
+  const h = o.hero && typeof o.hero === "object" ? (o.hero as Record<string, unknown>) : null;
+  const bar = typeof h?.bar === "number" && h.bar >= 0 ? Math.min(1, h.bar) : null;
+  return {
+    title: title || " ",
+    eyebrow: str(o.eyebrow, 24).toUpperCase(),
+    summary,
+    hero: h && str(h.value, 30) ? { label: str(h.label, 40), value: str(h.value, 30), note: str(h.note, 60), bar } : null,
+    tiles: list(o.tiles, 4)
+      .map((t) => ({ label: str(t.label, 30), value: str(t.value, 24), note: str(t.note, 40), tone: tone(t.tone) }))
+      .filter((t) => t.value),
+    rows: list(o.rows, 12)
+      .map((r) => ({ label: str(r.label, 60), value: str(r.value, 24), tone: tone(r.tone) }))
+      .filter((r) => r.label || r.value),
+    sections: list(o.sections, 4)
+      .map((s) => ({ title: str(s.title, 40), items: (Array.isArray(s.items) ? s.items : []).slice(0, 6).map((i) => str(i, 160)).filter(Boolean) }))
+      .filter((s) => s.items.length),
+    links: list(o.links, 2)
+      .map((l) => ({ label: str(l.label, 20), url: typeof l.url === "string" ? l.url.trim() : "" }))
+      .filter((l) => l.label && appUrl && l.url.startsWith(`${appUrl}/`)),
+  };
+}
+
+/** The card as plain lines (kept as the conversation so a follow-up question has it) */
+export function cardText(c: AiCard): string {
+  return [
+    c.title,
+    c.summary,
+    c.hero ? `${c.hero.label} ${c.hero.value} ${c.hero.note}`.trim() : "",
+    ...c.tiles.map((t) => `${t.label}: ${t.value} ${t.note}`.trim()),
+    ...c.rows.map((r) => `${r.label}: ${r.value}`),
+    ...c.sections.flatMap((s) => [s.title, ...s.items.map((i) => `• ${i}`)]),
+    ...c.links.map((l) => `${l.label}: ${l.url}`),
+  ]
+    .filter(Boolean)
+    .join("\n");
+}

@@ -3,6 +3,7 @@
 // Pure: the numbers come from lib/line-ask-server.ts and lib/weekly-report-server.ts.
 
 import type { messagingApi } from "@line/bot-sdk";
+import type { AiCard, Tone } from "./assistant";
 import type { LineLang } from "./line-lang";
 import { baht } from "./money";
 import { dmy } from "./thai-tax";
@@ -440,5 +441,45 @@ export function weeklyCard(d: WeeklyData, tips: Tip[], lang: LineLang, url: stri
     head(`${w.weekly} · ${dmy(d.from).slice(0, 5)} – ${dmy(d.to).slice(0, 5)}`, w.weeklyTitle, `${d.company}${d.branchCount > 1 ? ` · ${w.branches(d.branchCount)}` : ""}`),
     middle,
     [button(w.openDash, url), button(w.excelButton, { data: "ask=excel" }, false)],
+  );
+}
+
+// ── The AI assistant's answers ────────────────────────────────────────────────────────────────────────────────────
+
+const TONE: Record<Tone, string> = { up: C.lime, down: C.orange, warn: C.orange, neutral: C.white };
+const TILE_NOTE: Record<Tone, string> = { up: C.lime, down: C.orange, warn: C.orange, neutral: C.muted };
+
+/** A card the AI filled (lib/assistant.ts parseCard), drawn like the menu's cards */
+export function aiCard(c: AiCard): messagingApi.FlexMessage {
+  const tiles = c.tiles.map((t) => tile(t.label, t.value, t.note || " ", TILE_NOTE[t.tone]));
+  const middle: Comp[] = [
+    ...(c.hero ? [hero(c.hero.label || " ", c.hero.value, c.hero.bar, c.hero.note, "")] : []),
+    ...(tiles.length === 1 ? [{ ...tiles[0], margin: "sm" } satisfies Box] : []),
+    ...Array.from({ length: Math.floor(tiles.length / 2) }, (_, i) => pair(tiles[i * 2], tiles[i * 2 + 1])),
+    ...(tiles.length > 1 && tiles.length % 2 ? [{ ...tiles[tiles.length - 1], margin: "sm" } satisfies Box] : []),
+    ...(c.rows.length ? [rows(c.rows.map((r) => row(r.label, r.value, TONE[r.tone])))] : []),
+    ...c.sections.map(
+      (s): Box => ({
+        type: "box",
+        layout: "vertical",
+        margin: "md",
+        backgroundColor: C.card,
+        borderColor: C.line,
+        borderWidth: "1px",
+        cornerRadius: "16px",
+        paddingAll: "14px",
+        spacing: "sm",
+        contents: [
+          ...(s.title ? [txt(s.title, { size: "sm", weight: "bold", color: C.lime })] : []),
+          ...s.items.map((i) => txt(`• ${i}`, { size: "xs", color: C.soft })),
+        ],
+      }),
+    ),
+  ];
+  return bubble(
+    `${c.title} · ${c.summary}`,
+    head(c.eyebrow || "AI", c.title, c.summary || undefined),
+    middle,
+    c.links.map((l, i) => button(l.label, l.url, i === 0)),
   );
 }

@@ -14,6 +14,9 @@ import {
   quickSystem,
   wantsDeep,
   chatText,
+  type AiCard,
+  cardText,
+  parseCard,
 } from "./assistant";
 import { serverCategories } from "./categories-server";
 import { monthCosts } from "./cost-split";
@@ -132,6 +135,8 @@ let client: Anthropic | null = null;
 const reply = (res: Anthropic.Message) => res.content.map((b) => (b.type === "text" ? b.text : "")).join("");
 
 export interface AssistantAnswer {
+  /** The dashboard card, or null when the model did not answer with one (then `text` is sent) */
+  card: AiCard | null;
   text: string;
   model: string;
   /** This month's long analyses so far, when this answer was one */
@@ -162,7 +167,7 @@ export async function answer(admin: Admin, userId: string, question: string, onD
   const quickContext = await booksContext(admin, today, false, appUrl);
   const quick = await client.messages.create({
     model: QUICK_MODEL,
-    max_tokens: 1500,
+    max_tokens: 3000,
     system: [{ type: "text", text: quickSystem(quickContext), cache_control: { type: "ephemeral" } }],
     messages,
   });
@@ -179,7 +184,7 @@ export async function answer(admin: Admin, userId: string, question: string, onD
       await onDeep(deepCount);
       const deep = await client.messages.create({
         model: DEEP_MODEL,
-        max_tokens: 6000,
+        max_tokens: 8000,
         output_config: { effort: "medium" },
         system: deepSystem(await booksContext(admin, today, true, appUrl)),
         messages,
@@ -191,14 +196,15 @@ export async function answer(admin: Admin, userId: string, question: string, onD
       deepUsedUp = true;
       const again = await client.messages.create({
         model: QUICK_MODEL,
-        max_tokens: 2000,
+        max_tokens: 3000,
         system: [{ type: "text", text: quickSystem(quickContext), cache_control: { type: "ephemeral" } }],
         messages: [...messages.slice(0, -1), { role: "user", content: `${question}\n\n(Answer it yourself as well as you can in a short form; do not reply ${DEEP_MARK}.)` }],
       });
       text = reply(again).replace(DEEP_MARK, "");
     }
   }
-  text = chatText(text);
+  const card = parseCard(text, appUrl);
+  text = card ? cardText(card) : chatText(text);
 
   await admin.from("assistant_turns").insert([
     { user_id: userId, role: "user", content: question.slice(0, 8000) },
@@ -208,5 +214,5 @@ export async function answer(admin: Admin, userId: string, question: string, onD
   if (model === QUICK_MODEL) await admin.rpc("assistant_claim", { p_month: today.slice(0, 7), p_model: QUICK_MODEL, p_limit: 1_000_000 });
   // Older than 30 days: gone
   await admin.from("assistant_turns").delete().lt("created_at", new Date(Date.now() - 30 * 86_400_000).toISOString());
-  return { text, model, deepCount, deepUsedUp };
+  return { card, text, model, deepCount, deepUsedUp };
 }

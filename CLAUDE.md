@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (444) · `npm run db:test` (pgTAP 238 + STOCK 61) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (447) · `npm run db:test` (pgTAP 238 + STOCK 61) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -49,6 +49,8 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   `lib/assistant-server.ts` builds a compact text of the books): Haiku 5.5 answers, and hands over by itself to Sonnet 5.5
   for long analyses — at most 10 a month for the whole company (`assistant_claim()`, tables `assistant_turns` (last 24 h
   sent along, kept 30 days) / `assistant_usage`, server only, `…002100_assistant.sql`). Staff messages stay unanswered.
+  Its answers are dashboard cards too: the model fills a small JSON card (`AiCard`, `parseCard` — app links only),
+  `aiCard()` in `lib/line-dash.ts` draws it; plain text only if the model ever answers without one.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

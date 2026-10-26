@@ -18,6 +18,7 @@ import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
 import { assistantSay } from "./assistant";
 import { answer } from "./assistant-server";
+import { aiCard } from "./line-dash";
 import { type Ask, askFromData, askFromText, askSay, uploadPrompt } from "./line-ask";
 import { askAnswer } from "./line-ask-server";
 import { linkAdminMenu, profileLang, unlinkMenu, UPLOAD_DATA } from "./line-menu";
@@ -167,7 +168,7 @@ async function chat(event: { replyToken?: string }, lineUser: string, question: 
       later = {};
       await typing();
     }, appUrl());
-    await send(later, lineUser, [text(a.text), ...(a.deepUsedUp ? [text(assistantSay.deepUsedUp)] : [])]);
+    await send(later, lineUser, [a.card ? aiCard(a.card) : text(a.text), ...(a.deepUsedUp ? [text(assistantSay.deepUsedUp)] : [])]);
     console.log(`[line] assistant ${a.model}${a.deepCount ? ` (${a.deepCount} this month)` : ""}`);
   } catch (e) {
     console.error("[line] assistant failed", e instanceof Error ? e.message : e);
