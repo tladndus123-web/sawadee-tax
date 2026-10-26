@@ -1,4 +1,4 @@
-// Server part of "ask the bot" (lib/line-ask.ts) and the weekly report: the same numbers as the dashboard, read with
+// Server part of "ask the bot" (lib/line-ask.ts) and the 5-day report: the same numbers as the dashboard, read with
 // the service-role client, turned into dashboard cards (lib/line-dash.ts) in the reader's language.
 
 import crypto from "node:crypto";
@@ -41,7 +41,8 @@ export async function ledger(admin: Admin) {
   ]);
   if (docs.error || settings.error) throw docs.error ?? settings.error;
   const rows = (docs.data ?? []) as Row[];
-  const toDoc = (r: Row) => ({ id: r.id, doc: rowToDoc(r, r.document_items ?? []), ack: r.ack_flags ?? [] });
+  // created: the Bangkok day it was saved (the 5-day report looks at what came in)
+  const toDoc = (r: Row) => ({ id: r.id, doc: rowToDoc(r, r.document_items ?? []), ack: r.ack_flags ?? [], created: todayBangkok(new Date(r.created_at)) });
   const name = (settings.data?.name ?? {}) as { th?: string; en?: string; ja?: string };
   return {
     // Drafts never count in totals

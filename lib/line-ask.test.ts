@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { askData, askFromData, askFromText, uploadPrompt } from "./line-ask";
-import { dueCard, excelCard, salesCard, summaryCard, vatCard, weeklyCard } from "./line-dash";
+import { dueCard, excelCard, fiveDayMessage, salesCard, summaryCard, vatCard } from "./line-dash";
 import { MENU_SIZE, menuDefinition, menuLang, UPLOAD_DATA } from "./line-menu";
 
 describe("what the admin asks", () => {
@@ -97,20 +97,27 @@ describe("dashboard cards", () => {
     expect(m).toContain("https://a");
     expect(m).toContain("https://b");
   });
-  it("weekly report: month so far, week vs last week, food cost, purchases, VAT, AI tips, Excel asks the bot", () => {
-    const d = { from: "2026-10-19", to: "2026-10-25", company: "Sawadee Ramen", branchCount: 3, month: "2026-10", monthSales: 1284500, target: 0, lastMonthSales: 1500000, weekSales: 312400, prevWeekSales: 289000, foodCost: 33.8, foodCostLastMonth: 31.7, purchases: 612300, receipts: 184, vatEstimate: 41860, vatDue: "2026-11-17" };
+  it("5-day report: four cards to swipe — the 5 days, the month, AI suggestions, anything unusual", () => {
+    const d = { from: "2026-10-20", to: "2026-10-24", company: "Sawadee Ramen", branchCount: 3, hasSales: true, sales: 420000, salesBefore: 400000, bestDay: { date: "2026-10-24", gross: 98000 }, receipts: 31, purchases: 102300, month: "2026-10", monthSales: 1284500, target: 0, lastMonthSales: 1500000, monthPurchases: 612300, foodCost: 33.8, vatEstimate: 41860, vatDue: "2026-11-17" };
     const tips = [{ title: "채소 매입가가 올랐어요", body: "다른 거래처 단가를 비교해 보세요." }];
-    const ko = j(weeklyCard(d, tips, "ko", "https://app/"));
-    expect(ko).toContain("이번 주 AI 비서 리포트");
-    expect(ko).toContain("WEEKLY · 19/10 – 25/10");
-    expect(ko).toContain("지점 3곳");
-    expect(ko).toContain("▲ 8% 지난주보다");
-    expect(ko).toContain("33.8%");
-    expect(ko).toContain("▲ 2.1%p 지난달보다");
-    expect(ko).toContain("17/11/2026까지 신고");
+    const odd = [{ level: "red" as const, title: "같은 영수증이 두 번 올라왔어요", detail: "PANFOOD · IV-1 · ฿ 64,200.00", url: "https://app/documents/x" }];
+    const m = fiveDayMessage(d, tips, odd, "ko", "https://app", { tip: { title: "월말 예상", main: "M" }, next: ["📈 다음 달 매출 예상은?"] });
+    const c = m.contents as { type: string; contents: unknown[] };
+    expect(c.type).toBe("carousel");
+    expect(c.contents).toHaveLength(4);
+    const ko = j(m);
+    expect(ko).toContain("5 DAYS · 20/10 – 24/10");
+    expect(ko).toContain("▲ 5% 직전 5일보다");
+    expect(ko).toContain("가장 높은 날");
+    expect(ko).toContain("💡 TIP · 월말 예상");
+    expect(ko).toContain("✨ 이번 달 운영 제안");
     expect(ko).toContain("채소 매입가가 올랐어요");
-    expect(ko).toContain('"data":"ask=excel"');
-    expect(j(weeklyCard(d, [], "en", "u"))).not.toContain("This week's suggestions");
+    expect(ko).toContain("🔴");
+    expect(ko).toContain("https://app/documents/x");
+    expect(m.quickReply?.items).toHaveLength(1);
+    const calm = j(fiveDayMessage({ ...d, hasSales: false }, [], [], "ja", "https://app"));
+    expect(calm).toContain("いつもと違う点はありません");
+    expect(calm).toContain("AIの提案を作れませんでした");
   });
 });
 

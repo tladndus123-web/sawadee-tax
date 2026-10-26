@@ -401,91 +401,153 @@ export function excelCard(files: ExcelLink[], lang: LineLang, extra: CardExtra =
   );
 }
 
-// ── The weekly report ─────────────────────────────────────────────────────────────────────────────────────────────
-
-export interface WeeklyData {
-  /** The week shown: Monday … Sunday before the report */
-  from: string;
-  to: string;
-  company: string;
-  branchCount: number;
-  month: string;
-  monthSales: number;
-  target: number;
-  lastMonthSales: number;
-  weekSales: number;
-  prevWeekSales: number;
-  /** Food purchases ÷ sales without VAT, % (null = not enough data) */
-  foodCost: number | null;
-  foodCostLastMonth: number | null;
-  purchases: number;
-  receipts: number;
-  vatEstimate: number;
-  vatDue: string;
-}
+// ── The 5-day report (owner, 2026-10-26: on the 5th, 10th, 15th, 20th and 25th) ───────────────────────────────────
+// Four cards to swipe: ① the last 5 days ② the month so far and where it ends ③ ✨ the AI's suggestions for the month
+// ④ 🔍 anything unusual, compared with "our usual shop" (lib/anomalies.ts).
 
 export interface Tip {
   title: string;
   body: string;
 }
 
-const change = (now: number, before: number) => (before > 0 ? ((now - before) / before) * 100 : null);
+export interface FiveDayData {
+  /** The 5 days shown (inclusive) */
+  from: string;
+  to: string;
+  company: string;
+  branchCount: number;
+  /** The company keeps its sales here */
+  hasSales: boolean;
+  sales: number;
+  salesBefore: number;
+  bestDay: { date: string; gross: number } | null;
+  receipts: number;
+  purchases: number;
+  month: string;
+  monthSales: number;
+  target: number;
+  lastMonthSales: number;
+  monthPurchases: number;
+  /** Food purchases ÷ sales without VAT, % (null = not enough data) */
+  foodCost: number | null;
+  vatEstimate: number;
+  vatDue: string;
+}
 
-export function weeklyCard(d: WeeklyData, tips: Tip[], lang: LineLang, url: string, extra: CardExtra = {}): messagingApi.FlexMessage {
+/** An unusual thing, already in the reader's words */
+export interface AnomalyLine {
+  level: "red" | "orange" | "blue";
+  title: string;
+  detail: string;
+  url: string;
+}
+
+const FD: Record<LineLang, Record<string, string>> = {
+  ko: { days: "5일 결산", month: "이번 달 진행률", ai: "이번 달 운영 제안", odd: "이상한 점", none: "평소와 다른 점이 없어요 ✓", noneSub: "중복 영수증, 큰 지출, 새 거래처를 확인했어요.", sales: "5일 매출", purchases: "5일 매입", receipts: "들어온 영수증", best: "가장 높은 날", before: "직전 5일보다", check: "확인", noTips: "AI 제안을 만들지 못했어요. 대시보드에서 숫자를 확인해 주세요." },
+  ja: { days: "5日間の決算", month: "今月の進み具合", ai: "今月の運営アドバイス", odd: "気になる点", none: "いつもと違う点はありません ✓", noneSub: "重複領収書・大きな支出・新しい取引先を確認しました。", sales: "5日間の売上", purchases: "5日間の仕入", receipts: "届いた領収書", best: "一番よかった日", before: "直前5日比", check: "確認", noTips: "AIの提案を作れませんでした。ダッシュボードで数字をご確認ください。" },
+  th: { days: "สรุป 5 วัน", month: "ความคืบหน้าเดือนนี้", ai: "ข้อเสนอการบริหารเดือนนี้", odd: "สิ่งที่ผิดปกติ", none: "ไม่มีอะไรผิดปกติ ✓", noneSub: "ตรวจใบเสร็จซ้ำ ค่าใช้จ่ายสูง และผู้ขายใหม่แล้ว", sales: "ยอดขาย 5 วัน", purchases: "ยอดซื้อ 5 วัน", receipts: "ใบเสร็จที่เข้ามา", best: "วันที่ขายดีที่สุด", before: "จาก 5 วันก่อน", check: "ตรวจ", noTips: "สร้างข้อเสนอ AI ไม่ได้ ดูตัวเลขในแดชบอร์ด" },
+  en: { days: "Last 5 days", month: "This month so far", ai: "Suggestions for this month", odd: "Anything unusual", none: "Nothing unusual ✓", noneSub: "Checked for receipts twice, big spends and new suppliers.", sales: "Sales, 5 days", purchases: "Purchases, 5 days", receipts: "Receipts in", best: "Best day", before: "vs the 5 days before", check: "Check", noTips: "Couldn't make AI suggestions; see the numbers on the dashboard." },
+};
+
+const LEVEL: Record<AnomalyLine["level"], string> = { red: "🔴", orange: "🟠", blue: "🔵" };
+
+export function fiveDayMessage(d: FiveDayData, tips: Tip[], odd: AnomalyLine[], lang: LineLang, appUrl: string, extra: CardExtra = {}): messagingApi.FlexMessage {
   const w = W[lang];
-  const b = salesBar(d.monthSales, d.target, d.lastMonthSales, w);
-  const wk = change(d.weekSales, d.prevWeekSales);
-  const food = d.foodCost !== null && d.foodCostLastMonth !== null ? d.foodCost - d.foodCostLastMonth : null;
-  const tipBox: Box = {
-    type: "box",
-    layout: "vertical",
-    margin: "sm",
-    backgroundColor: C.card,
-    borderColor: C.line,
-    borderWidth: "1px",
-    cornerRadius: "16px",
-    paddingAll: "14px",
-    contents: [
-      {
-        type: "box",
-        layout: "horizontal",
-        spacing: "sm",
-        contents: [
-          { type: "box", layout: "vertical", backgroundColor: C.lime, cornerRadius: "99px", paddingStart: "8px", paddingEnd: "8px", paddingTop: "2px", paddingBottom: "2px", flex: 0, contents: [txt("AI", { size: "xxs", weight: "bold", color: C.bg })] },
-          txt(w.tips, { size: "md", weight: "bold", gravity: "center" }),
-        ],
-      },
-      ...tips.slice(0, 3).map(
-        (t, i): Box => ({
-          type: "box",
-          layout: "horizontal",
-          spacing: "md",
-          margin: "md",
-          contents: [
-            { type: "box", layout: "vertical", width: "22px", height: "22px", backgroundColor: C.line, cornerRadius: "8px", justifyContent: "center", contents: [txt(String(i + 1), { size: "xxs", weight: "bold", color: C.lime, align: "center" })] },
-            { type: "box", layout: "vertical", flex: 1, contents: [txt(t.title, { size: "sm", weight: "bold" }), txt(t.body, { size: "xs", color: C.soft, margin: "xs" })] },
-          ],
-        }),
+  const f = FD[lang];
+  const range = `${dmy(d.from).slice(0, 5)} – ${dmy(d.to).slice(0, 5)}`;
+  const ch = change(d.sales, d.salesBefore);
+
+  // ① the 5 days
+  const first = bubble(
+    f.days,
+    head(`5 DAYS · ${range}`, f.days, `${d.company}${d.branchCount > 1 ? ` · ${w.branches(d.branchCount)}` : ""}`),
+    [
+      d.hasSales ? hero(f.sales, baht(d.sales), null, ch === null ? "" : `${sign(ch)} ${pct(ch)} ${f.before}`, "") : hero(f.purchases, baht(d.purchases), null, "", ""),
+      pair(
+        tile(f.receipts, String(d.receipts), d.hasSales ? `${f.purchases} ${baht(d.purchases)}` : " "),
+        d.bestDay ? tile(f.best, baht(d.bestDay.gross), dmy(d.bestDay.date), C.lime) : tile(w.monthPurchases, baht(d.monthPurchases), " "),
       ),
     ],
+    [button(w.openDash, `${appUrl}/`)],
+  ).contents as messagingApi.FlexBubble;
+
+  // ② the month so far and where it ends
+  const b = salesBar(d.monthSales, d.target, d.lastMonthSales, w);
+  const second = bubble(
+    f.month,
+    head(w.monthNow(d.month), f.month),
+    [
+      ...(d.hasSales ? [hero(w.sales, baht(d.monthSales), b.bar, b.left, b.right)] : []),
+      pair(tile(w.monthPurchases, baht(d.monthPurchases), " "), d.foodCost === null ? tile(w.vatEstimate, baht(d.vatEstimate), w.fileBy(dmy(d.vatDue))) : tile(w.foodCost, `${d.foodCost.toFixed(1)}%`, " ")),
+      ...(d.foodCost === null ? [] : [{ ...tile(w.vatEstimate, baht(d.vatEstimate), w.fileBy(dmy(d.vatDue))), margin: "sm" } satisfies Box]),
+    ],
+    [],
+    { tip: extra.tip },
+  ).contents as messagingApi.FlexBubble;
+
+  // ③ ✨ the AI's suggestions
+  const third = bubble(
+    f.ai,
+    head("AI", `✨ ${f.ai}`),
+    tips.length
+      ? tips.slice(0, 3).map(
+          (t, i): Box => ({
+            type: "box",
+            layout: "horizontal",
+            spacing: "md",
+            margin: i ? "md" : "none",
+            backgroundColor: C.card,
+            borderColor: C.line,
+            borderWidth: "1px",
+            cornerRadius: "16px",
+            paddingAll: "14px",
+            contents: [
+              { type: "box", layout: "vertical", width: "24px", height: "24px", backgroundColor: C.line, cornerRadius: "8px", justifyContent: "center", contents: [txt(String(i + 1), { size: "xs", weight: "bold", color: C.lime, align: "center" })] },
+              { type: "box", layout: "vertical", flex: 1, contents: [txt(t.title, { size: "sm", weight: "bold" }), txt(t.body, { size: "xs", color: C.soft, margin: "xs" })] },
+            ],
+          }),
+        )
+      : [txt(f.noTips, { size: "sm", color: C.soft })],
+    [],
+  ).contents as messagingApi.FlexBubble;
+
+  // ④ 🔍 anything unusual
+  const fourth = bubble(
+    f.odd,
+    head("CHECK", `🔍 ${f.odd}`, odd.length ? undefined : f.noneSub),
+    odd.length
+      ? odd.map(
+          (a, i): Box => ({
+            type: "box",
+            layout: "horizontal",
+            spacing: "md",
+            margin: i ? "sm" : "none",
+            backgroundColor: C.card,
+            borderColor: C.line,
+            borderWidth: "1px",
+            cornerRadius: "16px",
+            paddingAll: "12px",
+            action: { type: "uri", label: f.check, uri: a.url },
+            contents: [
+              txt(LEVEL[a.level], { size: "sm", flex: 0, gravity: "top" }),
+              { type: "box", layout: "vertical", flex: 1, contents: [txt(a.title, { size: "sm", weight: "bold" }), txt(a.detail, { size: "xxs", color: C.soft, margin: "xs" })] },
+              txt(`${f.check} ›`, { size: "xxs", color: C.lime, flex: 0, gravity: "center" }),
+            ],
+          }),
+        )
+      : [{ type: "box", layout: "vertical", backgroundColor: C.card, cornerRadius: "16px", paddingAll: "16px", contents: [txt(f.none, { size: "md", weight: "bold", color: C.lime })] } satisfies Box],
+    [],
+  ).contents as messagingApi.FlexBubble;
+
+  return {
+    type: "flex",
+    altText: `${f.days} ${range}${d.hasSales ? ` · ${w.sales} ${baht(d.sales)}` : ""}${odd.length ? ` · ${f.odd} ${odd.length}` : ""}`.slice(0, 400),
+    contents: { type: "carousel", contents: [first, second, third, fourth] },
+    ...(extra.next?.length ? { quickReply: nextQuestions(extra.next) } : {}),
   };
-  const middle: Comp[] = [
-    hero(w.monthNow(d.month), baht(d.monthSales), b.bar, b.left || w.sales, b.right),
-    pair(
-      tile(w.weekSales, baht(d.weekSales), wk === null ? " " : w.vsLastWeek(wk), wk === null ? C.muted : wk >= 0 ? C.lime : C.orange),
-      tile(w.foodCost, d.foodCost === null ? "—" : `${d.foodCost.toFixed(1)}%`, food === null ? " " : w.vsLastMonthPt(food), food === null ? C.muted : food > 0 ? C.orange : C.lime),
-    ),
-    pair(tile(w.monthPurchases, baht(d.purchases), w.receipts(d.receipts)), tile(w.vatEstimate, baht(d.vatEstimate), w.fileBy(dmy(d.vatDue)))),
-    ...(tips.length ? [tipBox] : []),
-  ];
-  return bubble(
-    `${w.weeklyTitle} · ${w.sales} ${baht(d.monthSales)}`,
-    head(`${w.weekly} · ${dmy(d.from).slice(0, 5)} – ${dmy(d.to).slice(0, 5)}`, w.weeklyTitle, `${d.company}${d.branchCount > 1 ? ` · ${w.branches(d.branchCount)}` : ""}`),
-    middle,
-    [button(w.openDash, url), button(w.excelButton, { data: "ask=excel" }, false)],
-    extra,
-  );
 }
+
+const change = (now: number, before: number) => (before > 0 ? ((now - before) / before) * 100 : null);
 
 // ── The AI assistant's answers ────────────────────────────────────────────────────────────────────────────────────
 

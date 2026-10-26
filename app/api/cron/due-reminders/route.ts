@@ -2,14 +2,15 @@
 // the VAT return 3 days / 1 day before its deadline, payroll filings, staff documents (lib/reminders-server). Sent by LINE to admins who
 // linked it, and as a phone notification to every device an admin turned notifications on for.
 // Nothing is sent on days with nothing to say, so the monthly LINE message quota is barely touched.
-// Every LINE message is in the reader's phone language (2026-10-26). Mondays also bring the weekly AI report card.
+// Every LINE message is in the reader's phone language (2026-10-26). On the 5th, 10th, 15th, 20th and 25th the
+// 5-day report (four cards) goes out too.
 
 import { lineClient, lineConfig } from "@/lib/line";
 import { noticeMessage } from "@/lib/line-dash";
 import { appUrl } from "@/lib/line-bot";
 import { inLang } from "@/lib/line-lang";
 import { profileLang } from "@/lib/line-menu";
-import { isReportDay, sendWeeklyReport } from "@/lib/weekly-report-server";
+import { isReportDay, sendReport } from "@/lib/report-server";
 import { sendPush, toPush } from "@/lib/push-server";
 import { reminderTexts } from "@/lib/reminders-server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -28,9 +29,9 @@ export async function GET(req: Request) {
   if (admins.error) throw admins.error;
   const to = (admins.data ?? []).map((m) => m.line_user_id as string | null).filter((x): x is string => !!x);
 
-  // Monday: the weekly AI report (its own message, whatever else there is to say)
-  const weekly = lineConfig().channelAccessToken && isReportDay(today) ? await sendWeeklyReport(admin, appUrl(), today, to).catch((e) => (console.error("[cron] weekly report failed", e), 0)) : 0;
-  if (!texts.length) return Response.json({ sent: 0, weekly });
+  // The 5-day report (its own message, whatever else there is to say)
+  const report = lineConfig().channelAccessToken && isReportDay(today) ? await sendReport(admin, appUrl(), today, to).catch((e) => (console.error("[cron] 5-day report failed", e), 0)) : 0;
+  if (!texts.length) return Response.json({ sent: 0, report });
 
   // LINE
   let line = 0;
@@ -53,5 +54,5 @@ export async function GET(req: Request) {
     texts.map((t) => toPush(inLang(t, "ja"), `${appUrl()}/`)),
   ).catch((e) => (console.error("[cron] phone notifications failed", e), 0));
 
-  return Response.json({ sent: line, failed, devices, messages: texts.length, weekly });
+  return Response.json({ sent: line, failed, devices, messages: texts.length, report });
 }

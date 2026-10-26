@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (456) · `npm run db:test` (pgTAP 238 + STOCK 61) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (463) · `npm run db:test` (pgTAP 238 + STOCK 61) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -43,8 +43,9 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   aliases `sawadee-admin-<lang>`, layout `lib/line-menu.ts`; remake: `npx.cmd tsx scripts/line-menu.ts`): month summary ·
   bills due in 7 days · VAT return / yesterday's sales · Excel (1-hour signed link, private bucket `line-exports`) ·
   upload (camera buttons). Answers are dashboard cards (`lib/line-dash.ts`, navy / blue / lime like the menu). Short words
-  ("요약", "売上" …) work too (`lib/line-ask.ts`). Mondays the daily cron also pushes the weekly AI report card
-  (`lib/weekly-report-server.ts`: month so far, week vs week, food cost, purchases, VAT estimate, 3 Claude tips).
+  ("요약", "売上" …) work too (`lib/line-ask.ts`). On the 5th / 10th / 15th / 20th / 25th the daily cron also pushes the **5-day report** (`lib/report-server.ts`,
+  four cards to swipe: last 5 days · month so far + forecast TIP · ✨ 3 Claude suggestions · 🔍 anything unusual from
+  `lib/anomalies.ts` — receipt twice, ≥3× the usual of its category (≥ ฿5,000), new supplier + tax ID check).
   **AI assistant** (2026-10-26): any other text from an active admin is answered from the books (`lib/assistant.ts`,
   `lib/assistant-server.ts` builds a compact text of the books): Haiku 5.5 answers, and hands over by itself to Sonnet 5.5
   for long analyses — no monthly limit since the owner lifted it 2026-10-26 (counted; cap 1000 against a runaway) (`assistant_claim()`, tables `assistant_turns` (last 24 h
