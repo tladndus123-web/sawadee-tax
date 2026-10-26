@@ -1,12 +1,18 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(233);
+select plan(238);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
 select is((select public from storage.buckets where id = 'line-exports'), false, 'the LINE Excel bucket is private');
 select is((select count(*)::int from pg_policies where schemaname = 'storage' and (qual like '%line-exports%' or with_check like '%line-exports%')), 0, 'and no signed-in user can reach it (server only)');
+-- The LINE AI assistant: server-only tables, and the monthly limit of the long analyses
+select is((select count(*)::int from pg_policies where tablename in ('assistant_turns', 'assistant_usage')), 0, 'the assistant tables have no policies (server only)');
+select ok((select bool_and(relrowsecurity) from pg_class where relname in ('assistant_turns', 'assistant_usage')), 'and row level security is on');
+select is((select public.assistant_claim('2001-01', 'test-model', 2)), 1, 'a use is counted');
+select is((select public.assistant_claim('2001-01', 'test-model', 2) + public.assistant_claim('2001-01', 'test-model', 2)), 1, 'the limit stops the next one (2, then -1)');
+select ok(not has_function_privilege('authenticated', 'public.assistant_claim(text, text, int)', 'execute'), 'signed-in users cannot take uses themselves');
 
 
 -- Fixtures: one admin, one staff, one signed-in stranger (no membership)

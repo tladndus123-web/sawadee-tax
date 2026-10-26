@@ -2,7 +2,8 @@
 //   follow            → how to link
 //   text "123456"     → "checking the code" + the result: link this LINE account to the member who got that code
 //   menu button / short word ("요약", "売上" …) → admins only: the ledger's own numbers (lib/line-ask.ts)
-//   any other text / sticker … → no reply (people chat here; the bot only speaks when it has something to say)
+//   any other text            → admins: the AI assistant answers (lib/assistant*.ts); others: no reply
+//   sticker …                 → no reply
 //   image             → linked members only: AI reading → vendor dictionary → saved to the ledger
 //                       (status "reviewed", as that member) → receipt card with the automatic checks
 //   file .xlsx / .csv → linked members only: a POS sales export, read with the columns the app remembered from an
@@ -15,6 +16,8 @@ import { type LedgerRef, runChecks } from "./checks";
 import { docToRow } from "./db-map";
 import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
+import { assistantSay } from "./assistant";
+import { answer } from "./assistant-server";
 import { type Ask, askFromData, askFromText, askSay, uploadPrompt } from "./line-ask";
 import { askAnswer } from "./line-ask-server";
 import { linkAdminMenu, profileLang, unlinkMenu, UPLOAD_DATA } from "./line-menu";
@@ -110,6 +113,7 @@ export async function handleLineEvent(event: webhook.Event): Promise<void> {
   if (message.type === "text") {
     const ask = askFromText(message.text ?? "");
     if (ask) return answerAsk(event, lineUser, ask, false);
+    return chat(event, lineUser, message.text ?? "");
   }
   if (message.type === "image") return saveReceipt(event, lineUser, message.id);
   if (message.type === "file" && isPosFileName(message.fileName ?? "")) return salesFile(event, lineUser, message.id, message.fileName ?? "");
@@ -138,6 +142,37 @@ async function linkAccount(event: webhook.MessageEvent, lineUser: string, code: 
   await send(event, lineUser, [checking, text(say.linked(m?.name || m?.email || ""))]);
   // Admins get the menu with the ledger buttons at the bottom of the chat
   if (m?.role === "admin") await linkAdminMenu(lineUser);
+}
+
+/**
+ * The AI assistant: an admin's question, answered from the books (Haiku; a long analysis by Sonnet, 10 a month).
+ * Anyone else's messages stay unanswered, as before — people chat here too.
+ */
+async function chat(event: { replyToken?: string }, lineUser: string, question: string) {
+  const q = question.trim().slice(0, 2000);
+  if (!q || !process.env.ANTHROPIC_API_KEY) return;
+  const member = await memberFor(lineUser);
+  if (!member || member.role !== "admin" || member.disabled_at) return;
+  if (limited(`chat:${member.user_id}`, 20, 600_000)) return send(event, lineUser, [text(assistantSay.rate)]);
+  const typing = () =>
+    lineClient()
+      .showLoadingAnimation({ chatId: lineUser, loadingSeconds: 60 })
+      .catch(() => undefined);
+  await typing();
+  // The reply token is used once: by the "analysing" notice when there is one, else by the answer
+  let later: { replyToken?: string } = event;
+  try {
+    const a = await answer(supabaseAdmin(), member.user_id, q, async (n) => {
+      await send(later, lineUser, [text(assistantSay.thinking(n))]);
+      later = {};
+      await typing();
+    });
+    await send(later, lineUser, [text(a.text), ...(a.deepUsedUp ? [text(assistantSay.deepUsedUp)] : [])]);
+    console.log(`[line] assistant ${a.model}${a.deepCount ? ` (${a.deepCount} this month)` : ""}`);
+  } catch (e) {
+    console.error("[line] assistant failed", e instanceof Error ? e.message : e);
+    await send(later, lineUser, [text(assistantSay.failed)]);
+  }
 }
 
 /** The menu's upload card: camera / photo buttons, in the person's LINE language */

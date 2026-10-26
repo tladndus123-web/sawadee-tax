@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (438) · `npm run db:test` (pgTAP 233 + STOCK 61) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (443) · `npm run db:test` (pgTAP 238 + STOCK 61) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -45,6 +45,10 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   upload (camera buttons). Answers are dashboard cards (`lib/line-dash.ts`, navy / blue / lime like the menu). Short words
   ("요약", "売上" …) work too (`lib/line-ask.ts`). Mondays the daily cron also pushes the weekly AI report card
   (`lib/weekly-report-server.ts`: month so far, week vs week, food cost, purchases, VAT estimate, 3 Claude tips).
+  **AI assistant** (2026-10-26): any other text from an active admin is answered from the books (`lib/assistant.ts`,
+  `lib/assistant-server.ts` builds a compact text of the books): Haiku 5.5 answers, and hands over by itself to Sonnet 5.5
+  for long analyses — at most 10 a month for the whole company (`assistant_claim()`, tables `assistant_turns` (last 24 h
+  sent along, kept 30 days) / `assistant_usage`, server only, `…002100_assistant.sql`). Staff messages stay unanswered.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; sign-in lasts 12 h per
   device, then a security message and a new sign-in. Sign-in links work in any browser (implicit flow).
