@@ -188,7 +188,7 @@ export function BranchGate({ children }: { children: ReactNode }) {
   if (state === "open") return <>{children}</>;
   if (state === "checking") return <Loader2 className="mx-auto mt-16 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
   return (
-    <section className="mx-auto grid w-full max-w-md gap-5 pt-4 sm:pt-10" aria-labelledby="gate-title">
+    <section className="mx-auto grid w-full max-w-md grid-cols-[minmax(0,1fr)] gap-5 pt-4 sm:pt-10" aria-labelledby="gate-title">
       <div className="grid gap-1.5 text-center">
         <h1 id="gate-title" className="text-2xl font-semibold tracking-tight">
           {t("title")}

@@ -209,16 +209,15 @@ export function AssistantPanel() {
 
   return (
     <>
-      {/* Phones: the round button above the tab bar */}
+      {/* Phones: just the mark, small, above the tab bar (owner 2026-10-27: the pill with its name covered too much) */}
       {!open && (
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label={t("open")}
-          className="press fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex h-12 items-center gap-1.5 rounded-full bg-[#0d121c] py-1 pr-3.5 pl-1 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgb(13_18_28/0.35)] active:scale-[0.97] md:hidden"
+          className="press fixed right-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-40 grid size-11 place-items-center rounded-[13px] shadow-[0_6px_16px_rgb(10_60_200/0.35)] active:scale-[0.94] md:hidden"
         >
-          <AiMark className="size-10 rounded-[11px]" />
-          {t("title")}
+          <AiMark className="size-11 rounded-[13px]" />
         </button>
       )}
 

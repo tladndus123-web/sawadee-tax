@@ -106,7 +106,7 @@ export function PlReport() {
   };
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-5">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button asChild variant="ghost" className="-ml-3 text-primary">
           <Link href="/sales">

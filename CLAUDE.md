@@ -104,6 +104,11 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   columns change): shown at once, then only `id, updated_at` of every document is asked and only new / changed rows are
   downloaded (`documents_stamp` sets updated_at on every change); gone ones drop out; cleared on sign-out. Sign-in
   checks in the browser use `getSession()` (no server trip; the database checks the token).
+- **Phones** (2026-10-27): tab bar = dashboard · ledger · [+ upload, raised blue circle `.tab-plus`] · sales · more
+  (`.tab-more` opens a sheet with the rest of the menu; app-header.tsx). The AI button on phones is the mark only (44 px).
+  Every screen's outer grid is `grid-cols-[minmax(0,1fr)]` so a long number can never push a page wider than the phone.
+  "얼굴 인증" is now **간편 로그인** (かんたんログイン / เข้าสู่ระบบด่วน / Quick sign-in) with `public/quick-signin.svg`
+  (blue tile, white key) and the KeyRound icon.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

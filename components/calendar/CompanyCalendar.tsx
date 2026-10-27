@@ -155,7 +155,7 @@ export function CompanyCalendar() {
 
   if (me.loaded && !isAdmin) return <p className="mx-auto mt-16 max-w-md text-center text-sm text-muted-foreground">{t("adminOnly")}</p>;
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-6">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="grid gap-1">
           <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("title")}</h1>
@@ -194,7 +194,7 @@ export function CompanyCalendar() {
             <Button type="button" variant="ghost" size="icon" className="size-10 rounded-full" onClick={() => setMonth(shiftMonth(month, -1))} aria-label={t("prev")}>
               <ChevronLeft className="size-5" />
             </Button>
-            <button type="button" className="text-[18px] font-semibold" onClick={() => (setMonth(today.slice(0, 7)), setDay(null))}>
+            <button type="button" className="min-h-10 rounded-full px-3 text-[18px] font-semibold hover:bg-muted/60" onClick={() => (setMonth(today.slice(0, 7)), setDay(null))}>
               {monthName(month)}
             </button>
             <Button type="button" variant="ghost" size="icon" className="size-10 rounded-full" onClick={() => setMonth(shiftMonth(month, 1))} aria-label={t("next")}>

@@ -3,7 +3,7 @@
 // "Sign in with Face ID" on the login page (lib/auth/passkey). Membership is checked by the callback page, as for
 // links and codes. Closing the system sheet only shows a hint (no passkey here yet → use the email).
 
-import { Loader2, ScanFace } from "lucide-react";
+import { KeyRound, Loader2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -42,7 +42,7 @@ export function PasskeySignIn({ primary }: { primary: boolean }) {
         disabled={busy}
         onClick={() => void go()}
       >
-        {busy ? <Loader2 className="size-5 animate-spin" /> : <ScanFace className="size-5" aria-hidden />}
+        {busy ? <Loader2 className="size-5 animate-spin" /> : <KeyRound className="size-5" aria-hidden />}
         {t("signIn")}
       </Button>
       {/* Not registered here yet: the system sheet would only say "no passkeys", so say what to do first */}

@@ -233,12 +233,12 @@ function Tips({ tips, isAdmin, onAction }: { tips: CostTip[]; isAdmin: boolean; 
             <span className="min-w-0 flex-1">
               {text(tip)}
               {tip.action === "sales" && (
-                <Link href="/sales" className="ml-1.5 font-medium whitespace-nowrap text-primary hover:underline">
+                <Link href="/sales" className="-my-2 ml-1.5 inline-block py-2 font-medium whitespace-nowrap text-primary hover:underline">
                   {button("sales")} →
                 </Link>
               )}
               {tip.action && tip.action !== "sales" && isAdmin && (
-                <button type="button" onClick={() => onAction(tip.action!)} className="ml-1.5 font-medium whitespace-nowrap text-primary hover:underline">
+                <button type="button" onClick={() => onAction(tip.action!)} className="-my-2 ml-1.5 inline-block py-2 font-medium whitespace-nowrap text-primary hover:underline">
                   {button(tip.action)} →
                 </button>
               )}

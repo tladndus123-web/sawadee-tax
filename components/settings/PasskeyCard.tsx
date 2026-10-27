@@ -3,7 +3,7 @@
 // Settings → sign in with Face ID: the devices with a passkey for this account (name, added, last used), remove one
 // (a lost phone), register this device. Each person sees only their own (Supabase Auth).
 
-import { Loader2, ScanFace, Smartphone, Trash2 } from "lucide-react";
+import { KeyRound, Loader2, Smartphone, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -71,7 +71,7 @@ export function PasskeyCard() {
     <section aria-labelledby="passkey-title" className="workspace-panel grid content-start gap-3 p-5 sm:p-6">
       <div className="grid gap-1">
         <h2 id="passkey-title" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-          <ScanFace className="size-5 text-brand" aria-hidden />
+          <KeyRound className="size-5 text-brand" aria-hidden />
           {t("title")}
         </h2>
         <p className="text-sm text-muted-foreground">{t("hint")}</p>
@@ -107,7 +107,7 @@ export function PasskeyCard() {
       ) : (
         supported && (
           <Button type="button" variant={items?.length ? "outline" : "default"} className="h-10 w-fit rounded-full px-5" disabled={busy !== null} onClick={() => void add()}>
-            {busy === "add" ? <Loader2 className="size-4 animate-spin" /> : <ScanFace className="size-4" />}
+            {busy === "add" ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
             {t("addThis")}
           </Button>
         )

@@ -229,7 +229,8 @@ export function Dashboard() {
   if (!loaded) return <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
 
   return (
-    <div className="grid gap-5">
+    // One column that never grows past the screen (a long number must not push the page wider on phones)
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* The month is the heading, and changes right there */}
         <span className="relative">

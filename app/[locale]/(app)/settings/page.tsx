@@ -1,4 +1,4 @@
-import { Bell, CalendarClock, FileSpreadsheet, FileText, MessageCircle, ScanFace, Shapes, Smartphone, Store, Tag, UserPlus } from "lucide-react";
+import { Bell, CalendarClock, FileSpreadsheet, FileText, KeyRound, MessageCircle, Shapes, Smartphone, Store, Tag, UserPlus } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FormSettings } from "@/components/settings/FormSettings";
 import { ExcelFormatCard } from "@/components/settings/ExcelFormatCard";
@@ -20,7 +20,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
   setRequestLocale(locale as Locale);
   const t = await getTranslations();
   return (
-    <div className="mx-auto grid w-full max-w-5xl gap-8">
+    <div className="mx-auto grid w-full max-w-5xl grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("settings.title")}</h1>
       <div className="grid gap-4 lg:grid-cols-2">
         <AccountCard />
@@ -65,7 +65,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
           </SettingsFold>
         </SettingsGroup>
         <SettingsGroup title={t("settings.group.device")}>
-          <SettingsFold icon={<ScanFace className="text-primary" />} title={t("passkey.title")}>
+          <SettingsFold icon={<KeyRound className="text-primary" />} title={t("passkey.title")}>
             <PasskeyCard />
           </SettingsFold>
           <SettingsFold icon={<Smartphone className="text-primary" />} title={t("install.title")}>

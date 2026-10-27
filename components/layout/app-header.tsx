@@ -1,8 +1,8 @@
 "use client";
 
-import { BookOpen, Building2, CalendarDays, HandCoins, LayoutGrid, Settings, TrendingUp, WalletCards } from "lucide-react";
+import { BookOpen, Building2, CalendarDays, HandCoins, LayoutGrid, LayoutList, Plus, Settings, TrendingUp, WalletCards } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useLayoutEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useBranches } from "@/lib/branch-store";
 import { useMe } from "@/lib/role-store";
@@ -33,9 +33,11 @@ export function AppHeader() {
   // Payroll and the tax calendar are for admins only
   const isAdmin = useMe().role === "admin";
   const nav = NAV.filter((n) => !("admin" in n) || isAdmin);
-  // Phones: five tabs fit; with more, the bar scrolls sideways (the next tab peeks in at the edge)
-  const scrolls = nav.length > 5;
-  const barRef = useRef<HTMLDivElement>(null);
+  // Phones: dashboard, ledger, sales on the bar (with the camera between); everything else under "more"
+  const onBar = (href: string) => href === "/" || href === "/ledger" || href === "/sales";
+  const main = nav.filter((n) => onBar(n.href));
+  const rest = nav.filter((n) => !onBar(n.href));
+  const [more, setMore] = useState(false);
   // Detail screens hide the tab bar, like a pushed view on iOS, so their own action bar owns the bottom edge.
   const showTabBar = !pathname.startsWith("/documents");
   // With several branches the switcher takes the phone's top bar; the app name gives way
@@ -77,11 +79,6 @@ export function AppHeader() {
     return () => ro.disconnect();
   }, [active, nav.length]);
 
-  // Keep the active tab in view on a scrolling tab bar
-  useEffect(() => {
-    const a = barRef.current?.querySelector<HTMLElement>('a[data-active="true"]');
-    if (scrolls && a) a.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, [active, scrolls]);
 
   return (
     <>
@@ -118,16 +115,56 @@ export function AppHeader() {
       </header>
 
       {showTabBar && (
+        // Phones (owner 2026-10-27, "모바일 최적화"): four tabs and the camera in the middle, like an iPhone app —
+        // dashboard, ledger, [+ photo], sales, more; the rest of the menu opens from "more" as a sheet
         <nav aria-label={t("nav.menu")} className="tab-bar md:hidden">
-          <div ref={barRef} className={cn("mx-auto max-w-lg", scrolls ? "tab-scroll" : "grid grid-cols-5")}>
-            {nav.map(({ href, key, icon: Icon }) => (
-              <Link key={href} href={href} onClick={onTap(href)} data-active={active === href} aria-current={isActive(href) ? "page" : undefined}>
-                <Icon key={bounceKey(href)} className={cn("size-[22px]", bounceKey(href) > 0 && "sym-tap")} strokeWidth={active === href ? 2.2 : 1.8} aria-hidden />
-                {t(`nav.${key}`)}
-              </Link>
+          <div className="mx-auto grid max-w-lg grid-cols-5 items-end">
+            {main.map(({ href, key, icon: Icon }, i) => (
+              <Fragment key={href}>
+                {i === 2 && (
+                  <Link href="/upload" onClick={onTap("/upload")} aria-label={t("nav.upload")} className="tab-plus">
+                    <span>
+                      <Plus className="size-7" strokeWidth={2.4} aria-hidden />
+                    </span>
+                    {t("nav.upload")}
+                  </Link>
+                )}
+                <Link href={href} onClick={onTap(href)} data-active={active === href} aria-current={isActive(href) ? "page" : undefined}>
+                  <Icon key={bounceKey(href)} className={cn("size-[22px]", bounceKey(href) > 0 && "sym-tap")} strokeWidth={active === href ? 2.2 : 1.8} aria-hidden />
+                  {t(`nav.${key}`)}
+                </Link>
+              </Fragment>
             ))}
+            <button type="button" onClick={() => setMore(true)} data-active={!!rest.find((n) => n.href === active)} aria-expanded={more} className="tab-more">
+              <LayoutList className="size-[22px]" strokeWidth={rest.some((n) => n.href === active) ? 2.2 : 1.8} aria-hidden />
+              {t("nav.more")}
+            </button>
           </div>
         </nav>
+      )}
+      {/* "More": the rest of the menu as big tiles, from below */}
+      {more && (
+        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label={t("nav.more")}>
+          <button type="button" className="absolute inset-0 bg-black/35" aria-label={t("app.close")} onClick={() => setMore(false)} />
+          <div className="absolute inset-x-0 bottom-0 rounded-t-[26px] bg-background px-4 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl">
+            <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-muted-foreground/25" aria-hidden />
+            <ul className="grid grid-cols-3 gap-2.5">
+              {rest.map(({ href, key, icon: Icon }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    onClick={(e) => (onTap(href)(e), setMore(false))}
+                    data-active={active === href}
+                    className="press flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-2xl bg-card text-[13px] font-medium shadow-[var(--shadow-soft)] ring-1 ring-border data-[active=true]:text-primary data-[active=true]:ring-primary/40"
+                  >
+                    <Icon className="size-6" aria-hidden />
+                    {t(`nav.${key}`)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       )}
     </>
   );

@@ -358,8 +358,43 @@
   scroll-snap-align: start;
 }
 
-.tab-bar a[data-active="true"] {
+.tab-bar a[data-active="true"],
+.tab-bar .tab-more[data-active="true"] {
   color: var(--primary);
+}
+
+/* "More" looks like a tab */
+.tab-bar .tab-more {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.2rem;
+  min-height: 3.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+/* The camera in the middle: a raised blue circle */
+.tab-bar a.tab-plus {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.tab-bar a.tab-plus {
+  gap: 0.1rem;
+}
+
+.tab-bar a.tab-plus > span {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-top: -0.85rem;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(#3b8bff, #0a5ce6);
+  box-shadow: 0 6px 16px rgb(10 92 230 / 0.4), 0 0 0 4px var(--background);
 }
 
 /* Press: the icon dips while the finger is down */

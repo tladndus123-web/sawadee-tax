@@ -3,7 +3,7 @@
 // After an email sign-in on a device that can do Face ID / fingerprint: offer to register it, so the next sign-in
 // (and the one every 12 hours) is a glance. "Later" hides it for two weeks. Not shown after a passkey sign-in.
 
-import { Loader2, ScanFace, X } from "lucide-react";
+import { KeyRound, Loader2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -55,9 +55,9 @@ export function PasskeyOffer() {
 
   return (
     <section aria-labelledby="passkey-offer" className="workspace-panel relative mx-auto mb-5 grid w-full max-w-3xl grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-3 p-4 pr-11 sm:p-5 sm:pr-12">
-      <span className="intelligence-mark size-10">
-        <ScanFace className="size-5" aria-hidden />
-      </span>
+      {/* 간편 로그인 mark (public/quick-signin.svg), the app icon's family */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG */}
+      <img src="/quick-signin.svg" alt="" aria-hidden="true" className="size-10 rounded-[11px] shadow-[0_4px_10px_rgb(10_92_230/0.3)]" />
       <div className="grid gap-0.5">
         <h2 id="passkey-offer" className="text-[15px] font-semibold">
           {t("offerTitle")}
@@ -66,7 +66,7 @@ export function PasskeyOffer() {
       </div>
       <div className="col-start-2 flex flex-wrap gap-2">
         <Button type="button" className="h-10 rounded-full px-5" disabled={busy} onClick={() => void register()}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : <ScanFace className="size-4" />}
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
           {t("register")}
         </Button>
         <Button type="button" variant="ghost" className="h-10 rounded-full px-4" disabled={busy} onClick={later}>
