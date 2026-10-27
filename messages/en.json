@@ -432,7 +432,20 @@
     "unchecked": "not yet checked",
     "categoryFilter": "Filter by category",
     "categoryAll": "All categories",
-    "andMore": "{name} + {count} more"
+    "andMore": "{name} + {count} more",
+    "period": "Period",
+    "periodAll": "Any time",
+    "periodThis": "This month",
+    "periodLast": "Last month",
+    "views": {
+      "title": "Saved views",
+      "save": "Save this view",
+      "namePrompt": "Name this view (e.g. Unpaid this month)",
+      "saved": "Saved “{name}”",
+      "remove": "Remove {name}",
+      "edit": "Edit",
+      "done": "Done"
+    }
   },
   "auth": {
     "title": "Sign in",
@@ -615,7 +628,15 @@
     "view": "View",
     "viewFolders": "Folders",
     "viewList": "List",
-    "folderCount": "{count} vendors"
+    "folderCount": "{count} vendors",
+    "terms": {
+      "label": "Payment terms",
+      "now": "Paid on the spot",
+      "days": "Credit {n} days",
+      "eom": "End of month",
+      "next": "Day {n} of next month",
+      "hint": "With payment terms set, this supplier's documents without a printed due date get one automatically."
+    }
   },
   "dash": {
     "title": "Dashboard",
@@ -681,7 +702,25 @@
     "goal": "Target {amount}",
     "perDay": "{days, plural, one {# open day left} other {# open days left}} · {amount} more a day",
     "perDayNone": "No open days left this month",
-    "setGoal": "Set a monthly sales target →"
+    "setGoal": "Set a monthly sales target →",
+    "cards": {
+      "edit": "Edit cards",
+      "title": "Dashboard cards",
+      "sub": "Move the cards you use most up and hide the ones you don't. Saved to your account, the same on phone and PC.",
+      "profit": "What's left this month",
+      "tiles": "Sales · purchases · unpaid · VAT",
+      "todo": "To do",
+      "recent": "Last 7 days of sales",
+      "cost": "Cost control",
+      "team": "Work by staff",
+      "up": "Up",
+      "down": "Down",
+      "show": "Show",
+      "hide": "Hide",
+      "note": "Wide cards (what's left, the four figures) stay on top; the rest arrange themselves in two columns.",
+      "reset": "Back to usual",
+      "done": "Done"
+    }
   },
   "line": {
     "title": "LINE",
@@ -1609,7 +1648,7 @@
     "monthly": "This month {amount}",
     "edit": "Edit",
     "delete": "Delete",
-    "deleteAsk": "Delete '{name}'? Earlier months lose it too. If it just stopped, set an end month instead.",
+    "deleteAsk": "Delete “{name}”? Earlier months lose it too. If it just stopped, set an end month instead.",
     "deleted": "Deleted.",
     "lockedEnd": "It covers a closed month, so it can't be deleted. Set an end month instead.",
     "locked": "A closed month can't change. Use 'Change amount' from the next month on.",
@@ -2116,6 +2155,30 @@
     "remind": "Reminder",
     "save": "Save",
     "edit": "Change",
-    "saved": "Added to the calendar"
+    "saved": "Added to the calendar",
+    "attach": "Attach a file",
+    "dropHere": "Drop it here · receipts, contracts, licences",
+    "fileType": "Only photos (JPG, PNG) or PDFs.",
+    "fileAsk": "What should I do with this file?",
+    "fileLedger": "Add to the ledger (receipt)",
+    "fileCalendar": "Read its dates into the calendar",
+    "fileQueued": "The AI is reading it on the upload screen.",
+    "fileOpenUpload": "Have a look",
+    "fileReading": "Reading the dates…",
+    "fileNone": "No dates found in this file.",
+    "fileFail": "Couldn't read the file. Please try again."
+  },
+  "excelFmt": {
+    "title": "Accountant's Excel layout",
+    "sub": "Pick only the columns your accountant wants, put them in their order and use their headings. The app's Excel, the LINE Excel and the accountant link all follow it.",
+    "custom": "Custom · {n} columns",
+    "usual": "Usual layout",
+    "namePh": "Keep the name",
+    "name": "Heading for {col}",
+    "up": "Up",
+    "down": "Down",
+    "reset": "Back to usual",
+    "save": "Save",
+    "saved": "Excel layout saved"
   }
 }

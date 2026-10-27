@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { BulkCategoryBar } from "./BulkCategoryBar";
 import { BulkPayBar } from "./BulkPayBar";
 import { ExportButtons } from "./ExportButtons";
+import { SavedViews } from "./SavedViews";
 import { MonthLockButton } from "./MonthLockButton";
 import { PurgeButton } from "./PurgeButton";
 import { StickerDot, StickerDots, StickerPopover, useMonthLabel, useStickerLabel } from "./Stickers";
@@ -72,14 +73,14 @@ export function LedgerList() {
   // (the list parts below are memoized, so a keystroke itself only redraws the search box)
   const q = useDeferredValue(query);
   const filtered = useMemo(
-    () => (view === "ledger" ? list.filter((e) => matches(e.doc, filter)) : list).filter((e) => search(e.doc, q)),
+    () => (view === "ledger" ? list.filter((e) => matches(e.doc, filter, todayBangkok())) : list).filter((e) => search(e.doc, q)),
     [list, view, filter, q],
   );
   const months = useMemo(
     () => groupByMonth(filtered).map((g) => ({ group: g, monthEntries: list.filter((e) => monthKey(e.doc) === g.key) })),
     [filtered, list],
   );
-  const filtering = filter.stickers.length > 0 || filter.unpaidOnly || !!filter.category || q.trim() !== "";
+  const filtering = filter.stickers.length > 0 || filter.unpaidOnly || !!filter.category || !!filter.period || q.trim() !== "";
   // "Tick all shown": what can be ticked now (unpaid for a payment run; not in a closed month for a category)
   const tickable = useMemo(
     () => (selecting && view === "ledger" ? filtered.filter((e) => (mode === "pay" ? isUnpaid(e.doc) : !locks.has(monthKey(e.doc)))) : []),
@@ -148,6 +149,8 @@ export function LedgerList() {
         )}
         {view === "ledger" && counts.ledger > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2">
+            {/* Saved views: one tap brings back a set of filters and a search (owner, 2026-10-27) */}
+            <SavedViews filter={filter} query={query} onPick={(f, s) => (setFilter(f), setQuery(s))} />
             <FilterBar filter={filter} onChange={setFilter} entries={list} />
             {selecting ? (
               <Button type="button" variant="secondary" className="h-9 rounded-full px-3.5 text-[13px]" onClick={stopSelecting}>
@@ -302,6 +305,19 @@ function FilterBar({ filter, onChange, entries }: { filter: ArchiveFilter; onCha
       <button type="button" aria-pressed={filter.unpaidOnly} className={chip(filter.unpaidOnly)} onClick={() => onChange({ ...filter, unpaidOnly: !filter.unpaidOnly })}>
         {t("unpaidOnly")}
       </button>
+      <label className="relative flex-none">
+        <span className="sr-only">{t("period")}</span>
+        <select
+          value={filter.period ?? ""}
+          onChange={(e) => onChange({ ...filter, period: e.target.value === "this" || e.target.value === "last" ? e.target.value : undefined })}
+          className={cn(chip(!!filter.period), "appearance-none pr-7")}
+        >
+          <option value="">{t("periodAll")}</option>
+          <option value="this">{t("periodThis")}</option>
+          <option value="last">{t("periodLast")}</option>
+        </select>
+        <ChevronDown className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 opacity-70" aria-hidden />
+      </label>
       <label className="relative flex-none">
         <span className="sr-only">{t("categoryFilter")}</span>
         <select

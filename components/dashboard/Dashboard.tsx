@@ -30,6 +30,9 @@ import { useMe } from "@/lib/role-store";
 import { ALL } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
 import { BranchTable } from "./BranchTable";
+import { DashEditor } from "./DashEditor";
+import { arrange, type DashCard } from "@/lib/dash-layout";
+import { useDashLayout } from "@/lib/dash-layout-store";
 import { GoalBars } from "./GoalBars";
 import { RecentSalesCard } from "./RecentSalesCard";
 import { FoldAllButton, SettingsFold } from "@/components/settings/SettingsFold";
@@ -75,6 +78,7 @@ export function Dashboard() {
   const { lines: labor } = useLabor();
   const { lines: fixed } = useCostLines();
   const isAdmin = useMe().role === "admin";
+  const [dash, setDash] = useDashLayout();
   const allBranches = useBranch() === ALL;
   const branchCount = useBranches().branches.length;
   // Several branches seen together: the combined board carries the profit, so the single line steps aside
@@ -102,38 +106,11 @@ export function Dashboard() {
       };
   const purchases = useMemo(() => docs.map((d) => d.doc), [docs]);
 
-  if (!loaded) return <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
 
-  return (
-    <div className="grid gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* The month is the heading, and changes right there */}
-        <span className="relative">
-          <select
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            aria-label={t("dash.month")}
-            className="press h-11 cursor-pointer appearance-none rounded-full bg-card py-0 pr-10 pl-4 text-xl font-bold tracking-tight shadow-[var(--shadow-soft)] ring-1 ring-border"
-          >
-            {months.map((m) => (
-              <option key={m} value={m}>
-                {monthLabel(m)}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-        </span>
-        {/* A new company: what a read document looks like */}
-        {docs.length === 0 && (
-          <Link href="/documents/sample" className="press flex min-h-11 items-center gap-1 rounded-full px-4 text-sm font-medium text-primary hover:bg-primary/10">
-            {t("dash.sample")}
-            <ChevronRight className="size-4" aria-hidden />
-          </Link>
-        )}
-      </div>
-
-      {/* 1. How the month is going: what is left (the one number owners ask first), then four figures */}
-      {combined ? (
+  const cards: Record<DashCard, React.ReactNode> = {
+    // How the month is going: what is left (the one number owners ask first)
+    profit: (
+      combined ? (
         // Several branches seen together: each branch's month side by side carries the profit
         <BranchTable month={month} companyTaxId={company.taxId} />
       ) : (
@@ -168,8 +145,9 @@ export function Dashboard() {
           {/* How far towards break-even and the month's target (once there are sales to measure) */}
           {hasSales && <GoalBars month={month} today={today} salesValue={result.salesValue} />}
         </section>
-      )}
-
+      )
+    ),
+    tiles: (
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Tile icon={TrendingUp} label={t("sales.salesValue")} value={result.salesValue} note={t("dash.salesDays", { count: result.days })} />
         <Tile icon={Receipt} label={t("app.sTotal")} value={s.total} note={t("dash.monthDocs", { count: s.count })} />
@@ -193,10 +171,9 @@ export function Dashboard() {
           note={result.vatPayable < 0 ? t("dash.vatCreditShort") : `${bahtWhole(result.salesVat)} − ${bahtWhole(result.claimableVat)}`}
         />
       </div>
-
-      {/* 2. What to do: one card, one line each; a line opens its list */}
-      <div className="grid items-start gap-5 lg:grid-cols-2 lg:items-stretch">
-        <div className="flex min-w-0 flex-col gap-5">
+    ),
+    // What to do: one card, one line each; a line opens its list
+    todo: (
         <section aria-labelledby="todo-title" className="workspace-panel grid min-w-0 grid-cols-1 content-start px-4 pt-3 pb-1 sm:px-5">
           <div className="flex items-center justify-between gap-2 pt-1 pb-1">
             <h2 id="todo-title" className="px-1 text-lg font-semibold tracking-tight">
@@ -236,22 +213,61 @@ export function Dashboard() {
             </SettingsFold>
           )}
         </section>
+    ),
+    // The last week of sales, ending yesterday
+    recent: <RecentSalesCard today={today} />,
+    // In more detail: food, labour and rent against sales (FL / FLR)
+    cost: <CostCard month={month} salesValue={result.salesValue} purchases={purchases} fixed={fixed} fold />,
+    // Admins: who did what this month
+    team: isAdmin ? <TeamCard month={month} /> : null,
+  };
+  const layout = arrange({ ...dash, hidden: [...dash.hidden, ...(isAdmin ? [] : (["team"] as DashCard[]))] });
 
-          {/* The last week of sales, ending yesterday */}
-          <RecentSalesCard today={today} />
+  if (!loaded) return <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
 
-          {/* Admins: who did what this month (here so the two columns end together) */}
-          {isAdmin && <TeamCard month={month} />}
-        </div>
-
-        {/* 3. In more detail: food, labour and rent against sales (FL / FLR) */}
-        {/* Stays in view beside a long to-do list */}
-        <div className="min-w-0">
-          <div className="lg:sticky lg:top-24">
-            <CostCard month={month} salesValue={result.salesValue} purchases={purchases} fixed={fixed} fold />
-          </div>
-        </div>
+  return (
+    <div className="grid gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* The month is the heading, and changes right there */}
+        <span className="relative">
+          <select
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+            aria-label={t("dash.month")}
+            className="press h-11 cursor-pointer appearance-none rounded-full bg-card py-0 pr-10 pl-4 text-xl font-bold tracking-tight shadow-[var(--shadow-soft)] ring-1 ring-border"
+          >
+            {months.map((m) => (
+              <option key={m} value={m}>
+                {monthLabel(m)}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        </span>
+        <DashEditor layout={dash} onChange={setDash} isAdmin={isAdmin} />
+        {/* A new company: what a read document looks like */}
+        {docs.length === 0 && (
+          <Link href="/documents/sample" className="press flex min-h-11 items-center gap-1 rounded-full px-4 text-sm font-medium text-primary hover:bg-primary/10">
+            {t("dash.sample")}
+            <ChevronRight className="size-4" aria-hidden />
+          </Link>
+        )}
       </div>
+
+      {/* The cards, in each person's order, the ones they hid left out (lib/dash-layout): wide ones on top, the
+          others in two columns that balance themselves */}
+      {layout.wide.map((k) => (
+        <div key={k}>{cards[k]}</div>
+      ))}
+      {layout.rest.length > 0 && (
+        <div className="-mb-5 gap-5 lg:columns-2 [&>*]:mb-5 [&>*]:break-inside-avoid">
+          {layout.rest.map((k) => (
+            <div key={k} className="min-w-0">
+              {cards[k]}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Phones, until installed or closed: put the app on the home screen */}
       <InstallCard compact />

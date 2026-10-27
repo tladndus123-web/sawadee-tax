@@ -277,7 +277,7 @@ function VendorRow({
   const isAdmin = useMe().role === "admin";
   const [asking, setAsking] = useState(false);
   const [open, setOpen] = useState(false);
-  const ruled = !!(v.ruleCategory || v.rulePayment || v.autoRegister);
+  const ruled = !!(v.ruleCategory || v.rulePayment || v.autoRegister || v.payTerms);
   const remove = async () => {
     setBusy(true);
     try {

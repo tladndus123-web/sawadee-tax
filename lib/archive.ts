@@ -70,14 +70,26 @@ export interface ArchiveFilter {
   unpaidOnly: boolean;
   /** Only documents of this category (its own, or a line that has it); "" = any */
   category?: string;
+  /** Only this month's or last month's documents (their tax month), counted from `today` */
+  period?: "this" | "last";
+}
+
+/** The YYYY-MM a period means on `today` */
+export function periodMonth(period: "this" | "last", today: string): string {
+  const y = Number(today.slice(0, 4));
+  const m = Number(today.slice(5, 7)) - (period === "last" ? 1 : 0);
+  return new Date(Date.UTC(y, m - 1, 1)).toISOString().slice(0, 7);
 }
 
 /** Whether a document counts under a category: its own, or any line given that category (a mixed receipt) */
 export const hasCategory = (doc: LedgerDoc, category: string): boolean => doc.category === category || doc.items.some((i) => i.category === category);
 
 /** A document passes when it has any of the chosen stickers (or none are chosen), and the chosen category. */
-export const matches = (doc: LedgerDoc, f: ArchiveFilter): boolean =>
-  (!f.stickers.length || f.stickers.some((s) => doc.stickers.includes(s))) && (!f.unpaidOnly || isUnpaid(doc)) && (!f.category || hasCategory(doc, f.category));
+export const matches = (doc: LedgerDoc, f: ArchiveFilter, today = ""): boolean =>
+  (!f.stickers.length || f.stickers.some((s) => doc.stickers.includes(s))) &&
+  (!f.unpaidOnly || isUnpaid(doc)) &&
+  (!f.category || hasCategory(doc, f.category)) &&
+  (!f.period || !today || monthKey(doc) === periodMonth(f.period, today));
 
 const fold = (s: string) => s.normalize("NFKC").toLowerCase();
 const tri = (t: { th: string; en: string; ja: string }) => `${t.th} ${t.en} ${t.ja}`;

@@ -432,7 +432,20 @@
     "unchecked": "사무실 확인 전",
     "categoryFilter": "항목으로 거르기",
     "categoryAll": "모든 항목",
-    "andMore": "{name} 외 {count}건"
+    "andMore": "{name} 외 {count}건",
+    "period": "기간",
+    "periodAll": "전체 기간",
+    "periodThis": "이번 달",
+    "periodLast": "지난 달",
+    "views": {
+      "title": "저장한 보기",
+      "save": "이 보기 저장",
+      "namePrompt": "이 보기의 이름 (예: 이번 달 미지급)",
+      "saved": "“{name}” 보기를 저장했어요",
+      "remove": "{name} 지우기",
+      "edit": "편집",
+      "done": "완료"
+    }
   },
   "auth": {
     "title": "로그인",
@@ -615,7 +628,15 @@
     "view": "보기",
     "viewFolders": "폴더",
     "viewList": "목록",
-    "folderCount": "{count}곳"
+    "folderCount": "{count}곳",
+    "terms": {
+      "label": "결제 조건",
+      "now": "바로 결제 (현금·이체)",
+      "days": "외상 {n}일",
+      "eom": "매달 말일",
+      "next": "다음 달 {n}일",
+      "hint": "결제 조건을 정하면, 지급일이 안 적힌 이 거래처 서류에 지급 예정일이 자동으로 들어가요."
+    }
   },
   "dash": {
     "title": "대시보드",
@@ -681,7 +702,25 @@
     "goal": "목표 {amount}",
     "perDay": "남은 영업일 {days}일 · 하루 {amount}씩 더",
     "perDayNone": "이번 달 영업일이 끝났어요",
-    "setGoal": "월 매출 목표 정하기 →"
+    "setGoal": "월 매출 목표 정하기 →",
+    "cards": {
+      "edit": "카드 편집",
+      "title": "대시보드 카드",
+      "sub": "자주 보는 카드는 위로, 안 보는 카드는 숨겨요. 내 계정에 저장돼서 휴대폰·PC 모두 같아요.",
+      "profit": "이번 달 남은 돈",
+      "tiles": "매출·매입·미지급·부가세",
+      "todo": "할 일",
+      "recent": "최근 7일 매출",
+      "cost": "원가 관리",
+      "team": "직원별 작업",
+      "up": "위로",
+      "down": "아래로",
+      "show": "보이기",
+      "hide": "숨기기",
+      "note": "넓은 카드(남은 돈, 숫자 4개)는 항상 위에, 나머지는 두 줄로 알아서 나란히 놓여요.",
+      "reset": "기본으로",
+      "done": "완료"
+    }
   },
   "line": {
     "title": "LINE 연결",
@@ -1609,7 +1648,7 @@
     "monthly": "이번 달 합계 {amount}",
     "edit": "수정",
     "delete": "삭제",
-    "deleteAsk": "'{name}'을(를) 지울까요? 예전 달 숫자도 같이 사라져요. 그만 나가는 비용이면 대신 '끝나는 달'을 넣으세요.",
+    "deleteAsk": "“{name}”을(를) 지울까요? 예전 달 숫자도 같이 사라져요. 그만 나가는 비용이면 대신 '끝나는 달'을 넣으세요.",
     "deleted": "고정비를 지웠어요.",
     "lockedEnd": "마감한 달에 걸쳐 있어서 지울 수 없어요. 대신 끝나는 달을 넣으세요.",
     "locked": "마감한 달의 숫자는 바꿀 수 없어요. 새 금액은 '금액 바꾸기'로 다음 달부터 넣으세요.",
@@ -1816,7 +1855,7 @@
     "lastUsed": "마지막 사용 {date}",
     "addThis": "이 기기 등록",
     "remove": "삭제",
-    "removeAsk": "'{name}'을(를) 삭제할까요? 그 기기에서는 얼굴 인증으로 로그인할 수 없게 돼요 (메일로는 로그인할 수 있어요).",
+    "removeAsk": "“{name}”을(를) 삭제할까요? 그 기기에서는 얼굴 인증으로 로그인할 수 없게 돼요 (메일로는 로그인할 수 있어요).",
     "removed": "삭제했어요.",
     "unsupported": "이 기기(브라우저)는 얼굴 인증 로그인을 지원하지 않아요.",
     "count": "{count}대"
@@ -2116,6 +2155,30 @@
     "remind": "알림",
     "save": "저장",
     "edit": "고치기",
-    "saved": "일정에 넣었어요"
+    "saved": "일정에 넣었어요",
+    "attach": "파일 올리기",
+    "dropHere": "여기에 놓으세요 · 영수증, 계약서, 허가증",
+    "fileType": "사진(JPG·PNG)이나 PDF만 올릴 수 있어요.",
+    "fileAsk": "이 파일을 어떻게 할까요?",
+    "fileLedger": "장부에 올리기 (영수증)",
+    "fileCalendar": "날짜 읽어 일정에 넣기",
+    "fileQueued": "장부 올리기 화면에서 AI가 읽고 있어요.",
+    "fileOpenUpload": "보러 가기",
+    "fileReading": "날짜를 읽는 중…",
+    "fileNone": "이 파일에서 날짜를 찾지 못했어요.",
+    "fileFail": "파일을 읽지 못했어요. 다시 올려 주세요."
+  },
+  "excelFmt": {
+    "title": "회계사 엑셀 양식",
+    "sub": "회계사가 원하는 칸만 고르고, 순서를 바꾸고, 회계사가 쓰는 이름으로 바꿔요. 앱의 엑셀 받기, LINE 엑셀, 회계사 링크가 모두 이 양식으로 나와요.",
+    "custom": "맞춤 {n}칸",
+    "usual": "기본 양식",
+    "namePh": "이름 그대로",
+    "name": "{col} 칸 이름",
+    "up": "위로",
+    "down": "아래로",
+    "reset": "기본 양식으로",
+    "save": "저장",
+    "saved": "엑셀 양식을 저장했어요"
   }
 }

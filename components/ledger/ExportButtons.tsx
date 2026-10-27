@@ -79,6 +79,7 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
       category: (k) => catLabel(k),
       sheetCosts: t("export.sheetCosts"),
       cost: t("export.cost"),
+      format: company.excelFormat,
     };
     return { data, labels, costs: { rows: costRows, total: fromSatang(c.cost) } };
   };

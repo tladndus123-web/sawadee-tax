@@ -64,7 +64,7 @@ export async function saveVendorPay(id: string, pay: { pay_promptpay: string; pa
 /** Set a vendor's automatic registration rule (auto_register: admins only — the database refuses others) */
 export async function saveVendorRule(
   id: string,
-  patch: Partial<{ rule_category: string | null; rule_payment: string | null; auto_register: boolean }>,
+  patch: Partial<{ rule_category: string | null; rule_payment: string | null; auto_register: boolean; pay_terms: string | null }>,
 ) {
   const { data, error } = await supabaseBrowser().from("vendors").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id).select("id");
   if (error) throw error;

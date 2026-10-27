@@ -1,6 +1,7 @@
-import { Bell, CalendarClock, FileText, MessageCircle, ScanFace, Shapes, Smartphone, Store, Tag, UserPlus } from "lucide-react";
+import { Bell, CalendarClock, FileSpreadsheet, FileText, MessageCircle, ScanFace, Shapes, Smartphone, Store, Tag, UserPlus } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FormSettings } from "@/components/settings/FormSettings";
+import { ExcelFormatCard } from "@/components/settings/ExcelFormatCard";
 import { AccountCard, CompanyCard } from "@/components/settings/AccountSettings";
 import { MembersCard } from "@/components/settings/MembersCard";
 import { StickerNameSettings } from "@/components/ledger/Stickers";
@@ -45,6 +46,9 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
           </SettingsFold>
           <SettingsFold icon={<FileText className="text-brand" />} title={t("settings.formTitle")}>
             <FormSettings />
+          </SettingsFold>
+          <SettingsFold icon={<FileSpreadsheet className="text-brand" />} title={t("excelFmt.title")}>
+            <ExcelFormatCard />
           </SettingsFold>
         </SettingsGroup>
         <SettingsGroup title={t("settings.group.team")}>

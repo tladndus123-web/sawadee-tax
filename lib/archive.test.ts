@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import sample from "@/docs/reference/sample-document.json";
-import { groupByMonth, matches, monthKey, NO_DATE, search } from "./archive";
+import { groupByMonth, matches, monthKey, NO_DATE, periodMonth, search } from "./archive";
 import { normalize } from "./normalize";
 import { sampleDoc } from "./sample";
 import type { LedgerDoc } from "./types";
@@ -72,5 +72,18 @@ describe("one rule for 'unpaid' (ledger, filters, dashboard)", async () => {
     expect(paidAtTill({ paid: false, paidDate: "", payment: "credit", dueDate: "", date: "2026-09-27" }).paid).toBe(false);
     expect(paidAtTill({ paid: false, paidDate: "", payment: "transfer", dueDate: "2026-10-15", date: "2026-09-27" }).paid).toBe(false);
     expect(paidAtTill({ paid: false, paidDate: "", payment: "other", dueDate: "", date: "2026-09-27" }).paid).toBe(false);
+  });
+});
+
+describe("ledger: this month / last month", () => {
+  it("counts from today, across the new year", () => {
+    expect(periodMonth("this", "2026-10-27")).toBe("2026-10");
+    expect(periodMonth("last", "2026-10-27")).toBe("2026-09");
+    expect(periodMonth("last", "2027-01-05")).toBe("2026-12");
+  });
+  it("keeps only the documents of that month", () => {
+    const d = normalize({ date: "2026-09-12" });
+    expect(matches(d, { stickers: [], unpaidOnly: false, period: "last" }, "2026-10-27")).toBe(true);
+    expect(matches(d, { stickers: [], unpaidOnly: false, period: "this" }, "2026-10-27")).toBe(false);
   });
 });

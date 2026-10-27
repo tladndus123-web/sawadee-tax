@@ -3,6 +3,7 @@
 // with a 2-decimal format, a bold totals row, frozen header and filters.
 
 import type { MonthExport } from "./export";
+import { type ExcelFormat, ledgerColumns, MONEY_COLS } from "./excel-format";
 
 /** The month's costs by category (lib/cost-split monthCosts): the same figures as the P&L */
 export interface CostSheet {
@@ -21,7 +22,11 @@ export interface XlsxLabels {
   category: (k: string) => string;
   sheetCosts: string;
   cost: string;
+  /** The company's own column layout for the ledger sheet (lib/excel-format), else the usual one */
+  format?: ExcelFormat | null;
 }
+
+const WIDTH: Record<string, number> = { date: 12, docNo: 18, vendor: 34, vendorTh: 34, taxId: 16, branch: 18, docType: 22, category: 16, items: 40, taxable: 14, exempt: 14, vat: 13, net: 15, wht: 13, paid: 8, paidDate: 12, claimable: 10, flags: 9 };
 
 const MONEY = "#,##0.00";
 
@@ -65,28 +70,12 @@ export async function buildMonthXlsx(data: MonthExport, thaiColumn: boolean, L: 
 
   // Sheet 1: one row per document
   const ledger = wb.addWorksheet(L.sheetLedger, { views: [{ state: "frozen", ySplit: 1 }] });
-  const cols: { key: string; width: number; money?: boolean }[] = [
-    { key: "date", width: 12 },
-    { key: "docNo", width: 18 },
-    { key: "vendor", width: 34 },
-    ...(thaiColumn ? [{ key: "vendorTh", width: 34 }] : []),
-    { key: "taxId", width: 16 },
-    { key: "branch", width: 18 },
-    { key: "docType", width: 22 },
-    { key: "category", width: 16 },
-    { key: "items", width: 40 },
-    { key: "taxable", width: 14, money: true },
-    { key: "exempt", width: 14, money: true },
-    { key: "vat", width: 13, money: true },
-    { key: "net", width: 15, money: true },
-    { key: "wht", width: 13, money: true },
-    { key: "paid", width: 8 },
-    { key: "paidDate", width: 12 },
-    { key: "claimable", width: 10 },
-    { key: "flags", width: 9 },
-    ...(extras ? [{ key: "file", width: 44 }] : []),
+  // The company's layout for the accountant (which columns, order, headings), else the usual one
+  const cols: { key: string; width: number; money?: boolean; header: string }[] = [
+    ...ledgerColumns(L.format, thaiColumn).map((c) => ({ key: c.key, width: Math.max(WIDTH[c.key] ?? 14, c.label.length + 2), money: MONEY_COLS.has(c.key), header: c.label || L.cols[c.key] })),
+    ...(extras ? [{ key: "file", width: 44, header: extras.fileCol }] : []),
   ];
-  ledger.columns = cols.map((c) => ({ header: c.key === "file" ? extras?.fileCol : L.cols[c.key], key: c.key, width: c.width, style: c.money ? { numFmt: MONEY } : {} }));
+  ledger.columns = cols.map((c) => ({ header: c.header, key: c.key, width: c.width, style: c.money ? { numFmt: MONEY } : {} }));
   for (const [n, r] of data.rows.entries()) {
     ledger.addRow({
       file: extras?.files[n] ?? "",

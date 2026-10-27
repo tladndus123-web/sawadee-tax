@@ -1,7 +1,8 @@
 "use client";
 
-// One vendor's automatic registration rule: category and payment to always use, and (admins only) "save
-// without asking" for documents that pass every automatic check. Changes are saved at once.
+// One vendor's automatic registration rule: category and payment to always use, payment terms (the due date of
+// their documents, lib/pay-terms) and (admins only) "save without asking" for documents that pass every automatic
+// check. Changes are saved at once.
 
 import { Wand2 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useMe } from "@/lib/role-store";
+import { PAY_TERMS, type PayTerms } from "@/lib/pay-terms";
 import { PAYMENTS } from "@/lib/types";
 import { saveVendorRule } from "@/lib/vendor-store";
 import type { Vendor } from "@/lib/vendors";
@@ -29,6 +31,10 @@ export function VendorRule({ v }: { v: Vendor }) {
   const isAdmin = useMe().role === "admin";
   const [busy, setBusy] = useState(false);
 
+  const termLabel = (x: PayTerms) => {
+    const [k, n] = x.split(":") as ["now" | "eom" | "days" | "next", string?];
+    return t(`vendors.terms.${k}`, { n: Number(n) || 0 });
+  };
   const save = async (patch: Parameters<typeof saveVendorRule>[1]) => {
     setBusy(true);
     try {
@@ -104,6 +110,22 @@ export function VendorRule({ v }: { v: Vendor }) {
             </SelectContent>
           </Select>
         </div>
+        <div className="grid min-w-0 gap-1">
+          <span className="px-1 text-[11px] text-muted-foreground">{t("vendors.terms.label")}</span>
+          <Select value={v.payTerms ?? NONE} disabled={busy} onValueChange={(x) => void save({ pay_terms: x === NONE ? null : x })}>
+            <SelectTrigger size="sm" className="h-9 w-full min-w-0 bg-background sm:w-auto sm:min-w-36" aria-label={t("vendors.terms.label")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>{t("vendors.ruleNone")}</SelectItem>
+              {PAY_TERMS.map((k) => (
+                <SelectItem key={k} value={k}>
+                  {termLabel(k)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <label className="col-span-2 flex items-center gap-2 text-sm sm:ml-auto">
           <Switch
             checked={v.autoRegister}
@@ -114,7 +136,7 @@ export function VendorRule({ v }: { v: Vendor }) {
         </label>
       </div>
       <p className="text-[11px] leading-snug text-muted-foreground">
-        {isAdmin ? t("vendors.ruleHint") : t("vendors.ruleHintStaff")}
+        {isAdmin ? t("vendors.ruleHint") : t("vendors.ruleHintStaff")} {t("vendors.terms.hint")}
       </p>
     </div>
   );

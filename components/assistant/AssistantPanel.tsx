@@ -5,13 +5,17 @@
 // Questions go to /api/assistant (Sonnet 5.5, the books + the calendar); answers are the same navy cards as on LINE.
 // A date to put in the calendar comes as a proposal: saved only when the person taps Save (or changes it first).
 // The conversation of this tab stays in sessionStorage; the server keeps the last day's for follow-up questions.
+// A file dropped on the panel (or attached with the clip, or pasted) is a receipt for the ledger — it goes into the
+// upload screen's queue — or a contract / licence whose dates go to the calendar (/api/calendar/read), each date a
+// proposal saved only with a tap (owner, 2026-10-27: "AI 비서에 파일 끌어다 놓기").
 
-import { CalendarPlus, Check, Loader2, Pencil, RotateCcw, SendHorizontal, X } from "lucide-react";
+import { CalendarPlus, Check, FileText, Loader2, Paperclip, Pencil, Receipt, RotateCcw, SendHorizontal, Upload, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { AiCard, AiEvent } from "@/lib/assistant";
+import type { FoundDate } from "@/lib/calendar-read-server";
 import { saveEvent } from "@/lib/calendar-store";
 import { Link } from "@/i18n/navigation";
 import { bahtWhole, toSatang } from "@/lib/money";
@@ -21,7 +25,17 @@ import { cn } from "@/lib/utils";
 // The calendar's own edit window, loaded only when "change" is tapped
 const EventDialog = dynamic(() => import("@/components/calendar/CompanyCalendar").then((m) => m.EventDialog), { ssr: false });
 
-type Msg = { role: "user"; text: string } | { role: "ai"; card: AiCard | null; text: string; saved?: boolean } | { role: "error"; text: string };
+type FileStep = "ask" | "ledger" | "reading" | "dates" | "none" | "failed";
+type Msg =
+  | { role: "user"; text: string }
+  | { role: "ai"; card: AiCard | null; text: string; saved?: boolean }
+  | { role: "error"; text: string }
+  | { role: "file"; id: string; name: string; step: FileStep; dates?: AiEvent[]; saved?: number[] };
+
+const FILE_TYPES = /^(image\/(jpeg|png|webp|heic|heif)|application\/pdf)$/;
+const REMIND_FOR: Record<FoundDate["kind"], number> = { expiry: 30, renewal: 30, notice: 7, payment: 3, other: 7 };
+/** The files themselves stay in this tab's memory only (the conversation keeps their names) */
+const files = new Map<string, File>();
 
 const STORE = "sawadee.assistant.chat";
 const OPEN_EVENT = "assistant-open";
@@ -61,6 +75,9 @@ export function AssistantPanel() {
   const [editing, setEditing] = useState<{ index: number; event: AiEvent } | null>(null);
   const list = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
+  const picker = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const locale = useLocale();
 
   // This tab's conversation
   useEffect(() => {
@@ -71,7 +88,7 @@ export function AssistantPanel() {
   }, []);
   useEffect(() => {
     try {
-      sessionStorage.setItem(STORE, JSON.stringify(msgs.slice(-30)));
+      sessionStorage.setItem(STORE, JSON.stringify(msgs.filter((m) => m.role !== "file" || m.step !== "ask").slice(-30)));
     } catch {}
   }, [msgs]);
 
@@ -134,6 +151,58 @@ export function AssistantPanel() {
     }
   };
 
+  // A file came in: ask what it is for
+  const addFiles = (list: FileList | File[] | null) => {
+    const ok = [...(list ?? [])].filter((f) => FILE_TYPES.test(f.type) || /\.pdf$/i.test(f.name)).slice(0, 10);
+    if (!ok.length) return void toast.error(t("fileType"));
+    setOpen(true);
+    setMsgs((m) => [
+      ...m,
+      ...ok.map((f) => {
+        const id = crypto.randomUUID();
+        files.set(id, f);
+        return { role: "file" as const, id, name: f.name, step: "ask" as const };
+      }),
+    ]);
+  };
+  const setFile = (id: string, patch: Partial<Extract<Msg, { role: "file" }>>) => setMsgs((m) => m.map((x) => (x.role === "file" && x.id === id ? { ...x, ...patch } : x)));
+  // A receipt: into the upload screen's queue (read, checked and saved there like any upload)
+  const toLedger = async (id: string) => {
+    const f = files.get(id);
+    if (!f) return setFile(id, { step: "failed" });
+    const { addPhotos } = await import("@/lib/upload-queue");
+    addPhotos([f]);
+    setFile(id, { step: "ledger" });
+  };
+  // A contract / licence: its dates, each a proposal for the calendar
+  const toCalendar = async (id: string) => {
+    const f = files.get(id);
+    if (!f) return setFile(id, { step: "failed" });
+    setFile(id, { step: "reading" });
+    try {
+      const { preparePhoto } = await import("@/lib/upload-queue");
+      const form = new FormData();
+      form.append("file", f.type.startsWith("image/") ? await preparePhoto(f) : f);
+      form.append("lang", locale);
+      const res = await fetch("/api/calendar/read", { method: "POST", body: form });
+      const body = (await res.json().catch(() => ({}))) as { document?: string; dates?: FoundDate[] };
+      if (!res.ok || !body.dates) throw new Error("failed");
+      const dates = body.dates.map((d) => ({ title: d.title, date: d.date, repeat: d.repeat, remindDays: REMIND_FOR[d.kind] ?? 7, amount: d.amount ? d.amount / 100 : null, note: [body.document, d.note].filter(Boolean).join(" · ").slice(0, 300) }));
+      setFile(id, { step: dates.length ? "dates" : "none", dates, saved: [] });
+    } catch {
+      setFile(id, { step: "failed" });
+    }
+  };
+  const saveDate = async (id: string, k: number, ev: AiEvent) => {
+    try {
+      await saveEvent({ title: ev.title, date: ev.date, repeat: ev.repeat, remindDays: ev.remindDays, note: ev.note, amount: ev.amount ? toSatang(ev.amount) : null, source: "document" });
+      setMsgs((m) => m.map((x) => (x.role === "file" && x.id === id ? { ...x, saved: [...(x.saved ?? []), k] } : x)));
+      toast.success(t("saved"));
+    } catch {
+      toast.error(t("fail"));
+    }
+  };
+
   if (!isAdmin) return null;
   const last = [...msgs].reverse().find((m) => m.role === "ai") as Extract<Msg, { role: "ai" }> | undefined;
   const chips = last?.card?.next?.length ? last.card.next : [t("s1"), t("s2"), t("s3"), t("s4")];
@@ -159,6 +228,26 @@ export function AssistantPanel() {
         aria-label={t("title")}
         aria-hidden={!open}
         inert={!open}
+        onDragOver={(e) => {
+          if ([...e.dataTransfer.types].includes("Files")) {
+            e.preventDefault();
+            setDragging(true);
+          }
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          addFiles(e.dataTransfer.files);
+        }}
+        onPaste={(e) => {
+          if (e.clipboardData.files.length) {
+            e.preventDefault();
+            addFiles(e.clipboardData.files);
+          }
+        }}
         className={cn(
           "fixed z-50 flex flex-col bg-background shadow-2xl transition-[transform,visibility] duration-300 ease-out motion-reduce:transition-none",
           // phone: a sheet from below; PC: a panel on the right under the top bar
@@ -166,6 +255,14 @@ export function AssistantPanel() {
           open ? "visible translate-y-0 md:translate-x-0" : "invisible translate-y-full md:translate-x-full md:translate-y-0",
         )}
       >
+        {dragging && (
+          <div className="pointer-events-none absolute inset-2 z-10 grid place-items-center rounded-[22px] border-2 border-dashed border-primary bg-primary/10 text-center backdrop-blur-sm">
+            <span className="grid justify-items-center gap-2 text-[15px] font-semibold text-primary">
+              <Upload className="size-8" aria-hidden />
+              {t("dropHere")}
+            </span>
+          </div>
+        )}
         <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-muted-foreground/25 md:hidden" aria-hidden />
         <header className="flex items-center gap-3 border-b border-border/70 px-4 py-3">
           <AiMark className="size-9 rounded-[10px]" />
@@ -196,6 +293,8 @@ export function AssistantPanel() {
               <p key={i} className="max-w-[85%] self-end rounded-[18px] rounded-br-md bg-primary px-3.5 py-2 text-[14.5px] whitespace-pre-wrap text-primary-foreground">
                 {m.text}
               </p>
+            ) : m.role === "file" ? (
+              <FileCard key={m.id} m={m} onLedger={() => void toLedger(m.id)} onCalendar={() => void toCalendar(m.id)} onSaveDate={(k, ev) => void saveDate(m.id, k, ev)} onEditDate={(ev) => setEditing({ index: i, event: ev })} />
             ) : m.role === "error" ? (
               <p key={i} className="self-start rounded-2xl bg-bad-soft px-3.5 py-2 text-[13.5px] text-bad">
                 {m.text}
@@ -229,6 +328,10 @@ export function AssistantPanel() {
           }}
           className="mx-3 mb-[calc(0.75rem+env(safe-area-inset-bottom))] flex items-end gap-2 rounded-[22px] border border-input bg-card py-1.5 pr-1.5 pl-4"
         >
+          <input ref={picker} type="file" accept="image/*,application/pdf,.pdf" multiple className="sr-only" tabIndex={-1} onChange={(e) => (addFiles(e.target.files), (e.target.value = ""))} />
+          <button type="button" onClick={() => picker.current?.click()} className="-ml-2.5 grid size-9 flex-none place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={t("attach")} title={t("attach")}>
+            <Paperclip className="size-4" />
+          </button>
           <textarea
             ref={input}
             value={draft}
@@ -389,6 +492,68 @@ function EventProposal({ ev, saved, onSave, onEdit }: { ev: AiEvent; saved: bool
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+/** A file in the conversation: what is it for, then what became of it */
+function FileCard({
+  m,
+  onLedger,
+  onCalendar,
+  onSaveDate,
+  onEditDate,
+}: {
+  m: Extract<Msg, { role: "file" }>;
+  onLedger: () => void;
+  onCalendar: () => void;
+  onSaveDate: (k: number, ev: AiEvent) => void;
+  onEditDate: (ev: AiEvent) => void;
+}) {
+  const t = useTranslations("aiPanel");
+  return (
+    <div className="grid w-[94%] gap-2 self-end">
+      <p className="flex items-center gap-2 self-end rounded-[18px] rounded-br-md bg-primary/10 px-3.5 py-2 text-[14px] font-medium text-primary">
+        <FileText className="size-4 flex-none" aria-hidden />
+        <span className="truncate">{m.name}</span>
+      </p>
+      {m.step === "ask" && (
+        <div className="grid gap-2 self-start rounded-[18px] border border-border bg-card p-3">
+          <p className="text-[13.5px] font-semibold">{t("fileAsk")}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={onLedger} className="flex flex-col items-center gap-1 rounded-2xl bg-muted px-2 py-3 text-[13px] font-semibold hover:bg-muted/70">
+              <Receipt className="size-5 text-brand" aria-hidden />
+              {t("fileLedger")}
+            </button>
+            <button type="button" onClick={onCalendar} className="flex flex-col items-center gap-1 rounded-2xl bg-muted px-2 py-3 text-[13px] font-semibold hover:bg-muted/70">
+              <CalendarPlus className="size-5 text-[#6a4ae6]" aria-hidden />
+              {t("fileCalendar")}
+            </button>
+          </div>
+        </div>
+      )}
+      {m.step === "ledger" && (
+        <p className="self-start rounded-2xl bg-muted px-3.5 py-2 text-[13.5px]">
+          {t("fileQueued")}{" "}
+          <Link href="/upload" className="font-semibold text-primary hover:underline">
+            {t("fileOpenUpload")} →
+          </Link>
+        </p>
+      )}
+      {m.step === "reading" && (
+        <p className="flex items-center gap-2 self-start text-[13px] text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" aria-hidden />
+          {t("fileReading")}
+        </p>
+      )}
+      {m.step === "none" && <p className="self-start rounded-2xl bg-muted px-3.5 py-2 text-[13.5px]">{t("fileNone")}</p>}
+      {m.step === "failed" && <p className="self-start rounded-2xl bg-bad-soft px-3.5 py-2 text-[13.5px] text-bad">{t("fileFail")}</p>}
+      {m.step === "dates" &&
+        m.dates?.map((ev, k) => (
+          <div key={k} className="self-start w-full">
+            <EventProposal ev={ev} saved={!!m.saved?.includes(k)} onSave={() => onSaveDate(k, ev)} onEdit={() => onEditDate(ev)} />
+          </div>
+        ))}
     </div>
   );
 }

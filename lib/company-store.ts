@@ -3,6 +3,7 @@
 // Company-wide settings (public.company_settings, one row). Everyone reads; only admins can save (RLS).
 
 import { useEffect, useSyncExternalStore } from "react";
+import { type ExcelFormat, readExcelFormat } from "./excel-format";
 import { supabaseBrowser } from "./supabase/client";
 
 export interface CompanySettings {
@@ -20,15 +21,17 @@ export interface CompanySettings {
   payrollSettings: Record<string, unknown>;
   /** POS export columns remembered from an import (lib/pos-import posColumnsOf) */
   posColumns: Record<string, unknown>;
+  /** The accountant's Excel column layout (lib/excel-format), or null = the usual one */
+  excelFormat: ExcelFormat | null;
 }
 
-const EMPTY: CompanySettings = { loaded: false, taxId: "", formConfig: {}, stickerNames: {}, appFees: {}, costTargets: {}, channelNames: {}, payrollSettings: {}, posColumns: {} };
+const EMPTY: CompanySettings = { loaded: false, taxId: "", formConfig: {}, stickerNames: {}, appFees: {}, costTargets: {}, channelNames: {}, payrollSettings: {}, posColumns: {}, excelFormat: null };
 let current: CompanySettings = EMPTY;
 let started = false;
 const listeners = new Set<() => void>();
 
 async function load() {
-  const { data } = await supabaseBrowser().from("company_settings").select("tax_id, form_config, sticker_names, app_fees, cost_targets, channel_names, payroll_settings, pos_columns").eq("id", 1).maybeSingle();
+  const { data } = await supabaseBrowser().from("company_settings").select("tax_id, form_config, sticker_names, app_fees, cost_targets, channel_names, payroll_settings, pos_columns, excel_format").eq("id", 1).maybeSingle();
   current = {
     loaded: true,
     taxId: data?.tax_id ?? "",
@@ -39,6 +42,7 @@ async function load() {
     channelNames: (data?.channel_names as Record<string, string>) ?? {},
     payrollSettings: (data?.payroll_settings as Record<string, unknown>) ?? {},
     posColumns: (data?.pos_columns as Record<string, unknown>) ?? {},
+    excelFormat: readExcelFormat(data?.excel_format),
   };
   listeners.forEach((l) => l());
 }
@@ -67,7 +71,7 @@ export async function companyTaxId(): Promise<string> {
 }
 
 /** Admin only (the database refuses anyone else). */
-export async function saveCompany(patch: Partial<{ tax_id: string; form_config: unknown; sticker_names: unknown; app_fees: unknown; cost_targets: unknown; channel_names: unknown; payroll_settings: unknown; pos_columns: unknown }>) {
+export async function saveCompany(patch: Partial<{ tax_id: string; form_config: unknown; sticker_names: unknown; app_fees: unknown; cost_targets: unknown; channel_names: unknown; payroll_settings: unknown; pos_columns: unknown; excel_format: unknown }>) {
   const { data, error } = await supabaseBrowser().from("company_settings").update(patch).eq("id", 1).select("id");
   if (error) throw error;
   if (!data?.length) throw new Error("not allowed");

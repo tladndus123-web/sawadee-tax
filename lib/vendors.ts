@@ -5,6 +5,7 @@
 //     (branches share one tax ID but print different addresses, so a read address is never replaced)
 
 import { normalize, triHas } from "./normalize";
+import { dueByTerms, parsePayTerms, type PayTerms } from "./pay-terms";
 import { digitsOnly, taxIdOk } from "./thai-tax";
 import { isCategoryKey, PAYMENTS } from "./types";
 import type { Category, LedgerDoc, Tri } from "./types";
@@ -22,6 +23,8 @@ export interface Vendor {
   rulePayment: string | null;
   /** Save a new document that passes every check without asking (admins switch it) */
   autoRegister: boolean;
+  /** Payment terms (lib/pay-terms): the due date of their documents when the paper prints none */
+  payTerms?: PayTerms | null;
   /** How to pay them (admins set it): PromptPay ID, bank code (lib/promptpay THAI_BANKS), account number and name */
   pay: VendorPay;
 }
@@ -51,10 +54,11 @@ export interface VendorRow {
   pay_bank?: string | null;
   pay_account?: string | null;
   pay_name?: string | null;
+  pay_terms?: string | null;
 }
 
 /** Columns the app reads from public.vendors */
-export const VENDOR_COLUMNS = "id, tax_id, name, address, branch, tel, fax, rule_category, rule_payment, auto_register, pay_promptpay, pay_bank, pay_account, pay_name";
+export const VENDOR_COLUMNS = "id, tax_id, name, address, branch, tel, fax, rule_category, rule_payment, auto_register, pay_promptpay, pay_bank, pay_account, pay_name, pay_terms";
 
 /** Rows through normalize() so any stored shape becomes clean {th, en, ja} */
 export function toVendor(r: VendorRow): Vendor {
@@ -70,12 +74,13 @@ export function toVendor(r: VendorRow): Vendor {
     ruleCategory: r.rule_category ?? null,
     rulePayment: r.rule_payment ?? null,
     autoRegister: !!r.auto_register,
+    payTerms: parsePayTerms(r.pay_terms),
     pay: { promptpay: r.pay_promptpay ?? "", bank: r.pay_bank ?? "", account: r.pay_account ?? "", name: r.pay_name ?? "" },
   };
 }
 
 /** Which seller fields the dictionary changed, as field paths */
-export type VendorFix = "seller.name" | "seller.address" | "seller.branch" | "seller.tel" | "seller.fax" | "category" | "payment";
+export type VendorFix = "seller.name" | "seller.address" | "seller.branch" | "seller.tel" | "seller.fax" | "category" | "payment" | "dueDate";
 
 const sameTri = (a: Tri, b: Tri) => a.th === b.th && a.en === b.en && a.ja === b.ja;
 
@@ -116,7 +121,22 @@ const NO_TRI: Tri = { th: "", en: "", ja: "" };
 /** The vendor's rule wins over the AI and over history (the person set it on purpose) */
 export function applyRule(doc: LedgerDoc, v: Vendor | null | undefined): { doc: LedgerDoc; fixed: VendorFix[] } {
   if (!v) return { doc, fixed: [] };
-  return applyHistory(doc, { category: v.ruleCategory ?? doc.category, payment: v.rulePayment ?? doc.payment });
+  const ruled = applyHistory(doc, { category: v.ruleCategory ?? doc.category, payment: v.rulePayment ?? doc.payment });
+  const termed = applyTerms(ruled.doc, v.payTerms);
+  return { doc: termed.doc, fixed: [...ruled.fixed, ...termed.fixed] };
+}
+
+/**
+ * The supplier's payment terms, when the paper prints no due date (a printed one always wins): "now" = paid on its
+ * own date; otherwise the due date (and the credit days, for credit N days).
+ */
+export function applyTerms(doc: LedgerDoc, terms: PayTerms | null | undefined): { doc: LedgerDoc; fixed: VendorFix[] } {
+  if (!terms || doc.dueDate || doc.paid) return { doc, fixed: [] };
+  if (terms === "now") return doc.date ? { doc: { ...doc, paid: true, paidDate: doc.date }, fixed: [] } : { doc, fixed: [] };
+  const due = dueByTerms(doc.date, terms);
+  if (!due) return { doc, fixed: [] };
+  const credit = terms.startsWith("days:") ? Number(terms.slice(5)) : doc.creditDays;
+  return { doc: { ...doc, dueDate: due, creditDays: credit }, fixed: ["dueDate"] };
 }
 
 /**

@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (507) · `npm run db:test` (330 in 3 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (528) · `npm run db:test` (335 in 4 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -88,6 +88,15 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   an approved claim with `document_id` = the document (`claimFromDocument`, `moveToClaim`, `components/expenses/ToExpenseCard.tsx`);
   the document stays (cost counted once); paying back marks it paid (`payClaims` → `setPaidMany`). One claim per
   document: unique index `…002700_claim_from_document.sql`.
+- **Customising** (2026-10-27, owner's picks): supplier **payment terms** (`vendors.pay_terms`, `lib/pay-terms.ts`;
+  `applyTerms` inside `applyRule` → due date when the paper prints none, "now" = paid on its date; selector in
+  `VendorRule`); **dashboard cards** order / hide per person (`lib/dash-layout.ts`, `DashEditor`; wide cards on top, the
+  rest in balanced columns); **saved ledger views** + this / last month filter (`lib/ledger-views.ts`, `SavedViews`,
+  `ArchiveFilter.period`); per-person prefs live in auth `user_metadata` (`lib/user-prefs.ts` `usePref`); the
+  **accountant's Excel layout** (`company_settings.excel_format`, `lib/excel-format.ts`, `ExcelFormatCard` in settings;
+  app Excel, LINE Excel and the accountant link follow it); **files in the AI panel** (drop / clip / paste → ledger queue
+  or calendar dates via `/api/calendar/read`, each date saved with a tap). `lib/messages.test.ts`: same keys in 4
+  languages, no apostrophe before `{placeholder}` (ICU escapes it).
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

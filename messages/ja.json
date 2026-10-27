@@ -432,7 +432,20 @@
     "unchecked": "事務所未確認",
     "categoryFilter": "分類で絞り込み",
     "categoryAll": "すべての分類",
-    "andMore": "{name} ほか{count}件"
+    "andMore": "{name} ほか{count}件",
+    "period": "期間",
+    "periodAll": "全期間",
+    "periodThis": "今月",
+    "periodLast": "先月",
+    "views": {
+      "title": "保存した表示",
+      "save": "この表示を保存",
+      "namePrompt": "この表示の名前（例：今月の未払い）",
+      "saved": "「{name}」を保存しました",
+      "remove": "{name}を削除",
+      "edit": "編集",
+      "done": "完了"
+    }
   },
   "auth": {
     "title": "ログイン",
@@ -615,7 +628,15 @@
     "view": "表示",
     "viewFolders": "フォルダ",
     "viewList": "一覧",
-    "folderCount": "{count}社"
+    "folderCount": "{count}社",
+    "terms": {
+      "label": "支払条件",
+      "now": "その場で支払い",
+      "days": "掛け {n}日",
+      "eom": "月末",
+      "next": "翌月{n}日",
+      "hint": "支払条件を決めると、支払期日のないこの取引先の書類に期日が自動で入ります。"
+    }
   },
   "dash": {
     "title": "ダッシュボード",
@@ -681,7 +702,25 @@
     "goal": "目標 {amount}",
     "perDay": "残り営業日 {days}日 · 1日あたり {amount} 追加",
     "perDayNone": "今月の営業日は終わりました",
-    "setGoal": "月の売上目標を設定 →"
+    "setGoal": "月の売上目標を設定 →",
+    "cards": {
+      "edit": "カード編集",
+      "title": "ダッシュボードのカード",
+      "sub": "よく見るカードは上へ、見ないカードは隠せます。アカウントに保存され、スマホ・PCで同じです。",
+      "profit": "今月の残ったお金",
+      "tiles": "売上・仕入・未払い・VAT",
+      "todo": "やること",
+      "recent": "直近7日の売上",
+      "cost": "原価管理",
+      "team": "スタッフ別の作業",
+      "up": "上へ",
+      "down": "下へ",
+      "show": "表示",
+      "hide": "隠す",
+      "note": "横長のカード（残ったお金・4つの数字）は常に上、ほかは2列に自動で並びます。",
+      "reset": "元に戻す",
+      "done": "完了"
+    }
   },
   "line": {
     "title": "LINE連携",
@@ -2116,6 +2155,30 @@
     "remind": "お知らせ",
     "save": "保存",
     "edit": "直す",
-    "saved": "予定に入れました"
+    "saved": "予定に入れました",
+    "attach": "ファイルを添付",
+    "dropHere": "ここにドロップ · 領収書・契約書・許可証",
+    "fileType": "写真（JPG・PNG）かPDFだけ添付できます。",
+    "fileAsk": "このファイルをどうしますか？",
+    "fileLedger": "帳簿に登録（領収書）",
+    "fileCalendar": "日付を読んで予定に入れる",
+    "fileQueued": "アップロード画面でAIが読んでいます。",
+    "fileOpenUpload": "見に行く",
+    "fileReading": "日付を読んでいます…",
+    "fileNone": "このファイルから日付が見つかりませんでした。",
+    "fileFail": "ファイルを読めませんでした。もう一度どうぞ。"
+  },
+  "excelFmt": {
+    "title": "会計士用Excelの形式",
+    "sub": "会計士が必要な列だけ選び、順番を変え、会計士の呼び方に変えられます。アプリのExcel、LINEのExcel、会計士リンクがすべてこの形式になります。",
+    "custom": "カスタム {n}列",
+    "usual": "標準の形式",
+    "namePh": "名前はそのまま",
+    "name": "{col}の列名",
+    "up": "上へ",
+    "down": "下へ",
+    "reset": "標準に戻す",
+    "save": "保存",
+    "saved": "Excelの形式を保存しました"
   }
 }

@@ -13,6 +13,7 @@ import { daysUntil, summarize, upcoming, vatFiling } from "./dashboard";
 import { type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
 import { buildMonthExport } from "./export";
 import { buildMonthXlsx, XLSX_TYPE, type XlsxLabels } from "./export-xlsx";
+import { type ExcelFormat, readExcelFormat } from "./excel-format";
 import { branchWords } from "./line";
 import { type Ask, EXCEL_LINK_SECONDS } from "./line-ask";
 import { dueCard, excelCard, salesCard, summaryCard, vatCard } from "./line-dash";
@@ -37,7 +38,7 @@ export async function ledger(admin: Admin) {
   await serverCategories();
   const [docs, settings] = await Promise.all([
     admin.from("documents").select("*, document_items(*)").is("deleted_at", null),
-    admin.from("company_settings").select("tax_id, name").eq("id", 1).maybeSingle(),
+    admin.from("company_settings").select("tax_id, name, excel_format").eq("id", 1).maybeSingle(),
   ]);
   if (docs.error || settings.error) throw docs.error ?? settings.error;
   const rows = (docs.data ?? []) as Row[];
@@ -50,6 +51,8 @@ export async function ledger(admin: Admin) {
     drafts: rows.filter((r) => r.status === "draft").map(toDoc),
     taxId: (settings.data?.tax_id as string | undefined) ?? "",
     company: name.en || name.th || name.ja || "",
+    /** The accountant's column layout for the Excel (lib/excel-format) */
+    excelFormat: readExcelFormat(settings.data?.excel_format),
   };
 }
 
@@ -236,18 +239,18 @@ async function excelLabels(): Promise<XlsxLabels> {
 }
 
 /** One month's purchase ledger as an Excel file */
-export async function monthXlsx(saved: { doc: LedgerDoc }[], month: string, taxId: string): Promise<{ file: Buffer; count: number }> {
+export async function monthXlsx(saved: { doc: LedgerDoc }[], month: string, taxId: string, format?: ExcelFormat | null): Promise<{ file: Buffer; count: number }> {
   const docs = saved.filter((d) => monthKey(d.doc) === month);
   const data = buildMonthExport(
     docs.map((d) => ({ doc: d.doc, flags: flagsFor(d.doc, { companyTaxId: taxId }).filter((f) => f !== "unclear").length })),
     "ja",
     taxId,
   );
-  return { file: Buffer.from(await buildMonthXlsx(data, true, await excelLabels())), count: docs.length };
+  return { file: Buffer.from(await buildMonthXlsx(data, true, { ...(await excelLabels()), format })), count: docs.length };
 }
 
 async function excelFiles(admin: Admin, today: string) {
-  const { saved, taxId } = await ledger(admin);
+  const { saved, taxId, excelFormat } = await ledger(admin);
   // Earlier links' files are not kept
   const old = await admin.storage.from(BUCKET).list("", { limit: 100 });
   // (only the Excel files at the top; the accountant links' photo ZIPs live under share/)
@@ -261,7 +264,7 @@ async function excelFiles(admin: Admin, today: string) {
   const months = wanted.filter((m) => saved.some((d) => monthKey(d.doc) === m));
   const files = [];
   for (const m of months.length ? months : [month]) {
-    const { file, count } = await monthXlsx(saved, m, taxId);
+    const { file, count } = await monthXlsx(saved, m, taxId, excelFormat);
     const path = `${crypto.randomUUID()}.xlsx`;
     const up = await admin.storage.from(BUCKET).upload(path, file, { contentType: XLSX_TYPE });
     if (up.error) throw up.error;

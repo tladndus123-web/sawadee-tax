@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { normalize } from "./normalize";
 import { sampleDoc } from "./sample";
-import { applyHistory, applyRule, applyVendor, canAutoRegister, canPay, pickVendor, suggestRule, type Vendor, vendorCategory } from "./vendors";
+import { applyHistory, applyRule, applyTerms, applyVendor, canAutoRegister, canPay, pickVendor, suggestRule, type Vendor, vendorCategory } from "./vendors";
 
 const vendor: Vendor = {
   id: "v1",
@@ -145,5 +145,21 @@ describe("canPay", () => {
     expect(canPay(pay("", "1234567890"))).toBe(true);
     expect(canPay(pay("12345"))).toBe(false);
     expect(canPay(pay(""))).toBe(false);
+  });
+});
+
+describe("supplier payment terms on a new reading", () => {
+  const base = () => normalize({ date: "2026-10-20", seller: { name: { en: "MAKRO" }, taxId: "0105536092641" }, payment: "transfer", totals: { net: 100 } });
+  it("fills the due date when the paper has none; a printed one wins", () => {
+    const { doc, fixed } = applyTerms(base(), "days:30");
+    expect(doc.dueDate).toBe("2026-11-19");
+    expect(doc.creditDays).toBe(30);
+    expect(fixed).toEqual(["dueDate"]);
+    expect(applyTerms({ ...base(), dueDate: "2026-10-31" }, "days:30").doc.dueDate).toBe("2026-10-31");
+    expect(applyTerms(base(), "eom").doc.dueDate).toBe("2026-10-31");
+  });
+  it("'paid on the spot' starts paid on its own date; no terms change nothing", () => {
+    expect(applyTerms(base(), "now").doc).toMatchObject({ paid: true, paidDate: "2026-10-20" });
+    expect(applyTerms(base(), null).fixed).toEqual([]);
   });
 });

@@ -13,8 +13,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
   const admin = supabaseAdmin();
   const share = await shareMonth(admin, token);
   if (!share) return new Response("This link has expired or is not valid.", { status: 404 });
-  const { saved, taxId } = await ledger(admin);
-  const { file } = await monthXlsx(saved, share.month, taxId);
+  const { saved, taxId, excelFormat } = await ledger(admin);
+  const { file } = await monthXlsx(saved, share.month, taxId, excelFormat);
   return new Response(new Uint8Array(file), {
     headers: {
       "content-type": XLSX_TYPE,
