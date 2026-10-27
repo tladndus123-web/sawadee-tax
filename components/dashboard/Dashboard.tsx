@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, ChevronDown, ChevronRight, CircleCheck, Clock, Inbox, Landmark, Loader2, Lock, QrCode, Receipt, TrendingUp, Undo2, Wallet, Check } from "lucide-react";
+import { CalendarClock, ChevronDown, ListChecks, ChevronRight, CircleCheck, Clock, Inbox, Landmark, Loader2, Lock, QrCode, Receipt, TrendingUp, Undo2, Wallet, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { canPay } from "@/lib/vendors";
 import { amountToPay, hasWht, whtTax } from "@/lib/wht";
@@ -31,7 +31,9 @@ import { ALL } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
 import { BranchTable } from "./BranchTable";
 import { DashEditor } from "./DashEditor";
-import { arrange, type DashCard } from "@/lib/dash-layout";
+import { ADMIN_ONLY, arrange, type DashCard } from "@/lib/dash-layout";
+import { ClaimsCard } from "./ClaimsCard";
+import { UpcomingCard } from "./UpcomingCard";
 import { useDashLayout } from "@/lib/dash-layout-store";
 import { GoalBars } from "./GoalBars";
 import { RecentSalesCard } from "./RecentSalesCard";
@@ -51,7 +53,6 @@ const later = <Loader2 className="mx-auto my-4 size-5 animate-spin text-muted-fo
 const UncheckedList = dynamic(() => import("./UncheckedList").then((m) => m.UncheckedList), { loading: () => later });
 const VatCard = dynamic(() => import("./VatCard").then((m) => m.VatCard), { loading: () => later });
 const MonthCloseCard = dynamic(() => import("./MonthCloseCard").then((m) => m.MonthCloseCard), { loading: () => later });
-const TeamCard = dynamic(() => import("./TeamCard").then((m) => m.TeamCard));
 // The QR (and its drawing library) only when a bill is being paid
 const PayQr = dynamic(() => import("@/components/vendors/PayQr").then((m) => m.PayQr), { loading: () => later });
 
@@ -176,7 +177,8 @@ export function Dashboard() {
     todo: (
         <section aria-labelledby="todo-title" className="workspace-panel grid min-w-0 grid-cols-1 content-start px-4 pt-3 pb-1 sm:px-5">
           <div className="flex items-center justify-between gap-2 pt-1 pb-1">
-            <h2 id="todo-title" className="px-1 text-lg font-semibold tracking-tight">
+            <h2 id="todo-title" className="flex items-center gap-2 px-1 text-lg font-semibold tracking-tight">
+              <ListChecks className="size-5 text-brand" aria-hidden />
               {t("dash.todo")}
             </h2>
             <FoldAllButton />
@@ -218,10 +220,11 @@ export function Dashboard() {
     recent: <RecentSalesCard today={today} />,
     // In more detail: food, labour and rent against sales (FL / FLR)
     cost: <CostCard month={month} salesValue={result.salesValue} purchases={purchases} fixed={fixed} fold />,
-    // Admins: who did what this month
-    team: isAdmin ? <TeamCard month={month} /> : null,
+    // Admins: the next two weeks from the tax calendar, and staff expense claims
+    upcoming: isAdmin ? <UpcomingCard today={today} /> : null,
+    claims: isAdmin ? <ClaimsCard today={today} /> : null,
   };
-  const layout = arrange({ ...dash, hidden: [...dash.hidden, ...(isAdmin ? [] : (["team"] as DashCard[]))] });
+  const layout = arrange({ ...dash, hidden: [...dash.hidden, ...(isAdmin ? [] : [...ADMIN_ONLY])] });
 
   if (!loaded) return <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
 

@@ -3,7 +3,7 @@
 // Dashboard: the last seven days of sales, ending yesterday, with yesterday against the same weekday a week before.
 // A day without sales shows "closed" on the branch's closing weekdays, else a dash (not entered yet).
 
-import { ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
+import { BarChart3, ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { Link } from "@/i18n/navigation";
@@ -45,7 +45,8 @@ export function RecentSalesCard({ today }: { today: string }) {
     <section className="workspace-panel flex flex-1 flex-col gap-4 p-5 sm:p-6" aria-labelledby="recent-title">
       <Link href="/sales" className="press flex items-start justify-between gap-3 rounded-lg">
         <span className="grid gap-0.5">
-          <h2 id="recent-title" className="text-lg font-semibold tracking-tight">
+          <h2 id="recent-title" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+            <BarChart3 className="size-5 text-brand" aria-hidden />
             {t("title")}
           </h2>
           <span className="text-xs text-muted-foreground tabular-nums">{t("total", { amount: bahtWhole(fromSatang(r.total)) })}</span>

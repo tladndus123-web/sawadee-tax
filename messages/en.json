@@ -712,14 +712,27 @@
       "todo": "To do",
       "recent": "Last 7 days of sales",
       "cost": "Cost control",
-      "team": "Work by staff",
       "up": "Up",
       "down": "Down",
       "show": "Show",
       "hide": "Hide",
       "note": "Wide cards (what's left, the four figures) stay on top; the rest arrange themselves in two columns.",
       "reset": "Back to usual",
-      "done": "Done"
+      "done": "Done",
+      "upcoming": "Coming up (2 weeks)",
+      "claims": "Expense claims"
+    },
+    "upcoming2": {
+      "title": "Coming up",
+      "all": "Full calendar",
+      "none": "No taxes, papers or company dates in the next two weeks."
+    },
+    "claims": {
+      "title": "Expense claims",
+      "pending": "Waiting",
+      "owed": "To pay back",
+      "paid": "Paid back this month",
+      "count": "{n}"
     }
   },
   "line": {

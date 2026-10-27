@@ -91,7 +91,8 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 - **Customising** (2026-10-27, owner's picks): supplier **payment terms** (`vendors.pay_terms`, `lib/pay-terms.ts`;
   `applyTerms` inside `applyRule` → due date when the paper prints none, "now" = paid on its date; selector in
   `VendorRule`); **dashboard cards** order / hide per person (`lib/dash-layout.ts`, `DashEditor`; wide cards on top, the
-  rest in balanced columns); **saved ledger views** + this / last month filter (`lib/ledger-views.ts`, `SavedViews`,
+  rest in balanced columns; cards: profit, tiles, to-do, coming up (`UpcomingCard`, 2 weeks of the calendar without
+  bills / VAT), last 7 days, cost, expense claims (`ClaimsCard`); the staff card left 2026-10-27); **saved ledger views** + this / last month filter (`lib/ledger-views.ts`, `SavedViews`,
   `ArchiveFilter.period`); per-person prefs live in auth `user_metadata` (`lib/user-prefs.ts` `usePref`); the
   **accountant's Excel layout** (`company_settings.excel_format`, `lib/excel-format.ts`, `ExcelFormatCard` in settings;
   app Excel, LINE Excel and the accountant link follow it); **files in the AI panel** (drop / clip / paste → ledger queue

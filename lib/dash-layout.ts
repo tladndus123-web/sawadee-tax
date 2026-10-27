@@ -3,9 +3,12 @@
 // phone and PC. Wide cards (the month, the four figures) sit on top in their order; the others flow in two columns
 // below, in their order, the columns balancing themselves.
 
-export const DASH_CARDS = ["profit", "tiles", "todo", "recent", "cost", "team"] as const;
+// (owner 2026-10-27: the staff card left the dashboard; the next two weeks and the expense claims joined)
+export const DASH_CARDS = ["profit", "tiles", "todo", "upcoming", "recent", "cost", "claims"] as const;
 export type DashCard = (typeof DASH_CARDS)[number];
 export const WIDE: ReadonlySet<DashCard> = new Set(["profit", "tiles"]);
+/** Cards only admins see */
+export const ADMIN_ONLY: ReadonlySet<DashCard> = new Set(["upcoming", "claims"]);
 
 export interface DashLayout {
   order: DashCard[];
