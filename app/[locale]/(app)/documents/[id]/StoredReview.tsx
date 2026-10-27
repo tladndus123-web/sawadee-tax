@@ -21,6 +21,7 @@ import { reviewRun } from "@/lib/review-run";
 import { todayBangkok } from "@/lib/thai-tax";
 import { hasWht } from "@/lib/wht";
 import { useOfferRule } from "@/components/vendors/offer-rule";
+import { ToExpenseCard } from "@/components/expenses/ToExpenseCard";
 
 export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: boolean }) {
   const t = useTranslations();
@@ -178,6 +179,12 @@ export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: 
         }}
         onClose={() => router.push("/ledger")}
       />
+      {/* A member paid it themselves → their expense claim (admins) */}
+      {entry.status === "final" && !entry.deletedAt && (
+        <div className="lg:ml-[calc(360px+2rem)]">
+          <ToExpenseCard documentId={entry.id} doc={entry.doc} photoPath={entry.photoPath} />
+        </div>
+      )}
       <div className="print:hidden lg:ml-[calc(360px+2rem)]">
         <ActivityList key={entry.updatedAt} documentId={entry.id} limit={30} shown={5} title={t("dash.history")} />
       </div>

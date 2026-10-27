@@ -6,13 +6,13 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { docToRow } from "./db-map";
-import { type Claim, claimDoc, type ExpenseSettings, type PaidHow, readExpenseSettings, rowToClaim } from "./expenses";
-import { reloadLedger } from "./ledger-store";
+import { type Claim, claimDoc, claimFromDocument, type ExpenseSettings, type PaidHow, readExpenseSettings, rowToClaim } from "./expenses";
+import { reloadLedger, setPaidMany } from "./ledger-store";
 import { photoHash } from "./photo-hash";
 import { ALL } from "./branches";
 import { branchNow } from "./branch-store";
 import { supabaseBrowser } from "./supabase/client";
-import type { Category } from "./types";
+import type { Category, LedgerDoc } from "./types";
 
 type Snap = { claims: Claim[]; settings: ExpenseSettings; loaded: boolean };
 let snap: Snap = { claims: [], settings: readExpenseSettings(null), loaded: false };
@@ -98,6 +98,19 @@ export async function removeClaim(id: string) {
   await reloadClaims();
 }
 
+/**
+ * A ledger document the person paid themselves → their claim, approved (admins; owner 2026-10-27). The document stays
+ * where it is; paying the claim back marks it paid. One claim per document (the database refuses a second).
+ */
+export async function moveToClaim(documentId: string, doc: LedgerDoc, photoPath: string | null, person: { userId: string; name: string }, note = "") {
+  const row = claimFromDocument(doc, documentId, person, note);
+  const { error } = await supabaseBrowser()
+    .from("expense_claims")
+    .insert({ ...row, ...(photoPath ? { photo_path: photoPath } : {}), decided_at: new Date().toISOString() });
+  if (error) throw error;
+  await reloadClaims();
+}
+
 /** Approve, reject (with a reason) or send back to waiting */
 export async function decideClaims(ids: string[], status: "approved" | "rejected" | "pending", reason = "") {
   const { error } = await supabaseBrowser().from("expense_claims").update({ status, reason: status === "rejected" ? reason.trim().slice(0, 300) : "" }).in("id", ids);
@@ -122,6 +135,8 @@ export async function payClaims(claims: Claim[], paidOn: string, how: PaidHow, c
     }
     const { error } = await sb.from("expense_claims").update({ status: "paid", paid_on: paidOn, paid_how: how, document_id: c.documentId ?? c.id }).eq("id", c.id);
     if (error) throw error;
+    // A document moved over from the ledger: it is now paid (by the company, to the person)
+    if (c.documentId) await setPaidMany([c.documentId], true, paidOn);
     notifyClaim(c.id);
   }
   await Promise.all([reloadClaims(), reloadLedger()]);

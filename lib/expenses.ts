@@ -199,3 +199,24 @@ export const rowToClaim = (r: Record<string, unknown>): Claim => ({
   createdAt: r.created_at as string,
 });
 
+
+/**
+ * A ledger document a member paid out of their own pocket → their expense claim (owner, 2026-10-27: "장부에서 경비로
+ * 넘기기"). The document stays in the ledger (its cost counts once); the claim points at it, starts approved (an admin
+ * moves it) and, once paid back, marks that document paid instead of adding a new one.
+ */
+export function claimFromDocument(doc: LedgerDoc, documentId: string, person: { userId: string; name: string }, note = "") {
+  return {
+    user_id: person.userId,
+    name: person.name.trim().slice(0, 80),
+    ...(doc.branchId ? { branch_id: doc.branchId } : {}),
+    day: doc.date,
+    seller: (doc.seller.name.en || doc.seller.name.th || doc.seller.name.ja || "").slice(0, 120),
+    amount: docAmount(doc),
+    category: doc.category,
+    note: note.trim().slice(0, 500),
+    doc,
+    status: "approved" as const,
+    document_id: documentId,
+  };
+}

@@ -6,6 +6,8 @@ import { messagingApi } from "@line/bot-sdk";
 import { baht } from "./money";
 import { dmy } from "./thai-tax";
 import { four, inLang, LANG_SPLIT, type LineLang, type Words } from "./line-lang";
+import { appUrl } from "./app-url";
+import { linksOutside } from "./line-links";
 
 // Keys never contain whitespace; a line break or space pasted into .env makes LINE refuse some calls
 const key = (v: string | undefined) => (v ?? "").replace(/\s+/g, "");
@@ -17,9 +19,24 @@ export function lineConfig() {
   };
 }
 
+/**
+ * Every message the bot sends, its links to the app marked to open in the phone's own browser, where the sign-in
+ * stays and Face ID works (lib/line-links; owner 2026-10-27)
+ */
+class AppLinksClient extends messagingApi.MessagingApiClient {
+  override pushMessage(req: messagingApi.PushMessageRequest, retryKey?: string) {
+    return super.pushMessage({ ...req, messages: linksOutside(req.messages, appUrl()) }, retryKey);
+  }
+  override replyMessage(req: messagingApi.ReplyMessageRequest) {
+    return super.replyMessage({ ...req, messages: linksOutside(req.messages, appUrl()) });
+  }
+  override multicast(req: messagingApi.MulticastRequest, retryKey?: string) {
+    return super.multicast({ ...req, messages: linksOutside(req.messages, appUrl()) }, retryKey);
+  }
+}
+
 // The base URLs are only overridden by the local end-to-end check (a fake LINE server)
-export const lineClient = () =>
-  new messagingApi.MessagingApiClient({ channelAccessToken: lineConfig().channelAccessToken, baseURL: process.env.LINE_API_BASE_URL || undefined });
+export const lineClient = () => new AppLinksClient({ channelAccessToken: lineConfig().channelAccessToken, baseURL: process.env.LINE_API_BASE_URL || undefined });
 export const lineBlobClient = () =>
   new messagingApi.MessagingApiBlobClient({ channelAccessToken: lineConfig().channelAccessToken, baseURL: process.env.LINE_DATA_API_BASE_URL || undefined });
 

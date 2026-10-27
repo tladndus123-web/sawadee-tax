@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { monthExpenses, type Claim, claimDoc, claimProblems, claimSummary, DEFAULT_EXPENSE_CATEGORIES, docAmount, owed, readExpenseSettings } from "./expenses";
+import { monthExpenses, type Claim, claimDoc, claimFromDocument, claimProblems, claimSummary, DEFAULT_EXPENSE_CATEGORIES, docAmount, owed, readExpenseSettings } from "./expenses";
 import { normalize } from "./normalize";
 
 const claim = (over: Partial<Claim>): Claim => ({
@@ -90,5 +90,14 @@ describe("the month's expenses", () => {
       people: [{ name: "Nida", amount: 118000 }, { name: "Somchai", amount: 35000 }],
       categories: [{ category: "food", amount: 118000 }, { category: "supplies", amount: 35000 }],
     });
+  });
+});
+
+describe("ledger document → expense claim", () => {
+  it("keeps the document, points at it, the person's name and the read amount", () => {
+    const doc = { ...normalize({ date: "2026-10-20", seller: { name: { th: "แม็คโคร", en: "MAKRO" } }, totals: { net: 1234.5 }, category: "food" }), branchId: "b1" };
+    const row = claimFromDocument(doc, "d1", { userId: "u1", name: " Somchai " }, "ice");
+    expect(row).toMatchObject({ user_id: "u1", name: "Somchai", branch_id: "b1", day: "2026-10-20", seller: "MAKRO", amount: 123450, category: "food", note: "ice", status: "approved", document_id: "d1" });
+    expect(row.doc).toBe(doc);
   });
 });

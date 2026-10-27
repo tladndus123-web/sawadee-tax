@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (504) · `npm run db:test` (328 in 3 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (507) · `npm run db:test` (330 in 3 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -80,6 +80,14 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   sales); same `assistant_turns` history as LINE, counted in `assistant_usage`. Answers = the navy card
   (`components/assistant/AssistantPanel.tsx` CardView); "put X in the calendar" → `event` proposal (`parseEvent`),
   saved by the app only when Save is tapped (or changed in the calendar's `EventDialog`). Messages `aiPanel.*`.
+- **LINE links open outside LINE** (2026-10-27): every app link in a bot message gets `openExternalBrowser=1`
+  (`lib/line-links.ts`, applied in `lineClient()` = `AppLinksClient` for push / reply / multicast), so it opens in
+  Safari / Chrome where the sign-in stays and Face ID works (LINE's own browser keeps no sign-in). `appUrl()` lives in
+  `lib/app-url.ts` (re-exported by line-bot).
+- **Ledger → expense claim** (2026-10-27): admins, on a saved document, "경비 청구로 넘기기" picks who paid →
+  an approved claim with `document_id` = the document (`claimFromDocument`, `moveToClaim`, `components/expenses/ToExpenseCard.tsx`);
+  the document stays (cost counted once); paying back marks it paid (`payClaims` → `setPaidMany`). One claim per
+  document: unique index `…002700_claim_from_document.sql`.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

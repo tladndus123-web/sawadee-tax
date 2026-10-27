@@ -1,8 +1,8 @@
--- Tax calendar (…002500_company_calendar.sql) and expense claims (…002600_expense_claims.sql). Run: npm run db:test
+-- Tax calendar (…002500_company_calendar.sql) and expense claims (…002600_expense_claims.sql, …002700). Run: npm run db:test
 -- Everything rolls back; the claims are dated in 2001 so they never touch a real month.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(20);
+select plan(22);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000e0a01', 'boss@test.local'),
@@ -61,6 +61,10 @@ select throws_like($$ update public.expense_claims set status = 'paid' where id 
 
 -- Server-only expense mode on LINE
 select throws_ok($$ select count(*) from public.line_modes $$, '42501', NULL, 'signed-in users cannot read the LINE modes');
+
+-- A ledger document moved to a claim (…002700): one claim per document
+select has_index('public', 'expense_claims', 'expense_claims_one_per_document', 'a document can be moved to a claim');
+select index_is_unique('public', 'expense_claims', 'expense_claims_one_per_document', 'only once');
 
 select * from finish();
 rollback;

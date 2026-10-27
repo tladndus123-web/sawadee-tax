@@ -2061,6 +2061,21 @@
       "old": "The receipt is {n} days old",
       "big": "Far above this person's usual claim ({amount})",
       "noPhoto": "No receipt photo"
+    },
+    "move": {
+      "ask": "Did a staff member pay this with their own money?",
+      "button": "Move to expense claim",
+      "title": "Move to an expense claim",
+      "sub": "{amount} becomes money owed to the person who paid. It is approved right away.",
+      "who": "Who paid?",
+      "pick": "Pick a person",
+      "note": "Note (optional)",
+      "keeps": "This document stays in the ledger (the cost counts once). Tapping 'Paid back' on the expenses page marks it paid.",
+      "cancel": "Cancel",
+      "done": "Moved to {name}'s expense claim",
+      "fail": "Couldn't move it. It may have been moved already.",
+      "linked": "{name}'s expense claim · {status}",
+      "open": "Open expenses"
     }
   },
   "aiPanel": {

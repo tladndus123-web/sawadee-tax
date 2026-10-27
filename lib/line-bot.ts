@@ -14,6 +14,7 @@
 
 import crypto from "node:crypto";
 import type { messagingApi, webhook } from "@line/bot-sdk";
+import { appUrl } from "./app-url";
 import { type LedgerRef, runChecks } from "./checks";
 import { docToRow } from "./db-map";
 import { paidAtTill } from "./archive";
@@ -59,9 +60,7 @@ function wrongCodeTries(lineUser: string, add = false): number {
   return recent.length;
 }
 
-export function appUrl(): string {
-  return (process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3100")).replace(/\/$/, "");
-}
+export { appUrl };
 
 // The reader's phone language (LINE profile), remembered for an hour
 const langs = new Map<string, { lang: LineLang; at: number }>();
