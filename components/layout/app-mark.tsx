@@ -1,6 +1,6 @@
-// App logo (Sawadee TAX): a white tax invoice with a yellow check on a glowing blue tile.
-// The drawing lives in public/app-mark.svg; app/icon.svg (browser tab) is the same file and
-// app/apple-icon.png is rendered from it — keep the three in sync.
+// App logo (Sawadee TAX; owner's pick 2026-10-27): Sawadee's S on a white receipt, on the app's blue.
+// The drawing lives in public/app-mark.svg; app/icon.svg (browser tab) is the same file, and app/apple-icon.png and
+// public/icons/*.png are rendered from it (node scripts/make-app-icons.mjs) — keep them in sync.
 
 /** Soft blue light around the logo; pass a size class (e.g. "size-8") */
 // One filter with both shadows (two drop-shadow utilities would replace each other); brighter on dark backgrounds
