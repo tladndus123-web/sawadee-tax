@@ -38,15 +38,15 @@ export function AssistantButton() {
   const isAdmin = useMe().role === "admin";
   if (!isAdmin) return null;
   return (
+    // Just the mark, like the app logo (owner 2026-10-27: the wider pill squeezed the top bar); the name is the tooltip
     <button
       type="button"
       onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}
-      className="press hidden h-9 items-center gap-1.5 rounded-full bg-[#0d121c] py-1 pr-3.5 pl-1 text-[13px] font-semibold text-white shadow-sm transition-transform active:scale-[0.97] md:flex dark:bg-white/10"
+      className="press hidden size-9 flex-none place-items-center rounded-[10px] transition-transform hover:scale-105 active:scale-[0.95] md:grid"
       aria-label={t("open")}
+      title={`${t("title")} (Ctrl+K)`}
     >
-      <AiMark className="size-7 rounded-[8px]" />
-      {t("title")}
-      <kbd className="ml-0.5 rounded border border-white/25 px-1 text-[10px] font-medium text-white/60 max-lg:hidden">Ctrl K</kbd>
+      <AiMark className="size-9 rounded-[10px] [filter:drop-shadow(0_2px_6px_rgb(4_60_190/0.28))]" />
     </button>
   );
 }
