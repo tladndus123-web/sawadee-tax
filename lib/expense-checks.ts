@@ -4,7 +4,7 @@
 // - "dupReceipt": another claim with the same shop, day and amount;
 // - "personal": the receipt's lines or the shop look personal (alcohol, cigarettes, lottery, games …);
 // - "mismatch": the amount typed differs from the amount the AI read on the receipt;
-// - "old": the receipt is older than 30 days when claimed;
+// - "old": the receipt is older than 30 days when claimed (not for a ledger document moved to a claim);
 // - "big": far above what this person usually claims — the same rule as the 5-day report's "unusual spend"
 //   (lib/anomalies: 3× their median, at least ฿5,000, with 3 earlier claims or more);
 // - "noPhoto": no receipt at all.
@@ -79,7 +79,8 @@ export function claimFlags(c: Claim, ctx: CheckContext): Flag[] {
   const read = docAmount(c.doc);
   if (read > 0 && Math.abs(read - c.amount) > Math.max(100, Math.round(read * 0.01))) out.push({ kind: "mismatch", n: read });
   const age = daysBetween(c.day, c.createdAt || c.day);
-  if (age > 30) out.push({ kind: "old", n: age });
+  // (not for a document moved over from the ledger: it was booked long ago, that is the point)
+  if (age > 30 && !c.documentId) out.push({ kind: "old", n: age });
   const mine = others.filter((o) => (c.userId ? o.userId === c.userId : o.name === c.name) && o.createdAt < c.createdAt).map((o) => o.amount);
   if (mine.length >= BIG_HISTORY) {
     const usual = median(mine);

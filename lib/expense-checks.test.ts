@@ -51,6 +51,8 @@ describe("claim checks", () => {
       { kind: "old", n: 55 },
       { kind: "noPhoto" },
     ]);
+    // a ledger document moved to a claim is old by nature
+    expect(claimFlags(claim({ day: "2026-09-01", documentId: "d1" }), { claims: [] }).some((f) => f.kind === "old")).toBe(false);
     expect(personalWord(["HEINEKEN 330"])).toBe("HEINEKEN");
     expect(personalWord(["dish soap", "กระดาษทิชชู่"])).toBeNull();
   });

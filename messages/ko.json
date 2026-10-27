@@ -2076,6 +2076,19 @@
       "fail": "넘기지 못했어요. 이미 넘긴 서류일 수 있어요.",
       "linked": "{name} 님의 경비 청구 · {status}",
       "open": "경비 화면 열기"
+    },
+    "detail": {
+      "open": "영수증과 산 것 보기",
+      "see": "영수증 보기",
+      "more": "{name} 외 {n}개",
+      "photo": "영수증 사진",
+      "openPhoto": "사진 크게 보기",
+      "noPhoto": "영수증 사진이 없어요",
+      "items": "산 것",
+      "noItems": "AI가 읽은 품목이 없어요. 메모를 확인해 주세요.",
+      "total": "합계",
+      "note": "메모",
+      "ledger": "장부 서류 보기"
     }
   },
   "aiPanel": {

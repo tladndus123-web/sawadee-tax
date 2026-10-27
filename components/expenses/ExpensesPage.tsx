@@ -5,7 +5,7 @@
 // everyone's, who is owed how much, and the settings (what may be claimed, self-approval under an amount, photo
 // needed, LINE). lib/expenses has the rules, lib/expense-store the data.
 
-import { Check, ChevronRight, CircleCheck, HandCoins, Loader2, Pencil, Plus, Receipt, Settings2, Trash2, TriangleAlert, X } from "lucide-react";
+import { Check, ChevronRight, CircleCheck, HandCoins, Image as ImageIcon, Loader2, Pencil, Plus, Receipt, Settings2, Trash2, TriangleAlert, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import { baht, fromSatang } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
+import { ClaimDetail, firstItem } from "./ClaimDetail";
 import { ClaimDialog } from "./ClaimDialog";
 import { ExpenseSettingsPanel } from "./ExpenseSettingsPanel";
 
@@ -220,7 +221,11 @@ function ClaimRow({
   onEdit: () => void;
 }) {
   const t = useTranslations("expenses");
+  const locale = useLocale();
   const catLabel = useCategoryLabel();
+  // The receipt and what was bought, in full
+  const [open, setOpen] = useState(false);
+  const bought = firstItem(c.doc, locale);
   const flagText = (f: Flag) =>
     f.kind === "mismatch"
       ? t("flag.mismatch", { amount: baht(fromSatang(f.n ?? 0)) })
@@ -233,15 +238,27 @@ function ClaimRow({
             : t(`flag.${f.kind}`);
   return (
     <li className="grid gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-5">
-      <div className="flex min-w-0 items-start gap-3">
+      {open && <ClaimDetail c={c} isAdmin={isAdmin} onClose={() => setOpen(false)} />}
+      <button type="button" onClick={() => setOpen(true)} className="-m-1.5 flex min-w-0 items-start gap-3 rounded-2xl p-1.5 text-left hover:bg-muted/50" aria-label={t("detail.open")}>
         <CategoryIcon category={c.category} />
         <div className="grid min-w-0 flex-1 gap-0.5">
           <div className="flex items-baseline justify-between gap-3">
             <p className="min-w-0 truncate text-[15px] font-semibold">{isAdmin ? `${c.name} · ${c.seller || catLabel(c.category)}` : c.seller || catLabel(c.category)}</p>
             <b className="flex-none text-[16px] tabular-nums">{baht(fromSatang(c.amount))}</b>
           </div>
+          {bought && (
+            <p className="truncate text-[13px] text-foreground/80">
+              🛒 {bought.more ? t("detail.more", { name: bought.name, n: bought.more }) : bought.name}
+            </p>
+          )}
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted-foreground">
             <span>{day}</span>
+            {c.photoPath && (
+              <span className="flex items-center gap-1 font-medium text-primary">
+                · <ImageIcon className="size-3.5" aria-hidden />
+                {t("detail.see")}
+              </span>
+            )}
             <span>· {catLabel(c.category)}</span>
             {c.note && <span className="truncate">· {c.note}</span>}
             <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", STATUS_TONE[c.status])}>{t(`st.${c.status}`)}</span>
@@ -260,7 +277,7 @@ function ClaimRow({
             </ul>
           )}
         </div>
-      </div>
+      </button>
       <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
         {isAdmin && c.status === "pending" && (
           <>
@@ -280,7 +297,7 @@ function ClaimRow({
             {t("paidBack")}
           </Button>
         )}
-        {c.status === "paid" && c.documentId && isAdmin && (
+        {c.documentId && isAdmin && (
           <Button asChild variant="ghost" className="h-9 rounded-full px-3 text-primary">
             <Link href={`/documents/${c.documentId}`}>
               <CircleCheck className="size-4" />

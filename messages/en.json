@@ -2076,6 +2076,19 @@
       "fail": "Couldn't move it. It may have been moved already.",
       "linked": "{name}'s expense claim · {status}",
       "open": "Open expenses"
+    },
+    "detail": {
+      "open": "See the receipt and what was bought",
+      "see": "Receipt",
+      "more": "{name} and {n} more",
+      "photo": "Receipt photo",
+      "openPhoto": "See the photo full size",
+      "noPhoto": "No receipt photo",
+      "items": "What was bought",
+      "noItems": "No items were read. Check the note.",
+      "total": "Total",
+      "note": "Note",
+      "ledger": "Open the ledger document"
     }
   },
   "aiPanel": {
