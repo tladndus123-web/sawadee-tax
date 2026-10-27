@@ -37,8 +37,8 @@ const fmt2 = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumF
 /** 64200 → "64,200.00" */
 export const fmt = (n: number): string => fmt2.format(fromSatang(toSatang(n)));
 
-/** 64200 → "฿ 64,200.00" */
-export const baht = (n: number): string => `฿ ${fmt(n)}`;
+/** 64200 → "฿64,200.00", −5 → "−฿5.00" — written like bahtWhole, only with satang (one look everywhere, 2026-10-27) */
+export const baht = (n: number): string => `${n < 0 ? "−" : ""}฿${fmt(Math.abs(n))}`;
 
 const fmt0 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 

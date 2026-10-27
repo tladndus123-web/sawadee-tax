@@ -20,7 +20,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
   setRequestLocale(locale as Locale);
   const t = await getTranslations();
   return (
-    <div className="mx-auto grid w-full max-w-5xl grid-cols-[minmax(0,1fr)] gap-8">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-8">
       <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("settings.title")}</h1>
       <div className="grid gap-4 lg:grid-cols-2">
         <AccountCard />

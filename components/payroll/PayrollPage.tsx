@@ -45,7 +45,8 @@ export function PayrollPage() {
   const shown: Tab = tab ?? (loaded && employees.length === 0 ? "employees" : "run");
 
   return (
-    <div className={cn("mx-auto grid w-full gap-5", shown === "attendance" ? "max-w-6xl" : shown === "run" ? "max-w-4xl" : "max-w-3xl")}>
+    // One width for every tab and every screen (owner 2026-10-27: titles no longer jump between pages)
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-5">
       <header className="grid gap-1">
         <h1 className="flex items-center gap-1 text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">
           {t("title")}

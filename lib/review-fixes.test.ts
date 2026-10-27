@@ -70,7 +70,7 @@ describe("#4 the printed Thai words are the one source for the Thai line", () =>
     });
     const n = normalize(d);
     expect(n.words.th).toBe(bahtText(21));
-    expect(n.words.en).toBe("฿ 21.00");
+    expect(n.words.en).toBe("฿21.00");
   });
   it("falls back to generated words when nothing was printed", () => {
     expect(normalize({ ...sample, wordsPrinted: "" }).words.th).toBe(bahtText(64200));

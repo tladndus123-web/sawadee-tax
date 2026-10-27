@@ -59,7 +59,7 @@ export function CashBox() {
     setDraft({ kind, day: today, amount: 0, category: kind === "out" ? "food" : null, receipt: false, memo: "", branchId: branch !== ALL ? branch : (headOf(branches)?.id ?? "") });
 
   return (
-    <div className="mx-auto grid w-full max-w-3xl grid-cols-[minmax(0,1fr)] gap-5">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-5">
       <Button asChild variant="ghost" className="-ml-3 w-fit text-primary">
         <Link href="/ledger">
           <ChevronLeft className="size-4" />

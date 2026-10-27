@@ -109,6 +109,10 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   Every screen's outer grid is `grid-cols-[minmax(0,1fr)]` so a long number can never push a page wider than the phone.
   "얼굴 인증" is now **간편 로그인** (かんたんログイン / เข้าสู่ระบบด่วน / Quick sign-in) with `public/quick-signin.svg`
   (blue tile, white key) and the KeyRound icon.
+- **PC layout** (2026-10-27): every screen is `max-w-6xl` (one left edge on every page, payroll no longer changes
+  width per tab); the quick sign-in offer shows on the dashboard only. Sales on PC: result on top, cost (left) and the
+  input calendar + weekdays (right), the days as one table (cards stay on phones). Amounts: `baht()` is now "฿64,200.00"
+  / "−฿5.00" (no space, like `bahtWhole`); big summary figures use whole baht.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

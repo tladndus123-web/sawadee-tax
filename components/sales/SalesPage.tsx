@@ -19,7 +19,7 @@ import { useCompany } from "@/lib/company-store";
 import { fixedForMonth } from "@/lib/fixed-costs";
 import { useCostLines } from "@/lib/cash-store";
 import { pick, useLedger } from "@/lib/ledger-store";
-import { baht } from "@/lib/money";
+import { baht, bahtWhole } from "@/lib/money";
 import { type Channel, monthResult, type Sale, saleMonth } from "@/lib/sales";
 import { salePhotoUrl, useSales } from "@/lib/sales-store";
 import { todayBangkok } from "@/lib/thai-tax";
@@ -159,7 +159,7 @@ export function SalesPage() {
   const pct = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 });
 
   return (
-    <div className="mx-auto grid w-full max-w-5xl grid-cols-[minmax(0,1fr)] gap-6">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
           <h1 className="flex items-center gap-1 text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">
@@ -251,9 +251,9 @@ export function SalesPage() {
         </div>
         {resultAbout && <p className="rounded-xl bg-muted/50 px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">{t("sales.resultNote")}</p>}
         <div className="grid gap-3 sm:grid-cols-3">
-          <Fact label={t("sales.salesValue")} value={baht(r.salesValue)} sub={t("sales.salesSub", { gross: baht(r.salesGross), days: r.days })} />
-          <Fact label={t("sales.cost")} value={baht(r.purchasesCost)} sub={[r.depreciation ? t("sales.costSubDep", { gross: baht(r.purchasesGross), dep: baht(r.depreciation) }) : t("sales.costSub", { gross: baht(r.purchasesGross) }), r.labor ? t("cost.laborIn", { labor: baht(r.labor) }) : ""].filter(Boolean).join(" · ")} />
-          <Fact label={t("sales.profit")} value={baht(r.profit)} sub={r.salesValue ? t("sales.margin", { pct: pct.format(r.margin) }) : "—"} tone={r.profit < 0 ? "bad" : "brand"} />
+          <Fact label={t("sales.salesValue")} value={bahtWhole(r.salesValue)} sub={t("sales.salesSub", { gross: bahtWhole(r.salesGross), days: r.days })} />
+          <Fact label={t("sales.cost")} value={bahtWhole(r.purchasesCost)} sub={[r.depreciation ? t("sales.costSubDep", { gross: baht(r.purchasesGross), dep: baht(r.depreciation) }) : t("sales.costSub", { gross: baht(r.purchasesGross) }), r.labor ? t("cost.laborIn", { labor: baht(r.labor) }) : ""].filter(Boolean).join(" · ")} />
+          <Fact label={t("sales.profit")} value={bahtWhole(r.profit)} sub={r.salesValue ? t("sales.margin", { pct: pct.format(r.margin) }) : "—"} tone={r.profit < 0 ? "bad" : "brand"} />
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t pt-3 text-sm">
           <span className="text-muted-foreground">{t("sales.vatLine")}</span>
@@ -279,12 +279,16 @@ export function SalesPage() {
         )}
       </section>
 
+      {/* PC: two columns (owner 2026-10-27: the page ran on in one long column) — costs left, the days right */}
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-2">
+      <div className="grid min-w-0 gap-6">
       {/* Food cost, labour and rent against sales */}
       <CostCard month={month} salesValue={r.salesValue} purchases={purchases} fixed={fixed} />
 
       {/* Delivery apps: commission and payout (shown once the month has app sales) */}
       {fees.lines.length > 0 && <AppFeesCard f={fees} />}
-
+      </div>
+      <div className="grid min-w-0 gap-6">
       {/* Which days the shop's sales are in, per branch; a tap opens that day */}
       {loaded && (
         <SaleCalendar
@@ -299,6 +303,8 @@ export function SalesPage() {
 
       {/* Which weekdays sell: the average day over the last weeks */}
       {loaded && <WeekdayCard sales={sales} today={today} />}
+      </div>
+      </div>
 
       {/* Days */}
       <section className="grid gap-2" aria-label={t("sales.days")}>
@@ -309,8 +315,42 @@ export function SalesPage() {
             <p className="text-[15px] text-muted-foreground">{t("sales.empty")}</p>
           </div>
         ) : (
-          days.slice(0, shown).map((s) => (
-            <button key={s.id} type="button" onClick={() => void openSale(s)} className="workspace-panel hover-lift [--lift:1.015] tap-row flex items-center gap-3 p-4 text-left">
+          <>
+          {/* PC: one table, a month at a glance */}
+          <div className="workspace-panel hidden overflow-hidden md:block">
+            <table className="w-full text-[14px]">
+              <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-2.5 font-medium">{t("export.date")}</th>
+                  <th className="px-3 py-2.5 font-medium">{t("export.channel")}</th>
+                  <th className="px-3 py-2.5 font-medium">{t("export.saleDocs")}</th>
+                  <th className="px-3 py-2.5 text-right font-medium">{t("export.bills")}</th>
+                  <th className="px-3 py-2.5 text-right font-medium">{t("export.gross")}</th>
+                  <th className="px-4 py-2.5 text-right font-medium">{t("export.vat")}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {days.slice(0, shown).map((s) => (
+                  <tr key={s.id} onClick={() => void openSale(s)} className="cursor-pointer hover:bg-muted/40">
+                    <td className="px-4 py-2.5 font-semibold whitespace-nowrap">
+                      <button type="button" onClick={(e) => (e.stopPropagation(), void openSale(s))} className="text-left hover:underline">
+                        {sd(s.date)}
+                      </button>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <ChannelChip channel={s.channel} label={chName(s.channel)} />
+                    </td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{s.docFrom ? `${s.docFrom} – ${s.docTo}` : "—"}</td>
+                    <td className="px-3 py-2.5 text-right text-muted-foreground tabular-nums">{s.bills || "—"}</td>
+                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums">{baht(s.gross)}</td>
+                    <td className="px-4 py-2.5 text-right text-muted-foreground tabular-nums">{baht(s.vat)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {days.slice(0, shown).map((s) => (
+            <button key={s.id} type="button" onClick={() => void openSale(s)} className="workspace-panel hover-lift [--lift:1.015] tap-row flex items-center gap-3 p-4 text-left md:hidden">
               <span className="grid min-w-0 flex-1 gap-0.5">
                 <span className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">
                   {sd(s.date)}
@@ -325,7 +365,8 @@ export function SalesPage() {
                 <span className="text-xs text-muted-foreground tabular-nums">VAT {baht(s.vat)}</span>
               </span>
             </button>
-          ))
+          ))}
+          </>
         )}
         {days.length > PAGE && (
           <button

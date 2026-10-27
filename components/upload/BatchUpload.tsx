@@ -129,7 +129,7 @@ export function BatchUpload() {
   }
 
   return (
-    <div className="mx-auto grid max-w-4xl gap-6 md:gap-8">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6 md:gap-8">
       <header className="grid gap-2">
         <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("batch.title")}</h1>
         <p className="max-w-2xl text-[15px] leading-relaxed text-muted-foreground">{t("batch.intro", { max: MAX_QUEUE, at: MAX_PHOTOS })}</p>

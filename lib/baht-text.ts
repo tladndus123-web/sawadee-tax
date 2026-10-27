@@ -49,7 +49,7 @@ export const cleanWords = (s: string): string => s.replace(/[\s()（）]/g, "");
 
 /**
  * Amount-in-words band: Thai words as printed (or generated), English and Japanese as digits.
- * e.g. 64200 → { th: "หกหมื่นสี่พันสองร้อยบาทถ้วน", en: "฿ 64,200.00", ja: "฿ 64,200.00" }
+ * e.g. 64200 → { th: "หกหมื่นสี่พันสองร้อยบาทถ้วน", en: "฿64,200.00", ja: "฿64,200.00" }
  */
 export function amountWords(net: number, thaiPrinted = ""): Tri {
   const digits = baht(net);

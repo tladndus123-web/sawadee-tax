@@ -9,7 +9,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   setRequestLocale(locale as Locale);
   const t = await getTranslations();
   return (
-    <div className="mx-auto grid w-full max-w-5xl grid-cols-[minmax(0,1fr)] gap-6 md:gap-8">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6 md:gap-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("dash.title")}</h1>
         <AddDocButtons />

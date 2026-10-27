@@ -1,10 +1,12 @@
 "use client";
 
-// After an email sign-in on a device that can do Face ID / fingerprint: offer to register it, so the next sign-in
-// (and the one every 12 hours) is a glance. "Later" hides it for two weeks. Not shown after a passkey sign-in.
+// After an email sign-in on a device that can do Face ID / fingerprint: offer quick sign-in (간편 로그인), so the next
+// sign-in is a glance. "Later" hides it for two weeks. Not shown after a passkey sign-in. On the dashboard only, at the
+// page's width (owner 2026-10-27: it sat on top of every screen).
 
 import { KeyRound, Loader2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { usePathname } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,6 +19,7 @@ export function PasskeyOffer() {
   const t = useTranslations("passkey");
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
+  const onDashboard = usePathname() === "/";
 
   useEffect(() => {
     let live = true;
@@ -33,7 +36,7 @@ export function PasskeyOffer() {
     return () => void (live = false);
   }, []);
 
-  if (!show) return null;
+  if (!show || !onDashboard) return null;
 
   const later = () => {
     setLater();
@@ -54,7 +57,7 @@ export function PasskeyOffer() {
   };
 
   return (
-    <section aria-labelledby="passkey-offer" className="workspace-panel relative mx-auto mb-5 grid w-full max-w-3xl grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-3 p-4 pr-11 sm:p-5 sm:pr-12">
+    <section aria-labelledby="passkey-offer" className="workspace-panel relative mx-auto mb-5 grid w-full max-w-6xl grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-3 p-4 pr-11 sm:p-5 sm:pr-12">
       {/* 간편 로그인 mark (public/quick-signin.svg), the app icon's family */}
       {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG */}
       <img src="/quick-signin.svg" alt="" aria-hidden="true" className="size-10 rounded-[11px] shadow-[0_4px_10px_rgb(10_92_230/0.3)]" />

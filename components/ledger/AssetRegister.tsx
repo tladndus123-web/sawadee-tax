@@ -30,7 +30,7 @@ export function AssetRegister() {
   const sum = (k: "cost" | "writtenOff" | "bookValue") => fromSatang(rows.reduce((a, r) => a + r[k], 0));
 
   return (
-    <div className="mx-auto grid w-full max-w-4xl grid-cols-[minmax(0,1fr)] gap-5">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-5">
       <Button asChild variant="ghost" className="-ml-3 w-fit text-primary">
         <Link href="/ledger">
           <ChevronLeft className="size-4" />

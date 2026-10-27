@@ -39,8 +39,8 @@ describe("amount in words", () => {
   it("keeps Thai words and writes English / Japanese as digits", () => {
     expect(amountWords(64200, "หกหมื่นสี่พันสองร้อยบาทถ้วน")).toEqual({
       th: "หกหมื่นสี่พันสองร้อยบาทถ้วน",
-      en: "฿ 64,200.00",
-      ja: "฿ 64,200.00",
+      en: "฿64,200.00",
+      ja: "฿64,200.00",
     });
   });
 
@@ -50,6 +50,6 @@ describe("amount in words", () => {
 
   it("normalize replaces AI-translated words with digits", () => {
     const d = normalize(sample);
-    expect(d.words).toEqual({ th: "หกหมื่นสี่พันสองร้อยบาทถ้วน", en: "฿ 64,200.00", ja: "฿ 64,200.00" });
+    expect(d.words).toEqual({ th: "หกหมื่นสี่พันสองร้อยบาทถ้วน", en: "฿64,200.00", ja: "฿64,200.00" });
   });
 });
