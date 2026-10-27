@@ -10,7 +10,7 @@
 //   monthly ones above are never repeated.
 
 import { monthKey } from "./archive";
-import { type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
+import { DOC_LIST_COLUMNS, type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
 import { summarize, vatFiling } from "./dashboard";
 import { documentReminder, payrollReminder, vatReminder, whtReminder } from "./line";
 import { buildWhtList } from "./wht";
@@ -30,7 +30,7 @@ export async function reminderTexts(admin: Admin, today: string, opts: { test?: 
   // Which categories' VAT is not claimable (settings) — the claimable VAT in the message depends on it
   await serverCategories();
   const [docs, lock, settings] = await Promise.all([
-    admin.from("documents").select("*, document_items(*)").is("deleted_at", null),
+    admin.from("documents").select(DOC_LIST_COLUMNS).is("deleted_at", null),
     admin.from("month_locks").select("month").eq("month", f.month).maybeSingle(),
     admin.from("company_settings").select("tax_id").eq("id", 1).maybeSingle(),
   ]);

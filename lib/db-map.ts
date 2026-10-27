@@ -7,6 +7,14 @@ import type { LedgerDoc } from "./types";
 
 export type DbStatus = "draft" | "reviewed";
 
+/**
+ * The columns a list of documents needs (speed, owner 2026-10-27: "조금 느린거 같은데"): every column but the two heavy
+ * ones nothing in a list uses — ai_raw (the AI's raw answer, kept for the record) and field_boxes (where each field
+ * sits on the photo, needed only on one document's screen: lib/ledger-store fieldBoxesOf). Lines included.
+ */
+export const DOC_LIST_COLUMNS =
+  "id, created_by, created_at, updated_by, updated_at, status, doc_type, doc_title, copy_kind, form_serial, doc_no, doc_date, date_was_buddhist, vendor_id, seller, customer, order_no, term, credit_days, due_date, sales, delivery, total, discount, after_disc, deposit, after_dep, exempt, taxable, vat, net, wht, words_printed, words, terms, signs, form_code, form_since, category, payment, paid, paid_date, confidence, unclear, note, flags, stickers, photo_path, deleted_at, deleted_by, delete_reason, tax_month, no_claim, wht_rate, wht_type, ack_flags, ack_by, ack_at, branch_id, dep_years, disposed_on, photo_hash, memo, checked_at, checked_by, document_items(*)";
+
 export interface DocumentRow {
   id: string;
   status: DbStatus;
@@ -54,7 +62,8 @@ export interface DocumentRow {
   note: unknown;
   flags: string[];
   stickers: string[];
-  field_boxes: unknown;
+  /** Left out of lists (DOC_LIST_COLUMNS) */
+  field_boxes?: unknown;
   photo_path: string | null;
   tax_month: string | null;
   branch_id?: string | null;

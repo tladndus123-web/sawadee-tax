@@ -6,9 +6,10 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { invoiceMonth } from "./archive";
-import { type DocumentRow, docToRow, type ItemRow, rowToDoc } from "./db-map";
+import { DOC_LIST_COLUMNS, type DocumentRow, docToRow, type ItemRow, rowToDoc } from "./db-map";
 import { lockedMonths, openClaimMonth } from "./month-lock-store";
 import { supabaseBrowser } from "./supabase/client";
+import { cacheClear, cacheGet, cacheSet } from "./idb-cache";
 import { photoHash } from "./photo-hash";
 import { ALL } from "./branches";
 import { branchNow, subscribeBranch } from "./branch-store";
@@ -94,41 +95,107 @@ export async function knownPhotos(): Promise<KnownPhoto[]> {
 /** After something outside the ledger screens wrote documents (an expense claim paid back) */
 export const reloadLedger = () => reload();
 
+/** Where each field sits on one document's photo (left out of the list for speed; the document screen needs it) */
+export async function fieldBoxesOf(id: string): Promise<unknown> {
+  const { data } = await supabaseBrowser().from("documents").select("field_boxes").eq("id", id).maybeSingle();
+  return data?.field_boxes ?? null;
+}
+
 /** Screens opened within this time reuse the copy in memory instead of downloading the whole ledger again */
 const FRESH_MS = 30_000;
 
+type Row = DocumentRow & { document_items: ItemRow[]; ack_flags?: string[] | null; ack_by?: string | null; ack_at?: string | null; checked_at?: string | null; checked_by?: string | null };
+
+function toEntries(rows: Row[], who: Map<string, string>): LedgerEntry[] {
+  return rows.map((row) => ({
+    id: row.id,
+    status: row.status === "draft" ? "draft" : "final",
+    doc: rowToDoc(row, row.document_items ?? []),
+    photoPath: row.photo_path,
+    createdAt: time(row.created_at) ?? 0,
+    updatedAt: time(row.updated_at) ?? 0,
+    deletedAt: time(row.deleted_at),
+    deletedBy: row.deleted_by ? (who.get(row.deleted_by) ?? null) : null,
+    deleteReason: row.delete_reason,
+    ackFlags: row.ack_flags ?? [],
+    ackBy: row.ack_by ? (who.get(row.ack_by) ?? null) : null,
+    ackAt: time(row.ack_at ?? null),
+    checkedAt: time(row.checked_at ?? null),
+    checkedBy: row.checked_by ? (who.get(row.checked_by) ?? null) : null,
+  }));
+}
+
+/**
+ * The ledger kept on this device (speed, owner 2026-10-27): the last downloaded rows, per person. A screen shows them
+ * at once; then only a light list (id + when last changed) comes from the server, and only new or changed documents
+ * are downloaded in full — instead of every document (~4.6 KB each) on every visit. Removed ones drop out. The copy is
+ * erased when the person signs out (lib/idb-cache).
+ */
+let rows: Row[] = [];
+let rowsFor: string | null = null;
+// v1: the columns of DOC_LIST_COLUMNS; a new version starts the copy afresh
+const CACHE = (user: string) => `ledger:v1:${user}`;
+const CHUNK = 150;
+
 async function reload() {
   const supabase = supabaseBrowser();
-  const [{ data: rows, error }, { data: members }] = await Promise.all([
-    supabase.from("documents").select("*, document_items(*)").order("created_at", { ascending: false }),
+  const user = (await supabase.auth.getSession()).data.session?.user.id ?? null;
+  if (!user) return;
+  // First visit on this page load: the copy on this device, shown right away
+  if (rowsFor !== user) {
+    rows = [];
+    rowsFor = user;
+    const kept = await cacheGet<Row[]>(CACHE(user));
+    if (Array.isArray(kept) && kept.length && !loaded) {
+      rows = kept;
+      entries = toEntries(rows, names);
+      loaded = true;
+      listeners.forEach((l) => l());
+    }
+  }
+  const [index, { data: members }] = await Promise.all([
+    rows.length ? supabase.from("documents").select("id, updated_at").order("created_at", { ascending: false }) : null,
     supabase.from("members").select("user_id, name, email"),
   ]);
-  if (error) throw error;
+  let fresh: Row[];
+  if (!index) {
+    // Nothing kept yet: everything, once
+    const { data, error } = await supabase.from("documents").select(DOC_LIST_COLUMNS).order("created_at", { ascending: false });
+    if (error) throw error;
+    fresh = (data ?? []) as unknown as Row[];
+  } else {
+    if (index.error) throw index.error;
+    const have = new Map(rows.map((r) => [r.id, r]));
+    const need = (index.data ?? []).filter((x) => have.get(x.id as string)?.updated_at !== x.updated_at).map((x) => x.id as string);
+    for (let i = 0; i < need.length; i += CHUNK) {
+      const { data, error } = await supabase.from("documents").select(DOC_LIST_COLUMNS).in("id", need.slice(i, i + CHUNK));
+      if (error) throw error;
+      for (const r of (data ?? []) as unknown as Row[]) have.set(r.id, r);
+    }
+    // In the server's order; anything no longer there (removed for good, or out of reach) drops out
+    fresh = (index.data ?? []).map((x) => have.get(x.id as string)).filter((r): r is Row => !!r);
+  }
   const who = new Map((members ?? []).map((m) => [m.user_id as string, (m.name as string) || (m.email as string)]));
   names = who;
-  entries = (rows ?? []).map((r) => {
-    const row = r as DocumentRow & { document_items: ItemRow[]; ack_flags?: string[] | null; ack_by?: string | null; ack_at?: string | null; checked_at?: string | null; checked_by?: string | null };
-    return {
-      id: row.id,
-      status: row.status === "draft" ? "draft" : "final",
-      doc: rowToDoc(row, row.document_items ?? []),
-      photoPath: row.photo_path,
-      createdAt: time(row.created_at) ?? 0,
-      updatedAt: time(row.updated_at) ?? 0,
-      deletedAt: time(row.deleted_at),
-      deletedBy: row.deleted_by ? (who.get(row.deleted_by) ?? null) : null,
-      deleteReason: row.delete_reason,
-      ackFlags: row.ack_flags ?? [],
-      ackBy: row.ack_by ? (who.get(row.ack_by) ?? null) : null,
-      ackAt: time(row.ack_at ?? null),
-      checkedAt: time(row.checked_at ?? null),
-      checkedBy: row.checked_by ? (who.get(row.checked_by) ?? null) : null,
-    };
-  });
+  rows = fresh;
+  entries = toEntries(rows, who);
   loaded = true;
   loadedAt = Date.now();
   listeners.forEach((l) => l());
+  void cacheSet(CACHE(user), rows);
 }
+
+// Signing out: the copy on this device goes too
+if (typeof window !== "undefined")
+  supabaseBrowser().auth.onAuthStateChange((event: string) => {
+    if (event !== "SIGNED_OUT") return;
+    rows = [];
+    rowsFor = null;
+    entries = [];
+    loaded = false;
+    loadedAt = 0;
+    void cacheClear();
+  });
 
 const refresh = () => (loading ??= reload().finally(() => (loading = null)));
 const refreshIfStale = () => (Date.now() - loadedAt > FRESH_MS ? refresh() : undefined);
@@ -301,8 +368,9 @@ export async function softDelete(id: string, reason: string) {
   if (!isValidReason(reason)) throw new Error("reason required");
   const supabase = supabaseBrowser();
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user;
   const { data, error } = await supabase
     .from("documents")
     .update({ deleted_at: new Date().toISOString(), deleted_by: user?.id, delete_reason: reason.trim().slice(0, 200) })

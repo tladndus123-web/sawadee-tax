@@ -26,9 +26,11 @@ const emit = () => listeners.forEach((l) => l());
 
 async function load() {
   const supabase = supabaseBrowser();
+  // The session this browser already holds (no trip to the server: the database checks its token on every request)
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) {
     me = { ...SIGNED_OUT, loaded: true };
     return emit();

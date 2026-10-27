@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
 import { monthKey } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
-import { downloadLinks, restoreEntry, saveEntry, setAck, softDelete, useLedger, usePhotoUrl, setMemo } from "@/lib/ledger-store";
+import { downloadLinks, fieldBoxesOf, restoreEntry, saveEntry, setAck, softDelete, useLedger, usePhotoUrl, setMemo } from "@/lib/ledger-store";
+import { normalize } from "@/lib/normalize";
 import { useMonthLocks } from "@/lib/month-lock-store";
 import { useMonthLabel } from "@/components/ledger/Stickers";
 import { useMe } from "@/lib/role-store";
@@ -47,6 +48,19 @@ export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: 
       live = false;
     };
   }, [entry?.photoPath, docName]);
+  // Where each field sits on the photo: not in the ledger list (speed), so fetched for this one document — and the
+  // form waits for it, so a save never writes the boxes away
+  const [boxes, setBoxes] = useState<{ id: string; raw: unknown } | null>(null);
+  useEffect(() => {
+    let live = true;
+    void fieldBoxesOf(id)
+      .catch(() => null)
+      .then((raw) => live && setBoxes({ id, raw }));
+    return () => {
+      live = false;
+    };
+  }, [id]);
+  const doc = useMemo(() => (entry && boxes?.id === id ? { ...entry.doc, fieldBoxes: normalize({ fieldBoxes: boxes.raw }).fieldBoxes } : null), [entry, boxes, id]);
   const company = useCompany();
   const locks = useMonthLocks();
   const monthLabel = useMonthLabel();
@@ -67,7 +81,7 @@ export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: 
     }
   };
 
-  if (!loaded) return <Loader2 className="mx-auto mt-20 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
+  if (!loaded || (entry && !doc)) return <Loader2 className="mx-auto mt-20 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
 
   if (!entry || (entry.deletedAt && me.role !== "admin")) {
     return (
@@ -144,7 +158,7 @@ export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: 
         downloads={downloads}
         ack={entry.status === "final" && !entry.deletedAt ? { flags: entry.ackFlags, by: entry.ackBy, at: entry.ackAt, onSet: (f) => setAck(entry.id, f) } : undefined}
         onMemo={entry.deletedAt ? undefined : (m) => setMemo(entry.id, m)}
-        initial={entry.doc}
+        initial={doc ?? entry.doc}
         photoUrl={photoUrl}
         companyTaxId={company.taxId}
         others={others}

@@ -12,8 +12,8 @@ const cache = new Map<string, unknown>();
 
 const load = () =>
   (meta ??= supabaseBrowser()
-    .auth.getUser()
-    .then(({ data }) => (data.user?.user_metadata ?? {}) as Record<string, unknown>)
+    .auth.getSession()
+    .then(({ data }) => (data.session?.user.user_metadata ?? {}) as Record<string, unknown>)
     .catch(() => ({}) as Record<string, unknown>));
 
 export function usePref<T>(key: string, read: (v: unknown) => T, fallback: T): [T, (v: T) => void] {

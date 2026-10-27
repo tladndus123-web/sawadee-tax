@@ -10,7 +10,7 @@ import { claimable, flagsFor } from "./checks";
 import { cashTip, claimTip, costTip, excelTip, forecastTip, NEXT, weekdayTip } from "./line-tips";
 import { monthCosts } from "./cost-split";
 import { daysUntil, summarize, upcoming, vatFiling } from "./dashboard";
-import { type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
+import { DOC_LIST_COLUMNS, type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
 import { buildMonthExport } from "./export";
 import { buildMonthXlsx, XLSX_TYPE, type XlsxLabels } from "./export-xlsx";
 import { type ExcelFormat, readExcelFormat } from "./excel-format";
@@ -37,7 +37,7 @@ export async function ledger(admin: Admin) {
   // Which categories' VAT is not claimable (settings) — claimable VAT depends on it
   await serverCategories();
   const [docs, settings] = await Promise.all([
-    admin.from("documents").select("*, document_items(*)").is("deleted_at", null),
+    admin.from("documents").select(DOC_LIST_COLUMNS).is("deleted_at", null),
     admin.from("company_settings").select("tax_id, name, excel_format").eq("id", 1).maybeSingle(),
   ]);
   if (docs.error || settings.error) throw docs.error ?? settings.error;

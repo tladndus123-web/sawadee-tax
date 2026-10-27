@@ -97,6 +97,12 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   app Excel, LINE Excel and the accountant link follow it); **files in the AI panel** (drop / clip / paste → ledger queue
   or calendar dates via `/api/calendar/read`, each date saved with a tap). `lib/messages.test.ts`: same keys in 4
   languages, no apostrophe before `{placeholder}` (ICU escapes it).
+- **Speed** (2026-10-27): lists read `DOC_LIST_COLUMNS` (lib/db-map: every column but `ai_raw` and `field_boxes`; the
+  document screen fetches its boxes with `fieldBoxesOf` and waits for them, so a save never drops them). The ledger is
+  kept on the device (`lib/idb-cache.ts`, IndexedDB `sawadee-cache`, key `ledger:v1:<user>`; bump the version when the
+  columns change): shown at once, then only `id, updated_at` of every document is asked and only new / changed rows are
+  downloaded (`documents_stamp` sets updated_at on every change); gone ones drop out; cleared on sign-out. Sign-in
+  checks in the browser use `getSession()` (no server trip; the database checks the token).
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).
