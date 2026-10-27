@@ -160,10 +160,10 @@ export function AssistantPanel() {
         aria-hidden={!open}
         inert={!open}
         className={cn(
-          "fixed z-50 flex flex-col bg-background shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none",
+          "fixed z-50 flex flex-col bg-background shadow-2xl transition-[transform,visibility] duration-300 ease-out motion-reduce:transition-none",
           // phone: a sheet from below; PC: a panel on the right under the top bar
           "inset-x-0 top-[7vh] bottom-0 rounded-t-[26px] md:inset-x-auto md:top-16 md:right-0 md:w-[420px] md:rounded-none md:border-l md:border-border md:shadow-[-12px_0_30px_rgb(20_30_60/0.08)]",
-          open ? "translate-y-0 md:translate-x-0" : "translate-y-full md:translate-x-full md:translate-y-0",
+          open ? "visible translate-y-0 md:translate-x-0" : "invisible translate-y-full md:translate-x-full md:translate-y-0",
         )}
       >
         <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-muted-foreground/25 md:hidden" aria-hidden />

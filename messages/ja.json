@@ -1188,7 +1188,9 @@
       "place": "{n}位",
       "none": "順位なし",
       "noTarget": "目標なし"
-    }
+    },
+    "share": "店舗別の売上シェア",
+    "marginPct": "利益率 {pct}"
   },
   "dep": {
     "label": "償却期間",

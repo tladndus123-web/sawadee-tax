@@ -106,6 +106,37 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
             <p className="text-xs text-muted-foreground">{t("combinedHint")}</p>
           </div>
         </div>
+        {/* What is left, big (the one number owners ask first), with the margin */}
+        <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+          <span className="grid gap-0.5">
+            <span className="text-xs font-medium text-muted-foreground">{t("colProfit")}</span>
+            <span className={cn("text-[clamp(2rem,7vw,2.75rem)] leading-none font-bold tracking-tight tabular-nums", total.profit < 0 ? "text-bad" : "text-brand")}>
+              {total.days ? bahtWhole(total.profit) : "–"}
+            </span>
+          </span>
+          {total.salesValue > 0 && <span className="mb-1 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold tabular-nums">{t("marginPct", { pct: pct(total.margin) })}</span>}
+        </div>
+        {/* Each branch's share of the sales, in its colour */}
+        {total.salesValue > 0 && (
+          <div className="grid gap-2">
+            <div className="flex h-2.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={t("share")}>
+              {rows
+                .filter((r) => r.result.salesValue > 0)
+                .map((r) => (
+                  <span key={r.branch.id} className="h-full first:rounded-l-full last:rounded-r-full" style={{ width: `${(r.result.salesValue / total.salesValue) * 100}%`, background: BRANCH_COLORS[colorOf(r.branch, branches)][0] }} />
+                ))}
+            </div>
+            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              {rows.map((r) => (
+                <li key={r.branch.id} className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-full" style={{ background: BRANCH_COLORS[colorOf(r.branch, branches)][0] }} aria-hidden />
+                  <span className="max-w-40 truncate">{branchLabel(r.branch, names)}</span>
+                  <b className="font-semibold text-foreground tabular-nums">{total.salesValue ? Math.round((r.result.salesValue / total.salesValue) * 100) : 0}%</b>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <Figures r={total} c={totalCost} big />
       </div>
 
@@ -128,7 +159,7 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
       </div>
 
       {/* One card per branch, best first */}
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(min(100%,17rem),1fr))]">
         {ranked.map(({ row: { branch, result, cost }, rank, value }) => {
           const [fg] = BRANCH_COLORS[colorOf(branch, branches)];
           return (
@@ -178,9 +209,17 @@ function Figures({ r, c, big }: { r: MonthResult; c: CostControl; big?: boolean 
   const cell = (label: string, value: string, tone?: string) => (
     <span className="grid min-w-0 gap-0.5 rounded-2xl bg-muted/60 px-3 py-2">
       <span className="truncate text-[11px] text-muted-foreground">{label}</span>
-      <span className={cn("truncate font-semibold tracking-tight tabular-nums", big ? "text-[clamp(1rem,4.4vw,1.25rem)]" : "text-[15px]", tone)}>{value}</span>
+      <span className={cn("truncate font-semibold tracking-tight tabular-nums", big ? "text-[clamp(0.95rem,3.6vw,1.15rem)]" : "text-[15px]", tone)}>{value}</span>
     </span>
   );
+  if (big)
+    return (
+      <span className="grid grid-cols-3 gap-2">
+        {cell(t("colSales"), r.days ? bahtWhole(r.salesValue) : "–")}
+        {cell(t("colCost"), bahtWhole(r.purchasesCost))}
+        {cell("FL / FLR", c.flr.pct === null ? "–" : `${c.fl.pct}% / ${c.flr.pct}%`, TONE[c.flr.level])}
+      </span>
+    );
   return (
     <span className="grid grid-cols-2 gap-2">
       {cell(t("colSales"), r.days ? bahtWhole(r.salesValue) : "–")}

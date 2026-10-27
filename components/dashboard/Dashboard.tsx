@@ -239,6 +239,9 @@ export function Dashboard() {
 
           {/* The last week of sales, ending yesterday */}
           <RecentSalesCard today={today} />
+
+          {/* Admins: who did what this month (here so the two columns end together) */}
+          {isAdmin && <TeamCard month={month} />}
         </div>
 
         {/* 3. In more detail: food, labour and rent against sales (FL / FLR) */}
@@ -253,8 +256,6 @@ export function Dashboard() {
       {/* Phones, until installed or closed: put the app on the home screen */}
       <InstallCard compact />
 
-      {/* Admins: who did what this month */}
-      {isAdmin && <TeamCard month={month} />}
     </div>
   );
 }

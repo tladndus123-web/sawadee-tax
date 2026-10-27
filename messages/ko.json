@@ -1188,7 +1188,9 @@
       "place": "{n}위",
       "none": "순위 없음",
       "noTarget": "목표 없음"
-    }
+    },
+    "share": "지점별 매출 비중",
+    "marginPct": "이익률 {pct}"
   },
   "dep": {
     "label": "상각 기간",
