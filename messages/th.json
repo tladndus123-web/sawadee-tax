@@ -1046,7 +1046,8 @@
       "failed": "บันทึกไม่สำเร็จ {count} รายการ กรุณากดอีกครั้ง",
       "max": "อ่านได้ครั้งละ {count} รูป",
       "progress": "อ่านแล้ว {done} จาก {total} รูป"
-    }
+    },
+    "branchCol": "สาขา"
   },
   "pos": {
     "button": "Excel จาก POS",

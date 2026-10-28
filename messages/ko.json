@@ -1046,7 +1046,8 @@
       "failed": "{count}건은 저장하지 못했어요. 다시 눌러 주세요.",
       "max": "한 번에 {count}장까지 읽어요.",
       "progress": "{total}장 중 {done}장 읽음"
-    }
+    },
+    "branchCol": "지점"
   },
   "pos": {
     "button": "POS 엑셀",

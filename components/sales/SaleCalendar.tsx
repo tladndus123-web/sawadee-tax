@@ -59,7 +59,7 @@ export function SaleCalendar({
         </h2>
         <p className="text-xs text-muted-foreground">{t("calHint")}</p>
       </div>
-      <div className={cn("grid gap-6", cals.length > 1 && "lg:grid-cols-2")}>
+      <div className={cn("grid gap-6", cals.length > 1 && "sm:grid-cols-[repeat(auto-fit,minmax(min(100%,17rem),1fr))]")}>
         {cals.map(({ b, days }) => {
           const missing = missingDays(days).length;
           const lead = days[0]?.weekday ?? 0;

@@ -27,7 +27,7 @@ export function WeekdayCard({ sales, today }: { sales: Sale[]; today: string }) 
   const order = [1, 2, 3, 4, 5, 6, 0];
 
   return (
-    <section className="workspace-panel grid gap-4 p-5 sm:p-6" aria-labelledby="weekday-title">
+    <section className="workspace-panel flex flex-col gap-4 p-5 sm:p-6" aria-labelledby="weekday-title">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="grid gap-0.5">
           <h2 id="weekday-title" className="flex items-center gap-2 text-sm font-semibold">
@@ -50,7 +50,7 @@ export function WeekdayCard({ sales, today }: { sales: Sale[]; today: string }) 
           ))}
         </div>
       </div>
-      <ul className="grid gap-2">
+      <ul className="flex flex-1 flex-col justify-between gap-2">
         {order.map((w) => {
           const r = rows[w];
           const top = r.avg === max;

@@ -1046,7 +1046,8 @@
       "failed": "{count}件は保存できませんでした。もう一度押してください。",
       "max": "一度に{count}枚まで読み取ります。",
       "progress": "{total}枚中{done}枚を読み取り"
-    }
+    },
+    "branchCol": "店舗"
   },
   "pos": {
     "button": "POS Excel",

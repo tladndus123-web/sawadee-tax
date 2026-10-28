@@ -13,7 +13,8 @@ import { useMonthLabel } from "@/components/ledger/Stickers";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { invoiceMonth, NO_DATE } from "@/lib/archive";
-import { ALL } from "@/lib/branches";
+import { ALL, branchLabel } from "@/lib/branches";
+import { BranchAvatar, useBranchName } from "@/components/layout/branch-switcher";
 import { useBranch, useBranches } from "@/lib/branch-store";
 import { useCompany } from "@/lib/company-store";
 import { fixedForMonth } from "@/lib/fixed-costs";
@@ -59,6 +60,7 @@ export function SalesPage() {
   const branchId = branch === ALL ? "" : branch;
   const { sales, loaded } = useSales();
   const { branches } = useBranches();
+  const names = useBranchName();
   const shownBranches = useMemo(() => (branch === ALL ? branches : branches.filter((b) => b.id === branch)), [branch, branches]);
   const { entries } = useLedger();
   const { lines: labor } = useLabor();
@@ -94,7 +96,13 @@ export function SalesPage() {
     [sales, purchases, month, company.taxId, labor, fixed, stock],
   );
   const fees = useMemo(() => monthFees(sales, month, company.appFees), [sales, month, company.appFees]);
-  const days = useMemo(() => sales.filter((s) => saleMonth(s) === month), [sales, month]);
+  // Newest day first; on one day the branches in their usual order, then the channels (the list keeps its shape)
+  const days = useMemo(() => {
+    const order = new Map(branches.map((b, i) => [b.id, i]));
+    return sales
+      .filter((s) => saleMonth(s) === month)
+      .sort((a, b) => b.date.localeCompare(a.date) || (order.get(a.branchId) ?? 99) - (order.get(b.branchId) ?? 99) || a.channel.localeCompare(b.channel));
+  }, [sales, month, branches]);
   const existingFor = (d: SaleDraft) => sales.find((x) => x.date === d.date && x.channel === d.channel && (x.branchId || "") === (d.branchId || "") && x.id !== d.id) ?? null;
 
   // Closing reports: prepare each picture and let the AI read it (two at a time). One photo with one line opens the
@@ -157,6 +165,21 @@ export function SalesPage() {
   };
 
   const pct = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 });
+
+  // All branches at once: the calendars get a row of their own, and the days say which branch
+  const many = shownBranches.length > 1;
+  // Which days the shop's sales are in, per branch; a tap opens that day
+  const calendar = loaded ? (
+    <SaleCalendar
+          month={month}
+          today={today}
+          sales={sales}
+          branches={shownBranches}
+          all={branches}
+          onDay={(id, d) => (d.sale ? void openSale(d.sale) : setOpen({ draft: blank(d.date, id) }))}
+        />
+  ) : null;
+  const branchOf = (id: string) => branches.find((b) => b.id === id);
 
   return (
     <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6">
@@ -280,7 +303,7 @@ export function SalesPage() {
       </section>
 
       {/* PC: two columns (owner 2026-10-27: the page ran on in one long column) — costs left, the days right */}
-      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-2">
       <div className="grid min-w-0 gap-6">
       {/* Food cost, labour and rent against sales */}
       <CostCard month={month} salesValue={r.salesValue} purchases={purchases} fixed={fixed} />
@@ -289,22 +312,15 @@ export function SalesPage() {
       {fees.lines.length > 0 && <AppFeesCard f={fees} />}
       </div>
       <div className="grid min-w-0 gap-6">
-      {/* Which days the shop's sales are in, per branch; a tap opens that day */}
-      {loaded && (
-        <SaleCalendar
-          month={month}
-          today={today}
-          sales={sales}
-          branches={shownBranches}
-          all={branches}
-          onDay={(id, d) => (d.sale ? void openSale(d.sale) : setOpen({ draft: blank(d.date, id) }))}
-        />
-      )}
-
+      {/* One branch: its input calendar here, beside the costs */}
+      {!many && calendar}
       {/* Which weekdays sell: the average day over the last weeks */}
       {loaded && <WeekdayCard sales={sales} today={today} />}
       </div>
       </div>
+
+      {/* All branches: their calendars in one row below (owner 2026-10-27: three in a 2-column card left one alone) */}
+      {many && calendar}
 
       {/* Days */}
       <section className="grid gap-2" aria-label={t("sales.days")}>
@@ -322,6 +338,7 @@ export function SalesPage() {
               <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">{t("export.date")}</th>
+                  {many && <th className="px-3 py-2.5 font-medium">{t("sales.branchCol")}</th>}
                   <th className="px-3 py-2.5 font-medium">{t("export.channel")}</th>
                   <th className="px-3 py-2.5 font-medium">{t("export.saleDocs")}</th>
                   <th className="px-3 py-2.5 text-right font-medium">{t("export.bills")}</th>
@@ -337,6 +354,18 @@ export function SalesPage() {
                         {sd(s.date)}
                       </button>
                     </td>
+                    {many && (
+                      <td className="px-3 py-2.5">
+                        {branchOf(s.branchId) ? (
+                          <span className="flex items-center gap-2">
+                            <BranchAvatar branch={branchOf(s.branchId)!} branches={branches} />
+                            <span className="truncate">{branchLabel(branchOf(s.branchId)!, names)}</span>
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    )}
                     <td className="px-3 py-2.5">
                       <ChannelChip channel={s.channel} label={chName(s.channel)} />
                     </td>
@@ -357,7 +386,7 @@ export function SalesPage() {
                   <ChannelChip channel={s.channel} label={chName(s.channel)} />
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {[s.docFrom && `${s.docFrom} – ${s.docTo}`, s.bills ? t("sales.billsN", { count: s.bills }) : ""].filter(Boolean).join(" · ") || "—"}
+                  {[many && branchOf(s.branchId) ? branchLabel(branchOf(s.branchId)!, names) : "", s.docFrom && `${s.docFrom} – ${s.docTo}`, s.bills ? t("sales.billsN", { count: s.bills }) : ""].filter(Boolean).join(" · ") || "—"}
                 </span>
               </span>
               <span className="grid text-right">

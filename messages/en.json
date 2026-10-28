@@ -1046,7 +1046,8 @@
       "failed": "{count} could not be saved. Please try again.",
       "max": "Up to {count} photos at a time.",
       "progress": "Read {done} of {total}"
-    }
+    },
+    "branchCol": "Branch"
   },
   "pos": {
     "button": "POS Excel",
