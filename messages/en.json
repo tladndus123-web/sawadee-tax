@@ -530,7 +530,18 @@
     "homeOf": "{name}'s home branch",
     "noHome": "No home branch",
     "homeHint": "After signing in it comes first in the branch list with its PIN box open",
-    "homeChanged": "Home branch changed."
+    "homeChanged": "Home branch changed.",
+    "pinsTitle": "Branch passwords (quick PIN)",
+    "pinsOpen": "Open",
+    "pinsHint": "The 4–8 digits typed when choosing a branch — admins type them too. After a change, staff who had that branch open type the new one. The same PINs as in branch settings.",
+    "blockMenu": "Block branches",
+    "blockMenuHint": "Keep only this person out of chosen branches",
+    "blockTitle": "{name} — branches to keep them out of",
+    "blockHint": "For this person a ticked branch asks for a password, but no password opens it, and its ledger and sales stay hidden from them. Everyone else is unaffected.",
+    "blockOn": "Blocked",
+    "blockSave": "Save",
+    "blockSaved": "Saved",
+    "blockedBadge": "{branch} blocked"
   },
   "export": {
     "excel": "Excel",

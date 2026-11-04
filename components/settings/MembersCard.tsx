@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Mail, MessageCircle, MoreHorizontal, RotateCcw, UserMinus, UserPlus } from "lucide-react";
+import { Ban, Loader2, Lock, Mail, MessageCircle, MoreHorizontal, RotateCcw, UserMinus, UserPlus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import { useBranches } from "@/lib/branch-store";
 import { type Role, useMe } from "@/lib/role-store";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { BranchPins } from "./BranchCard";
 import { useFoldStatus } from "./SettingsFold";
 
 interface Member {
@@ -48,12 +49,16 @@ export function MembersCard() {
   const [role, setRole] = useState<Role>("staff");
   const [busy, setBusy] = useState<string | null>(null);
   const [removing, setRemoving] = useState<Member | null>(null);
+  // Branches a staff member is kept out of (it looks locked to them; no password opens it) — admins only
+  const [blocks, setBlocks] = useState<{ userId: string; branchId: string }[]>([]);
+  const [blocking, setBlocking] = useState<Member | null>(null);
   const { branches } = useBranches();
   const names = useBranchName();
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/members");
+    const [res, kept] = await Promise.all([fetch("/api/members"), supabaseBrowser().from("member_branch_blocks").select("user_id, branch_id")]);
     if (res.ok) setMembers(((await res.json()) as { members: Member[] }).members);
+    setBlocks((kept.data ?? []).map((r) => ({ userId: r.user_id as string, branchId: r.branch_id as string })));
   }, []);
   useEffect(() => {
     if (me.role === "admin") void load();
@@ -149,6 +154,16 @@ export function MembersCard() {
                           {m.lastSignIn ? t("members.lastSignIn", { when: when.format(new Date(m.lastSignIn)) }) : t("members.neverSignedIn")}
                         </span>
                       )}
+                      {blocks
+                        .filter((k) => k.userId === m.userId)
+                        .map((k) => branches.find((b) => b.id === k.branchId))
+                        .filter((b) => !!b)
+                        .map((b) => (
+                          <span key={b!.id} className="inline-flex items-center gap-1 rounded-full bg-bad-soft px-2 py-0.5 font-semibold text-bad">
+                            <Ban className="size-3" aria-hidden />
+                            {t("members.blockedBadge", { branch: branchLabel(b!, names) })}
+                          </span>
+                        ))}
                       {m.line && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-[#06c755]/12 px-2 py-0.5 font-medium text-[#05a847]">
                           <MessageCircle className="size-3" aria-hidden />
@@ -196,6 +211,15 @@ export function MembersCard() {
                           <span className="text-[11px] text-muted-foreground">{t("members.sendEmailHint")}</span>
                         </span>
                       </DropdownMenuItem>
+                      {m.role !== "admin" && branches.length > 1 && (
+                        <DropdownMenuItem onSelect={() => setBlocking(m)} className="items-start gap-2 py-2">
+                          <Ban className="mt-0.5 size-4" />
+                          <span className="grid">
+                            {t("members.blockMenu")}
+                            <span className="text-[11px] text-muted-foreground">{t("members.blockMenuHint")}</span>
+                          </span>
+                        </DropdownMenuItem>
+                      )}
                       {!self && (
                         <>
                           <DropdownMenuSeparator />
@@ -260,6 +284,29 @@ export function MembersCard() {
         </Button>
       </form>
 
+      {/* The passwords for choosing a branch (everyone types them, admins too) — the same as in branch settings */}
+      <details className="group grid gap-3 rounded-2xl border border-border/70 p-3">
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold">
+          <Lock className="size-4 text-brand" aria-hidden />
+          {t("members.pinsTitle")}
+          <span className="ml-auto text-xs font-normal text-muted-foreground group-open:hidden">{t("members.pinsOpen")}</span>
+        </summary>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{t("members.pinsHint")}</p>
+        <div className="mt-2">
+          <BranchPins />
+        </div>
+      </details>
+
+      {blocking && (
+        <BlockDialog
+          member={blocking}
+          branches={branches.map((b) => ({ id: b.id, label: branchLabel(b, names) }))}
+          kept={blocks.filter((k) => k.userId === blocking.userId).map((k) => k.branchId)}
+          onClose={() => setBlocking(null)}
+          onSaved={() => (setBlocking(null), void load())}
+        />
+      )}
+
       <RemoveDialog member={removing} busy={!!busy} onClose={() => setRemoving(null)} onConfirm={async (reason) => (await act(removing!, "disable", reason)) && setRemoving(null)} />
     </section>
   );
@@ -306,6 +353,74 @@ function RemoveDialog({ member, busy, onClose, onConfirm }: { member: Member | n
             </Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Keep one staff member out of branches (owner 2026-11-04): for them a ticked branch asks for a password that never
+ * opens it; nobody else notices (supabase …003000_member_branch_blocks.sql)
+ */
+function BlockDialog({ member, branches, kept, onClose, onSaved }: { member: Member; branches: { id: string; label: string }[]; kept: string[]; onClose: () => void; onSaved: () => void }) {
+  const t = useTranslations();
+  const [on, setOn] = useState<ReadonlySet<string>>(new Set(kept));
+  const [busy, setBusy] = useState(false);
+  const toggle = (id: string, checked: boolean) =>
+    setOn((cur) => {
+      const next = new Set(cur);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  const save = async () => {
+    setBusy(true);
+    try {
+      const sb = supabaseBrowser();
+      const add = [...on].filter((id) => !kept.includes(id));
+      const drop = kept.filter((id) => !on.has(id));
+      if (add.length) {
+        const { error } = await sb.from("member_branch_blocks").insert(add.map((branch_id) => ({ user_id: member.userId, branch_id })));
+        if (error) throw error;
+      }
+      if (drop.length) {
+        const { error } = await sb.from("member_branch_blocks").delete().eq("user_id", member.userId).in("branch_id", drop);
+        if (error) throw error;
+      }
+      toast.success(t("members.blockSaved"));
+      onSaved();
+    } catch {
+      toast.error(t("app.saveFail"));
+      setBusy(false);
+    }
+  };
+  return (
+    <Dialog open onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent className="rounded-3xl sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("members.blockTitle", { name: member.name || member.email })}</DialogTitle>
+          <DialogDescription>{t("members.blockHint")}</DialogDescription>
+        </DialogHeader>
+        <ul className="grid gap-1.5">
+          {branches.map((b) => (
+            <li key={b.id}>
+              <label className={cn("flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3", on.has(b.id) ? "bg-bad-soft text-bad" : "bg-muted/60")}>
+                <input type="checkbox" className="size-4" checked={on.has(b.id)} onChange={(e) => toggle(b.id, e.target.checked)} />
+                <span className="flex-1 text-sm font-medium">{b.label}</span>
+                {on.has(b.id) && <span className="text-xs font-semibold">{t("members.blockOn")}</span>}
+              </label>
+            </li>
+          ))}
+        </ul>
+        <DialogFooter>
+          <Button type="button" variant="ghost" className="rounded-full" onClick={onClose} disabled={busy}>
+            {t("common.cancel")}
+          </Button>
+          <Button type="button" className="rounded-full px-6" onClick={() => void save()} disabled={busy}>
+            {busy && <Loader2 className="size-4 animate-spin" />}
+            {t("members.blockSave")}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -206,6 +206,32 @@ export function BranchCard() {
   );
 }
 
+/**
+ * Every branch's password in one place, and the "all branches" one — also shown in staff management (owner
+ * 2026-11-04: "직원관리에서 설정 가능"). The same PINs as in each branch's own settings.
+ */
+export function BranchPins() {
+  const t = useTranslations("branch");
+  const names = useBranchName();
+  const { branches } = useBranches();
+  const { pins, all: allPin } = useBranchPins();
+  if (!branches.length) return null;
+  return (
+    <div className="grid gap-2">
+      {branches.map((b) => (
+        <div key={b.id} className="grid gap-1.5 rounded-2xl bg-muted/50 p-2">
+          <span className="flex items-center gap-2 px-1 text-sm font-medium">
+            <BranchAvatar branch={b} branches={branches} />
+            {branchLabel(b, names)}
+          </span>
+          <PinField hasPin={pins.has(b.id)} onSave={(v) => setBranchPin(b.id, v)} />
+        </div>
+      ))}
+      {branches.length > 1 && <PinField hasPin={allPin} onSave={setAllBranchesPin} title={t("allPinTitle")} hint={t("allPinHint")} />}
+    </div>
+  );
+}
+
 /** Set, change or remove a branch's password (4–8 digits); staff who had the branch open must type the new one */
 function PinField({ hasPin, onSave, title, hint }: { hasPin: boolean; onSave: (pin: string) => Promise<void>; title?: string; hint?: string }) {
   const t = useTranslations("branch");
