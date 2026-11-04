@@ -365,7 +365,8 @@
   },
   "role": {
     "admin": "管理者",
-    "staff": "スタッフ"
+    "staff": "スタッフ",
+    "owner": "代表"
   },
   "del": {
     "adminOnly": "削除できるのは管理者だけです",
@@ -535,13 +536,24 @@
     "pinsOpen": "開く",
     "pinsHint": "店舗を選ぶときに入れる4〜8桁の数字です。管理者も店舗を選ぶたびに入れます。変更すると、その店舗を開いているスタッフも新しい番号が必要です。店舗管理で決めたものと同じ番号です。",
     "blockMenu": "店舗をブロック",
-    "blockMenuHint": "このスタッフだけ選んだ店舗を見られなくします",
+    "blockMenuHint": "この人だけ選んだ店舗を見られなくします（管理者も）",
     "blockTitle": "{name} — 見られなくする店舗",
     "blockHint": "チェックした店舗は、このスタッフが押すとパスワード画面が出ますが、どの番号でも開きません。その店舗の帳簿・売上もこのスタッフには見えません。ほかの人はそのままです。",
     "blockOn": "ブロック中",
     "blockSave": "保存",
     "blockSaved": "保存しました",
-    "blockedBadge": "{branch} ブロック"
+    "blockedBadge": "{branch} ブロック",
+    "ownerOnly": "代表だけが変更できます。",
+    "lastOwner": "代表が少なくとも1人必要です。",
+    "ownerOn": "代表にする",
+    "ownerOff": "代表を外す",
+    "ownerHint": "代表はすべての店舗を見られ、管理者が見る店舗・画面を決めます",
+    "screensMenu": "見られる画面",
+    "screensMenuHint": "この管理者が開けるメニューを決めます",
+    "screensTitle": "{name} — 見られる画面",
+    "screensHint": "チェックした画面だけがこの管理者のメニューに出て、開けます。すべてチェックすると制限なしです。",
+    "screensAlways": "ダッシュボードはいつも表示されます。",
+    "screensBadge": "画面{count}つのみ"
   },
   "export": {
     "excel": "Excel",
@@ -2210,5 +2222,10 @@
     "reset": "標準に戻す",
     "save": "保存",
     "saved": "Excelの形式を保存しました"
+  },
+  "screens": {
+    "closedTitle": "この画面は見られません",
+    "closedHint": "代表が決めた画面だけ開けます。",
+    "home": "ダッシュボードへ"
   }
 }

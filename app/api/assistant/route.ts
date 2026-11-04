@@ -5,6 +5,7 @@
 import { answerInApp } from "@/lib/assistant-server";
 import { endIfExpired } from "@/lib/auth/session-guard";
 import { appUrl } from "@/lib/line-bot";
+import { hiddenBranches, scopedAdmin } from "@/lib/branch-scope-server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -30,7 +31,9 @@ export async function POST(req: Request) {
   if (recent.length >= 20) return Response.json({ error: "rate" }, { status: 429 });
   hits.set(user.id, [...recent, now]);
   try {
-    const a = await answerInApp(supabaseAdmin(), user.id, question, appUrl());
+    // Without the branches an owner kept this admin out of (lib/branch-scope-server)
+    const db = supabaseAdmin();
+    const a = await answerInApp(scopedAdmin(db, await hiddenBranches(db, user.id)), user.id, question, appUrl());
     return Response.json(a);
   } catch (e) {
     console.error("[assistant] app answer failed:", e instanceof Error ? e.message : e);

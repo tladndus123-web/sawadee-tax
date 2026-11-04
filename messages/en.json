@@ -365,7 +365,8 @@
   },
   "role": {
     "admin": "Admin",
-    "staff": "Staff"
+    "staff": "Staff",
+    "owner": "Owner"
   },
   "del": {
     "adminOnly": "Only admins can delete",
@@ -535,13 +536,24 @@
     "pinsOpen": "Open",
     "pinsHint": "The 4–8 digits typed when choosing a branch — admins type them too. After a change, staff who had that branch open type the new one. The same PINs as in branch settings.",
     "blockMenu": "Block branches",
-    "blockMenuHint": "Keep only this person out of chosen branches",
+    "blockMenuHint": "Keep only this person out of chosen branches (admins too)",
     "blockTitle": "{name} — branches to keep them out of",
     "blockHint": "For this person a ticked branch asks for a password, but no password opens it, and its ledger and sales stay hidden from them. Everyone else is unaffected.",
     "blockOn": "Blocked",
     "blockSave": "Save",
     "blockSaved": "Saved",
-    "blockedBadge": "{branch} blocked"
+    "blockedBadge": "{branch} blocked",
+    "ownerOnly": "Only owners can change this.",
+    "lastOwner": "At least one owner is required.",
+    "ownerOn": "Make owner",
+    "ownerOff": "Remove owner",
+    "ownerHint": "Owners see every branch and decide which branches and screens admins see",
+    "screensMenu": "Screens they can open",
+    "screensMenuHint": "Choose the menus this admin can open",
+    "screensTitle": "{name} — screens they can open",
+    "screensHint": "Only ticked screens show in this admin’s menu and open. All ticked = no limit.",
+    "screensAlways": "The dashboard always shows.",
+    "screensBadge": "{count} screens only"
   },
   "export": {
     "excel": "Excel",
@@ -2210,5 +2222,10 @@
     "reset": "Back to usual",
     "save": "Save",
     "saved": "Excel layout saved"
+  },
+  "screens": {
+    "closedTitle": "You can’t open this screen",
+    "closedHint": "Only the screens an owner chose can be opened.",
+    "home": "Go to dashboard"
   }
 }

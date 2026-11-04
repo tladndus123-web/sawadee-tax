@@ -53,11 +53,17 @@ export async function notifyNewClaim(id: string, appUrl: string): Promise<number
   if (!c || c.status !== "pending") return 0;
   const [settings, { data: admins }, all, ledger] = await Promise.all([
     settingsOf(admin),
-    admin.from("members").select("line_user_id").eq("role", "admin").is("disabled_at", null).not("line_user_id", "is", null),
+    admin.from("members").select("user_id, line_user_id").eq("role", "admin").is("disabled_at", null).not("line_user_id", "is", null),
     admin.from("expense_claims").select("*"),
     admin.from("documents").select("id, photo_hash").is("deleted_at", null).not("photo_hash", "is", null),
   ]);
   if (!settings.line || !admins?.length) return 0;
+  // Not to an admin an owner kept out of the claim's branch (supabase …003200_owners.sql)
+  const kept = c.branchId
+    ? new Set(((await admin.from("member_branch_blocks").select("user_id, members!inner(owner)").eq("branch_id", c.branchId)).data ?? [])
+        .filter((r) => !(r.members as unknown as { owner: boolean } | null)?.owner)
+        .map((r) => r.user_id as string))
+    : new Set<string>();
   const photoUrl = c.photoPath ? ((await admin.storage.from("documents").createSignedUrl(c.photoPath, 3 * 86_400)).data?.signedUrl ?? null) : null;
   const claims = (all.data ?? []).map((r) => rowToClaim(r as Record<string, unknown>));
   const month = c.day.slice(0, 7);
@@ -65,7 +71,7 @@ export async function notifyNewClaim(id: string, appUrl: string): Promise<number
   // What to look at before approving: the same checks as the app (lib/expense-checks)
   const flags = claimFlags(c, { claims, ledgerPhotos: (ledger.data ?? []).map((d) => ({ id: d.id as string, hash: d.photo_hash as string })) });
   let sent = 0;
-  for (const a of admins) {
+  for (const a of admins.filter((x) => !kept.has(x.user_id as string))) {
     const lang = await profileLang(a.line_user_id as string);
     const msg = claimCard(
       {

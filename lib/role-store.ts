@@ -5,6 +5,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { routing } from "@/i18n/routing";
+import { cleanScreens, type Screen } from "./screens";
 import { supabaseBrowser } from "./supabase/client";
 
 export type Role = "admin" | "staff";
@@ -16,9 +17,13 @@ export interface Me {
   role: Role;
   /** The branch an admin set as this person's usual one (first in the branch list after signing in) */
   homeBranch: string | null;
+  /** Above admins: sees every branch, sets what admins see (supabase …003200_owners.sql) */
+  owner: boolean;
+  /** The screens an owner lets this admin open (null = all) — lib/screens */
+  screens: Screen[] | null;
 }
 
-const SIGNED_OUT: Me = { loaded: false, userId: null, email: "", name: "", role: "staff", homeBranch: null };
+const SIGNED_OUT: Me = { loaded: false, userId: null, email: "", name: "", role: "staff", homeBranch: null, owner: false, screens: null };
 let me: Me = SIGNED_OUT;
 let started = false;
 const listeners = new Set<() => void>();
@@ -35,7 +40,7 @@ async function load() {
     me = { ...SIGNED_OUT, loaded: true };
     return emit();
   }
-  const { data } = await supabase.from("members").select("name, role, email, home_branch").eq("user_id", user.id).maybeSingle();
+  const { data } = await supabase.from("members").select("name, role, email, home_branch, owner, admin_screens").eq("user_id", user.id).maybeSingle();
   // Signed in but not an (active) member any more — e.g. an admin removed their access: sign out and say why
   if (!data && !/\/(login|auth)(\/|$)/.test(window.location.pathname)) {
     await supabase.auth.signOut();
@@ -50,6 +55,8 @@ async function load() {
     name: data?.name ?? "",
     role: data?.role === "admin" ? "admin" : "staff",
     homeBranch: (data?.home_branch as string | null) ?? null,
+    owner: data?.role === "admin" && !!data?.owner,
+    screens: cleanScreens(data?.admin_screens),
   };
   emit();
 }

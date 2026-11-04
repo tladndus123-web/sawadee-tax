@@ -34,6 +34,8 @@ insert into public.members (user_id, email, name, role) values
 delete from public.month_locks;
 
 -- Only the test admin is an admin inside this (rolled-back) test
+-- The test admin is an owner (full rights, as admins had before owners existed)
+update public.members set owner = true where user_id = '00000000-0000-0000-0000-00000000000a';
 update public.members set role = 'staff' where user_id <> '00000000-0000-0000-0000-00000000000a';
 
 create function pg_temp.act_as(uid uuid) returns void language sql as $$

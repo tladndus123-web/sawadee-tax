@@ -3,6 +3,7 @@ import { SessionWatch } from "@/components/auth/SessionWatch";
 import { StoredFormConfig } from "@/components/invoice/StoredFormConfig";
 import { AppHeader } from "@/components/layout/app-header";
 import { BranchGate } from "@/components/auth/BranchGate";
+import { ScreenGuard } from "@/components/auth/ScreenGuard";
 import { PasskeyOffer } from "@/components/auth/PasskeyOffer";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 
@@ -17,7 +18,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <BranchGate>
           {/* After an email sign-in: offer Face ID for next time */}
           <PasskeyOffer />
-          <StoredFormConfig>{children}</StoredFormConfig>
+          <StoredFormConfig>
+            {/* Screens an owner did not let this admin open */}
+            <ScreenGuard>{children}</ScreenGuard>
+          </StoredFormConfig>
         </BranchGate>
       </main>
       {/* The AI assistant (admins): a sheet on phones, a panel on the right on PC */}

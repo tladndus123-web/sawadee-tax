@@ -27,6 +27,7 @@ import { aiCard, goalCard, goalSetText, noticeMessage, shareCard } from "./line-
 import { createShare, goalSuggestion, setGoals } from "./month-end-server";
 import { type Ask, askFromData, askFromText, askSay, uploadPrompt } from "./line-ask";
 import { askAnswer } from "./line-ask-server";
+import { hiddenBranches, scopedAdmin } from "./branch-scope-server";
 import { linkAdminMenu, profileLang, unlinkMenu, UPLOAD_DATA } from "./line-menu";
 import { branchButtons, branchWords, imageType, lineBlobClient, lineBranchLabel, lineClient, receiptCard, salesBranchButtons, say } from "./line";
 import { inLang, type LineLang } from "./line-lang";
@@ -239,7 +240,9 @@ async function answerAsk(event: { replyToken?: string }, lineUser: string, ask: 
   await lineClient()
     .showLoadingAnimation({ chatId: lineUser, loadingSeconds: ask === "excel" ? 20 : 5 })
     .catch(() => undefined);
-  await send(event, lineUser, await askAnswer(supabaseAdmin(), ask, appUrl(), await langOf(lineUser)));
+  // Without the branches an owner kept this admin out of (lib/branch-scope-server)
+  const db = supabaseAdmin();
+  await send(event, lineUser, await askAnswer(scopedAdmin(db, await hiddenBranches(db, member.user_id)), ask, appUrl(), await langOf(lineUser)));
 }
 
 /**

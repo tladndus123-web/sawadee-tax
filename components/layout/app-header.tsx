@@ -6,6 +6,7 @@ import { Fragment, useLayoutEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useBranches } from "@/lib/branch-store";
 import { useMe } from "@/lib/role-store";
+import { canOpen, screenOf } from "@/lib/screens";
 import { cn } from "@/lib/utils";
 import { BranchSwitcher, useCurrentBranch } from "./branch-switcher";
 import { APP_MARK_GLOW, AppMark } from "./app-mark";
@@ -31,8 +32,11 @@ export function AppHeader() {
   const pathname = usePathname();
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   // Payroll and the tax calendar are for admins only
-  const isAdmin = useMe().role === "admin";
-  const nav = NAV.filter((n) => !("admin" in n) || isAdmin);
+  const me = useMe();
+  const isAdmin = me.role === "admin";
+  // …and an owner may limit an admin to some screens (lib/screens)
+  const nav = NAV.filter((n) => (!("admin" in n) || isAdmin) && canOpen(me, screenOf(n.href)));
+  const canUpload = canOpen(me, "upload");
   // Phones: dashboard, ledger, sales on the bar (with the camera between); everything else under "more"
   const onBar = (href: string) => href === "/" || href === "/ledger" || href === "/sales";
   const main = nav.filter((n) => onBar(n.href));
@@ -121,7 +125,8 @@ export function AppHeader() {
           <div className="mx-auto grid max-w-lg grid-cols-5 items-end">
             {main.map(({ href, key, icon: Icon }, i) => (
               <Fragment key={href}>
-                {i === 2 && (
+                {i === 2 && !canUpload && <span aria-hidden />}
+                {i === 2 && canUpload && (
                   <Link href="/upload" onClick={onTap("/upload")} aria-label={t("nav.upload")} className="tab-plus">
                     <span>
                       <Plus className="size-7" strokeWidth={2.4} aria-hidden />

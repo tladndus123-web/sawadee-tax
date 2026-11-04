@@ -11,6 +11,8 @@ insert into auth.users (id, email) values
 insert into public.members (user_id, email, name, role) values
   ('00000000-0000-0000-0000-00000000000a', 'admin@test.local', 'Admin', 'admin'),
   ('00000000-0000-0000-0000-00000000000b', 'staff@test.local', 'Staff', 'staff');
+-- The test admin is an owner (full rights, as admins had before owners existed)
+update public.members set owner = true where user_id = '00000000-0000-0000-0000-00000000000a';
 update public.members set role = 'staff' where user_id <> '00000000-0000-0000-0000-00000000000a';
 insert into public.branches (id, no, name) values
   ('00000000-0000-0000-0000-0000000000a1', '90001', 'A'),

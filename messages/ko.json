@@ -365,7 +365,8 @@
   },
   "role": {
     "admin": "관리자",
-    "staff": "직원"
+    "staff": "직원",
+    "owner": "대표"
   },
   "del": {
     "adminOnly": "관리자만 삭제할 수 있어요",
@@ -535,13 +536,24 @@
     "pinsOpen": "열기",
     "pinsHint": "지점을 고를 때 넣는 4~8자리 숫자예요. 관리자도 지점을 고를 때마다 넣어요. 바꾸면 그 지점을 열어 둔 직원도 새 번호를 넣어야 해요. 지점 관리에서 정한 것과 같은 번호예요.",
     "blockMenu": "지점 막기",
-    "blockMenuHint": "이 직원만 고른 지점을 못 보게 해요",
+    "blockMenuHint": "이 사람만 고른 지점을 못 보게 해요 (관리자도)",
     "blockTitle": "{name} — 못 보게 할 지점",
     "blockHint": "체크한 지점은 이 직원이 누르면 비밀번호 창이 뜨지만, 어떤 번호를 넣어도 열리지 않아요. 그 지점의 장부·매출도 이 직원에게는 보이지 않아요. 다른 사람은 그대로예요.",
     "blockOn": "막힘",
     "blockSave": "저장",
     "blockSaved": "저장했어요",
-    "blockedBadge": "{branch} 막힘"
+    "blockedBadge": "{branch} 막힘",
+    "ownerOnly": "대표만 바꿀 수 있어요.",
+    "lastOwner": "대표가 한 명은 있어야 해요.",
+    "ownerOn": "대표로 지정",
+    "ownerOff": "대표 해제",
+    "ownerHint": "대표는 모든 지점을 보고, 관리자가 볼 지점·화면을 정해요",
+    "screensMenu": "볼 수 있는 화면",
+    "screensMenuHint": "이 관리자가 열 수 있는 메뉴를 정해요",
+    "screensTitle": "{name} — 볼 수 있는 화면",
+    "screensHint": "체크한 화면만 이 관리자의 메뉴에 나오고 열려요. 모두 체크하면 제한이 없어요.",
+    "screensAlways": "대시보드는 항상 보여요.",
+    "screensBadge": "화면 {count}개만"
   },
   "export": {
     "excel": "엑셀",
@@ -2210,5 +2222,10 @@
     "reset": "기본 양식으로",
     "save": "저장",
     "saved": "엑셀 양식을 저장했어요"
+  },
+  "screens": {
+    "closedTitle": "이 화면은 볼 수 없어요",
+    "closedHint": "대표가 정한 화면만 열 수 있어요.",
+    "home": "대시보드로"
   }
 }

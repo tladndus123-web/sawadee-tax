@@ -1,6 +1,7 @@
 "use client";
 
-import { Ban, Loader2, Lock, Mail, MessageCircle, MoreHorizontal, RotateCcw, UserMinus, UserPlus } from "lucide-react";
+import { Ban, Crown, Eye, Loader2, Lock, Mail, MessageCircle, MoreHorizontal, RotateCcw, UserMinus, UserPlus } from "lucide-react";
+import { SCREENS, type Screen } from "@/lib/screens";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -22,6 +23,10 @@ interface Member {
   email: string;
   name: string;
   role: Role;
+  /** Above admins (supabase …003200_owners.sql) */
+  owner: boolean;
+  /** The screens an owner lets this admin open (null = all) */
+  adminScreens: string[] | null;
   homeBranch: string | null;
   createdAt: string;
   line: boolean;
@@ -52,6 +57,9 @@ export function MembersCard() {
   // Branches a staff member is kept out of (it looks locked to them; no password opens it) — admins only
   const [blocks, setBlocks] = useState<{ userId: string; branchId: string }[]>([]);
   const [blocking, setBlocking] = useState<Member | null>(null);
+  const [screening, setScreening] = useState<Member | null>(null);
+  // Owners alone keep people out of branches, set admins' screens and make admins (the database checks the same)
+  const isOwner = me.owner;
   const { branches } = useBranches();
   const names = useBranchName();
 
@@ -101,7 +109,14 @@ export function MembersCard() {
 
   const changeRole = async (m: Member, next: Role) => {
     const { error } = await supabaseBrowser().from("members").update({ role: next }).eq("user_id", m.userId);
-    if (error) toast.error(/admin is required/.test(error.message) ? t("members.lastAdmin") : error.message);
+    if (error) toast.error(/admin is required/.test(error.message) ? t("members.lastAdmin") : /only owners/.test(error.message) ? t("members.ownerOnly") : error.message);
+    else toast.success(t("members.roleChanged"));
+    void load();
+  };
+
+  const changeOwner = async (m: Member, next: boolean) => {
+    const { error } = await supabaseBrowser().from("members").update({ owner: next }).eq("user_id", m.userId);
+    if (error) toast.error(/owner is required/.test(error.message) ? t("members.lastOwner") : /only owners/.test(error.message) ? t("members.ownerOnly") : error.message);
     else toast.success(t("members.roleChanged"));
     void load();
   };
@@ -144,6 +159,12 @@ export function MembersCard() {
                     <span className="flex min-w-0 items-center gap-2 text-sm font-medium">
                       <span className="truncate">{name}</span>
                       {self && <span className="flex-none rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-semibold text-brand">{t("members.you")}</span>}
+                      {m.owner && (
+                        <span className="inline-flex flex-none items-center gap-1 rounded-full bg-warn-soft px-2 py-0.5 text-[11px] font-semibold text-warn">
+                          <Crown className="size-3" aria-hidden />
+                          {t("role.owner")}
+                        </span>
+                      )}
                     </span>
                     {m.name && <span className="block truncate text-xs text-muted-foreground">{m.email}</span>}
                     <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -164,6 +185,12 @@ export function MembersCard() {
                             {t("members.blockedBadge", { branch: branchLabel(b!, names) })}
                           </span>
                         ))}
+                      {m.role === "admin" && !m.owner && m.adminScreens && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+                          <Eye className="size-3" aria-hidden />
+                          {t("members.screensBadge", { count: m.adminScreens.length })}
+                        </span>
+                      )}
                       {m.line && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-[#06c755]/12 px-2 py-0.5 font-medium text-[#05a847]">
                           <MessageCircle className="size-3" aria-hidden />
@@ -190,11 +217,15 @@ export function MembersCard() {
                   )}
                   <select
                     value={m.role}
+                    disabled={!isOwner && (m.role === "admin" || m.owner)}
+                    title={!isOwner && m.role === "admin" ? t("members.ownerOnly") : undefined}
                     onChange={(e) => void changeRole(m, e.target.value as Role)}
                     aria-label={`${m.email} · ${t("members.title")}`}
                     className={cn("h-10 rounded-full border bg-card px-3 text-sm", m.role === "admin" && "font-semibold text-primary")}
                   >
-                    <option value="admin">{t("role.admin")}</option>
+                    <option value="admin" disabled={!isOwner}>
+                      {t("role.admin")}
+                    </option>
                     <option value="staff">{t("role.staff")}</option>
                   </select>
                   <DropdownMenu>
@@ -211,7 +242,25 @@ export function MembersCard() {
                           <span className="text-[11px] text-muted-foreground">{t("members.sendEmailHint")}</span>
                         </span>
                       </DropdownMenuItem>
-                      {m.role !== "admin" && branches.length > 1 && (
+                      {isOwner && m.role === "admin" && !m.owner && (
+                        <DropdownMenuItem onSelect={() => setScreening(m)} className="items-start gap-2 py-2">
+                          <Eye className="mt-0.5 size-4" />
+                          <span className="grid">
+                            {t("members.screensMenu")}
+                            <span className="text-[11px] text-muted-foreground">{t("members.screensMenuHint")}</span>
+                          </span>
+                        </DropdownMenuItem>
+                      )}
+                      {isOwner && m.role === "admin" && !self && (
+                        <DropdownMenuItem onSelect={() => void changeOwner(m, !m.owner)} className="items-start gap-2 py-2">
+                          <Crown className="mt-0.5 size-4" />
+                          <span className="grid">
+                            {m.owner ? t("members.ownerOff") : t("members.ownerOn")}
+                            <span className="text-[11px] text-muted-foreground">{t("members.ownerHint")}</span>
+                          </span>
+                        </DropdownMenuItem>
+                      )}
+                      {isOwner && !m.owner && branches.length > 1 && (
                         <DropdownMenuItem onSelect={() => setBlocking(m)} className="items-start gap-2 py-2">
                           <Ban className="mt-0.5 size-4" />
                           <span className="grid">
@@ -220,7 +269,7 @@ export function MembersCard() {
                           </span>
                         </DropdownMenuItem>
                       )}
-                      {!self && (
+                      {!self && (isOwner || (m.role !== "admin" && !m.owner)) && (
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onSelect={() => setRemoving(m)} className="gap-2 py-2 text-bad focus:text-bad">
@@ -276,7 +325,7 @@ export function MembersCard() {
         </label>
         <select value={role} onChange={(e) => setRole(e.target.value as Role)} aria-label={t("role.staff")} className="h-10 rounded-full border bg-card px-3 text-sm">
           <option value="staff">{t("role.staff")}</option>
-          <option value="admin">{t("role.admin")}</option>
+          {isOwner && <option value="admin">{t("role.admin")}</option>}
         </select>
         <Button type="submit" className="h-10 rounded-full" disabled={!!busy}>
           {busy === "invite" ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
@@ -304,6 +353,14 @@ export function MembersCard() {
           kept={blocks.filter((k) => k.userId === blocking.userId).map((k) => k.branchId)}
           onClose={() => setBlocking(null)}
           onSaved={() => (setBlocking(null), void load())}
+        />
+      )}
+
+      {screening && (
+        <ScreensDialog
+          member={screening}
+          onClose={() => setScreening(null)}
+          onSaved={() => (setScreening(null), void load())}
         />
       )}
 
@@ -412,6 +469,65 @@ function BlockDialog({ member, branches, kept, onClose, onSaved }: { member: Mem
             </li>
           ))}
         </ul>
+        <DialogFooter>
+          <Button type="button" variant="ghost" className="rounded-full" onClick={onClose} disabled={busy}>
+            {t("common.cancel")}
+          </Button>
+          <Button type="button" className="rounded-full px-6" onClick={() => void save()} disabled={busy}>
+            {busy && <Loader2 className="size-4 animate-spin" />}
+            {t("members.blockSave")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Which screens this admin may open (owners only; all ticked = no limit) — lib/screens */
+function ScreensDialog({ member, onClose, onSaved }: { member: Member; onClose: () => void; onSaved: () => void }) {
+  const t = useTranslations();
+  const [on, setOn] = useState<ReadonlySet<Screen>>(new Set((member.adminScreens ?? SCREENS) as Screen[]));
+  const [busy, setBusy] = useState(false);
+  const toggle = (s: Screen, checked: boolean) =>
+    setOn((cur) => {
+      const next = new Set(cur);
+      if (checked) next.add(s);
+      else next.delete(s);
+      return next;
+    });
+  const save = async () => {
+    setBusy(true);
+    const list = SCREENS.filter((s) => on.has(s));
+    const { error } = await supabaseBrowser()
+      .from("members")
+      .update({ admin_screens: list.length === SCREENS.length ? null : list })
+      .eq("user_id", member.userId);
+    if (error) {
+      toast.error(/only owners/.test(error.message) ? t("members.ownerOnly") : t("app.saveFail"));
+      setBusy(false);
+      return;
+    }
+    toast.success(t("members.blockSaved"));
+    onSaved();
+  };
+  return (
+    <Dialog open onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent className="rounded-3xl sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("members.screensTitle", { name: member.name || member.email })}</DialogTitle>
+          <DialogDescription>{t("members.screensHint")}</DialogDescription>
+        </DialogHeader>
+        <ul className="grid grid-cols-2 gap-1.5">
+          {SCREENS.map((s) => (
+            <li key={s}>
+              <label className={cn("flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3", on.has(s) ? "bg-brand-soft text-brand" : "bg-muted/60 text-muted-foreground")}>
+                <input type="checkbox" className="size-4" checked={on.has(s)} onChange={(e) => toggle(s, e.target.checked)} />
+                <span className="text-sm font-medium">{t(`nav.${s}`)}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-muted-foreground">{t("members.screensAlways")}</p>
         <DialogFooter>
           <Button type="button" variant="ghost" className="rounded-full" onClick={onClose} disabled={busy}>
             {t("common.cancel")}
