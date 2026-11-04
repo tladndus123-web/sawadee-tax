@@ -5,13 +5,14 @@
 // own, or the separate "all branches" one — checked on the screen only (the database shows admins everything).
 // Asked once per sign-in. The same list opens from the branch button in the top bar.
 
-import { ChevronRight, Loader2, Lock } from "lucide-react";
+import { ChevronRight, KeyRound, Loader2, Lock } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { BranchAvatar, useBranchName } from "@/components/layout/branch-switcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { checkAdminPin, chosenFor, markChosen, myUnlock, signInMark, unlockBranch, useBranchPins } from "@/lib/branch-lock";
+import { passkeyHere, passkeySupported } from "@/lib/auth/passkey";
+import { checkAdminPin, chosenFor, markChosen, myUnlock, signInMark, unlockBranch, unlockWithPasskey, useBranchPins } from "@/lib/branch-lock";
 import { ALL, branchLabel } from "@/lib/branches";
 import { setBranch, useBranch, useBranches } from "@/lib/branch-store";
 import { useMe } from "@/lib/role-store";
@@ -33,9 +34,14 @@ export function BranchPicker({ onDone, openHome }: { onDone?: () => void; openHo
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const pinRef = useRef<HTMLInputElement>(null);
+  // Quick sign-in opens a locked branch too, on a device that registered one (the PIN stays below it)
+  const [quick, setQuick] = useState(false);
   useEffect(() => {
-    if (asking) pinRef.current?.focus();
-  }, [asking]);
+    void passkeySupported().then((ok) => setQuick(ok && !!passkeyHere()));
+  }, []);
+  useEffect(() => {
+    if (asking && !quick) pinRef.current?.focus();
+  }, [asking, quick]);
   // Right after signing in: their usual branch (set by an admin) has its PIN box open already
   const home = me.homeBranch && branches.some((b) => b.id === me.homeBranch) ? me.homeBranch : null;
   const homeOpened = useRef(false);
@@ -90,6 +96,22 @@ export function BranchPicker({ onDone, openHome }: { onDone?: () => void; openHo
     }
   };
 
+  const withPasskey = async () => {
+    if (!asking) return;
+    setBusy(asking);
+    setError(null);
+    try {
+      const r = await unlockWithPasskey(asking, staff);
+      if (r === "ok") return void (await enter(asking));
+      if (r === "other") return void window.location.reload();
+      if (r !== "cancel") setError(r === "wait" ? t("wait") : t("passkeyFail"));
+    } catch {
+      setError(t("fail"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   // Their usual branch first
   const ids = branches.map((b) => b.id);
   const rows = [...(staff ? [] : [ALL]), ...(home ? [home, ...ids.filter((id) => id !== home)] : ids)];
@@ -131,6 +153,15 @@ export function BranchPicker({ onDone, openHome }: { onDone?: () => void; openHo
                   void submit();
                 }}
               >
+                {quick && (
+                  <>
+                    <Button type="button" className="h-11 rounded-full" disabled={busy !== null} onClick={() => void withPasskey()}>
+                      {busy === id ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" aria-hidden />}
+                      {t("passkey")}
+                    </Button>
+                    <p className="text-center text-[11px] text-muted-foreground">{t("orPin")}</p>
+                  </>
+                )}
                 <label className="grid gap-1">
                   <span className="text-xs text-muted-foreground">{t("pin")}</span>
                   <Input
@@ -145,7 +176,7 @@ export function BranchPicker({ onDone, openHome }: { onDone?: () => void; openHo
                   />
                 </label>
                 {error && <p className="text-xs font-medium text-bad">{error}</p>}
-                <Button type="submit" className="h-10 rounded-full" disabled={pin.length < 4 || busy !== null}>
+                <Button type="submit" variant={quick ? "outline" : "default"} className="h-10 rounded-full" disabled={pin.length < 4 || busy !== null}>
                   {busy === id && <Loader2 className="size-4 animate-spin" />}
                   {t("enter")}
                 </Button>

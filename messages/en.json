@@ -1764,7 +1764,10 @@
     "wrong": "That password is not right.",
     "wait": "Five wrong tries. Please try again in 10 minutes.",
     "fail": "Could not open it now. Please try again shortly.",
-    "home": "My branch"
+    "home": "My branch",
+    "passkey": "Open with quick sign-in",
+    "orPin": "or the branch password",
+    "passkeyFail": "Couldn’t open it with quick sign-in."
   },
   "errorPage": {
     "title": "Something went wrong",

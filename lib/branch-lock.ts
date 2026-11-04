@@ -63,6 +63,30 @@ export async function unlockBranch(branchId: string, pin: string): Promise<Unloc
   return data ? "ok" : "wrong";
 }
 
+/**
+ * Open a branch with quick sign-in instead of its PIN (owner 2026-11-04; supabase …003100_branch_passkey.sql): sign
+ * in again with this device's passkey, then the database checks the fresh token. "cancel" = the system sheet was
+ * closed; "other" = the passkey belongs to another account (that account is now signed in — reload).
+ */
+export async function unlockWithPasskey(branchId: string, staff: boolean): Promise<UnlockResult | "cancel" | "other"> {
+  const sb = supabaseBrowser();
+  const before = (await sb.auth.getSession()).data.session?.user.id;
+  const { data, error } = await sb.auth.signInWithPasskey();
+  if (error) {
+    const { isCancel } = await import("./auth/passkey");
+    if (isCancel(error)) return "cancel";
+    return "wrong";
+  }
+  const after = data?.session?.user.id ?? (await sb.auth.getSession()).data.session?.user.id;
+  if (before && after && before !== after) return "other";
+  const res = staff || branchId !== "all" ? await sb.rpc("unlock_branch_passkey", { p_branch: branchId }) : await sb.rpc("passkey_fresh");
+  if (res.error) {
+    if (/too_many_tries/.test(res.error.message)) return "wait";
+    throw res.error;
+  }
+  return res.data ? "ok" : "wrong";
+}
+
 /** Admins (checked on the screen only): the branch's PIN, or the "all branches" one for `id` = "all" */
 export async function checkAdminPin(branchId: string, pin: string, all: boolean): Promise<UnlockResult> {
   const sb = supabaseBrowser();
