@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, Crown, Eye, Loader2, Lock, Mail, MessageCircle, MoreHorizontal, RotateCcw, UserMinus, UserPlus } from "lucide-react";
+import { Ban, Crown, Eye, Loader2, Mail, MessageCircle, MoreHorizontal, RotateCcw, UserMinus, UserPlus } from "lucide-react";
 import { SCREENS, type Screen } from "@/lib/screens";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -15,7 +15,6 @@ import { useBranches } from "@/lib/branch-store";
 import { type Role, useMe } from "@/lib/role-store";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { BranchPins } from "./BranchCard";
 import { useFoldStatus } from "./SettingsFold";
 
 interface Member {
@@ -69,9 +68,10 @@ export function MembersCard() {
     setBlocks((kept.data ?? []).map((r) => ({ userId: r.user_id as string, branchId: r.branch_id as string })));
   }, []);
   useEffect(() => {
-    if (me.role === "admin") void load();
-  }, [me.role, load]);
-  if (me.role !== "admin") return null;
+    if (me.owner) void load();
+  }, [me.owner, load]);
+  // Owners only (owner 2026-11-04: "직원관리는 대표자만") — the database and /api/members check the same
+  if (!me.owner) return null;
 
   const call = async (key: string, init: RequestInit) => {
     setBusy(key);
@@ -332,19 +332,6 @@ export function MembersCard() {
           {t("members.invite")}
         </Button>
       </form>
-
-      {/* The passwords for choosing a branch (everyone types them, admins too) — the same as in branch settings */}
-      <details className="group grid gap-3 rounded-2xl border border-border/70 p-3">
-        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold">
-          <Lock className="size-4 text-brand" aria-hidden />
-          {t("members.pinsTitle")}
-          <span className="ml-auto text-xs font-normal text-muted-foreground group-open:hidden">{t("members.pinsOpen")}</span>
-        </summary>
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{t("members.pinsHint")}</p>
-        <div className="mt-2">
-          <BranchPins />
-        </div>
-      </details>
 
       {blocking && (
         <BlockDialog

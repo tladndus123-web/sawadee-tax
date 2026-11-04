@@ -1,4 +1,4 @@
-// Member management (admins only).
+// Member management (owners only, 2026-11-04).
 //   GET    list with sign-in status (last sign-in, invite accepted, LINE linked, access removed)
 //   POST   invite by email. Sign-up is disabled, so this is the only way in: the service role sends
 //          the invite email and records the membership with the chosen role (re-inviting restores access).
@@ -28,9 +28,9 @@ async function adminSession() {
   } = await supabase.auth.getUser();
   if (!user || (await endIfExpired(supabase))) return { error: fail("signin", 401) };
   const { data: me } = await supabase.from("members").select("role, owner, disabled_at").eq("user_id", user.id).maybeSingle();
-  if (me?.role !== "admin" || me.disabled_at) return { error: fail("forbidden", 403) };
-  // Owners (above admins) alone make or change admins — supabase …003200_owners.sql
-  return { supabase, user, owner: !!me.owner };
+  // Staff management is for owners only (owner 2026-11-04) — supabase …003300
+  if (me?.role !== "admin" || !me.owner || me.disabled_at) return { error: fail("forbidden", 403) };
+  return { supabase, user, owner: true };
 }
 
 /** Sign-in link by email (implicit flow: the link works on any device, not only the admin's browser) */

@@ -14,7 +14,7 @@ import { BRANCH_COLORS, type Branch, branchLabel, COLOR_NAMES, colorOf, isHead }
 import { deleteBranch, saveBranch, useBranches } from "@/lib/branch-store";
 import { useMe } from "@/lib/role-store";
 import { cn } from "@/lib/utils";
-import { setAllBranchesPin, setBranchPin, useBranchPins } from "@/lib/branch-lock";
+import { setAllBranchesPin, useBranchPins } from "@/lib/branch-lock";
 import { useFoldStatus } from "./SettingsFold";
 
 export function BranchCard() {
@@ -22,7 +22,7 @@ export function BranchCard() {
   const names = useBranchName();
   const isAdmin = useMe().role === "admin";
   const { branches, loaded } = useBranches();
-  const { pins, all: allPin } = useBranchPins();
+  const { all: allPin } = useBranchPins();
   const tf = useTranslations("fold");
   useFoldStatus(loaded ? tf("branches", { count: branches.length }) : null);
   const [editing, setEditing] = useState<Partial<Branch> | null>(null);
@@ -82,7 +82,6 @@ export function BranchCard() {
               <span className="grid min-w-0 flex-1">
                 <span className="flex min-w-0 items-center gap-1.5">
                   <span className="truncate text-[15px] font-medium">{branchLabel(b, names)}</span>
-                  {pins.has(b.id) && <Lock className="size-3.5 flex-none text-muted-foreground" aria-label={t("pinSet")} />}
                 </span>
                 {!!b.closedDays?.length && (
                   <span className="text-xs text-muted-foreground">{t("closedShort", { days: b.closedDays.map((d) => weekdays[d]).join(" · ") })}</span>
@@ -189,8 +188,6 @@ export function BranchCard() {
             </div>
             <p className="text-[11px] leading-snug text-muted-foreground">{t("closedHint")}</p>
           </div>
-          {/* Branch password: staff type it after signing in to open this branch (admins never need it) */}
-          {editing.id && <PinField hasPin={pins.has(editing.id)} onSave={(v) => setBranchPin(editing.id!, v)} />}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" className="rounded-full" disabled={busy} onClick={() => setEditing(null)}>
               {t("cancel")}
@@ -203,32 +200,6 @@ export function BranchCard() {
         </form>
       )}
     </section>
-  );
-}
-
-/**
- * Every branch's password in one place, and the "all branches" one — also shown in staff management (owner
- * 2026-11-04: "직원관리에서 설정 가능"). The same PINs as in each branch's own settings.
- */
-export function BranchPins() {
-  const t = useTranslations("branch");
-  const names = useBranchName();
-  const { branches } = useBranches();
-  const { pins, all: allPin } = useBranchPins();
-  if (!branches.length) return null;
-  return (
-    <div className="grid gap-2">
-      {branches.map((b) => (
-        <div key={b.id} className="grid gap-1.5 rounded-2xl bg-muted/50 p-2">
-          <span className="flex items-center gap-2 px-1 text-sm font-medium">
-            <BranchAvatar branch={b} branches={branches} />
-            {branchLabel(b, names)}
-          </span>
-          <PinField hasPin={pins.has(b.id)} onSave={(v) => setBranchPin(b.id, v)} />
-        </div>
-      ))}
-      {branches.length > 1 && <PinField hasPin={allPin} onSave={setAllBranchesPin} title={t("allPinTitle")} hint={t("allPinHint")} />}
-    </div>
   );
 }
 

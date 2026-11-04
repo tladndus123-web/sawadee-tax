@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (533) · `npm run db:test` (366 in 6 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (533) · `npm run db:test` (368 in 6 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -131,6 +131,10 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   branch table now uses `admin_for(branch_id)` / `admin_for_employee()`. Service-role reads for one admin (LINE
   answers, AI assistant, claim notices) go through `lib/branch-scope-server` (`scopedAdmin`, `hiddenBranches`).
   Company-wide reminders (VAT/payroll deadline totals) are not split by branch.
+- **No branch PINs any more** (2026-11-04, …003300): per-person branch access replaced them; all PINs were removed,
+  the screens to set them are gone (only the "all branches" PIN stays, in branch settings). `set_branch_pin` is
+  owners-only with no screen. **Staff management is owners only** (settings fold, /api/members, policy
+  "owners manage members"; everyone still edits their own name/LINE link).
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

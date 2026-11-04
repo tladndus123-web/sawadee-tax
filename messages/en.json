@@ -532,9 +532,6 @@
     "noHome": "No home branch",
     "homeHint": "After signing in it comes first in the branch list with its PIN box open",
     "homeChanged": "Home branch changed.",
-    "pinsTitle": "Branch passwords (quick PIN)",
-    "pinsOpen": "Open",
-    "pinsHint": "The 4–8 digits typed when choosing a branch — admins type them too. After a change, staff who had that branch open type the new one. The same PINs as in branch settings.",
     "blockMenu": "Block branches",
     "blockMenuHint": "Keep only this person out of chosen branches (admins too)",
     "blockTitle": "{name} — branches to keep them out of",
@@ -1255,7 +1252,7 @@
     "pinHint": "Staff and admins type it when they choose this branch. If it is forgotten, an admin sets a new one here. It is stored encrypted, so nobody can read it back.",
     "allPinTitle": "All-branches password",
     "allPinNone": "None (admins see all branches without one)",
-    "allPinHint": "Admins type it to enter \"All branches\". It is separate from each branch's password.",
+    "allPinHint": "The password admins type to open “All branches”.",
     "rank": {
       "by": "Rank by",
       "sales": "Sales",

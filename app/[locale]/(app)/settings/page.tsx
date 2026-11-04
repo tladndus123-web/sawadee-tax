@@ -4,6 +4,7 @@ import { FormSettings } from "@/components/settings/FormSettings";
 import { ExcelFormatCard } from "@/components/settings/ExcelFormatCard";
 import { AccountCard, CompanyCard } from "@/components/settings/AccountSettings";
 import { MembersCard } from "@/components/settings/MembersCard";
+import { OwnerOnly } from "@/components/settings/OwnerOnly";
 import { StickerNameSettings } from "@/components/ledger/Stickers";
 import { LineCard } from "@/components/settings/LineCard";
 import { BranchCard } from "@/components/settings/BranchCard";
@@ -51,11 +52,13 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
             <ExcelFormatCard />
           </SettingsFold>
         </SettingsGroup>
-        <SettingsGroup title={t("settings.group.team")}>
-          <SettingsFold icon={<UserPlus className="text-primary" />} title={t("members.title")}>
-            <MembersCard />
-          </SettingsFold>
-        </SettingsGroup>
+        <OwnerOnly>
+          <SettingsGroup title={t("settings.group.team")}>
+            <SettingsFold icon={<UserPlus className="text-primary" />} title={t("members.title")}>
+              <MembersCard />
+            </SettingsFold>
+          </SettingsGroup>
+        </OwnerOnly>
         <SettingsGroup title={t("settings.group.notify")}>
           <SettingsFold icon={<MessageCircle className="text-[#06c755]" />} title={t("line.title")}>
             <LineCard />

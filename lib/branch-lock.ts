@@ -124,13 +124,6 @@ export async function myUnlock(): Promise<{ branchId: string; expiresAt: number 
   return expiresAt > Date.now() ? { branchId: data.branch_id as string, expiresAt } : null;
 }
 
-/** Admins only: set, change or remove ("") a branch's PIN */
-export async function setBranchPin(branchId: string, pin: string) {
-  const { error } = await supabaseBrowser().rpc("set_branch_pin", { p_branch: branchId, p_pin: pin });
-  if (error) throw error;
-  await reload();
-}
-
 /** This sign-in (its time): a new sign-in asks for the branch again */
 export async function signInMark(): Promise<string> {
   const { data } = await supabaseBrowser().auth.getSession();

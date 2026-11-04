@@ -1,7 +1,7 @@
 -- One staff member kept out of one branch (…003000_member_branch_blocks.sql). Run: npm run db:test. Everything rolls back.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(21);
+select plan(23);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000b1001', 'boss-b@test.local'),
@@ -63,10 +63,16 @@ select is(public.check_branch_pin('00000000-0000-0000-0000-0000000bb001', '1234'
 select throws_ok($$ select public.set_branch_pin('00000000-0000-0000-0000-0000000bb001', '5555') $$, 'P0001', 'admin_only', 'the kept-out admin cannot change its PIN');
 select is((select count(*)::int from public.member_branch_blocks), 0, 'and cannot see the blocks');
 -- Admins vs owners: only owners make admins or owners
-select throws_ok($$ update public.members set role = 'admin' where user_id = '00000000-0000-0000-0000-0000000b1003' $$, 'P0001', 'only owners can change admins', 'a plain admin cannot make an admin');
+update public.members set role = 'admin' where user_id = '00000000-0000-0000-0000-0000000b1003';
+select is((select role from public.members where user_id = '00000000-0000-0000-0000-0000000b1003'), 'staff', 'a plain admin cannot make an admin (members are for owners)');
 select throws_ok($$ update public.members set owner = true where user_id = '00000000-0000-0000-0000-0000000b1004' $$, 'P0001', 'only owners can change this', 'nor an owner');
 select pg_temp.act_as('00000000-0000-0000-0000-0000000b1001');
 select lives_ok($$ update public.members set role = 'admin' where user_id = '00000000-0000-0000-0000-0000000b1003' $$, 'the owner makes an admin');
+
+-- Branch PINs are gone; only owners could still set one (no screen)
+select pg_temp.act_as('00000000-0000-0000-0000-0000000b1004');
+select throws_ok($$ select public.set_branch_pin('00000000-0000-0000-0000-0000000bb001', '5555') $$, 'P0001', 'admin_only', 'a plain admin cannot set a branch PIN');
+select is((select count(*)::int from public.branch_pins), 0, 'no branch PINs are left');
 
 select * from finish();
 rollback;
