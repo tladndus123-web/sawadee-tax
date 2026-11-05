@@ -19,6 +19,14 @@ export function canOpen(me: { role: string; owner: boolean; screens: readonly st
   return me.screens.includes(screen);
 }
 
+/**
+ * The AI assistant, the LINE number answers and the company reminders read the whole books, so they are only for
+ * admins an owner did not limit (no screen list, kept out of no branch) — and owners.
+ */
+export function fullAdmin(me: { role: string; owner: boolean; screens: readonly string[] | null; kept?: number }): boolean {
+  return me.role === "admin" && (me.owner || (me.screens === null && !me.kept));
+}
+
 /** Only known screen names, in menu order (null stays null = all) */
 export function cleanScreens(v: unknown): Screen[] | null {
   if (!Array.isArray(v)) return null;

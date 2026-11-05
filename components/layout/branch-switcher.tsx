@@ -67,7 +67,8 @@ export function BranchSwitcher() {
   const [open, setOpen] = useState(false);
   const pinsNow = useBranchPins();
   // Staff always, admins once any PIN is set: the list that asks for PINs (else the sheet with the month's figures)
-  const staff = useMe().role !== "admin" || pinsNow.pins.size > 0 || pinsNow.all;
+  const me = useMe();
+  const staff = me.role !== "admin" || pinsNow.pins.size > 0 || pinsNow.all || !me.allBranches;
   if (branches.length < 2) return null;
   return (
     <>

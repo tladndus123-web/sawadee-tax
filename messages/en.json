@@ -550,7 +550,10 @@
     "screensTitle": "{name} — screens they can open",
     "screensHint": "Only ticked screens show in this admin’s menu and open. All ticked = no limit.",
     "screensAlways": "The dashboard always shows.",
-    "screensBadge": "{count} screens only"
+    "screensBadge": "{count} screens only",
+    "noAll": "No “all branches”",
+    "noAllHint": "Picks one branch at a time (no combined view)",
+    "noAllBadge": "No all branches"
   },
   "export": {
     "excel": "Excel",
@@ -1763,7 +1766,7 @@
   },
   "gate": {
     "title": "Which branch are you working in?",
-    "hint": "Choose a branch. Those with 🔒 need their password.",
+    "hint": "Choose the branch to work in.",
     "hintAdmin": "Choose a branch to look at. Admins need no password.",
     "all": "All branches",
     "current": "Current branch",

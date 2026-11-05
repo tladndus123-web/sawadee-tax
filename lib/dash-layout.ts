@@ -7,6 +7,14 @@
 export const DASH_CARDS = ["profit", "tiles", "todo", "upcoming", "recent", "cost", "claims"] as const;
 export type DashCard = (typeof DASH_CARDS)[number];
 export const WIDE: ReadonlySet<DashCard> = new Set(["profit", "tiles"]);
+/** The screen each card shows (an admin an owner limited sees only the cards of their screens) — lib/screens */
+export const CARD_SCREEN: Partial<Record<DashCard, "sales" | "calendar" | "expenses" | "ledger">> = {
+  profit: "sales",
+  recent: "sales",
+  cost: "sales",
+  upcoming: "calendar",
+  claims: "expenses",
+};
 /** Cards only admins see */
 export const ADMIN_ONLY: ReadonlySet<DashCard> = new Set(["upcoming", "claims"]);
 

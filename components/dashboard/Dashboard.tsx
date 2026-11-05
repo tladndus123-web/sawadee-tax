@@ -31,7 +31,8 @@ import { ALL } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
 import { BranchTable } from "./BranchTable";
 import { DashEditor } from "./DashEditor";
-import { ADMIN_ONLY, arrange, type DashCard } from "@/lib/dash-layout";
+import { ADMIN_ONLY, arrange, CARD_SCREEN, DASH_CARDS, type DashCard } from "@/lib/dash-layout";
+import { canOpen } from "@/lib/screens";
 import { ClaimsCard } from "./ClaimsCard";
 import { UpcomingCard } from "./UpcomingCard";
 import { useDashLayout } from "@/lib/dash-layout-store";
@@ -78,7 +79,11 @@ export function Dashboard() {
   const { sales } = useSales();
   const { lines: labor } = useLabor();
   const { lines: fixed } = useCostLines();
-  const isAdmin = useMe().role === "admin";
+  const me = useMe();
+  const isAdmin = me.role === "admin";
+  // Cards of screens an owner did not let this admin open
+  const notMine = DASH_CARDS.filter((c) => !canOpen(me, CARD_SCREEN[c] ?? null));
+  const seeCalendar = canOpen(me, "calendar");
   const [dash, setDash] = useDashLayout();
   const allBranches = useBranch() === ALL;
   const branchCount = useBranches().branches.length;
@@ -206,9 +211,11 @@ export function Dashboard() {
           >
             <DueList items={due} docs={docs} />
           </SettingsFold>
+          {seeCalendar && (
           <SettingsFold row lazy icon={<CalendarClock className="text-primary" />} title={t("dash.vatRow", { month: new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(new Date(`${filing.month}-01T00:00:00Z`)) })} status={vatStatus}>
             <VatCard entries={entries} companyTaxId={company.taxId} today={today} />
           </SettingsFold>
+          )}
           {isAdmin && (
             <SettingsFold row lazy icon={<Lock className="text-muted-foreground" />} title={t("close.row")}>
               <MonthCloseCard />
@@ -224,7 +231,7 @@ export function Dashboard() {
     upcoming: isAdmin ? <UpcomingCard today={today} /> : null,
     claims: isAdmin ? <ClaimsCard today={today} /> : null,
   };
-  const layout = arrange({ ...dash, hidden: [...dash.hidden, ...(isAdmin ? [] : [...ADMIN_ONLY])] });
+  const layout = arrange({ ...dash, hidden: [...dash.hidden, ...(isAdmin ? [] : [...ADMIN_ONLY]), ...notMine] });
 
   if (!loaded) return <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
 
@@ -248,7 +255,7 @@ export function Dashboard() {
           </select>
           <ChevronDown className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
         </span>
-        <DashEditor layout={dash} onChange={setDash} isAdmin={isAdmin} />
+        <DashEditor layout={dash} onChange={setDash} isAdmin={isAdmin} notMine={notMine} />
         {/* A new company: what a read document looks like */}
         {docs.length === 0 && (
           <Link href="/documents/sample" className="press flex min-h-11 items-center gap-1 rounded-full px-4 text-sm font-medium text-primary hover:bg-primary/10">

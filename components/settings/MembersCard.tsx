@@ -26,6 +26,8 @@ interface Member {
   owner: boolean;
   /** The screens an owner lets this admin open (null = all) */
   adminScreens: string[] | null;
+  /** May look at all branches together */
+  allBranches: boolean;
   homeBranch: string | null;
   createdAt: string;
   line: boolean;
@@ -185,6 +187,12 @@ export function MembersCard() {
                             {t("members.blockedBadge", { branch: branchLabel(b!, names) })}
                           </span>
                         ))}
+                      {m.role === "admin" && !m.owner && !m.allBranches && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-bad-soft px-2 py-0.5 font-semibold text-bad">
+                          <Ban className="size-3" aria-hidden />
+                          {t("members.noAllBadge")}
+                        </span>
+                      )}
                       {m.role === "admin" && !m.owner && m.adminScreens && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
                           <Eye className="size-3" aria-hidden />
@@ -409,6 +417,8 @@ function RemoveDialog({ member, busy, onClose, onConfirm }: { member: Member | n
 function BlockDialog({ member, branches, kept, onClose, onSaved }: { member: Member; branches: { id: string; label: string }[]; kept: string[]; onClose: () => void; onSaved: () => void }) {
   const t = useTranslations();
   const [on, setOn] = useState<ReadonlySet<string>>(new Set(kept));
+  // Admins: also "all branches together" (staff never have it)
+  const [noAll, setNoAll] = useState(member.role === "admin" && !member.allBranches);
   const [busy, setBusy] = useState(false);
   const toggle = (id: string, checked: boolean) =>
     setOn((cur) => {
@@ -431,6 +441,10 @@ function BlockDialog({ member, branches, kept, onClose, onSaved }: { member: Mem
         const { error } = await sb.from("member_branch_blocks").delete().eq("user_id", member.userId).in("branch_id", drop);
         if (error) throw error;
       }
+      if (member.role === "admin" && noAll === member.allBranches) {
+        const { error } = await sb.from("members").update({ all_branches: !noAll }).eq("user_id", member.userId);
+        if (error) throw error;
+      }
       toast.success(t("members.blockSaved"));
       onSaved();
     } catch {
@@ -446,6 +460,17 @@ function BlockDialog({ member, branches, kept, onClose, onSaved }: { member: Mem
           <DialogDescription>{t("members.blockHint")}</DialogDescription>
         </DialogHeader>
         <ul className="grid gap-1.5">
+          {member.role === "admin" && (
+            <li>
+              <label className={cn("flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3", noAll ? "bg-bad-soft text-bad" : "bg-muted/60")}>
+                <input type="checkbox" className="size-4" checked={noAll} onChange={(e) => setNoAll(e.target.checked)} />
+                <span className="grid flex-1">
+                  <span className="text-sm font-medium">{t("members.noAll")}</span>
+                  <span className="text-[11px] opacity-80">{t("members.noAllHint")}</span>
+                </span>
+              </label>
+            </li>
+          )}
           {branches.map((b) => (
             <li key={b.id}>
               <label className={cn("flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3", on.has(b.id) ? "bg-bad-soft text-bad" : "bg-muted/60")}>

@@ -35,8 +35,9 @@ export function AppHeader() {
   const me = useMe();
   const isAdmin = me.role === "admin";
   // …and an owner may limit an admin to some screens (lib/screens)
-  const nav = NAV.filter((n) => (!("admin" in n) || isAdmin) && canOpen(me, screenOf(n.href)));
-  const canUpload = canOpen(me, "upload");
+  // Until we know who this is, only the dashboard (no menu that flashes and goes)
+  const nav = me.loaded ? NAV.filter((n) => (!("admin" in n) || isAdmin) && canOpen(me, screenOf(n.href))) : NAV.filter((n) => n.href === "/");
+  const canUpload = me.loaded && canOpen(me, "upload");
   // Phones: dashboard, ledger, sales on the bar (with the camera between); everything else under "more"
   const onBar = (href: string) => href === "/" || href === "/ledger" || href === "/sales";
   const main = nav.filter((n) => onBar(n.href));
@@ -140,10 +141,15 @@ export function AppHeader() {
                 </Link>
               </Fragment>
             ))}
-            <button type="button" onClick={() => setMore(true)} data-active={!!rest.find((n) => n.href === active)} aria-expanded={more} className="tab-more">
-              <LayoutList className="size-[22px]" strokeWidth={rest.some((n) => n.href === active) ? 2.2 : 1.8} aria-hidden />
-              {t("nav.more")}
-            </button>
+            {/* "More" only when there is more (an admin limited to a few screens may have none) */}
+            {rest.length > 0 ? (
+              <button type="button" onClick={() => setMore(true)} data-active={!!rest.find((n) => n.href === active)} aria-expanded={more} className="tab-more">
+                <LayoutList className="size-[22px]" strokeWidth={rest.some((n) => n.href === active) ? 2.2 : 1.8} aria-hidden />
+                {t("nav.more")}
+              </button>
+            ) : (
+              <span aria-hidden />
+            )}
           </div>
         </nav>
       )}

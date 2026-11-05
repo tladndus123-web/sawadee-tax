@@ -21,9 +21,13 @@ export interface Me {
   owner: boolean;
   /** The screens an owner lets this admin open (null = all) — lib/screens */
   screens: Screen[] | null;
+  /** May look at all branches together (owners set it per admin; owners always) */
+  allBranches: boolean;
+  /** How many branches an owner kept this person out of */
+  kept: number;
 }
 
-const SIGNED_OUT: Me = { loaded: false, userId: null, email: "", name: "", role: "staff", homeBranch: null, owner: false, screens: null };
+const SIGNED_OUT: Me = { loaded: false, userId: null, email: "", name: "", role: "staff", homeBranch: null, owner: false, screens: null, allBranches: true, kept: 0 };
 let me: Me = SIGNED_OUT;
 let started = false;
 const listeners = new Set<() => void>();
@@ -40,7 +44,10 @@ async function load() {
     me = { ...SIGNED_OUT, loaded: true };
     return emit();
   }
-  const { data } = await supabase.from("members").select("name, role, email, home_branch, owner, admin_screens").eq("user_id", user.id).maybeSingle();
+  const [{ data }, blocked] = await Promise.all([
+    supabase.from("members").select("name, role, email, home_branch, owner, admin_screens, all_branches").eq("user_id", user.id).maybeSingle(),
+    supabase.rpc("my_blocked_branches"),
+  ]);
   // Signed in but not an (active) member any more — e.g. an admin removed their access: sign out and say why
   if (!data && !/\/(login|auth)(\/|$)/.test(window.location.pathname)) {
     await supabase.auth.signOut();
@@ -57,6 +64,8 @@ async function load() {
     homeBranch: (data?.home_branch as string | null) ?? null,
     owner: data?.role === "admin" && !!data?.owner,
     screens: cleanScreens(data?.admin_screens),
+    allBranches: data?.role === "admin" && (!!data?.owner || data?.all_branches !== false),
+    kept: ((blocked.data ?? []) as unknown[]).length,
   };
   emit();
 }

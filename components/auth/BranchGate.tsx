@@ -24,7 +24,8 @@ export function BranchPicker({ onDone, openHome }: { onDone?: () => void; openHo
   const names = useBranchName();
   const me = useMe();
   const staff = me.role !== "admin";
-  const { branches } = useBranches();
+  const { branches, kept } = useBranches();
+  const every = [...branches, ...kept];
   const { pins, all: allPin } = useBranchPins();
   const selected = useBranch();
   // Which choices need a PIN: a branch with one (everyone), "all branches" when its PIN is set (admins)
@@ -114,11 +115,12 @@ export function BranchPicker({ onDone, openHome }: { onDone?: () => void; openHo
 
   // Their usual branch first
   const ids = branches.map((b) => b.id);
-  const rows = [...(staff ? [] : [ALL]), ...(home ? [home, ...ids.filter((id) => id !== home)] : ids)];
+  // Kept-out branches last, locked (no password opens them); "all branches" only for admins an owner allows it
+  const rows = [...(staff || !me.allBranches ? [] : [ALL]), ...(home ? [home, ...ids.filter((id) => id !== home)] : ids), ...kept.map((b) => b.id)];
   return (
     <ul className="grid gap-2">
       {rows.map((id) => {
-        const b = id === ALL ? null : (branches.find((x) => x.id === id) ?? null);
+        const b = id === ALL ? null : (every.find((x) => x.id === id) ?? null);
         const locked = needsPin(id);
         const open = asking === id;
         return (
@@ -130,7 +132,7 @@ export function BranchPicker({ onDone, openHome }: { onDone?: () => void; openHo
               aria-expanded={locked ? open : undefined}
               className="press flex min-h-14 w-full items-center gap-3 px-4 py-2.5 text-left"
             >
-              <BranchAvatar branch={b} branches={branches} size="size-9" className="text-sm" />
+              <BranchAvatar branch={b} branches={every} size="size-9" className="text-sm" />
               <span className="grid min-w-0 flex-1">
                 <span className="truncate text-[15px] font-semibold">{b ? branchLabel(b, names) : t("all")}</span>
                 {(selected === id || home === id) && (
@@ -209,12 +211,13 @@ export function BranchGate({ children }: { children: ReactNode }) {
       let next: "open" | "ask" = "open";
       if (need) {
         if (chosenFor() !== (await signInMark())) next = "ask";
-        else if (staff && (selected === ALL || (pins.has(selected) && (await myUnlock())?.branchId !== selected))) next = "ask";
+        else if ((staff || !me.allBranches) && selected === ALL) next = "ask";
+        else if (staff && pins.has(selected) && (await myUnlock())?.branchId !== selected) next = "ask";
       }
       if (live) setState(next);
     })();
     return () => void (live = false);
-  }, [me.loaded, me.userId, me.role, loaded, pinsLoaded, branches.length, pins, selected]);
+  }, [me.loaded, me.userId, me.role, me.allBranches, loaded, pinsLoaded, branches.length, pins, selected]);
 
   if (state === "open") return <>{children}</>;
   if (state === "checking") return <Loader2 className="mx-auto mt-16 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;

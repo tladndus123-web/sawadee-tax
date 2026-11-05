@@ -20,6 +20,7 @@ import { saveEvent } from "@/lib/calendar-store";
 import { Link } from "@/i18n/navigation";
 import { bahtWhole, toSatang } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
+import { fullAdmin } from "@/lib/screens";
 import { cn } from "@/lib/utils";
 
 // The calendar's own edit window, loaded only when "change" is tapped
@@ -49,7 +50,8 @@ export function AiMark({ className }: { className?: string }) {
 /** Top bar button (PC); phones get the round button at the bottom right */
 export function AssistantButton() {
   const t = useTranslations("aiPanel");
-  const isAdmin = useMe().role === "admin";
+  // It reads the whole books: not for an admin an owner limited (lib/screens fullAdmin)
+  const isAdmin = fullAdmin(useMe());
   if (!isAdmin) return null;
   return (
     // Just the mark, like the app logo (owner 2026-10-27: the wider pill squeezed the top bar); the name is the tooltip
@@ -67,7 +69,7 @@ export function AssistantButton() {
 
 export function AssistantPanel() {
   const t = useTranslations("aiPanel");
-  const isAdmin = useMe().role === "admin";
+  const isAdmin = fullAdmin(useMe());
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");

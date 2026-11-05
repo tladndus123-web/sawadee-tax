@@ -28,6 +28,7 @@ import { createShare, goalSuggestion, setGoals } from "./month-end-server";
 import { type Ask, askFromData, askFromText, askSay, uploadPrompt } from "./line-ask";
 import { askAnswer } from "./line-ask-server";
 import { hiddenBranches, scopedAdmin } from "./branch-scope-server";
+import { isFullAdmin } from "./full-admin-server";
 import { linkAdminMenu, profileLang, unlinkMenu, UPLOAD_DATA } from "./line-menu";
 import { branchButtons, branchWords, imageType, lineBlobClient, lineBranchLabel, lineClient, receiptCard, salesBranchButtons, say } from "./line";
 import { inLang, type LineLang } from "./line-lang";
@@ -236,6 +237,8 @@ async function answerAsk(event: { replyToken?: string }, lineUser: string, ask: 
     if (tapped) await unlinkMenu(lineUser);
     return send(event, lineUser, [text(askSay.adminOnly)]);
   }
+  // An admin an owner limited (screens / branches): the numbers are for the app, where the limits apply
+  if (!(await isFullAdmin(supabaseAdmin(), member.user_id))) return send(event, lineUser, [text(askSay.adminOnly)]);
   if (limited(`ask:${member.user_id}`, 10, 60_000)) return send(event, lineUser, [text(say.rate)]);
   await lineClient()
     .showLoadingAnimation({ chatId: lineUser, loadingSeconds: ask === "excel" ? 20 : 5 })

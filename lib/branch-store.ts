@@ -10,6 +10,9 @@ import { supabaseBrowser } from "./supabase/client";
 const KEY = "trl.branch";
 
 let branches: Branch[] = [];
+/** Branches an owner kept this person out of: out of every list and total, shown locked only when choosing */
+let kept: Branch[] = [];
+let snap = { branches, kept };
 let loaded = false;
 let started = false;
 let selected: string = ALL;
@@ -33,9 +36,10 @@ const toBranch = (r: { id: string; no: string; name: string; sort: number; color
 });
 
 async function reload() {
-  const [{ data, error }, targets] = await Promise.all([
+  const [{ data, error }, targets, blocked] = await Promise.all([
     supabaseBrowser().from("branches").select("id, no, name, sort, color, closed_days, sales_target"),
     supabaseBrowser().from("branch_targets").select("branch_id, month, amount"),
+    supabaseBrowser().rpc("my_blocked_branches"),
   ]);
   if (error) throw error;
   // Each branch's own month targets (set from the month-end LINE report); none readable = only the standing target
@@ -45,7 +49,11 @@ async function reload() {
     m[t.month as string] = Number(t.amount) || 0;
     byBranch.set(t.branch_id as string, m);
   }
-  branches = sortBranches((data ?? []).map((r) => ({ ...toBranch(r), monthTargets: byBranch.get(r.id) ?? {} })));
+  const out = new Set(((blocked.data ?? []) as unknown[]).map(String));
+  const every = sortBranches((data ?? []).map((r) => ({ ...toBranch(r), monthTargets: byBranch.get(r.id) ?? {} })));
+  branches = every.filter((b) => !out.has(b.id));
+  kept = every.filter((b) => out.has(b.id));
+  snap = { branches, kept };
   // A branch that was removed on another device
   if (selected !== ALL && !branches.some((b) => b.id === selected)) setBranch(ALL);
   loaded = true;
@@ -57,14 +65,14 @@ const subscribe = (l: () => void) => {
   return () => listeners.delete(l);
 };
 
-export function useBranches(): { branches: Branch[]; loaded: boolean } {
-  const snap = useSyncExternalStore(subscribe, () => branches, () => branches);
+export function useBranches(): { branches: Branch[]; kept: Branch[]; loaded: boolean } {
+  const now = useSyncExternalStore(subscribe, () => snap, () => snap);
   useEffect(() => {
     if (started) return;
     started = true;
     void reload().catch(() => (started = false));
   }, []);
-  return { branches: snap, loaded };
+  return { branches: now.branches, kept: now.kept, loaded };
 }
 
 /** The branch the person is working in ("all" = every branch together) */

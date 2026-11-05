@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canOpen, cleanScreens, screenOf } from "./screens";
+import { canOpen, cleanScreens, fullAdmin, screenOf } from "./screens";
 
 describe("screens", () => {
   it("maps paths to screens (documents belong to the ledger)", () => {
@@ -23,5 +23,12 @@ describe("screens", () => {
   it("keeps only known screens", () => {
     expect(cleanScreens(null)).toBeNull();
     expect(cleanScreens(["payroll", "x", "ledger"])).toEqual(["ledger", "payroll"]);
+  });
+  it("keeps the AI assistant and LINE numbers to admins nobody limited", () => {
+    expect(fullAdmin({ role: "admin", owner: false, screens: null, kept: 0 })).toBe(true);
+    expect(fullAdmin({ role: "admin", owner: false, screens: ["sales"], kept: 0 })).toBe(false);
+    expect(fullAdmin({ role: "admin", owner: false, screens: null, kept: 1 })).toBe(false);
+    expect(fullAdmin({ role: "admin", owner: true, screens: ["sales"], kept: 2 })).toBe(true);
+    expect(fullAdmin({ role: "staff", owner: false, screens: null, kept: 0 })).toBe(false);
   });
 });

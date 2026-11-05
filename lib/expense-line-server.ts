@@ -53,7 +53,7 @@ export async function notifyNewClaim(id: string, appUrl: string): Promise<number
   if (!c || c.status !== "pending") return 0;
   const [settings, { data: admins }, all, ledger] = await Promise.all([
     settingsOf(admin),
-    admin.from("members").select("user_id, line_user_id").eq("role", "admin").is("disabled_at", null).not("line_user_id", "is", null),
+    admin.from("members").select("user_id, line_user_id, owner, admin_screens").eq("role", "admin").is("disabled_at", null).not("line_user_id", "is", null),
     admin.from("expense_claims").select("*"),
     admin.from("documents").select("id, photo_hash").is("deleted_at", null).not("photo_hash", "is", null),
   ]);
@@ -71,7 +71,9 @@ export async function notifyNewClaim(id: string, appUrl: string): Promise<number
   // What to look at before approving: the same checks as the app (lib/expense-checks)
   const flags = claimFlags(c, { claims, ledgerPhotos: (ledger.data ?? []).map((d) => ({ id: d.id as string, hash: d.photo_hash as string })) });
   let sent = 0;
-  for (const a of admins.filter((x) => !kept.has(x.user_id as string))) {
+  // …nor to an admin an owner did not let open the expenses screen (lib/screens)
+  const seesClaims = (x: { owner?: unknown; admin_screens?: unknown }) => !!x.owner || x.admin_screens === null || (Array.isArray(x.admin_screens) && x.admin_screens.includes("expenses"));
+  for (const a of admins.filter((x) => !kept.has(x.user_id as string) && seesClaims(x))) {
     const lang = await profileLang(a.line_user_id as string);
     const msg = claimCard(
       {

@@ -5,6 +5,7 @@
 // Every LINE message is in the reader's phone language (2026-10-26). On the 5th, 10th, 15th, 20th and 25th the
 // 5-day report (four cards) goes out too, and on the 1st last month's month-end report.
 
+import { fullAdmins } from "@/lib/full-admin-server";
 import { lineClient, lineConfig } from "@/lib/line";
 import { noticeMessage } from "@/lib/line-dash";
 import { appUrl } from "@/lib/line-bot";
@@ -25,8 +26,9 @@ export async function GET(req: Request) {
 
   const admin = supabaseAdmin();
   const today = todayBangkok();
-  const [texts, admins] = await Promise.all([reminderTexts(admin, today), admin.from("members").select("user_id, line_user_id").eq("role", "admin").is("disabled_at", null)]);
-  if (admins.error) throw admins.error;
+  // Company-wide numbers: only to admins an owner did not limit (lib/full-admin-server)
+  const [texts, full] = await Promise.all([reminderTexts(admin, today), fullAdmins(admin)]);
+  const admins = { data: full };
   const to = (admins.data ?? []).map((m) => m.line_user_id as string | null).filter((x): x is string => !!x);
 
   // The 5-day report (its own message, whatever else there is to say)

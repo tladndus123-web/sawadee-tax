@@ -46,7 +46,7 @@ export async function GET() {
   if (s.error) return s.error;
   const admin = supabaseAdmin();
   const [{ data: members, error }, { data: users }] = await Promise.all([
-    admin.from("members").select("user_id, email, name, role, owner, admin_screens, home_branch, created_at, line_user_id, disabled_at, disabled_by, disable_reason").order("created_at"),
+    admin.from("members").select("user_id, email, name, role, owner, admin_screens, all_branches, home_branch, created_at, line_user_id, disabled_at, disabled_by, disable_reason").order("created_at"),
     admin.auth.admin.listUsers({ perPage: 1000 }),
   ]);
   if (error) return fail(error.message, 502);
@@ -62,6 +62,7 @@ export async function GET() {
         role: m.role,
         owner: !!m.owner,
         adminScreens: (m.admin_screens as string[] | null) ?? null,
+        allBranches: m.all_branches !== false,
         homeBranch: m.home_branch ?? null,
         createdAt: m.created_at,
         line: !!m.line_user_id,

@@ -10,10 +10,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ADMIN_ONLY, DEFAULT_LAYOUT, type DashLayout, moveCard, toggleCard } from "@/lib/dash-layout";
 import { cn } from "@/lib/utils";
 
-export function DashEditor({ layout, onChange, isAdmin }: { layout: DashLayout; onChange: (l: DashLayout) => void; isAdmin: boolean }) {
+export function DashEditor({ layout, onChange, isAdmin, notMine = [] }: { layout: DashLayout; onChange: (l: DashLayout) => void; isAdmin: boolean; notMine?: readonly string[] }) {
   const t = useTranslations("dash.cards");
   const [open, setOpen] = useState(false);
-  const order = layout.order.filter((c) => isAdmin || !ADMIN_ONLY.has(c));
+  const order = layout.order.filter((c) => (isAdmin || !ADMIN_ONLY.has(c)) && !notMine.includes(c));
   return (
     <>
       <Button type="button" variant="ghost" className="h-11 rounded-full px-4 text-muted-foreground" onClick={() => setOpen(true)}>

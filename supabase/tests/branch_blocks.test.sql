@@ -1,7 +1,7 @@
 -- One staff member kept out of one branch (…003000_member_branch_blocks.sql). Run: npm run db:test. Everything rolls back.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(23);
+select plan(27);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000b1001', 'boss-b@test.local'),
@@ -73,6 +73,14 @@ select lives_ok($$ update public.members set role = 'admin' where user_id = '000
 select pg_temp.act_as('00000000-0000-0000-0000-0000000b1004');
 select throws_ok($$ select public.set_branch_pin('00000000-0000-0000-0000-0000000bb001', '5555') $$, 'P0001', 'admin_only', 'a plain admin cannot set a branch PIN');
 select is((select count(*)::int from public.branch_pins), 0, 'no branch PINs are left');
+
+-- Which branches am I kept out of (the app leaves them out of lists and totals)
+select pg_temp.act_as('00000000-0000-0000-0000-0000000b1004');
+select is((select count(*)::int from public.my_blocked_branches()), 1, 'the kept-out admin learns their one blocked branch');
+select throws_ok($$ update public.members set all_branches = false where user_id = '00000000-0000-0000-0000-0000000b1004' $$, 'P0001', 'only owners can change this', 'an admin cannot change their own "all branches"');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000b1001');
+select is((select count(*)::int from public.my_blocked_branches()), 0, 'an owner is kept out of nothing');
+select lives_ok($$ update public.members set all_branches = false where user_id = '00000000-0000-0000-0000-0000000b1004' $$, 'the owner keeps an admin from all branches together');
 
 select * from finish();
 rollback;

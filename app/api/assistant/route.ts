@@ -6,6 +6,7 @@ import { answerInApp } from "@/lib/assistant-server";
 import { endIfExpired } from "@/lib/auth/session-guard";
 import { appUrl } from "@/lib/line-bot";
 import { hiddenBranches, scopedAdmin } from "@/lib/branch-scope-server";
+import { isFullAdmin } from "@/lib/full-admin-server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -22,6 +23,8 @@ export async function POST(req: Request) {
   if (!user || (await endIfExpired(supabase))) return Response.json({ error: "signin" }, { status: 401 });
   const { data: member } = await supabase.from("members").select("role, disabled_at").eq("user_id", user.id).maybeSingle();
   if (member?.role !== "admin" || member.disabled_at) return Response.json({ error: "admin" }, { status: 403 });
+  // Not for an admin an owner limited to some screens or kept out of a branch (it reads the whole books)
+  if (!(await isFullAdmin(supabaseAdmin(), user.id))) return Response.json({ error: "admin" }, { status: 403 });
   if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: "noKey" }, { status: 503 });
   const body = (await req.json().catch(() => null)) as { question?: unknown } | null;
   const question = typeof body?.question === "string" ? body.question.trim().slice(0, 2000) : "";

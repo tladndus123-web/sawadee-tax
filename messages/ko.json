@@ -550,7 +550,10 @@
     "screensTitle": "{name} — 볼 수 있는 화면",
     "screensHint": "체크한 화면만 이 관리자의 메뉴에 나오고 열려요. 모두 체크하면 제한이 없어요.",
     "screensAlways": "대시보드는 항상 보여요.",
-    "screensBadge": "화면 {count}개만"
+    "screensBadge": "화면 {count}개만",
+    "noAll": "전체 지점 못 보게",
+    "noAllHint": "지점을 하나씩만 골라서 봐요 (합쳐 보기 없음)",
+    "noAllBadge": "전체 지점 막힘"
   },
   "export": {
     "excel": "엑셀",
@@ -1763,7 +1766,7 @@
   },
   "gate": {
     "title": "어느 지점으로 들어갈까요?",
-    "hint": "들어갈 지점을 골라 주세요. 🔒 표시가 있는 곳은 비밀번호가 필요해요.",
+    "hint": "들어갈 지점을 골라 주세요.",
     "hintAdmin": "볼 지점을 골라 주세요. 관리자는 비밀번호 없이 들어가요.",
     "all": "전체 지점",
     "current": "지금 선택된 지점",
