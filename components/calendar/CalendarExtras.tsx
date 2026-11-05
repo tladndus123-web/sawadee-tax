@@ -4,12 +4,12 @@
 // this week's three things from the AI, the month's money going out (by kind and week, with a warning when the next
 // week needs more than the last week brought in), a sentence that becomes a date, and the phone-calendar link.
 
-import { AlarmClock, ArrowRight, CalendarSync, Check, Copy, Loader2, RefreshCw, Sparkles, TriangleAlert, Wand2 } from "lucide-react";
+import { AlarmClock, ArrowRight, Calendar, Loader2, Lock, Sparkles, TriangleAlert, Wand2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/i18n/navigation";
 import type { AiEvent } from "@/lib/assistant";
@@ -300,6 +300,71 @@ export function SpeakAdd({ onEvent }: { onEvent: (e: AiEvent) => void }) {
 
 // ── Phone calendar (iCal) ────────────────────────────────────────────────────────────────────────────────────────
 
+/** The connect dialog. `url` is empty while the address is still loading. */
+export function PhoneCalendarDialog({
+  onClose,
+  url,
+  busy,
+  onCopy,
+  onRenew,
+}: {
+  onClose: () => void;
+  url: string;
+  busy: boolean;
+  onCopy: () => void;
+  onRenew: () => void;
+}) {
+  const t = useTranslations("calendar.x");
+  const webcal = url.replace(/^https?:/, "webcal:");
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="gap-0 overflow-x-clip rounded-2xl p-0 shadow-lg sm:max-w-sm">
+        <div className="grid min-w-0 gap-4 px-5 pt-5 pb-4">
+          <div className="flex min-w-0 items-start gap-3 pr-8">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary" aria-hidden>
+              <Calendar className="size-5" />
+            </span>
+            <DialogHeader className="min-w-0 gap-1">
+              <DialogTitle className="text-left text-[17px] leading-tight font-semibold">{t("icalTitle")}</DialogTitle>
+              <DialogDescription className="text-left text-[13.5px] leading-relaxed text-pretty">{t("icalSub")}</DialogDescription>
+            </DialogHeader>
+          </div>
+          {!url ? (
+            <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" aria-hidden />
+          ) : (
+            <>
+              <Button asChild className="h-12 w-full min-w-0 rounded-xl text-[15px] font-semibold">
+                <a href={webcal}>{t("icalOpen")}</a>
+              </Button>
+              <div className="grid min-w-0 gap-2">
+                <p className="text-[13px] text-muted-foreground">{t("icalGoogleLabel")}</p>
+                <div className="flex min-w-0 items-center gap-2 overflow-hidden rounded-xl bg-muted p-1.5 pl-3 ring-1 ring-foreground/10 dark:bg-black/40">
+                  <code className="min-w-0 flex-1 truncate text-[13px] text-muted-foreground">{url}</code>
+                  <Button type="button" variant="outline" className="h-10 shrink-0 rounded-lg bg-popover px-3 font-medium text-primary" onClick={onCopy}>
+                    {t("icalCopy")}
+                  </Button>
+                </div>
+                <p className="text-[13px] leading-snug text-muted-foreground">{t("icalIphone")}</p>
+                <p className="text-[13px] leading-snug text-muted-foreground">{t("icalGoogle")}</p>
+              </div>
+              <p className="flex min-w-0 items-start gap-2 rounded-xl bg-warn-soft px-3 py-2.5 text-[13px] leading-snug text-foreground">
+                <Lock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="min-w-0">{t("icalSecret")}</span>
+              </p>
+            </>
+          )}
+        </div>
+        <DialogFooter className="mx-0 mb-0 min-w-0 flex-row flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-none bg-transparent px-5 py-3 sm:flex-row sm:justify-between">
+          <p className="min-w-0 text-[13px] text-muted-foreground">{t("icalRenewHint")}</p>
+          <Button type="button" variant="ghost" className="h-10 shrink-0 px-2 text-[13px] font-medium text-bad hover:text-bad" disabled={busy || !url} onClick={onRenew}>
+            {t("icalRenew")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function PhoneCalendar({ onClose }: { onClose: () => void }) {
   const t = useTranslations("calendar.x");
   const locale = useLocale();
@@ -315,7 +380,6 @@ export function PhoneCalendar({ onClose }: { onClose: () => void }) {
   };
   useEffect(() => void load(false), []); // eslint-disable-line react-hooks/exhaustive-deps -- once
   const url = token ? `${window.location.origin}/api/calendar/feed?t=${token}&lang=${locale}` : "";
-  const webcal = url.replace(/^https?:/, "webcal:");
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);
@@ -325,53 +389,14 @@ export function PhoneCalendar({ onClose }: { onClose: () => void }) {
     }
   };
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="rounded-3xl sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarSync className="size-5 text-primary" aria-hidden />
-            {t("icalTitle")}
-          </DialogTitle>
-          <DialogDescription>{t("icalSub")}</DialogDescription>
-        </DialogHeader>
-        {!token ? (
-          <Loader2 className="mx-auto size-6 animate-spin text-muted-foreground" aria-hidden />
-        ) : (
-          <div className="grid gap-3">
-            <Button asChild className="h-12 rounded-full text-[15px]">
-              <a href={webcal}>
-                <CalendarSync className="size-4" />
-                {t("icalOpen")}
-              </a>
-            </Button>
-            <div className="flex items-center gap-2 rounded-2xl bg-muted/60 p-2 pl-3">
-              <code className="min-w-0 flex-1 truncate text-[12px]">{url}</code>
-              <Button type="button" variant="secondary" className="h-9 rounded-full px-3" onClick={() => void copy()}>
-                <Copy className="size-4" />
-                {t("icalCopy")}
-              </Button>
-            </div>
-            <ul className="grid gap-1.5 text-[13px] leading-relaxed text-muted-foreground">
-              <li className="flex gap-2">
-                <Check className="mt-0.5 size-4 flex-none text-ok" aria-hidden />
-                {t("icalIphone")}
-              </li>
-              <li className="flex gap-2">
-                <Check className="mt-0.5 size-4 flex-none text-ok" aria-hidden />
-                {t("icalGoogle")}
-              </li>
-              <li className="flex gap-2">
-                <TriangleAlert className="mt-0.5 size-4 flex-none text-warn" aria-hidden />
-                {t("icalSecret")}
-              </li>
-            </ul>
-            <Button type="button" variant="ghost" className="h-10 w-fit rounded-full text-bad" disabled={busy} onClick={() => window.confirm(t("icalRenewAsk")) && void load(true)}>
-              <RefreshCw className="size-4" />
-              {t("icalRenew")}
-            </Button>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+    <PhoneCalendarDialog
+      onClose={onClose}
+      url={url}
+      busy={busy}
+      onCopy={() => void copy()}
+      onRenew={() => {
+        if (window.confirm(t("icalRenewAsk"))) void load(true);
+      }}
+    />
   );
 }
