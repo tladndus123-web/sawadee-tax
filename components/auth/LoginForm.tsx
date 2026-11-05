@@ -3,11 +3,12 @@
 import { ArrowRight, ClipboardPaste, KeyRound, Loader2, Lock, Mail, MailCheck, ShieldCheck } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { AppMark } from "@/components/layout/app-mark";
 import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { dropLoginDraft, finishLoginSwitch, isLoginSwitching, keepLoginDraft, loginStayCookie, markLoginSwitch, peekLoginDraft } from "@/lib/auth/login-entrance";
 import { CODE_LENGTH, pickCode, readClipboard } from "@/lib/auth/otp-code";
 import { passkeyHere, passkeySupported } from "@/lib/auth/passkey";
 import { SESSION_HOURS } from "@/lib/auth/session-limit";
@@ -35,7 +36,7 @@ const LANGS: [Locale, string][] = [
 ];
 
 /** Passwordless sign-in: invited members get a magic link by email (sign-up is disabled). */
-export function LoginForm() {
+export function LoginForm({ enter = true }: { enter?: boolean }) {
   const t = useTranslations("auth");
   const tApp = useTranslations("app");
   const locale = useLocale();
@@ -44,6 +45,9 @@ export function LoginForm() {
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
   const [code, setCode] = useState("");
+  // Skip the first paint of a language change: that paint is empty and would wipe what was typed
+  const draftReady = useRef(enter);
+  if (typeof window !== "undefined" && draftReady.current) keepLoginDraft({ email, code, sent: state === "sent" });
   const [codeState, setCodeState] = useState<"idle" | "checking">("idle");
   const [codeError, setCodeError] = useState<string | null>(null);
   const emailBox = useRef<HTMLLabelElement>(null);
@@ -55,6 +59,28 @@ export function LoginForm() {
   useEffect(() => {
     void passkeySupported().then((ok) => setPasskey(!ok ? "none" : passkeyHere() ? "first" : "offer"));
   }, []);
+
+  // Language change: the route swaps, but the card should already be in place (no second rise-in).
+  useLayoutEffect(() => {
+    if (!enter) {
+      const kept = peekLoginDraft();
+      if (kept) {
+        setEmail(kept.email);
+        setCode(kept.code);
+        if (kept.sent) setState("sent");
+      }
+      finishLoginSwitch();
+      document.documentElement.removeAttribute("data-login-stay");
+      document.cookie = loginStayCookie(false);
+    }
+    draftReady.current = true;
+    return () => {
+      if (!isLoginSwitching()) {
+        document.documentElement.removeAttribute("data-login-stay");
+        dropLoginDraft();
+      }
+    };
+  }, [enter]);
 
   // A wrong or unknown address gives the field a short shake, like a wrong password on a Mac
   useEffect(() => {
@@ -135,15 +161,15 @@ export function LoginForm() {
 
   return (
     <div className="grid w-full max-w-[420px] justify-items-center gap-6">
-      <div className="login-card login-enter relative w-full">
-        {/* Apple Intelligence edge glow: a slow, soft spectrum circling behind the card */}
+      <div className={cn("login-card relative w-full", enter && "login-enter")}>
+        {/* Soft blue edge glow, same family as the app mark and the sign-in button */}
         <span className="login-glow" aria-hidden />
         <div className="relative grid gap-7 rounded-[28px] bg-card px-7 pt-9 pb-7 shadow-[var(--shadow-lift)] sm:px-9">
           <header className="grid justify-items-center gap-4 text-center">
-            <AppMark className="login-logo-in size-16 [filter:drop-shadow(0_4px_10px_rgb(4_60_190/0.3))_drop-shadow(0_0_26px_rgb(20_110_255/0.55))] dark:[filter:drop-shadow(0_0_30px_rgb(70_150_255/0.7))]" />
+            <AppMark className={cn("size-16 [filter:drop-shadow(0_4px_10px_rgb(4_60_190/0.3))_drop-shadow(0_0_26px_rgb(20_110_255/0.55))] dark:[filter:drop-shadow(0_0_30px_rgb(70_150_255/0.7))]", enter && "login-logo-in")} />
             <div className="grid gap-2">
-              <p className="ai-text text-[13px] font-semibold tracking-tight">{tApp("appName")}</p>
-              <h1 key={state === "sent" ? "sent" : "form"} className="login-swap text-[28px] leading-tight font-semibold tracking-[-0.03em] text-balance">
+              <p className="text-[13px] font-semibold tracking-tight text-primary">{tApp("appName")}</p>
+              <h1 key={state === "sent" ? "sent" : "form"} className={cn("text-[28px] leading-tight font-semibold tracking-[-0.03em] text-balance", (enter || state === "sent") && "login-swap")}>
                 {state === "sent" ? t("sentTitle") : t("welcome")}
               </h1>
               {/* What this site is, in one line (only before the link is sent) */}
@@ -211,7 +237,7 @@ export function LoginForm() {
               </Button>
             </div>
           ) : (
-            <form onSubmit={send} noValidate className="login-swap grid gap-4">
+            <form onSubmit={send} noValidate className={cn("grid gap-4", enter && "login-swap")}>
               <p className="text-center text-[15px] leading-relaxed text-balance text-foreground/75 [word-break:auto-phrase]">{t("intro")}</p>
               {params.get("removed") && <p role="status" className="rounded-2xl bg-bad-soft px-4 py-3 text-center text-sm text-bad">{t("removed")}</p>}
               {params.get("expired") && !params.get("removed") && (
@@ -298,6 +324,8 @@ function LanguagePicker() {
             aria-current={on ? "true" : undefined}
             onClick={() => {
               if (on) return;
+              // Hold the card still before the route swaps (the entrance starts invisible)
+              markLoginSwitch();
               // Keep "where to go after signing in", but in the newly chosen language
               const q = new URLSearchParams(params.toString());
               const next = q.get("next");

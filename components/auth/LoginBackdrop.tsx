@@ -34,7 +34,7 @@ const ORDER = [0, 4, 1, 6, 3, 5, 2, 7];
 const EVERY_MS = 2600;
 const EFFECT_MS = 1700;
 
-export function LoginBackdrop() {
+export function LoginBackdrop({ enter = true }: { enter?: boolean }) {
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export function LoginBackdrop() {
 
   return (
     <div className="login-light" aria-hidden>
-      <div ref={root} className="login-symbols">
+      <div ref={root} className={enter ? "login-symbols" : "login-symbols is-still"}>
         {SYMBOLS.map(({ Icon, fx, x, y }, i) => (
           <span key={fx} className="sym" data-fx={fx} style={{ "--x": `${x}px`, "--y": `${y}%`, "--i": i } as CSSProperties}>
             <Icon strokeWidth={1.5} />
