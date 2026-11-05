@@ -279,6 +279,17 @@ export function employedInMonth(e: Pick<Employee, "startDate" | "endDate">, mont
   return (!e.startDate || e.startDate <= last) && (!e.endDate || e.endDate >= `${month}-01`);
 }
 
+/**
+ * Why a payroll tab has nobody to list. "Add employees" only when this branch scope is empty.
+ * People on file whose start/end dates miss the month are not the same as a company with no staff.
+ */
+export type RosterEmpty = "add-employees" | "off-roster";
+
+export function rosterEmpty(employeesInScope: number, onRoster: number): RosterEmpty | null {
+  if (onRoster > 0) return null;
+  return employeesInScope > 0 ? "off-roster" : "add-employees";
+}
+
 export type PayIssue = "noRate" | "noDays" | "noId" | "badId" | "absentAll";
 
 /**

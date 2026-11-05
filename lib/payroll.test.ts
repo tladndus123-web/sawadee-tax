@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { annualDeadlines, DEFAULT_PAYROLL, type Employee, EMPTY_PERIOD, incomeTax, LEGAL_OT, lineRates, otRatesOf, monthlyWithholding, daysNotEmployed, maskId, monthPay, payrollFiling, payrollSettingsOf, periodPay, socialSecurity, taxableIncome } from "./payroll";
+import { annualDeadlines, DEFAULT_PAYROLL, type Employee, EMPTY_PERIOD, incomeTax, LEGAL_OT, lineRates, otRatesOf, monthlyWithholding, daysNotEmployed, maskId, monthPay, payrollFiling, payrollSettingsOf, periodPay, rosterEmpty, socialSecurity, taxableIncome } from "./payroll";
 
 const emp = (p: Partial<Employee> = {}): Employee => ({
   id: "e",
@@ -114,6 +114,19 @@ describe("filing deadlines (the month after pay)", () => {
   });
   it("after the deadline, the current month", () => {
     expect(payrollFiling("2026-10-16")).toMatchObject({ month: "2026-10", due: "2026-11-16" });
+  });
+});
+
+describe("payroll empty state", () => {
+  it("asks to add employees only when this branch scope has nobody", () => {
+    expect(rosterEmpty(0, 0)).toBe("add-employees");
+  });
+  it("does not ask to add employees when people exist but none are employed this month", () => {
+    expect(rosterEmpty(4, 0)).toBe("off-roster");
+  });
+  it("shows the pay form when someone is on this month's roster, even with no attendance yet", () => {
+    expect(rosterEmpty(4, 4)).toBeNull();
+    expect(rosterEmpty(0, 1)).toBeNull();
   });
 });
 

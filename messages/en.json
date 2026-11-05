@@ -224,7 +224,8 @@
     "retry": "Try again",
     "cancel": "Cancel",
     "notFound": "Not found.",
-    "pickDate": "Pick a date"
+    "pickDate": "Pick a date",
+    "close": "Close"
   },
   "photo": {
     "alt": "Original photo",
@@ -1541,6 +1542,8 @@
     "cancel": "Cancel",
     "save": "Save",
     "noStaffThisMonth": "Nobody worked this month. Add employees in the Employees tab first.",
+    "markAttendanceFirst": "Employees are already on file. Fill in this month's attendance on the Attendance tab first. If no names appear, check start and end dates on the Employees tab.",
+    "noRosterThisMonth": "Employees are on file, but nobody is employed this month. Check start and end dates on the Employees tab.",
     "notSaved": "not saved",
     "takeHome": "take-home",
     "half1": "1st–15th",
