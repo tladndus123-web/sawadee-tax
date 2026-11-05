@@ -4,7 +4,7 @@
 // sheet (worked / day off / absent / annual / sick, overtime hours). Phones scroll it sideways with the names pinned.
 // Under it, each person's leave for the year. The pay run reads its inputs from here ("from attendance").
 
-import { CalendarCheck, CalendarSync, Loader2, Lock, ScanLine } from "lucide-react";
+import { CalendarCheck, CalendarSync, Loader2, Lock, ScanLine, Share2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ATTENDANCE_KINDS, type AttendanceKind, type AttendanceRow, daysOfMonth, leaveBalance } from "@/lib/attendance";
 import { fillWorked, loadAttendance, saveAttendance } from "@/lib/attendance-store";
+import { ALL, branchLabel } from "@/lib/branches";
+import { useBranches } from "@/lib/branch-store";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
 import { useCompany } from "@/lib/company-store";
 import { type Employee, payrollSettingsOf, timesText } from "@/lib/payroll";
@@ -21,6 +23,7 @@ import { THAI_HOLIDAYS } from "@/lib/thai-holidays";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { inMonth } from "./PayRunTab";
+import { AttendanceShare } from "./AttendanceShare";
 import { ScheduleFromPhoto } from "./ScheduleFromPhoto";
 import { StaffCalendarShare } from "./StaffCalendarShare";
 
@@ -32,15 +35,33 @@ const CELL: Record<AttendanceKind, string> = {
   sick: "bg-warn/15 text-warn",
 };
 
-export function AttendanceTab({ month }: { month: string }) {
+/** Fixture data for the local preview route. Production never passes this. */
+export interface AttendancePreview {
+  employees: Employee[];
+  rows: AttendanceRow[];
+  yearRows: AttendanceRow[];
+  branchId: string;
+  branchLabel: string;
+  branchNames: Record<string, string>;
+}
+
+export function AttendanceTab({ month, preview }: { month: string; preview?: AttendancePreview }) {
   const t = useTranslations("pay");
   const locale = useLocale();
-  const { employees, loaded } = useBranchEmployees();
+  const live = useBranchEmployees();
+  const { branches } = useBranches();
+  const tb = useTranslations("branch");
+  const employees = preview?.employees ?? live.employees;
+  const loaded = preview ? true : live.loaded;
+  const branch = preview?.branchId ?? live.branch;
   const locked = useMonthLocks().has(month);
-  const [rows, setRows] = useState<AttendanceRow[] | null>(null);
+  const [rows, setRows] = useState<AttendanceRow[] | null>(preview?.rows ?? null);
   const [sharing, setSharing] = useState(false);
+  const [sheetShare, setSheetShare] = useState(false);
   const [fromPhoto, setFromPhoto] = useState(false);
-  const [yearRows, setYearRows] = useState<AttendanceRow[]>([]);
+  const [yearRows, setYearRows] = useState<AttendanceRow[]>(preview?.yearRows ?? []);
+  const [leaveReady, setLeaveReady] = useState(!!preview);
+  const [leaveFailed, setLeaveFailed] = useState(false);
   const [open, setOpen] = useState<{ employee: Employee; day: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const today = todayBangkok();
@@ -52,16 +73,34 @@ export function AttendanceTab({ month }: { month: string }) {
     setYearRows(y);
   };
   useEffect(() => {
+    if (preview) return;
+    setLeaveReady(false);
+    setLeaveFailed(false);
     setRows(null);
     void loadAttendance({ month })
       .then(setRows)
       .catch(() => setRows([]));
     void loadAttendance({ year })
-      .then(setYearRows)
-      .catch(() => undefined);
-  }, [month, year]);
+      .then((loadedYear) => {
+        setYearRows(loadedYear);
+        setLeaveReady(true);
+      })
+      .catch(() => setLeaveFailed(true));
+  }, [month, year, preview]);
 
   const staff = useMemo(() => employees.filter((e) => inMonth(e, month)), [employees, month]);
+  const branchNames = useMemo(() => ({ head: tb("head"), branch: (no: string) => tb("no", { no }) }), [tb]);
+  const branchScope = useMemo(() => {
+    if (preview) return { id: preview.branchId, label: preview.branchLabel };
+    if (branch === ALL) return { id: ALL, label: tb("all") };
+    const found = branches.find((item) => item.id === branch);
+    return { id: branch, label: found ? branchLabel(found, branchNames) : tb("label") };
+  }, [preview, branch, branches, branchNames, tb]);
+  const branchNameOf = (id: string) => {
+    if (preview) return preview.branchNames[id] ?? "";
+    const found = branches.find((item) => item.id === id);
+    return found ? branchLabel(found, branchNames) : "";
+  };
   const days = useMemo(() => daysOfMonth(month), [month]);
   const cellOf = useMemo(() => new Map((rows ?? []).map((r) => [`${r.employeeId}|${r.day}`, r])), [rows]);
   const weekday = new Intl.DateTimeFormat(locale, { weekday: "narrow", timeZone: "UTC" });
@@ -100,6 +139,10 @@ export function AttendanceTab({ month }: { month: string }) {
             <CalendarSync className="size-4" />
             {t("shareCal")}
           </Button>
+          <Button type="button" className="h-10 rounded-full px-4" disabled={!!open || fromPhoto} title={open || fromPhoto ? t("sheetShare.saveFirst") : undefined} onClick={() => setSheetShare(true)}>
+            <Share2 className="size-4" />
+            {t("sheetShare.button")}
+          </Button>
         </span>
       </div>
       {fromPhoto && (
@@ -114,6 +157,28 @@ export function AttendanceTab({ month }: { month: string }) {
         />
       )}
       {sharing && <StaffCalendarShare employees={staff} onClose={() => setSharing(false)} />}
+      {sheetShare && (
+        <AttendanceShare
+          open
+          onClose={() => setSheetShare(false)}
+          month={month}
+          monthLabel={new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${month}-01T00:00:00Z`))}
+          staff={staff.map((person) => ({
+            id: person.id,
+            name: person.name,
+            nickname: person.nickname,
+            branchId: person.branchId,
+            branchName: branchNameOf(person.branchId),
+            startDate: person.startDate,
+            endDate: person.endDate,
+          }))}
+          rows={rows}
+          yearRows={yearRows}
+          leaveReady={leaveReady}
+          leaveFailed={leaveFailed}
+          branch={branchScope}
+        />
+      )}
       {locked && (
         <p className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3 text-sm text-muted-foreground">
           <Lock className="size-4 flex-none" aria-hidden />

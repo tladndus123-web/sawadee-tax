@@ -1,0 +1,13 @@
+Noto Sans Regular and Noto Sans Thai Regular
+Copyright The Noto Project Authors
+https://github.com/notofonts/latin-greek-cyrillic
+https://github.com/notofonts/thai
+Licensed under the SIL Open Font License, Version 1.1 (OFL.txt).
+
+Noto Sans KR and Noto Sans JP
+These files are the fontsource builds of Noto Sans CJK / Source Han Sans.
+Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
+Licensed under the SIL Open Font License, Version 1.1 (OFL.txt).
+
+Sawadee TAX embeds them only when someone saves or shares an attendance sheet
+from this app. No paid font service is used.
