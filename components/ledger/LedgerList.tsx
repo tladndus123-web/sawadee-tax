@@ -4,13 +4,16 @@ import { useBranchName } from "@/components/layout/branch-switcher";
 import { ALL, BRANCH_COLORS, branchLabel, byId, colorOf, headOf } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
 import { isDepreciated } from "@/lib/cost-split";
-import { ArchiveRestore, CalendarDays, Check, ChevronDown, ChevronRight, CircleCheck, Coins, FilePen, ImagePlus, Loader2, Lock, Refrigerator, Search, Tags, Trash2, TriangleAlert, UserCheck, X } from "lucide-react";
+import { ArchiveRestore, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, CircleCheck, CircleDollarSign, Coins, Copy, Ellipsis, FilePen, ImagePlus, ListChecks, Loader2, Lock, Refrigerator, Search, SlidersHorizontal, Tags, Trash2, TriangleAlert, UserCheck, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { type DayBucket, groupByDays } from "@/lib/ledger-days";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link } from "@/i18n/navigation";
 import { AddDocButtons } from "@/components/upload/AddDocButtons";
@@ -22,7 +25,7 @@ import { healThumb, type LedgerEntry, type LedgerView, pick, restoreEntry, resto
 import { useMonthLocks } from "@/lib/month-lock-store";
 import { useCompany } from "@/lib/company-store";
 import { openWarnings } from "@/lib/dashboard";
-import { baht } from "@/lib/money";
+import { baht, fromSatang, toSatang } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
 import { todayBangkok } from "@/lib/thai-tax";
 import { STICKERS, type Sticker } from "@/lib/types";
@@ -69,30 +72,55 @@ export function LedgerList() {
   const list = useMemo(() => pick(entries, view), [entries, view]);
   const assetCount = useMemo(() => pick(entries, "ledger").filter((e) => isDepreciated(e.doc)).length, [entries]);
   const [query, setQuery] = useState("");
-  // The box shows every key at once; the list follows a moment later, so typing never waits for it
-  // (the list parts below are memoized, so a keystroke itself only redraws the search box)
-  const q = useDeferredValue(query);
-  const filtered = useMemo(
-    () => (view === "ledger" ? list.filter((e) => matches(e.doc, filter, todayBangkok())) : list).filter((e) => search(e.doc, q)),
-    [list, view, filter, q],
-  );
-  const months = useMemo(
-    () => groupByMonth(filtered).map((g) => ({ group: g, monthEntries: list.filter((e) => monthKey(e.doc) === g.key) })),
-    [filtered, list],
-  );
-  const filtering = filter.stickers.length > 0 || filter.unpaidOnly || !!filter.category || !!filter.period || q.trim() !== "";
-  // "Tick all shown": what can be ticked now (unpaid for a payment run; not in a closed month for a category)
-  const tickable = useMemo(
-    () => (selecting && view === "ledger" ? filtered.filter((e) => (mode === "pay" ? isUnpaid(e.doc) : !locks.has(monthKey(e.doc)))) : []),
-    [selecting, view, filtered, mode, locks],
-  );
-  const allTicked = tickable.length > 0 && tickable.every((e) => selected.has(e.id));
+  // The status chips on top: only the documents that need a look, or the ones that may be in twice
+  const [status, setStatus] = useState<"check" | "dup" | null>(null);
   const company = useCompany();
   // Same rule as the dashboard tile "needs a look", duplicates included
   const check = useMemo(
     () => openWarnings(pick(entries, "ledger").map((e) => ({ id: e.id, doc: e.doc, ack: e.ackFlags })), company.taxId, todayBangkok()),
     [entries, company.taxId],
   );
+  const statusCounts = useMemo(
+    () => ({
+      check: check.size,
+      dup: [...check.values()].filter((f) => f.includes("dup")).length,
+      unpaid: pick(entries, "ledger").filter((e) => isUnpaid(e.doc)).length,
+    }),
+    [check, entries],
+  );
+  // The box shows every key at once; the list follows a moment later, so typing never waits for it
+  // (the list parts below are memoized, so a keystroke itself only redraws the search box)
+  const q = useDeferredValue(query);
+  const filtered = useMemo(
+    () =>
+      (view === "ledger" ? list.filter((e) => matches(e.doc, filter, todayBangkok()) && (status === null || (status === "check" ? check.has(e.id) : !!check.get(e.id)?.includes("dup")))) : list).filter((e) =>
+        search(e.doc, q),
+      ),
+    [list, view, filter, q, status, check],
+  );
+  const months = useMemo(
+    () => groupByMonth(filtered).map((g) => ({ group: g, monthEntries: list.filter((e) => monthKey(e.doc) === g.key) })),
+    [filtered, list],
+  );
+  const filtering = filter.stickers.length > 0 || filter.unpaidOnly || !!filter.category || !!filter.period || q.trim() !== "" || status !== null;
+  const filterCount = filter.stickers.length + (filter.unpaidOnly ? 1 : 0) + (filter.category ? 1 : 0) + (filter.period ? 1 : 0);
+  const thisMonth = monthKey({ date: todayBangkok() });
+  const thisMonthEntries = useMemo(() => pick(entries, "ledger").filter((e) => monthKey(e.doc) === thisMonth), [entries, thisMonth]);
+  // "Tick all shown": what can be ticked now (unpaid for a payment run; not in a closed month for a category)
+  const tickable = useMemo(
+    () => (selecting && view === "ledger" ? filtered.filter((e) => (mode === "pay" ? isUnpaid(e.doc) : !locks.has(monthKey(e.doc)))) : []),
+    [selecting, view, filtered, mode, locks],
+  );
+  const allTicked = tickable.length > 0 && tickable.every((e) => selected.has(e.id));
+  const startPay = () => {
+    setMode("pay");
+    setSelecting(true);
+    setFilter((f) => ({ ...f, unpaidOnly: true }));
+  };
+  const startCategory = () => {
+    setMode("category");
+    setSelecting(true);
+  };
 
   return (
     <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6">
@@ -103,16 +131,6 @@ export function LedgerList() {
             <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("nav.ledger")}</h1>
             <div className="flex flex-wrap items-center gap-2">
               <AddDocButtons size="sm" />
-              <Link href="/ledger/cash" className="press inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-primary hover:bg-primary/10">
-                <Coins className="size-4" aria-hidden />
-                {t("cash.link")}
-              </Link>
-              {assetCount > 0 && (
-                <Link href="/ledger/assets" className="press inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-primary hover:bg-primary/10">
-                  <Refrigerator className="size-4" aria-hidden />
-                  {t("assets.link", { count: assetCount })}
-                </Link>
-              )}
             </div>
           </div>
           <ToggleGroup type="single" className="segmented-control" value={view} onValueChange={(v) => {
@@ -135,58 +153,127 @@ export function LedgerList() {
             )}
           </ToggleGroup>
         </div>
-        {list.length > 0 && (
-          <label className="relative block">
-            <span className="sr-only">{t("archive.search")}</span>
-            <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("archive.search")}
-              className="h-11 w-full rounded-full border bg-card pr-4 pl-10 text-[15px] outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20"
+        {/* What needs doing, one tap to see just those (owner, 2026-11-06) */}
+        {view === "ledger" && counts.ledger > 0 && (statusCounts.check > 0 || statusCounts.unpaid > 0) && (
+          <div className="-mx-4 flex min-w-0 gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label={t("archive.status.title")}>
+            <StatusChip on={status === "check"} n={statusCounts.check} tone="bad" icon={TriangleAlert} label={t("archive.status.check")} onClick={() => setStatus((s) => (s === "check" ? null : "check"))} />
+            <StatusChip
+              on={filter.unpaidOnly && status === null}
+              n={statusCounts.unpaid}
+              tone="warn"
+              icon={CircleDollarSign}
+              label={t("archive.status.unpaid")}
+              onClick={() => (setStatus(null), setFilter((f) => ({ ...f, unpaidOnly: !(f.unpaidOnly && status === null) })))}
             />
-          </label>
+            {statusCounts.dup > 0 && <StatusChip on={status === "dup"} n={statusCounts.dup} tone="bad" icon={Copy} label={t("archive.status.dup")} onClick={() => setStatus((s) => (s === "dup" ? null : "dup"))} />}
+          </div>
         )}
-        {view === "ledger" && counts.ledger > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            {/* Saved views: one tap brings back a set of filters and a search (owner, 2026-10-27) */}
-            <SavedViews filter={filter} query={query} onPick={(f, s) => (setFilter(f), setQuery(s))} />
-            <FilterBar filter={filter} onChange={setFilter} entries={list} />
-            {selecting ? (
-              <Button type="button" variant="secondary" className="h-9 rounded-full px-3.5 text-[13px]" onClick={stopSelecting}>
+        {/* One row: search, filters, saved views, export, several at once, more (owner, 2026-11-06: "버튼 정리") */}
+        {list.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="relative block min-w-[12rem] flex-1">
+              <span className="sr-only">{t("archive.search")}</span>
+              <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("archive.search")}
+                className="h-11 w-full rounded-full border bg-card pr-4 pl-10 text-[15px] outline-none placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20"
+              />
+            </label>
+            {view === "ledger" && !selecting && (
+              // Phones: one row of icons (the words stay for screen readers); wider screens: icons with words
+              <div className="flex items-center gap-1.5 max-sm:w-full max-sm:justify-between">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button type="button" variant={filterCount ? "default" : "secondary"} className="h-11 rounded-full px-4">
+                      <SlidersHorizontal className="size-4" />
+                      {t("archive.bar.filter")}
+                      {filterCount > 0 && <span className="grid size-5 place-items-center rounded-full bg-background/25 text-[11px] font-bold">{filterCount}</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-[min(92vw,26rem)] rounded-2xl p-3">
+                    <FilterBar filter={filter} onChange={setFilter} entries={list} wrap />
+                    {filterCount > 0 && (
+                      <button type="button" className="mt-2 text-[13px] font-medium text-primary hover:underline" onClick={() => setFilter({ stickers: [], unpaidOnly: false })}>
+                        {t("archive.clear")}
+                      </button>
+                    )}
+                  </PopoverContent>
+                </Popover>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button type="button" variant="secondary" className="h-11 rounded-full px-4 max-sm:px-3.5" title={t("archive.bar.views")}>
+                      <Bookmark className="size-4" />
+                      <span className="max-sm:sr-only">{t("archive.bar.views")}</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-[min(92vw,24rem)] rounded-2xl p-3">
+                    {/* Saved views: one tap brings back a set of filters and a search (owner, 2026-10-27) */}
+                    <SavedViews filter={filter} query={query} onPick={(f, s) => (setStatus(null), setFilter(f), setQuery(s))} inMenu />
+                  </PopoverContent>
+                </Popover>
+                <ExportButtons month={thisMonth} entries={thisMonthEntries} label={t("archive.bar.exportThis")} />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="secondary" className="h-11 rounded-full px-4 max-sm:px-3.5" title={t("archive.bar.bulk")}>
+                      <ListChecks className="size-4" />
+                      <span className="max-sm:sr-only">{t("archive.bar.bulk")}</span>
+                      <ChevronDown className="size-3.5 text-muted-foreground max-sm:hidden" aria-hidden />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 rounded-xl">
+                    <DropdownMenuItem onSelect={startPay} className="gap-2 py-2.5">
+                      <CircleCheck className="size-4" />
+                      {t("bulk.start")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={startCategory} className="gap-2 py-2.5">
+                      <Tags className="size-4" />
+                      {t("bulkCat.start")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="ghost" size="icon" className="size-11 rounded-full" aria-label={t("archive.bar.more")} title={t("archive.bar.more")}>
+                      <Ellipsis className="size-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 rounded-xl">
+                    <DropdownMenuItem asChild className="gap-2 py-2.5">
+                      <Link href="/ledger/cash">
+                        <Coins className="size-4" />
+                        {t("cash.link")}
+                      </Link>
+                    </DropdownMenuItem>
+                    {assetCount > 0 && (
+                      <DropdownMenuItem asChild className="gap-2 py-2.5">
+                        <Link href="/ledger/assets">
+                          <Refrigerator className="size-4" />
+                          {t("assets.link", { count: assetCount })}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+            {view === "ledger" && selecting && (
+              <Button type="button" variant="secondary" className="h-11 rounded-full px-4" onClick={stopSelecting}>
                 <X className="size-4" />
                 {t("bulk.stop")}
               </Button>
-            ) : (
-              <div className="flex flex-wrap gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-9 rounded-full px-3 text-[13px]"
-                  onClick={() => {
-                    setMode("pay");
-                    setSelecting(true);
-                    setFilter((f) => ({ ...f, unpaidOnly: true }));
-                  }}
-                >
-                  <CircleCheck className="size-4" />
-                  {t("bulk.start")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-9 rounded-full px-3 text-[13px]"
-                  onClick={() => {
-                    setMode("category");
-                    setSelecting(true);
-                  }}
-                >
-                  <Tags className="size-4" />
-                  {t("bulkCat.start")}
-                </Button>
-              </div>
             )}
+          </div>
+        )}
+        {/* A month without documents still reaches the cash box and the assets */}
+        {view === "ledger" && list.length === 0 && loaded && (
+          <div className="flex flex-wrap gap-2">
+            <Link href="/ledger/cash" className="press inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-primary hover:bg-primary/10">
+              <Coins className="size-4" aria-hidden />
+              {t("cash.link")}
+            </Link>
           </div>
         )}
         {selecting && view === "ledger" && (
@@ -225,6 +312,7 @@ export function LedgerList() {
           onClear={() => {
             setFilter({ stickers: [], unpaidOnly: false });
             setQuery("");
+            setStatus(null);
           }}
         />
       ) : view === "trash" ? (
@@ -254,9 +342,9 @@ export function LedgerList() {
           {months.map(({ group, monthEntries }, i) => (
             // Starting or clearing a search re-opens the months (every match is shown while searching)
             <MonthSection
-              key={`${group.key}:${q.trim() !== "" || !!filter.category}`}
+              key={`${group.key}:${q.trim() !== "" || !!filter.category || status !== null}`}
               group={group}
-              defaultOpen={i < 3 || q.trim() !== "" || !!filter.category}
+              defaultOpen={i < 3 || q.trim() !== "" || !!filter.category || status !== null}
               monthEntries={monthEntries}
               check={check}
               locked={locks.has(group.key)}
@@ -274,7 +362,7 @@ export function LedgerList() {
   );
 }
 
-function FilterBar({ filter, onChange, entries }: { filter: ArchiveFilter; onChange: (f: ArchiveFilter) => void; entries: LedgerEntry[] }) {
+function FilterBar({ filter, onChange, entries, wrap = false }: { filter: ArchiveFilter; onChange: (f: ArchiveFilter) => void; entries: LedgerEntry[]; wrap?: boolean }) {
   const t = useTranslations("archive");
   const label = useStickerLabel();
   // Categories in use, with how many documents each (a mixed receipt counts under each of its categories)
@@ -293,7 +381,11 @@ function FilterBar({ filter, onChange, entries }: { filter: ArchiveFilter; onCha
     );
   return (
     // Phones: one row that scrolls sideways, on its own line; min-w-0 so it never widens the page (a long category list)
-    <div className="-mx-4 flex min-w-0 basis-[calc(100%+2rem)] gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:basis-auto sm:flex-wrap sm:px-0" role="group" aria-label={t("stickers")}>
+    <div
+      className={wrap ? "flex flex-wrap gap-2" : "-mx-4 flex min-w-0 basis-[calc(100%+2rem)] gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:basis-auto sm:flex-wrap sm:px-0"}
+      role="group"
+      aria-label={t("stickers")}
+    >
       <button type="button" aria-pressed={!filter.stickers.length} className={chip(!filter.stickers.length)} onClick={() => onChange({ ...filter, stickers: [] })}>
         {t("stickerAll")}
       </button>
@@ -303,7 +395,7 @@ function FilterBar({ filter, onChange, entries }: { filter: ArchiveFilter; onCha
           {label(c)}
         </button>
       ))}
-      <span className="mx-1 w-px flex-none self-stretch bg-border" aria-hidden />
+      {wrap ? <span className="basis-full" aria-hidden /> : <span className="mx-1 w-px flex-none self-stretch bg-border" aria-hidden />}
       <button type="button" aria-pressed={filter.unpaidOnly} className={chip(filter.unpaidOnly)} onClick={() => onChange({ ...filter, unpaidOnly: !filter.unpaidOnly })}>
         {t("unpaidOnly")}
       </button>
@@ -368,6 +460,12 @@ const MonthSection = memo(function MonthSection({
   const tl = useTranslations("lock");
   const monthLabel = useMonthLabel();
   const current = group.key === monthKey({ date: todayBangkok() });
+  const td = useTranslations("archive.days");
+  const locale = useLocale();
+  const dayLabel = (b: DayBucket) =>
+    b.kind === "range"
+      ? td("range", { month: new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(new Date(`${b.month}-01T00:00:00Z`)), from: b.from, to: b.to })
+      : td(b.kind);
   // Rows (and their photos) exist only while the month is open: a year of documents stays light
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -410,23 +508,61 @@ const MonthSection = memo(function MonthSection({
               <ExportButtons month={group.key} entries={monthEntries} />
             </div>
           )}
-          <ul className="grid gap-2">
-            {group.items.map((e) => (
-              <DocRow
-                key={e.id}
-                e={e}
-                open={check.get(e.id)}
-                selectable={selecting === "pay" ? isUnpaid(e.doc) : selecting === "category" && !locked}
-                checked={selected.has(e.id)}
-                onToggle={onToggle}
-              />
-            ))}
-          </ul>
+          {/* Rows in date groups: today, yesterday, this week, last week, then weeks of the month (owner, 2026-11-06) */}
+          {groupByDays(group.items, (e) => e.doc.date, todayBangkok()).map((g) => (
+            <section key={g.key} className="grid gap-2" aria-label={dayLabel(g.bucket)}>
+              <h3 className="flex items-baseline justify-between gap-3 px-2 pt-1.5 text-[12.5px] font-semibold text-muted-foreground">
+                <span className="flex items-baseline gap-1.5">
+                  <span className={cn(g.bucket.kind === "today" && "text-primary")}>{dayLabel(g.bucket)}</span>
+                  <span className="font-normal">{t("docs", { count: g.items.length })}</span>
+                </span>
+                <span className="tabular-nums">{baht(fromSatang(g.items.reduce((a, e) => a + toSatang(e.doc.totals.net), 0)))}</span>
+              </h3>
+              <ul className="grid gap-2">
+                {g.items.map((e) => (
+                  <DocRow
+                    key={e.id}
+                    e={e}
+                    open={check.get(e.id)}
+                    selectable={selecting === "pay" ? isUnpaid(e.doc) : selecting === "category" && !locked}
+                    checked={selected.has(e.id)}
+                    onToggle={onToggle}
+                  />
+                ))}
+              </ul>
+            </section>
+          ))}
         </div>
       )}
     </details>
   );
 });
+
+/** A status on top of the ledger: how many, and a tap shows only those */
+function StatusChip({ on, n, tone, icon: Icon, label, onClick }: { on: boolean; n: number; tone: "bad" | "warn"; icon: typeof Copy; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      disabled={n === 0 && !on}
+      onClick={onClick}
+      className={cn(
+        "press inline-flex min-h-10 flex-none items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold transition-colors disabled:opacity-45",
+        on
+          ? tone === "bad"
+            ? "bg-bad text-white"
+            : "bg-warn text-white"
+          : tone === "bad"
+            ? "bg-bad-soft text-bad hover:bg-bad/15"
+            : "bg-warn-soft text-warn hover:bg-warn/15",
+      )}
+    >
+      <Icon className="size-4" aria-hidden />
+      {label}
+      <span className={cn("min-w-6 rounded-full px-1.5 text-center text-[12px] tabular-nums", on ? "bg-white/25" : "bg-card")}>{n}</span>
+    </button>
+  );
+}
 
 function Empty({ view, filtering, onClear }: { view: LedgerView; filtering: boolean; onClear: () => void }) {
   const t = useTranslations();

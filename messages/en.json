@@ -449,7 +449,29 @@
       "saved": "Saved “{name}”",
       "remove": "Remove {name}",
       "edit": "Edit",
-      "done": "Done"
+      "done": "Done",
+      "empty": "Pick filters or a search, then name and save it here to bring it back with one tap."
+    },
+    "status": {
+      "title": "To do",
+      "check": "Needs a look",
+      "unpaid": "Unpaid",
+      "dup": "Possible duplicate"
+    },
+    "bar": {
+      "filter": "Filter",
+      "views": "Saved views",
+      "exportThis": "This month’s Excel",
+      "bulk": "Several at once",
+      "more": "More"
+    },
+    "days": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "week": "This week",
+      "lastWeek": "Last week",
+      "noDate": "No date",
+      "range": "{month} {from}–{to}"
     }
   },
   "auth": {
@@ -1727,6 +1749,34 @@
       "someFailed": "{n} photo(s) could not be read.",
       "max": "Up to {n} photos at once.",
       "tapFix": "Tap a day to change it: work → off → annual → sick → absent → blank."
+    },
+    "steps": {
+      "title": "This month’s payroll",
+      "nowAt": "Step {n} of {total}",
+      "allDone": "Payroll done for the month!",
+      "count": "{done}/{total}",
+      "doneShort": "Done",
+      "notYet": "Not yet",
+      "fail": "Could not save.",
+      "undo": "Undo “{step}”",
+      "name": {
+        "attendance": "Attendance",
+        "pay": "Pay run",
+        "check": "Check",
+        "slips": "Payslips",
+        "filing": "Filing"
+      },
+      "hint": {
+        "attendance": "Fill in this month’s work days and days off on the attendance tab — or from a schedule photo.",
+        "pay": "Work out the pay from attendance on the pay run tab and save it.",
+        "check": "On the pay run tab, check each person’s figures and tap “Checked”.",
+        "slips": "Send the payslips by LINE with “Send payslips” under the pay run. Handed out on paper? Mark it done.",
+        "filing": "Print the ภ.ง.ด.1 and สปส.1-10 lists on the filing tab, file them, then mark it done."
+      },
+      "markDone": {
+        "slips": "All handed out",
+        "filing": "Filed"
+      }
     }
   },
   "fixed": {

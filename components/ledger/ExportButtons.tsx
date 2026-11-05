@@ -26,6 +26,7 @@ import { useCostLines } from "@/lib/cash-store";
 import { type LedgerEntry, pick, useLedger } from "@/lib/ledger-store";
 import { fromSatang } from "@/lib/money";
 import { useCategoryLabel } from "@/components/vendors/CategoryIcon";
+import { cn } from "@/lib/utils";
 
 export const EXPORT_COLS = [
   "date", "docNo", "vendor", "vendorTh", "taxId", "branch", "docType", "category", "items", "taxable", "exempt",
@@ -33,7 +34,7 @@ export const EXPORT_COLS = [
 ] as const;
 
 /** Excel download + printable PDF report for one month of the ledger (always the whole month, not the filter) */
-export function ExportButtons({ month, entries }: { month: string; entries: LedgerEntry[] }) {
+export function ExportButtons({ month, entries, label }: { month: string; entries: LedgerEntry[]; label?: string }) {
   const t = useTranslations();
   const locale = useLocale();
   const company = useCompany();
@@ -173,10 +174,10 @@ export function ExportButtons({ month, entries }: { month: string; entries: Ledg
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="secondary" className="h-10 rounded-full px-4 pointer-fine:h-9" disabled={working}>
+        <Button type="button" variant="secondary" className={cn("rounded-full px-4", label ? "h-11 max-sm:px-3.5" : "h-10 pointer-fine:h-9")} disabled={working} title={label}>
           {working ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
-          {packing ? t("export.packing", { done: packing.done, total: packing.total }) : busy ? t("export.exporting") : t("export.menu")}
-          {!working && <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden />}
+          {packing ? t("export.packing", { done: packing.done, total: packing.total }) : busy ? t("export.exporting") : label ? <span className="max-sm:sr-only">{label}</span> : t("export.menu")}
+          {!working && <ChevronDown className={cn("size-3.5 text-muted-foreground", label && "max-sm:hidden")} aria-hidden />}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64 rounded-xl">

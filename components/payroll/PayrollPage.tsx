@@ -14,7 +14,8 @@ import { cn } from "@/lib/utils";
 import { AttendanceTab } from "./AttendanceTab";
 import { EmployeesTab } from "./EmployeesTab";
 import { FilingTab } from "./FilingTab";
-import { PayRunTab } from "./PayRunTab";
+import { inMonth, PayRunTab } from "./PayRunTab";
+import { PayrollSteps } from "./PayrollSteps";
 
 type Tab = "attendance" | "run" | "employees" | "filing";
 const TABS: Tab[] = ["attendance", "run", "employees", "filing"];
@@ -82,6 +83,9 @@ export function PayrollPage() {
           </select>
         )}
       </div>
+
+      {/* This month's payroll, step by step (owner, 2026-11-06) */}
+      {shown !== "employees" && <PayrollSteps month={month} staff={employees.filter((e) => inMonth(e, month))} refresh={shown} onTab={setTab} />}
 
       {shown === "attendance" && <AttendanceTab month={month} />}
       {shown === "run" && <PayRunTab month={month} />}

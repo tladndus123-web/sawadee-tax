@@ -15,7 +15,8 @@ import { cn } from "@/lib/utils";
 
 const NONE: SavedView[] = [];
 
-export function SavedViews({ filter, query, onPick }: { filter: ArchiveFilter; query: string; onPick: (f: ArchiveFilter, q: string) => void }) {
+/** `inMenu`: inside the ledger's toolbar menu — wraps, and says how it works when there is nothing yet */
+export function SavedViews({ filter, query, onPick, inMenu = false }: { filter: ArchiveFilter; query: string; onPick: (f: ArchiveFilter, q: string) => void; inMenu?: boolean }) {
   const t = useTranslations("archive.views");
   const [views, setViews] = usePref<SavedView[]>("ledgerViews", readViews, NONE);
   const [editing, setEditing] = useState(false);
@@ -29,9 +30,9 @@ export function SavedViews({ filter, query, onPick }: { filter: ArchiveFilter; q
     toast.success(t("saved", { name }));
   };
 
-  if (!views.length && !somethingOn) return null;
+  if (!views.length && !somethingOn) return inMenu ? <p className="text-[13px] leading-relaxed text-muted-foreground">{t("empty")}</p> : null;
   return (
-    <div className="-mx-4 flex w-full gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label={t("title")}>
+    <div className={inMenu ? "flex flex-wrap gap-2" : "-mx-4 flex w-full gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0"} role="group" aria-label={t("title")}>
       {views.map((v) => (
         <span key={v.name} className="flex flex-none items-center">
           <button

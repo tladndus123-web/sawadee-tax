@@ -83,5 +83,7 @@ export async function POST(req: Request) {
       failed.push(e.name);
     }
   }
+  // The payroll steps (components/payroll/PayrollSteps) read this mark: "payslips sent" for the month
+  if (sent.length) await admin.from("calendar_done").upsert({ key: `slips:${month}`, done_by: user.id }, { onConflict: "key" });
   return Response.json({ sent, notLinked, noPay, failed });
 }
