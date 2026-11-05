@@ -17,7 +17,7 @@ import { ALL, branchLabel } from "@/lib/branches";
 import { useBranches } from "@/lib/branch-store";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
 import { useCompany } from "@/lib/company-store";
-import { type Employee, payrollSettingsOf, timesText } from "@/lib/payroll";
+import { type Employee, payrollSettingsOf, rosterEmpty, timesText } from "@/lib/payroll";
 import { useBranchEmployees } from "@/lib/payroll-store";
 import { THAI_HOLIDAYS } from "@/lib/thai-holidays";
 import { todayBangkok } from "@/lib/thai-tax";
@@ -121,7 +121,8 @@ export function AttendanceTab({ month, preview }: { month: string; preview?: Att
   };
 
   if (!loaded || !rows) return <Loader2 className="mx-auto my-10 size-5 animate-spin text-muted-foreground" aria-hidden />;
-  if (staff.length === 0) return <p className="workspace-panel px-5 py-10 text-center text-sm text-muted-foreground">{t("noStaffThisMonth")}</p>;
+  const empty = rosterEmpty({ employeesInScope: employees.length, onRoster: staff.length });
+  if (empty) return <p className="workspace-panel px-5 py-10 text-center text-sm text-muted-foreground">{t(empty === "add-employees" ? "noStaffThisMonth" : "noRosterThisMonth")}</p>;
 
   return (
     <div className="grid gap-3">

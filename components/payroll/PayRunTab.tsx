@@ -20,7 +20,7 @@ import { useCompany } from "@/lib/company-store";
 import { refreshLabor } from "@/lib/labor-store";
 import { fmt } from "@/lib/money";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
-import { daysNotEmployed, type Employee, employedInMonth, payIssues, EMPTY_PERIOD, type LineRates, lineRates, monthPay, payrollSettingsOf, type PeriodInput, sameRates, timesText } from "@/lib/payroll";
+import { daysNotEmployed, type Employee, employedInMonth, payIssues, EMPTY_PERIOD, type LineRates, lineRates, monthPay, payrollSettingsOf, type PeriodInput, rosterEmpty, sameRates, timesText } from "@/lib/payroll";
 import { SendSlipsButton } from "./SendSlips";
 import { loadAllowanceNames, loadPayroll, loadPayrollChecks, type PayrollCheck, type PayrollLineRow, savePayrollMonth, setPayrollCheck, setPayrollPaid, useBranchEmployees } from "@/lib/payroll-store";
 import { cn } from "@/lib/utils";
@@ -220,10 +220,12 @@ export function PayRunTab({ month }: { month: string }) {
   const stale = staff.some((e) => savedRates.has(e.id) && !sameRates(savedRates.get(e.id)!, lineRates(settings.ot, e.payType)));
 
   if (!loaded || !ready || !company.loaded) return <Loader2 className="mx-auto my-10 size-5 animate-spin text-muted-foreground" aria-hidden />;
-  if (staff.length === 0)
+  const empty = rosterEmpty({ employeesInScope: employees.length, onRoster: staff.length });
+  // "Add employees" only when this branch scope is empty. Existing staff with no attendance stay on the form.
+  if (empty)
     return (
       <div className="grid gap-3">
-        <p className="workspace-panel px-5 py-10 text-center text-sm text-muted-foreground">{t("noStaffThisMonth")}</p>
+        <p className="workspace-panel px-5 py-10 text-center text-sm text-muted-foreground">{t(empty === "add-employees" ? "noStaffThisMonth" : "markAttendanceFirst")}</p>
         <OtSettings />
       </div>
     );
