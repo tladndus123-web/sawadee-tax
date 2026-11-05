@@ -32,6 +32,11 @@ insert into public.members (user_id, email, name, role) values
 
 -- Real closed months would collide with the months these tests close: start from none (rolled back at the end)
 delete from public.month_locks;
+-- Real PINs (an "all branches" one set in the app, branch PINs) would change what these tests expect: none here
+-- (rolled back at the end). A real PIN once stopped the deploy (2026-11-04).
+delete from public.all_branches_pin;
+delete from public.branch_pins;
+delete from public.branch_unlocks;
 
 -- Only the test admin is an admin inside this (rolled-back) test
 -- The test admin is an owner (full rights, as admins had before owners existed)
