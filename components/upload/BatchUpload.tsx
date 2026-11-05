@@ -149,12 +149,12 @@ export function BatchUpload() {
           add(e.dataTransfer.files);
         }}
         className={cn(
-          "workspace-panel ai-ring grid justify-items-center gap-5 rounded-[1.75rem] px-6 py-8 text-center transition-transform sm:py-14",
+          "workspace-panel ai-ring upload-drop grid justify-items-center gap-5 rounded-[1.75rem] px-6 py-8 text-center transition-transform sm:py-14",
           dragging && "scale-[1.01]",
           room <= 0 && "opacity-70",
         )}
       >
-        <span className="ai-orb size-16"><Sparkles className="size-7" aria-hidden /></span>
+        <span className="upload-orb size-16"><Sparkles className="size-7" aria-hidden /></span>
         <div className="grid gap-1">
           <p className="text-lg font-semibold tracking-tight">
             <span className="max-sm:hidden">{t("batch.drop")}</span>
