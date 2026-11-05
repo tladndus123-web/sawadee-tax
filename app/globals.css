@@ -115,15 +115,17 @@
   --rule-soft: #e8e8ed;
   --shadow-soft: 0 1px 2px rgb(0 0 0 / 4%), 0 8px 28px rgb(0 0 0 / 5%);
   --shadow-lift: 0 2px 6px rgb(0 0 0 / 5%), 0 18px 48px rgb(0 0 0 / 9%);
-  /* Intelligence chrome: brand blues (app mark, login glow, upload drop).
-     The fill skips the pale halo so white icons and gradient text stay readable.
+  /* Intelligence chrome: lighter and darker brand blue only.
+     #0a5ce6 (the old dark stop) sat toward purple, so the ring holds #0071e3
+     across the middle and ends on a deeper #0071e3 (#0066cc). The fill still
+     skips the pale halo so white icons and gradient text stay readable.
      .intelligence-mark.is-soft does not use these — it stays gray. */
   --ai-1: #8ebfff;
   --ai-2: #3b8bff;
   --ai-3: #0071e3;
-  --ai-4: #0a5ce6;
-  --ai-gradient: linear-gradient(160deg, var(--ai-2), var(--ai-3) 52%, var(--ai-4));
-  --ai-conic: conic-gradient(from 180deg, var(--ai-1), var(--ai-2), var(--ai-3), var(--ai-4), var(--ai-2), var(--ai-1));
+  --ai-4: #0066cc;
+  --ai-gradient: linear-gradient(160deg in oklch, var(--ai-2), var(--ai-3) 36%, var(--ai-3) 68%, var(--ai-4));
+  --ai-conic: conic-gradient(from 180deg in oklch, var(--ai-1), var(--ai-2), var(--ai-3), var(--ai-4), var(--ai-3), var(--ai-2), var(--ai-1));
   --sidebar: #fafafa;
   --sidebar-foreground: #1d1d1f;
   --sidebar-primary: #1d1d1f;
@@ -433,6 +435,10 @@
   color: transparent;
 }
 
+.ai-fill {
+  background: var(--ai-gradient);
+}
+
 .ai-ring {
   position: relative;
   isolation: isolate;
@@ -488,11 +494,6 @@
 .ai-orb > * {
   color: #fff;
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 20%));
-}
-
-/* Photo drop zone. Same blues as the shared --ai-gradient (app mark and the pick button). */
-.upload-drop {
-  --ai-gradient: linear-gradient(160deg, #3b8bff, #0071e3 52%, #0a5ce6);
 }
 
 .upload-orb {
@@ -1004,8 +1005,8 @@ html.print-fit .invoice-paper {
   content: "";
   position: absolute;
   inset: -60%;
-  /* #3b8bff → #0071e3 → #0a5ce6, same stops as the app mark. No pink or orange. */
-  background: conic-gradient(from 180deg, #8ebfff, #3b8bff, #0071e3, #0a5ce6, #3b8bff, #8ebfff);
+  /* Shared --ai-conic: pale, light, brand held through the middle, deeper brand. */
+  background: var(--ai-conic);
   animation: ai-spin 24s linear infinite;
 }
 
