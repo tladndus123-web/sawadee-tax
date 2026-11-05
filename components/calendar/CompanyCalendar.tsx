@@ -259,9 +259,11 @@ export function CompanyCalendar() {
 
       {suggestions.length > 0 && <RecurringCard items={suggestions} />}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1.35fr_1fr]">
+      {/* The month sets the row height. The list scrolls inside that height on a wide screen, so the money
+          chart stays just below instead of sitting under a very long agenda. On a phone the list follows the month. */}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-stretch">
         {/* Month grid */}
-        <section className="workspace-panel grid gap-2 p-3 sm:gap-3 sm:p-5" aria-label={monthName(month)}>
+        <section className="workspace-panel grid min-w-0 gap-2 p-3 sm:gap-3 sm:p-5" aria-label={monthName(month)}>
           <div className="flex items-center justify-between">
             <Button type="button" variant="ghost" size="icon" className="size-10 rounded-full" onClick={() => setMonth(shiftMonth(month, -1))} aria-label={t("prev")}>
               <ChevronLeft className="size-5" />
@@ -329,8 +331,9 @@ export function CompanyCalendar() {
           <p className="text-xs text-muted-foreground max-sm:hidden">{t("note")}</p>
         </section>
 
-        {/* The list */}
-        <section className="grid gap-3" aria-labelledby="cal-list">
+        {/* The list. On a wide screen it fills the month's height and scrolls, so every date stays reachable. */}
+        <div className="min-w-0 lg:relative">
+        <section className="grid gap-3 lg:absolute lg:inset-0 lg:grid-rows-[auto_minmax(0,1fr)] lg:overflow-hidden" aria-labelledby="cal-list">
           <div className="flex items-center justify-between gap-2">
             <h2 id="cal-list" className="text-[18px] font-semibold">
               {day ? dateText(day) : t("upcoming")}
@@ -354,7 +357,7 @@ export function CompanyCalendar() {
               {t("nothing")}
             </p>
           ) : (
-            <ul className="workspace-panel divide-y divide-border/60 overflow-hidden">
+            <ul tabIndex={0} aria-labelledby="cal-list" className="workspace-panel min-h-0 divide-y divide-border/60 overflow-y-auto overscroll-y-contain focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:h-full lg:min-h-0">
               {shown.map((i) => {
                 const g = groupOf(i.kind);
                 const Icon = i.kind === "doc" ? FileText : TONE[g].icon;
@@ -422,6 +425,7 @@ export function CompanyCalendar() {
             </ul>
           )}
         </section>
+        </div>
       </div>
 
       {/* The month's money going out */}
