@@ -67,6 +67,10 @@ export function LoginForm() {
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
+    // The button always looks ready (owner 2026-11-05: a pale one read as broken); say what is missing instead
+    const typed = email.trim();
+    if (!typed) return setError(t("emailNeeded"));
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(typed)) return setError(t("emailInvalid"));
     setState("sending");
     setError(null);
     const next = params.get("next") || `/${locale}`;
@@ -94,7 +98,7 @@ export function LoginForm() {
   const verify = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const token = code.replace(/\D/g, "");
-    if (token.length < CODE_LENGTH) return;
+    if (token.length < CODE_LENGTH) return setCodeError(t("codeNeeded"));
     tried.current = token;
     setCodeState("checking");
     setCodeError(null);
@@ -143,7 +147,7 @@ export function LoginForm() {
                 {state === "sent" ? t("sentTitle") : t("welcome")}
               </h1>
               {/* What this site is, in one line (only before the link is sent) */}
-              {state !== "sent" && <p className="text-[14px] leading-relaxed text-pretty text-muted-foreground">{t("about")}</p>}
+              {state !== "sent" && <p className="text-[14px] leading-relaxed text-balance text-foreground/70 [word-break:auto-phrase]">{t("about")}</p>}
             </div>
           </header>
 
@@ -152,13 +156,13 @@ export function LoginForm() {
               <span className="intelligence-mark sent-mark size-14">
                 <MailCheck className="size-6" aria-hidden />
               </span>
-              <p className="text-[15px] leading-relaxed text-muted-foreground" role="status">
+              <p className="text-[15px] leading-relaxed text-balance text-foreground/75 [word-break:auto-phrase]" role="status">
                 {t("sent", { email: email.trim() })}
               </p>
               {CODE_IN_EMAIL && (
                 <form onSubmit={verify} className="grid w-full gap-3 text-left">
                   <label className="grid gap-1.5">
-                    <span className="text-center text-sm text-muted-foreground">{t("codeHint")}</span>
+                    <span className="text-center text-sm text-balance text-foreground/70 [word-break:auto-phrase]">{t("codeHint")}</span>
                     <span className="group relative block">
                       <KeyRound className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden />
                       <input
@@ -188,7 +192,7 @@ export function LoginForm() {
                       {codeError}
                     </p>
                   )}
-                  <Button type="submit" variant="secondary" className="h-11 rounded-2xl text-[15px] font-semibold" disabled={codeState === "checking" || code.length < 6}>
+                  <Button type="submit" className="h-11 rounded-2xl text-[15px] font-semibold" disabled={codeState === "checking"}>
                     {codeState === "checking" && <Loader2 className="size-4 animate-spin" />}
                     {t("codeSubmit")}
                   </Button>
@@ -207,8 +211,8 @@ export function LoginForm() {
               </Button>
             </div>
           ) : (
-            <form onSubmit={send} className="login-swap grid gap-4">
-              <p className="text-center text-[15px] leading-relaxed text-pretty text-muted-foreground">{t("intro")}</p>
+            <form onSubmit={send} noValidate className="login-swap grid gap-4">
+              <p className="text-center text-[15px] leading-relaxed text-balance text-foreground/75 [word-break:auto-phrase]">{t("intro")}</p>
               {params.get("removed") && <p role="status" className="rounded-2xl bg-bad-soft px-4 py-3 text-center text-sm text-bad">{t("removed")}</p>}
               {params.get("expired") && !params.get("removed") && (
                 <p role="status" className="flex items-start gap-2 rounded-2xl bg-muted px-4 py-3 text-left text-sm text-foreground">
@@ -227,13 +231,12 @@ export function LoginForm() {
                 <Mail className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden />
                 <input
                   type="email"
-                  required
                   autoComplete="email"
                   inputMode="email"
                   autoFocus={passkey !== "first"}
                   placeholder="name@company.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => (setEmail(e.target.value), error && setError(null))}
                   aria-invalid={!!error}
                   className="h-[52px] w-full rounded-2xl border border-input bg-background/60 pr-4 pl-11 text-[16px] transition-[border-color,box-shadow] outline-none placeholder:text-muted-foreground/70 focus:border-primary focus:bg-card focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--primary)_14%,transparent)] aria-invalid:border-bad"
                 />
@@ -243,7 +246,7 @@ export function LoginForm() {
                   {error}
                 </p>
               )}
-              <Button type="submit" variant={passkey === "first" ? "secondary" : "default"} className="group h-[52px] rounded-2xl text-[16px] font-semibold" disabled={state === "sending" || !email.trim()}>
+              <Button type="submit" variant={passkey === "first" ? "secondary" : "default"} className="group h-[52px] rounded-2xl text-[16px] font-semibold" disabled={state === "sending"}>
                 {state === "sending" ? <Loader2 className="size-4 animate-spin" /> : null}
                 {t("send")}
                 {state !== "sending" && <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />}
@@ -254,11 +257,11 @@ export function LoginForm() {
                   <PasskeySignIn primary={false} />
                 </>
               )}
-              <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+              <p className="flex items-center justify-center gap-1.5 text-[13px] text-foreground/65">
                 <Lock className="size-3.5" aria-hidden />
                 {t("inviteOnly")}
               </p>
-              <p className="-mt-2 text-center text-xs text-muted-foreground">{SESSION_HOURS ? t("keepSigned", { hours: SESSION_HOURS }) : t("keepSignedOn")}</p>
+              <p className="-mt-2 text-center text-[13px] text-balance text-foreground/65 [word-break:auto-phrase]">{SESSION_HOURS ? t("keepSigned", { hours: SESSION_HOURS }) : t("keepSignedOn")}</p>
             </form>
           )}
         </div>
@@ -284,7 +287,7 @@ function LanguagePicker() {
   const params = useSearchParams();
   const [pending, start] = useTransition();
   return (
-    <nav aria-label={t("language")} className={cn("flex flex-wrap items-center justify-center gap-1 transition-opacity", pending && "opacity-60")}>
+    <nav aria-label={t("language")} className={cn("grid w-full max-w-[420px] grid-cols-4 gap-1 rounded-full bg-card/60 p-1 ring-1 ring-border/60 transition-opacity", pending && "opacity-60")}>
       {LANGS.map(([code, label]) => {
         const on = code === locale;
         return (
@@ -303,8 +306,8 @@ function LanguagePicker() {
               start(() => router.replace(`${pathname}${query ? `?${query}` : ""}`, { locale: code }));
             }}
             className={cn(
-              "min-h-9 rounded-full px-3.5 text-[13px] transition-colors",
-              on ? "bg-card font-semibold text-foreground shadow-[var(--shadow-soft)]" : "text-muted-foreground hover:text-foreground",
+              "min-h-11 rounded-full px-2 text-[14px] transition-colors",
+              on ? "bg-card font-semibold text-foreground shadow-[var(--shadow-soft)]" : "text-foreground/70 hover:text-foreground",
             )}
           >
             {label}

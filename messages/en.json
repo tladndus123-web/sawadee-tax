@@ -485,7 +485,10 @@
     "retry2": "Type the email you were invited with and tap \"Send sign-in link\".",
     "retry3": "Enter the 6-digit code at the start of the email's subject.",
     "getCode": "Get a code on the sign-in page",
-    "keepSignedOn": "Sign in once and you stay signed in on this device until you sign out."
+    "keepSignedOn": "Sign in once and you stay signed in on this device until you sign out.",
+    "emailNeeded": "Please enter your email.",
+    "emailInvalid": "Please check the email address.",
+    "codeNeeded": "Enter the 6-digit code from the start of the email's subject."
   },
   "members": {
     "title": "Members",
@@ -1878,7 +1881,7 @@
   "passkey": {
     "signIn": "Quick sign-in",
     "signInHint": "Face ID · fingerprint · Windows Hello",
-    "firstTimeHint": "Works on registered devices only. On a new device, sign in with your email first, then tap Register.",
+    "firstTimeHint": "Works on registered devices only. On a new device, sign in once with your email and you’ll be offered to set it up.",
     "or": "or",
     "cancelled": "If this device has no quick sign-in yet, sign in with your email.",
     "fail": "Couldn't do a quick sign-in. Please sign in with your email.",

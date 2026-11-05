@@ -38,15 +38,19 @@ export function PasskeySignIn({ primary }: { primary: boolean }) {
       <Button
         type="button"
         variant={primary ? "default" : "outline"}
-        className={cn("h-[52px] rounded-2xl text-[16px] font-semibold", !primary && "bg-background/60")}
+        className={cn("h-auto min-h-[56px] rounded-2xl py-2 text-[16px] font-semibold", !primary && "bg-background/60")}
         disabled={busy}
         onClick={() => void go()}
       >
         {busy ? <Loader2 className="size-5 animate-spin" /> : <KeyRound className="size-5" aria-hidden />}
-        {t("signIn")}
+        {/* What "quick sign-in" is, on the button itself: Face ID / fingerprint (a passkey) */}
+        <span className="grid text-left leading-tight">
+          {t("signIn")}
+          <span className={cn("text-[12px] font-normal", primary ? "text-primary-foreground/85" : "text-foreground/65")}>{t("signInHint")}</span>
+        </span>
       </Button>
       {/* Not registered here yet: the system sheet would only say "no passkeys", so say what to do first */}
-      <p className="text-center text-xs leading-relaxed text-pretty text-muted-foreground">{primary ? t("signInHint") : t("firstTimeHint")}</p>
+      {!primary && <p className="text-center text-[13px] leading-relaxed text-balance text-foreground/65 [word-break:auto-phrase]">{t("firstTimeHint")}</p>}
       {note && (
         <p role={note.bad ? "alert" : "status"} className={cn("text-center text-sm", note.bad ? "text-bad" : "text-muted-foreground")}>
           {note.text}
