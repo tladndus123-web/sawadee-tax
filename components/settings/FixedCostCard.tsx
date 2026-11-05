@@ -17,6 +17,7 @@ import { monthDate } from "@/lib/archive";
 import { branchLabel, byId, headOf } from "@/lib/branches";
 import { useBranches } from "@/lib/branch-store";
 import { type FixedLine, fixedActive } from "@/lib/fixed-costs";
+import { fixedDisplayName, isGenericName } from "@/lib/fixed-name";
 import { changeAmount, deleteFixed, saveFixed, useFixedCosts } from "@/lib/fixed-store";
 import { baht, bahtWhole } from "@/lib/money";
 import { isMonthLocked } from "@/lib/month-lock-store";
@@ -49,7 +50,7 @@ export function FixedCostCard() {
   useFoldStatus(loaded ? (monthly ? tf("fixed", { amount: bahtWhole(monthly) }) : tf("none")) : null);
 
   const remove = async (l: FixedLine) => {
-    if (!confirm(t("deleteAsk", { name: l.name }))) return;
+    if (!confirm(t("deleteAsk", { name: fixedDisplayName(l, catLabel) }))) return;
     setBusy(true);
     try {
       await deleteFixed(l.id);
@@ -83,9 +84,10 @@ export function FixedCostCard() {
               <li key={l.id} className={cn("flex items-center gap-2 py-2.5 sm:gap-3", !running && "opacity-55")}>
                 <CategoryIcon category={l.category} />
                 <span className="grid min-w-0 flex-1 gap-0.5">
-                  <span className="truncate text-[15px] font-medium">{l.name}</span>
+                  {/* A generic name (家賃, 水道光熱費 …) shows as its kind in the reader's language (lib/fixed-name) */}
+                  <span className="truncate text-[15px] font-medium">{fixedDisplayName(l, catLabel)}</span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {[catLabel(l.category), b && branches.length > 1 ? branchLabel(b, names) : "", l.toMonth ? t("range", { from: monthText(l.fromMonth), to: monthText(l.toMonth) }) : t("since", { from: monthText(l.fromMonth) })]
+                    {[isGenericName(l.category, l.name) ? "" : catLabel(l.category), b && branches.length > 1 ? branchLabel(b, names) : "", l.toMonth ? t("range", { from: monthText(l.fromMonth), to: monthText(l.toMonth) }) : t("since", { from: monthText(l.fromMonth) })]
                       .filter(Boolean)
                       .join(" · ")}
                   </span>
@@ -238,6 +240,7 @@ function FixedForm({ draft, onChange, onDone, onAmount }: { draft: Draft; onChan
 
 /** A new amount from a month on; the months before keep the old one */
 function AmountForm({ line, onDone }: { line: FixedLine; onDone: () => void }) {
+  const catLabel = useCategoryLabel();
   const t = useTranslations("fixed");
   const [amount, setAmount] = useState(line.amount);
   const [from, setFrom] = useState(todayBangkok().slice(0, 7));
@@ -263,7 +266,7 @@ function AmountForm({ line, onDone }: { line: FixedLine; onDone: () => void }) {
         void save();
       }}
     >
-      <p className="text-sm font-semibold">{t("changeTitle", { name: line.name })}</p>
+      <p className="text-sm font-semibold">{t("changeTitle", { name: fixedDisplayName(line, catLabel) })}</p>
       <div className="grid grid-cols-2 gap-3">
         <label className="grid gap-1">
           <span className="text-[11px] text-muted-foreground">{t("newAmount")}</span>

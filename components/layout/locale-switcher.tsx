@@ -2,7 +2,6 @@
 
 import { Globe } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useParams } from "next/navigation";
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +28,6 @@ export function LocaleSwitcher() {
   const t = useTranslations("nav");
   const router = useRouter();
   const pathname = usePathname();
-  const params = useParams();
   const [pending, startTransition] = useTransition();
   const short = LABELS.find(([code]) => code === locale)?.[2] ?? locale.toUpperCase();
 
@@ -47,11 +45,14 @@ export function LocaleSwitcher() {
           value={locale}
           onValueChange={(next) => {
             if (!next || next === locale) return;
-            startTransition(() => {
-              // Same screen in another language: stay where the reader was on the page
-              // @ts-expect-error -- params always match the current pathname
-              router.replace({ pathname, params }, { locale: next as Locale, scroll: false });
-            });
+            // Same screen (and its ?query) in another language. If the in-app switch does not land (a slow phone, an
+            // installed app keeping the old page), open the new address outright, so the language always changes.
+            const query = window.location.search;
+            const target = `/${next}${pathname === "/" ? "" : pathname}${query}${window.location.hash}`;
+            startTransition(() => router.replace(`${pathname}${query}`, { locale: next as Locale, scroll: false }));
+            window.setTimeout(() => {
+              if (!window.location.pathname.startsWith(`/${next}`)) window.location.assign(target);
+            }, 2500);
           }}
         >
           {LABELS.map(([code, label]) => (
