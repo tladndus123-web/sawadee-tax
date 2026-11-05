@@ -985,7 +985,8 @@ html.print-fit .invoice-paper {
   to { opacity: 1; }
 }
 
-/* Login: Apple Intelligence edge glow — a blurred spectrum turning slowly behind the card */
+/* Login card only. The shared spectrum (--ai-conic, pink / orange) stays on confirm
+   cards and other marks. This halo uses the app-mark blues and the sign-in button. */
 .login-card {
   isolation: isolate;
 }
@@ -1004,7 +1005,8 @@ html.print-fit .invoice-paper {
   content: "";
   position: absolute;
   inset: -60%;
-  background: var(--ai-conic);
+  /* #3b8bff → #0071e3 → #0a5ce6, same stops as the app mark. No pink or orange. */
+  background: conic-gradient(from 180deg, #8ebfff, #3b8bff, #0071e3, #0a5ce6, #3b8bff, #8ebfff);
   animation: ai-spin 24s linear infinite;
 }
 
@@ -1039,6 +1041,11 @@ html.print-fit .invoice-paper {
   .login-symbols {
     display: none;
   }
+}
+
+/* A language change remounts the tiles. Skip the pop-in so they stay where they are. */
+.login-symbols.is-still .sym {
+  animation: none;
 }
 
 .sym {
@@ -1171,7 +1178,16 @@ html.print-fit .invoice-paper {
   from { opacity: 0; transform: scale(0.2); }
 }
 
-/* Login card: rises in on load; its content cross-fades when the form turns into "check your email" */
+/* Login card: rises in on load; its content cross-fades when the form turns into "check your email".
+   A language click sets data-login-stay before the route swaps, so this rise (it starts invisible)
+   cannot ghost the card for a frame. */
+html[data-login-stay] .login-enter,
+html[data-login-stay] .login-logo-in,
+html[data-login-stay] .login-swap,
+html[data-login-stay] .sym {
+  animation: none;
+}
+
 .login-enter {
   animation: login-enter 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

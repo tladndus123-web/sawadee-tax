@@ -394,7 +394,7 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 ## 8. 알아 두면 좋은 것
 
 **디자인**
-- 애플풍: 배경 `#f5f5f7`, 카드 흰색, 포인트 시스템 블루(`--primary`), 애플 인텔리전스 그라데이션(`--ai-gradient`: 파랑→보라→분홍→주황)은 로고 · 합계 카드 · 자동 확인에만 절제해서 써요. 사진 올리기 칸은 그 색을 쓰지 않고, 앱 아이콘·「사진 고르기」 버튼과 같은 파랑만 써요(`.upload-drop` · `.upload-orb`, 2026-11-05).
+- 애플풍: 배경 `#f5f5f7`, 카드 흰색, 포인트 시스템 블루(`--primary`), 애플 인텔리전스 그라데이션(`--ai-gradient`: 파랑→보라→분홍→주황)은 합계 카드 · 자동 확인에만 절제해서 써요. 사진 올리기 칸과 로그인 화면의 이름·카드 바깥 빛은 그 색을 쓰지 않고, 앱 아이콘·파란 버튼과 같은 파랑만 써요(`.upload-drop` · `.upload-orb` · 로그인 이름 `text-primary` · `.login-glow`, 2026-11-05). 로그인에서 언어만 바꾸면 카드가 다시 떠오르지 않아요(`sawadee_login_stay` 쿠키, 2026-11-05).
 - `globals.css`의 공용 클래스를 쓰면 모양이 맞아요: `.workspace-panel`(카드), `.ai-ring`(그라데이션 테두리), `.segmented-control`(iOS 토글), `.review-actions`(떠 있는 하단 버튼 바).
 - 스타일 규칙을 레이어 밖(unlayered)에 쓰면 Tailwind 유틸리티(`hidden` 등)를 이겨 버려요. 실제로 `.nav-pill`의 `display:flex` 때문에 휴대폰에서 가로 넘침이 났어요 — display는 유틸리티로 주세요.
 - 한국어는 `word-break: keep-all`(음절 중간에서 줄바꿈 안 함).
