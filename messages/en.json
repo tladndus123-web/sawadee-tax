@@ -73,7 +73,15 @@
     "foot": "Tax IDs are checked with the Revenue Department check-digit rule. Confirm with your accountant before filing.",
     "typeSign": "Type a signature here",
     "print": "Print",
-    "sameAsDoc": "Same as document"
+    "sameAsDoc": "Same as document",
+    "companyHint": "Our company as payslips and filing lists print it. Left empty, it is taken from the invoices we received.",
+    "companyNameTh": "Company name (Thai)",
+    "companyNameEn": "Company name (English)",
+    "companyBranch": "Branch no. (head office 00000)",
+    "companyAddrTh": "Address (Thai)",
+    "companyAddrEn": "Address (English)",
+    "companyBranchBad": "The branch number is 5 digits.",
+    "companySaveFail": "Could not save. Please try again."
   },
   "checks": {
     "sellerTax": "Seller tax ID (13 digits)",
@@ -1688,7 +1696,9 @@
       "failedList": "Could not send",
       "rate": "Too many sends. Try again in a minute.",
       "fail": "Could not send."
-    }
+    },
+    "shareHint": "Put the schedule on the staff phone calendars — changes follow by themselves.",
+    "shareCal": "Share as calendar"
   },
   "fixed": {
     "title": "Fixed costs (no invoice)",
@@ -2088,7 +2098,8 @@
       "icalRenew": "Make a new address",
       "icalRenewAsk": "A new address stops the calendars connected now from updating. Make a new one?",
       "icalRenewed": "New address made. Add it to your calendar again.",
-      "icalFail": "Couldn't make the address right now."
+      "icalFail": "Couldn't make the address right now.",
+      "thenTitle": "After that"
     }
   },
   "expenses": {
@@ -2321,5 +2332,31 @@
     "check": "I checked: this is a different document (e.g. same number from another branch)",
     "needCheck": "Check whether it is a duplicate, then tick the box.",
     "card": "Possible duplicate · look when you check it"
+  },
+  "feed": {
+    "name": "Staff schedule",
+    "leave": "Leave",
+    "holiday": "Thai public holiday",
+    "title": "Share the schedule as a calendar",
+    "sub": "Send the link once: work days, days off and leave appear in the staff phone calendar and update when attendance changes.",
+    "everyone": "Whole team",
+    "allSub": "Everyone · for managers",
+    "oneSub": "Only their own days",
+    "line": "Send by LINE",
+    "qr": "QR code",
+    "share": "Share",
+    "copy": "Copy link",
+    "copied": "Copied.",
+    "fail": "That did not work. Please try again.",
+    "qrFor": "{who} — schedule",
+    "qrHint": "Scan with the phone camera to add it to the calendar.",
+    "message": "{who} — work schedule. Tap to add it to your calendar (updates by itself): {url}",
+    "howIphone": "iPhone: tap the link, then Subscribe.",
+    "howAndroid": "Android: Google Calendar → Other calendars + → From URL, paste the link.",
+    "privacy": "Anyone with the link can see the schedule. When someone leaves, tap “New link” (old links stop at once).",
+    "renew": "New link",
+    "renewAsk": "Every schedule link sent so far will stop working. Make a new link?",
+    "renewed": "New link made. Please send it again.",
+    "team": "Everyone"
   }
 }

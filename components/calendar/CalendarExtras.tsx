@@ -26,6 +26,7 @@ export function NextDeadline({
   amount,
   ready,
   href,
+  then = [],
 }: {
   title: string;
   date: string;
@@ -35,29 +36,36 @@ export function NextDeadline({
   /** Documents checked out of all, for the VAT return */
   ready: { checked: number; total: number } | null;
   href?: string;
+  /** The dates after it (title, date text, days left, dot colour) — a short timeline under the card */
+  then?: { key: string; title: string; date: string; daysLeft: number; dot: string }[];
 }) {
   const t = useTranslations("calendar.x");
   const late = daysLeft < 0;
   const pct = ready && ready.total ? Math.round((ready.checked / ready.total) * 100) : null;
   return (
-    <section className={cn("workspace-panel relative grid gap-4 overflow-hidden p-5 sm:p-6", late && "ring-2 ring-bad/40")} aria-label={t("nextTitle")}>
-      <span className={cn("pointer-events-none absolute -top-20 -right-20 size-56 rounded-full blur-3xl", late ? "bg-bad/15" : "bg-primary/12")} aria-hidden />
+    <section className={cn("workspace-panel relative grid content-start gap-4 overflow-hidden p-5 sm:p-6", late && "ring-1 ring-bad/30 dark:ring-bad/25")} aria-label={t("nextTitle")}>
+      <span className={cn("pointer-events-none absolute -top-24 -right-24 size-60 rounded-full blur-3xl", late ? "bg-bad/10 dark:bg-bad/8" : "bg-primary/10")} aria-hidden />
       <div className="flex items-start justify-between gap-3">
         <div className="grid min-w-0 gap-1">
-          <span className="flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground">
-            <AlarmClock className="size-4" aria-hidden />
+          <span className={cn("flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold", late ? "bg-bad-soft text-bad" : "bg-primary/10 text-primary")}>
+            <AlarmClock className="size-3.5" aria-hidden />
             {t("nextTitle")}
           </span>
           <p className="text-[19px] leading-snug font-semibold text-pretty">{title}</p>
           <span className="text-[13px] text-muted-foreground">{date}</span>
         </div>
-        <div className={cn("grid flex-none justify-items-center rounded-2xl px-4 py-2.5 text-center", late ? "bg-bad text-white" : daysLeft <= 3 ? "bg-warn text-white" : "bg-primary text-primary-foreground")}>
+        <div
+          className={cn(
+            "grid min-w-[76px] flex-none justify-items-center rounded-2xl px-4 py-2.5 text-center shadow-sm",
+            late ? "bg-bad text-white dark:bg-bad/85" : daysLeft <= 3 ? "bg-warn text-white dark:bg-warn/85" : "bg-primary text-primary-foreground",
+          )}
+        >
           <span className="text-[11px] font-semibold opacity-90">{late ? t("lateLabel") : daysLeft === 0 ? t("todayLabel") : "D-DAY"}</span>
           <b className="text-[30px] leading-none font-bold tabular-nums">{late ? `+${-daysLeft}` : daysLeft === 0 ? "!" : daysLeft}</b>
         </div>
       </div>
       {amount !== null && (
-        <div className="flex items-baseline justify-between gap-3 rounded-2xl bg-muted/60 px-4 py-3">
+        <div className="flex items-baseline justify-between gap-3 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3">
           <span className="text-[13px] text-muted-foreground">{amount < 0 ? t("refund") : t("toPay")}</span>
           <b className="text-[22px] tabular-nums">{bahtWhole(Math.abs(amount))}</b>
         </div>
@@ -83,6 +91,23 @@ export function NextDeadline({
             <ArrowRight className="size-4" />
           </Link>
         </Button>
+      )}
+      {then.length > 0 && (
+        <div className="grid gap-2 border-t border-border/60 pt-3.5">
+          <span className="text-[12px] font-semibold text-muted-foreground">{t("thenTitle")}</span>
+          <ol className="relative grid gap-2.5 before:absolute before:top-2 before:bottom-2 before:left-[4.5px] before:w-px before:bg-border">
+            {then.map((i) => (
+              <li key={i.key} className="relative flex items-center gap-3 pl-0">
+                <span className={cn("relative size-2.5 flex-none rounded-full ring-4 ring-card", i.dot)} aria-hidden />
+                <span className="min-w-0 flex-1 truncate text-[13.5px]">{i.title}</span>
+                <span className="flex-none text-[12px] text-muted-foreground tabular-nums">{i.date}</span>
+                <span className={cn("w-12 flex-none text-right text-[12px] font-semibold tabular-nums", i.daysLeft < 0 ? "text-bad" : i.daysLeft <= 3 ? "text-warn" : "text-muted-foreground")}>
+                  {i.daysLeft < 0 ? `+${-i.daysLeft}` : i.daysLeft === 0 ? t("todayLabel") : `D-${i.daysLeft}`}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
       )}
     </section>
   );
@@ -264,7 +289,7 @@ export function SpeakAdd({ onEvent }: { onEvent: (e: AiEvent) => void }) {
   return (
     <form onSubmit={go} className="workspace-panel ai-ring flex flex-wrap items-center gap-2 p-2.5 pl-4">
       <Wand2 className="size-5 flex-none text-primary" aria-hidden />
-      <Input value={text} onChange={(e) => setText(e.target.value)} maxLength={300} placeholder={t("speakPh")} aria-label={t("speakLabel")} className="h-11 min-w-0 flex-1 border-0 bg-transparent px-1 text-[15px] shadow-none focus-visible:ring-0" />
+      <Input value={text} onChange={(e) => setText(e.target.value)} maxLength={300} placeholder={t("speakPh")} aria-label={t("speakLabel")} className="h-11 min-w-0 flex-1 border-0 bg-transparent px-1 text-[15px] shadow-none focus-visible:ring-0 dark:bg-transparent" />
       <Button type="submit" className="h-10 rounded-full px-4" disabled={busy || !text.trim()}>
         {busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
         {t("speakGo")}
@@ -282,7 +307,7 @@ export function PhoneCalendar({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const load = async (fresh: boolean) => {
     setBusy(true);
-    const { data, error } = await supabaseBrowser().rpc("calendar_feed_token", { p_new: fresh });
+    const { data, error } = await supabaseBrowser().rpc("calendar_feed_token", { p_new: fresh, p_which: 1 });
     setBusy(false);
     if (error) return void toast.error(t("icalFail"));
     setToken(data as string);

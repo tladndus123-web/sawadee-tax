@@ -159,6 +159,8 @@ export function CompanyCalendar() {
     const open = items.filter((i) => !i.done && daysTo(today, i.date) >= -30 && (i.kind !== "bill" || i.date >= today));
     return open.find((i) => TAX_KINDS.includes(i.kind)) ?? open.find((i) => i.date >= today) ?? null;
   }, [items, today]);
+  // The three dates after it (any kind, today onward), for the card's short timeline
+  const thenItems = useMemo(() => items.filter((i) => !i.done && i !== next && i.date >= today).slice(0, 3), [items, next, today]);
   const nextReady = next?.kind === "vat" && next.period ? (() => {
     const s = summarize(ledgerDocs, next.period, company.taxId, today);
     return { checked: Math.max(0, s.count - s.toCheck), total: s.count };
@@ -217,7 +219,7 @@ export function CompanyCalendar() {
       </div>
 
       {/* The next deadline, big, and this week's three things from the AI */}
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         {next && (
           <NextDeadline
             title={title(next)}
@@ -226,6 +228,7 @@ export function CompanyCalendar() {
             amount={next.kind === "vat" && next.period ? vatEstimate(next.period) : (next.amount ?? null)}
             ready={nextReady}
             href={HREF[next.kind]}
+            then={thenItems.map((i) => ({ key: i.key, title: title(i), date: dateText(i.date), daysLeft: daysTo(today, i.date), dot: TONE[groupOf(i.kind)].dot }))}
           />
         )}
         <WeekBrief canAi={fullAdmin(me)} />

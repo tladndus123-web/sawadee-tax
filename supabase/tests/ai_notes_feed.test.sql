@@ -1,7 +1,7 @@
 -- AI notes and the calendar subscription secret (…003600). Run: npm run db:test. Everything rolls back.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(10);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000d1001', 'boss-d@test.local'),
@@ -29,6 +29,10 @@ create temp table t1 as select public.calendar_feed_token() as v;
 select ok((select length(v) from t1) >= 32, 'an admin gets a long secret');
 select is(public.calendar_feed_token(), (select v from t1), 'asking again gives the same one');
 select isnt(public.calendar_feed_token(true), (select v from t1), 'renewing gives a new one');
+
+create temp table t2 as select public.calendar_feed_token(false, 2) as v;
+select isnt((select v from t2), public.calendar_feed_token(), 'the staff schedule has its own secret');
+select throws_like($$ select public.calendar_feed_token(false, 3) $$, 'bad_feed%', 'only two feeds');
 
 select * from finish();
 rollback;

@@ -4,7 +4,7 @@
 // sheet (worked / day off / absent / annual / sick, overtime hours). Phones scroll it sideways with the names pinned.
 // Under it, each person's leave for the year. The pay run reads its inputs from here ("from attendance").
 
-import { CalendarCheck, Loader2, Lock } from "lucide-react";
+import { CalendarCheck, CalendarSync, Loader2, Lock } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ import { THAI_HOLIDAYS } from "@/lib/thai-holidays";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { inMonth } from "./PayRunTab";
+import { StaffCalendarShare } from "./StaffCalendarShare";
 
 const CELL: Record<AttendanceKind, string> = {
   work: "bg-ok/15 text-ok",
@@ -36,6 +37,7 @@ export function AttendanceTab({ month }: { month: string }) {
   const { employees, loaded } = useBranchEmployees();
   const locked = useMonthLocks().has(month);
   const [rows, setRows] = useState<AttendanceRow[] | null>(null);
+  const [sharing, setSharing] = useState(false);
   const [yearRows, setYearRows] = useState<AttendanceRow[]>([]);
   const [open, setOpen] = useState<{ employee: Employee; day: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -82,6 +84,15 @@ export function AttendanceTab({ month }: { month: string }) {
 
   return (
     <div className="grid gap-3">
+      {/* The schedule on the staff's own phone calendars */}
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-primary/6 px-4 py-2.5">
+        <span className="text-[13px] text-foreground/80">{t("shareHint")}</span>
+        <Button type="button" variant="secondary" className="h-10 rounded-full px-4" onClick={() => setSharing(true)}>
+          <CalendarSync className="size-4" />
+          {t("shareCal")}
+        </Button>
+      </div>
+      {sharing && <StaffCalendarShare employees={staff} onClose={() => setSharing(false)} />}
       {locked && (
         <p className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3 text-sm text-muted-foreground">
           <Lock className="size-4 flex-none" aria-hidden />
