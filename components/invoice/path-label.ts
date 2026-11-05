@@ -14,6 +14,8 @@ export function usePathLabel() {
   return (p: string) => {
     if (p === "category") return t("app.category");
     if (p === "payment") return t("app.payment");
+    // The signature block (no form label of its own)
+    if (p === "signs" || p.startsWith("signs.")) return t("labels.signsBlock");
     const [a, b, c] = p.split(".");
     if (a === "items" && c) return `${label(c)} ${Number(b) + 1}`;
     if (a === "totals" && b) return label(b);

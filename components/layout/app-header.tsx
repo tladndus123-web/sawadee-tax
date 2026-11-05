@@ -1,7 +1,7 @@
 "use client";
 
 import { BookOpen, Building2, CalendarDays, HandCoins, LayoutGrid, LayoutList, Plus, Settings, TrendingUp, WalletCards } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Fragment, useLayoutEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useBranches } from "@/lib/branch-store";
@@ -29,6 +29,7 @@ const NAV = [
 /** Glass top bar with a segmented nav on md+, and an iOS-style tab bar below md. */
 export function AppHeader() {
   const t = useTranslations();
+  const locale = useLocale();
   const pathname = usePathname();
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   // Payroll and the tax calendar are for admins only
@@ -95,7 +96,7 @@ export function AppHeader() {
           <div className="flex min-w-0 items-center gap-2.5">
             <Link href="/" className="press flex min-w-0 items-center gap-2.5 text-[15px] font-semibold tracking-tight active:scale-[0.97]">
               <AppMark className={`size-8 flex-none rounded-[9px] ${APP_MARK_GLOW}`} />
-              <span className={cn("truncate", manyBranches && "max-sm:hidden")}>{t("app.appName")}</span>
+              <span className={cn("truncate", manyBranches && "max-sm:hidden", (locale === "en" || locale === "th") && "md:max-2xl:hidden")}>{t("app.appName")}</span>
             </Link>
           </div>
 

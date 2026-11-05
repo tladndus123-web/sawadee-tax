@@ -164,7 +164,8 @@
     "deliverer": "배송한 사람",
     "note": "메모",
     "formCode": "양식 코드",
-    "since": "사용 시작"
+    "since": "사용 시작",
+    "signsBlock": "서명란"
   },
   "docType": {
     "full": "정식 세금계산서",
@@ -361,7 +362,8 @@
     "dupDraft": "임시저장한 서류({no})와 같은 사진이에요. AI로 읽지 않고 멈췄어요(비용 없음).",
     "dupQueue": "이 목록에 같은 사진이 이미 있어요. AI로 읽지 않고 멈췄어요(비용 없음).",
     "dupRemove": "빼기",
-    "loaderWord": "읽는 중"
+    "loaderWord": "읽는 중",
+    "tips": "잘 읽히는 사진: 서류 전체가 화면에 들어오게, 밝은 곳에서, 흔들리지 않게 찍어 주세요. 한 장에 보통 15~30초 걸려요."
   },
   "role": {
     "admin": "관리자",
@@ -630,7 +632,7 @@
     "edit": "이름 고치기",
     "save": "저장",
     "saved": "거래처를 저장했어요.",
-    "fixed": "거래처 사전으로 맞췄어요: {fields}",
+    "fixed": "지난번 거래처 정보로 맞췄어요: {fields}",
     "noMatch": "검색 결과가 없어요.",
     "delete": "거래처 지우기",
     "deleteTitle": "{name}을(를) 거래처 명부에서 지울까요?",
@@ -1278,7 +1280,8 @@
       "noTarget": "목표 없음"
     },
     "share": "지점별 매출 비중",
-    "marginPct": "이익률 {pct}"
+    "marginPct": "이익률 {pct}",
+    "colCostAll": "비용 (인건비 포함)"
   },
   "dep": {
     "label": "상각 기간",

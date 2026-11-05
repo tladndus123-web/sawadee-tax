@@ -65,8 +65,9 @@ export function ExcelFormatCard() {
       <ul className="grid gap-1.5">
         {rows.map((r, i) => (
           <li key={r.key} className={cn("grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl bg-muted/50 py-1.5 pr-1.5 pl-3", !r.on && "opacity-55")}>
-            <label className="flex items-center gap-2.5">
-              <Checkbox checked={r.on} onCheckedChange={(v) => setRows((x) => x.map((y, k) => (k === i ? { ...y, on: v === true } : y)))} aria-label={t(`export.${r.key}`)} />
+            {/* The whole name taps the box (40 px tall row target) */}
+            <label className="flex min-h-10 cursor-pointer items-center gap-2.5">
+              <Checkbox className="size-5" checked={r.on} onCheckedChange={(v) => setRows((x) => x.map((y, k) => (k === i ? { ...y, on: v === true } : y)))} aria-label={t(`export.${r.key}`)} />
               <span className="w-24 truncate text-[13px] font-medium sm:w-32">{t(`export.${r.key}`)}</span>
             </label>
             <Input

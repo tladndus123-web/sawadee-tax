@@ -26,7 +26,7 @@ export function AccountCard() {
           {me.role === "admin" ? <ShieldCheck className="size-5 text-primary" aria-hidden /> : <UserRound className="size-5 text-muted-foreground" aria-hidden />}
           {t("auth.account")}
         </h2>
-        <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">{t(`role.${me.role}`)}</span>
+        <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">{me.owner ? t("role.owner") : t(`role.${me.role}`)}</span>
       </div>
       <p className="text-sm text-muted-foreground">{me.email}</p>
       <div className="flex flex-wrap items-end gap-2">

@@ -573,6 +573,11 @@
   background: color-mix(in srgb, var(--foreground) 6%, transparent);
 }
 
+.segmented-control [data-slot="tabs-trigger"] {
+  /* the same 40 px as the toggle groups below */
+  min-height: 2.5rem;
+}
+
 .segmented-control [data-slot="toggle-group-item"] {
   /* 40px: comfortable to tap on a phone */
   min-height: 2.5rem;

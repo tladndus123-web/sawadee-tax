@@ -2,6 +2,7 @@
 
 // A document from the temporary ledger (IndexedDB). Step 5 loads it from Supabase instead.
 
+import { cn } from "@/lib/utils";
 import { ArchiveRestore, FileText, ListChecks, Loader2, Lock, SkipForward, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
@@ -95,8 +96,11 @@ export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: 
     );
   }
 
+  // The cards below the form sit under its column (the photo column is 320 px on lg, 360 px on xl, then a 2 rem gap)
+  const below = entry.photoPath ? "lg:ml-[calc(320px+2rem)] xl:ml-[calc(360px+2rem)]" : "mx-auto w-full max-w-3xl";
   return (
     <div className="grid gap-4">
+      {/* (cards below: under the form column — beside the photo on PC, or centred like a document without one) */}
       <h1 className="sr-only">{entry.doc.docNo || t("ui.documentForm")}</h1>
       {entry.status === "final" && !entry.deletedAt && hasWht(entry.doc) && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-brand-soft/60 px-4 py-3 text-sm print:hidden">
@@ -195,11 +199,11 @@ export function StoredReview({ id, checkRun = false }: { id: string; checkRun?: 
       />
       {/* A member paid it themselves → their expense claim (admins) */}
       {entry.status === "final" && !entry.deletedAt && (
-        <div className="lg:ml-[calc(360px+2rem)]">
+        <div className={below}>
           <ToExpenseCard documentId={entry.id} doc={entry.doc} photoPath={entry.photoPath} />
         </div>
       )}
-      <div className="print:hidden lg:ml-[calc(360px+2rem)]">
+      <div className={cn("print:hidden", below)}>
         <ActivityList key={entry.updatedAt} documentId={entry.id} limit={30} shown={5} title={t("dash.history")} />
       </div>
     </div>

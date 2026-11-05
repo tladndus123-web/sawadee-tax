@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@/i18n/navigation";
 import { signOut, useMe } from "@/lib/role-store";
+import { canOpen } from "@/lib/screens";
 
 /** Initial in a circle → name, email, role, settings, sign out */
 export function UserMenu() {
@@ -31,15 +32,17 @@ export function UserMenu() {
         <DropdownMenuLabel className="grid gap-0.5">
           <span className="truncate text-sm font-semibold">{label}</span>
           {me.name && <span className="truncate text-xs font-normal text-muted-foreground">{me.email}</span>}
-          <span className="text-xs font-normal text-muted-foreground">{t(`role.${me.role}`)}</span>
+          <span className="text-xs font-normal text-muted-foreground">{me.owner ? t("role.owner") : t(`role.${me.role}`)}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/settings">
-            <Settings className="size-4" />
-            {t("nav.settings")}
-          </Link>
-        </DropdownMenuItem>
+        {canOpen(me, "settings") && (
+          <DropdownMenuItem asChild>
+            <Link href="/settings">
+              <Settings className="size-4" />
+              {t("nav.settings")}
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onSelect={() => void signOut()}>
           <LogOut className="size-4" />
           {t("nav.signOut")}

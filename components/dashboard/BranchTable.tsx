@@ -206,24 +206,25 @@ const TONE = { ok: "text-ok", watch: "text-caution", near: "text-warn", over: "t
 
 function Figures({ r, c, big }: { r: MonthResult; c: CostControl; big?: boolean }) {
   const t = useTranslations("branch");
-  const cell = (label: string, value: string, tone?: string) => (
-    <span className="grid min-w-0 gap-0.5 rounded-2xl bg-muted/60 px-3 py-2">
+  const cell = (label: string, value: string, tone?: string, wide?: boolean) => (
+    <span className={cn("grid min-w-0 gap-0.5 rounded-2xl bg-muted/60 px-3 py-2", wide && "col-span-2 sm:col-span-1")}>
       <span className="truncate text-[11px] text-muted-foreground">{label}</span>
       <span className={cn("truncate font-semibold tracking-tight tabular-nums", big ? "text-[clamp(0.95rem,3.6vw,1.15rem)]" : "text-[15px]", tone)}>{value}</span>
     </span>
   );
   if (big)
     return (
-      <span className="grid grid-cols-3 gap-2">
+      // Costs with labour, so sales − costs = what is left (owner review 2026-11-06); phones: FL / FLR on its own row
+      <span className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {cell(t("colSales"), r.days ? bahtWhole(r.salesValue) : "–")}
-        {cell(t("colCost"), bahtWhole(r.purchasesCost))}
-        {cell("FL / FLR", c.flr.pct === null ? "–" : `${c.fl.pct}% / ${c.flr.pct}%`, TONE[c.flr.level])}
+        {cell(t("colCostAll"), bahtWhole(r.purchasesCost + r.labor))}
+        {cell("FL / FLR", c.flr.pct === null ? "–" : `${c.fl.pct}% / ${c.flr.pct}%`, TONE[c.flr.level], true)}
       </span>
     );
   return (
     <span className="grid grid-cols-2 gap-2">
       {cell(t("colSales"), r.days ? bahtWhole(r.salesValue) : "–")}
-      {cell(t("colCost"), bahtWhole(r.purchasesCost))}
+      {cell(t("colCostAll"), bahtWhole(r.purchasesCost + r.labor))}
       {cell(t("colProfit"), r.days ? bahtWhole(r.profit) : "–", r.days ? (r.profit < 0 ? "text-bad" : "text-brand") : undefined)}
       {cell("FL / FLR", c.flr.pct === null ? "–" : `${c.fl.pct}% / ${c.flr.pct}%`, TONE[c.flr.level])}
     </span>

@@ -161,6 +161,8 @@ export function BatchUpload() {
             <span className="sm:hidden">{t("batch.dropPhone")}</span>
           </p>
           <p className="text-sm text-muted-foreground">{t("batch.formats")}</p>
+          {/* What reads well, and how long it takes */}
+          <p className="max-w-md text-xs leading-relaxed text-balance text-foreground/70">{t("batch.tips")}</p>
         </div>
         <div className="flex flex-wrap justify-center gap-2">
           <Button type="button" className="h-11 rounded-full px-6 text-[15px]" disabled={room <= 0} onClick={() => pickRef.current?.click()}>

@@ -225,9 +225,9 @@ function Folders({ list, stats, lang }: { list: Vendor[]; stats: Map<string, Sta
               </span>
               <span className="w-full truncate text-[13px] font-semibold">{catLabel(f.key)}</span>
               {/* A peek inside: the first vendors' initials */}
-              <span className="flex -space-x-1.5" aria-hidden>
+              <span className="flex -space-x-1.5" title={f.vendors.slice(0, 6).map(nameOf).join(" · ")}>
                 {f.vendors.slice(0, 4).map((v) => (
-                  <span key={v.id} className="grid size-5 place-items-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground ring-2 ring-card">
+                  <span key={v.id} aria-hidden className="grid size-5 place-items-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground ring-2 ring-card">
                     {Array.from(nameOf(v).trim())[0]?.toUpperCase() ?? "•"}
                   </span>
                 ))}

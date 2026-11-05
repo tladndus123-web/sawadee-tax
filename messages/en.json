@@ -164,7 +164,8 @@
     "deliverer": "Delivered by",
     "note": "Note",
     "formCode": "Form code",
-    "since": "In use since"
+    "since": "In use since",
+    "signsBlock": "Signatures"
   },
   "docType": {
     "full": "Full tax invoice",
@@ -361,7 +362,8 @@
     "dupDraft": "Same photo as a draft ({no}). Stopped before the AI read it (no cost).",
     "dupQueue": "The same photo is already in this list. Stopped before the AI read it (no cost).",
     "dupRemove": "Remove",
-    "loaderWord": "Reading"
+    "loaderWord": "Reading",
+    "tips": "Photos that read well: the whole document in the frame, good light, held still. Each takes about 15–30 seconds."
   },
   "role": {
     "admin": "Admin",
@@ -630,7 +632,7 @@
     "edit": "Edit name",
     "save": "Save",
     "saved": "Vendor saved.",
-    "fixed": "Matched to the vendor list: {fields}",
+    "fixed": "Filled from this vendor's record: {fields}",
     "noMatch": "No results.",
     "delete": "Remove vendor",
     "deleteTitle": "Remove {name} from the vendor list?",
@@ -1278,7 +1280,8 @@
       "noTarget": "No target"
     },
     "share": "Share of sales by branch",
-    "marginPct": "Margin {pct}"
+    "marginPct": "Margin {pct}",
+    "colCostAll": "Costs incl. labour"
   },
   "dep": {
     "label": "Depreciation period",
