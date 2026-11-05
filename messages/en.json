@@ -1699,7 +1699,35 @@
       "fail": "Could not send."
     },
     "shareHint": "Put the schedule on the staff phone calendars — changes follow by themselves.",
-    "shareCal": "Share as calendar"
+    "shareCal": "Share as calendar",
+    "sheet": {
+      "button": "Schedule from photo",
+      "title": "Make the schedule from a photo",
+      "sub": "Take a photo of the schedule (paper, whiteboard or a spreadsheet) and the AI fills in the attendance. You check it before saving.",
+      "pick": "Pick or take schedule photos",
+      "pickHint": "Photos or PDF, up to 4 (a month in two halves is fine)",
+      "tip1": "Shoot straight from above with every name and date in view.",
+      "tip2": "3 or more photos at once are read with the more accurate model (Opus).",
+      "reading": "The AI is reading the schedule… ({done}/{total})",
+      "check": "The schedule for {month}. Check the people and days, then add it.",
+      "otherMonth": "The photo looks like the schedule for {month}. It will be saved in {month}.",
+      "onSheet": "Name on the photo:",
+      "whoLabel": "Who is {name}",
+      "skip": "Leave out",
+      "blankIsWork": "Blank days are work days",
+      "blankHint": "Turn on when the schedule marks only days off.",
+      "replaceNote": "Days already filled in are replaced by the photo. The staff calendars follow by themselves.",
+      "again": "Another photo",
+      "save": "Add to attendance ({n})",
+      "saved": "Schedule added for {n}.",
+      "savedOther": "Schedule added for {n} in {month}. Pick that month above to see it.",
+      "notSchedule": "No schedule found. Please take it again with the table in clear view.",
+      "rate": "Please wait a moment and try again.",
+      "fail": "Could not read it. Please try again.",
+      "someFailed": "{n} photo(s) could not be read.",
+      "max": "Up to {n} photos at once.",
+      "tapFix": "Tap a day to change it: work → off → annual → sick → absent → blank."
+    }
   },
   "fixed": {
     "title": "Fixed costs (no invoice)",

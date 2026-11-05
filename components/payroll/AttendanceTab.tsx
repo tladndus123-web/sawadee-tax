@@ -4,7 +4,7 @@
 // sheet (worked / day off / absent / annual / sick, overtime hours). Phones scroll it sideways with the names pinned.
 // Under it, each person's leave for the year. The pay run reads its inputs from here ("from attendance").
 
-import { CalendarCheck, CalendarSync, Loader2, Lock } from "lucide-react";
+import { CalendarCheck, CalendarSync, Loader2, Lock, ScanLine } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ import { THAI_HOLIDAYS } from "@/lib/thai-holidays";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { inMonth } from "./PayRunTab";
+import { ScheduleFromPhoto } from "./ScheduleFromPhoto";
 import { StaffCalendarShare } from "./StaffCalendarShare";
 
 const CELL: Record<AttendanceKind, string> = {
@@ -38,6 +39,7 @@ export function AttendanceTab({ month }: { month: string }) {
   const locked = useMonthLocks().has(month);
   const [rows, setRows] = useState<AttendanceRow[] | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [fromPhoto, setFromPhoto] = useState(false);
   const [yearRows, setYearRows] = useState<AttendanceRow[]>([]);
   const [open, setOpen] = useState<{ employee: Employee; day: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -87,11 +89,30 @@ export function AttendanceTab({ month }: { month: string }) {
       {/* The schedule on the staff's own phone calendars */}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-primary/6 px-4 py-2.5">
         <span className="text-[13px] text-foreground/80">{t("shareHint")}</span>
-        <Button type="button" variant="secondary" className="h-10 rounded-full px-4" onClick={() => setSharing(true)}>
-          <CalendarSync className="size-4" />
-          {t("shareCal")}
-        </Button>
+        <span className="flex flex-wrap gap-2">
+          {!locked && (
+            <Button type="button" variant="secondary" className="h-10 rounded-full px-4" onClick={() => setFromPhoto(true)}>
+              <ScanLine className="size-4" />
+              {t("sheet.button")}
+            </Button>
+          )}
+          <Button type="button" variant="secondary" className="h-10 rounded-full px-4" onClick={() => setSharing(true)}>
+            <CalendarSync className="size-4" />
+            {t("shareCal")}
+          </Button>
+        </span>
       </div>
+      {fromPhoto && (
+        <ScheduleFromPhoto
+          month={month}
+          staff={staff}
+          onClose={() => setFromPhoto(false)}
+          onSaved={(m) => {
+            setFromPhoto(false);
+            if (m === month) void reload();
+          }}
+        />
+      )}
       {sharing && <StaffCalendarShare employees={staff} onClose={() => setSharing(false)} />}
       {locked && (
         <p className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3 text-sm text-muted-foreground">

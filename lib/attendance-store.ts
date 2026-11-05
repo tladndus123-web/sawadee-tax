@@ -47,3 +47,15 @@ export async function fillWorked(employeeId: string, days: string[]) {
     );
   if (error) throw error;
 }
+
+/** Many cells at once (a schedule read from a photo): what is there for those days is replaced */
+export async function saveAttendanceMany(cells: { employeeId: string; day: string; kind: AttendanceKind; otHours: number }[]) {
+  if (!cells.length) return;
+  const { error } = await supabaseBrowser()
+    .from("attendance")
+    .upsert(
+      cells.map((c) => ({ employee_id: c.employeeId, day: c.day, kind: c.kind, ot_hours: Math.max(0, Math.min(24, c.otHours || 0)), note: "" })),
+      { onConflict: "employee_id,day" },
+    );
+  if (error) throw error;
+}
