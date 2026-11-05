@@ -68,15 +68,48 @@ function classifyShareError(error: unknown): "cancelled" | "failed" {
   return name === "AbortError" ? "cancelled" : "failed";
 }
 
-/** Changes when the sheet, the person, or the file type changes, so a prepared file is not reused. */
-export function attendanceExportStamp(input: {
-  month: string;
+/** Everything that is drawn: names, branch labels, marks, employment gaps, and the words on the page. */
+export interface AttendanceExportIdentity {
+  format: string;
   branchId: string;
   personId: string;
-  format: string;
-  people: readonly { id: string; cells: readonly { kind: string | null; otHours: number }[]; annualUsed: number; annualEntitled: number; sickUsed: number }[];
-}): string {
+  sheet: {
+    month: string;
+    branchLabel: string;
+    allBranches: boolean;
+    showBranch: boolean;
+    days: readonly { date: string; weekday: string; holiday: boolean; today: boolean }[];
+    people: readonly {
+      id: string;
+      label: string;
+      leaveLabel: string;
+      branchName: string;
+      cells: readonly { kind: string | null; otHours: number; outside: boolean }[];
+      leave: { annualUsed: number; annualEntitled: number; sickUsed: number; sickEntitled: number };
+    }[];
+  };
+  labels: {
+    title: string;
+    employee: string;
+    subtitle: string;
+    short: Readonly<Record<string, string>>;
+    unmarked: string;
+    legend: readonly string[];
+    leaveTitle: string;
+    leaveLines: readonly string[];
+    /** The translated "1–16" wording, so a language change is a new file even before a page split. */
+    daySpan: string;
+  };
+}
+
+/** Changes when the drawn sheet changes, so a prepared file is not reused. */
+export function attendanceExportStamp(input: AttendanceExportIdentity): string {
   return JSON.stringify(input);
+}
+
+/** A finished preparation is kept only for the sheet that is on screen now, and only if it was not cancelled. */
+export function shouldPublishPrepared(cancelled: boolean, wanted: string, current: string): boolean {
+  return !cancelled && wanted === current;
 }
 
 /** Save a file on this device. One click saves one file, so the browser is not asked for several at once. */

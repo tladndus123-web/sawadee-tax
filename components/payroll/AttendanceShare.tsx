@@ -5,13 +5,13 @@
 
 import { FileImage, Loader2, Share2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ATTENDANCE_KINDS, type AttendanceRow } from "@/lib/attendance";
 import { attendanceFileName, buildAttendanceSheet, type SheetBranchScope, type SheetStaff } from "@/lib/attendance-sheet";
-import { attendanceExportStamp, downloadBlob, shareNow } from "@/lib/attendance-share";
+import { attendanceExportStamp, downloadBlob, shareNow, shouldPublishPrepared } from "@/lib/attendance-share";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 
@@ -83,18 +83,43 @@ export function AttendanceShare({
   }, [t, branch.label, monthLabel, month, sheet.people]);
 
   const stamp = attendanceExportStamp({
-    month,
+    format,
     branchId: branch.id,
     personId,
-    format,
-    people: sheet.people.map((person) => ({
-      id: person.id,
-      cells: person.cells.map((cell) => ({ kind: cell.kind, otHours: cell.otHours })),
-      annualUsed: person.leave.annualUsed,
-      annualEntitled: person.leave.annualEntitled,
-      sickUsed: person.leave.sickUsed,
-    })),
+    sheet: {
+      month: sheet.month,
+      branchLabel: sheet.branchLabel,
+      allBranches: sheet.allBranches,
+      showBranch: sheet.showBranch,
+      days: sheet.days.map((day) => ({ date: day.date, weekday: day.weekday, holiday: day.holiday, today: day.today })),
+      people: sheet.people.map((person) => ({
+        id: person.id,
+        label: person.label,
+        leaveLabel: person.leaveLabel,
+        branchName: person.branchName,
+        cells: person.cells.map((cell) => ({ kind: cell.kind, otHours: cell.otHours, outside: cell.outside })),
+        leave: {
+          annualUsed: person.leave.annualUsed,
+          annualEntitled: person.leave.annualEntitled,
+          sickUsed: person.leave.sickUsed,
+          sickEntitled: person.leave.sickEntitled,
+        },
+      })),
+    },
+    labels: {
+      title: labels.title,
+      employee: labels.employee,
+      subtitle: labels.subtitle,
+      short: labels.short,
+      unmarked: labels.unmarked,
+      legend: labels.legend,
+      leaveTitle: labels.leaveTitle,
+      leaveLines: labels.leaveLines,
+      daySpan: labels.daySpan(1, 16),
+    },
   });
+  const stampRef = useRef(stamp);
+  stampRef.current = stamp;
 
   useEffect(() => {
     if (!open || !leaveReady || !sheet.people.length) {
@@ -111,7 +136,7 @@ export function AttendanceShare({
         const fonts = await loadSheetFonts();
         const pdf = await buildAttendancePdf(sheet, labels, fonts);
         const files = format === "pdf" ? [new File([toBuffer(pdf)], attendanceFileName(month, "pdf"), { type: "application/pdf" })] : await pngFiles(pdf, month);
-        if (!cancel) setReady({ stamp: wanted, files });
+        if (shouldPublishPrepared(cancel, wanted, stampRef.current)) setReady({ stamp: wanted, files });
       } catch {
         if (!cancel) setError(t("sheetShare.fail"));
       }

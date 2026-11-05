@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attendanceExportStamp, deliverAttendanceFiles, pngScaleFor, PNG_MAX_EDGE, shareNow, type ShareFile } from "./attendance-share";
+import { attendanceExportStamp, deliverAttendanceFiles, pngScaleFor, PNG_MAX_EDGE, shareNow, shouldPublishPrepared, type AttendanceExportIdentity, type ShareFile } from "./attendance-share";
 
 const file = (name: string, type = "image/png"): ShareFile => ({ name, type });
 
@@ -98,7 +98,40 @@ describe("sharing an attendance file", () => {
 });
 
 describe("share stays inside the click", () => {
-  const person = (id: string, annualUsed = 0) => ({ id, cells: [{ kind: "work" as string | null, otHours: 0 }], annualUsed, annualEntitled: 6, sickUsed: 0 });
+  const identity = (over: Partial<AttendanceExportIdentity> = {}, personOver: { label?: string; branchName?: string; outside?: boolean } = {}): AttendanceExportIdentity => ({
+    format: "pdf",
+    branchId: "b",
+    personId: "",
+    sheet: {
+      month: "2026-01",
+      branchLabel: "실롬",
+      allBranches: false,
+      showBranch: false,
+      days: [{ date: "2026-01-01", weekday: "목", holiday: true, today: false }],
+      people: [
+        {
+          id: "a",
+          label: personOver.label ?? "예시김",
+          leaveLabel: personOver.label ?? "김예시",
+          branchName: personOver.branchName ?? "실롬",
+          cells: [{ kind: "work", otHours: 0, outside: personOver.outside ?? false }],
+          leave: { annualUsed: 1, annualEntitled: 6, sickUsed: 0, sickEntitled: 30 },
+        },
+      ],
+    },
+    labels: {
+      title: "출근표",
+      employee: "직원",
+      subtitle: "실롬 · 2026년 1월 · 1명",
+      short: { work: "출" },
+      unmarked: "·",
+      legend: ["출 출근"],
+      leaveTitle: "2026년 휴가",
+      leaveLines: ["김예시 — 연차 1일 사용"],
+      daySpan: "1–16일",
+    },
+    ...over,
+  });
 
   it("calls share before a later turn can clear the gesture", async () => {
     let active = true;
@@ -136,12 +169,24 @@ describe("share stays inside the click", () => {
     ).resolves.toBe("failed");
   });
 
-  it("a new person or a new leave total is a different file", () => {
-    const base = { month: "2026-01", branchId: "b", personId: "", format: "pdf", people: [person("a", 1), person("b")] };
-    expect(attendanceExportStamp(base)).toBe(attendanceExportStamp({ ...base, people: [person("a", 1), person("b")] }));
-    expect(attendanceExportStamp({ ...base, personId: "a" })).not.toBe(attendanceExportStamp(base));
-    expect(attendanceExportStamp({ ...base, people: [person("a", 2), person("b")] })).not.toBe(attendanceExportStamp(base));
-    expect(attendanceExportStamp({ ...base, format: "png" })).not.toBe(attendanceExportStamp(base));
+  it("a name, a branch label, the language, or an employment gap is a different file", () => {
+    const base = attendanceExportStamp(identity());
+    expect(attendanceExportStamp(identity())).toBe(base);
+    expect(attendanceExportStamp(identity({}, { label: "다른이름" }))).not.toBe(base);
+    expect(attendanceExportStamp(identity({}, { branchName: "아속" }))).not.toBe(base);
+    expect(attendanceExportStamp(identity({}, { outside: true }))).not.toBe(base);
+    const english = identity();
+    english.labels = { ...english.labels, title: "Attendance sheet", daySpan: "1–16", leaveLines: ["Kim — annual 1 used"] };
+    english.sheet = { ...english.sheet, days: [{ ...english.sheet.days[0], weekday: "T" }] };
+    expect(attendanceExportStamp(english)).not.toBe(base);
+    expect(attendanceExportStamp(identity({ personId: "a" }))).not.toBe(base);
+    expect(attendanceExportStamp(identity({ format: "png" }))).not.toBe(base);
+  });
+
+  it("a cancelled or outdated preparation is not published", () => {
+    expect(shouldPublishPrepared(true, "old", "old")).toBe(false);
+    expect(shouldPublishPrepared(false, "old", "new")).toBe(false);
+    expect(shouldPublishPrepared(false, "new", "new")).toBe(true);
   });
 });
 
