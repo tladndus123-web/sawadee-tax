@@ -27,6 +27,8 @@ export interface Sale {
   note: string;
   photoPath: string | null;
   source: "photo" | "excel" | "manual";
+  /** Which closing report of that day (1, 2 … — breakfast, lunch, dinner); the day is their sum (lib/sales-slips) */
+  part?: number;
 }
 
 /** Value of goods sold, without VAT (taxable + exempt) */

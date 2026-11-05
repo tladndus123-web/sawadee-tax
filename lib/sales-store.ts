@@ -42,6 +42,7 @@ const toSale = (r: SaleRow): Sale => ({
   note: r.note ?? "",
   photoPath: r.photo_path,
   source: r.source,
+  part: Number((r as { part?: number }).part) || 1,
 });
 
 let sales: Sale[] = [];
@@ -93,8 +94,9 @@ export function useSales(opts: { all?: boolean } = {}): { sales: Sale[]; loaded:
 }
 
 /**
- * Save a day of one channel. A new line for a day and channel that already exist replaces it (a re-shot closing
- * report corrects the numbers instead of counting the day twice). Returns the id.
+ * Save one closing report (one line). With an id it changes that line; without one it is a new slip of its day —
+ * the database numbers it (part) and the day becomes the sum of its slips. Whether a new reading adds a slip or
+ * replaces a line is decided before (lib/sales-slips slipPlan). Returns the id.
  */
 export async function saveSale(s: Omit<Sale, "id" | "photoPath"> & { id?: string; photoPath?: string | null }, photo?: File | null): Promise<string> {
   const sb = supabaseBrowser();
@@ -120,7 +122,7 @@ export async function saveSale(s: Omit<Sale, "id" | "photoPath"> & { id?: string
   };
   const q = s.id
     ? sb.from("sales").update(row).eq("id", s.id).select("id").single()
-    : sb.from("sales").upsert(row, { onConflict: "branch_id,sale_date,channel" }).select("id").single();
+    : sb.from("sales").insert(row).select("id").single();
   const { data, error } = await q;
   if (error) throw error;
   await reload();
@@ -137,7 +139,15 @@ export async function saveSalesBulk(days: ImportDay[], branchId = ""): Promise<{
   const valid = days.filter((d) => d.gross >= 0 && d.vat >= 0 && d.exempt >= 0 && d.vat + d.exempt <= d.gross);
   const open = valid.filter((d) => !closed.has(d.date.slice(0, 7)));
   if (open.length) {
+    // A file gives whole days: the extra slips of those days go, slip 1 is overwritten
+    const { error: cleared } = await supabaseBrowser().rpc("sales_clear_extra_slips", {
+      p_branch: branchId || null,
+      p_dates: open.map((d) => d.date),
+      p_channels: open.map((d) => d.channel),
+    });
+    if (cleared) throw cleared;
     const rows = open.map((d) => ({
+      part: 1,
       ...(branchId ? { branch_id: branchId } : {}),
       sale_date: d.date,
       channel: d.channel,
@@ -150,7 +160,7 @@ export async function saveSalesBulk(days: ImportDay[], branchId = ""): Promise<{
       note: "",
       source: "excel" as const,
     }));
-    const { error } = await supabaseBrowser().from("sales").upsert(rows, { onConflict: "branch_id,sale_date,channel" });
+    const { error } = await supabaseBrowser().from("sales").upsert(rows, { onConflict: "branch_id,sale_date,channel,part" });
     if (error) throw error;
   }
   await reload();

@@ -2,7 +2,7 @@
 
 // Several closing reports at once (owner, 2026-10-09): every photo is read, each gives one or more lines (a day and a
 // channel), and they are checked together here — date, channel, sales and VAT editable — then saved in one go.
-// A line for a day and channel already in the books replaces it, like the single sheet.
+// Several reports of one day (breakfast · lunch · dinner) add up; one read twice is caught (lib/sales-slips).
 
 import { Check, FileText, Loader2, TriangleAlert, X } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -18,6 +18,7 @@ import { baht, fromSatang, toSatang } from "@/lib/money";
 import { isMonthLocked } from "@/lib/month-lock-store";
 import { CHANNELS, type Channel, type Sale, saleVatOk } from "@/lib/sales";
 import { saveSale } from "@/lib/sales-store";
+import { sameDay, type SlipPlan, slipPlan } from "@/lib/sales-slips";
 import { cn } from "@/lib/utils";
 import { useChannelLabel } from "./channel-name";
 import type { SaleDraft } from "./SaleSheet";
@@ -41,16 +42,30 @@ export function SalesReview({ photos, branchId, existing, onClose }: { photos: R
   const [rows, setRows] = useState<Row[]>(() => photos.flatMap((p, i) => p.lines.map((l, j) => ({ ...l, key: `${i}-${j}`, photo: i, on: true }))));
   const [busy, setBusy] = useState(false);
   const set = (key: string, patch: Partial<Row>) => setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
-  const sameAs = (r: Row) => existing.find((x) => x.date === r.date && x.channel === r.channel && (x.branchId || "") === (branch || "")) ?? null;
-  // Two lines for the same day and channel would overwrite each other
-  const twice = useMemo(() => {
-    const seen = new Map<string, number>();
-    for (const r of rows) if (r.on) seen.set(`${r.date}|${r.channel}`, (seen.get(`${r.date}|${r.channel}`) ?? 0) + 1);
-    return new Set([...seen].filter(([, n]) => n > 1).map(([k]) => k));
-  }, [rows]);
+  const asLine = (r: Row, id: string): Sale => ({ ...r, id, branchId: branch, photoPath: null, source: "photo" });
+  // Each picked line in order, next to what is already in and the lines before it: add / same / replace
+  const plans = useMemo(() => {
+    const known: Sale[] = existing.filter((x) => (x.branchId || "") === (branch || ""));
+    const out = new Map<string, SlipPlan & { twin?: boolean }>();
+    for (const r of rows) {
+      if (!r.on) continue;
+      const line = asLine(r, `new-${r.key}`);
+      const plan = slipPlan(sameDay(known, line), line);
+      // The same report twice in this batch
+      if (plan.mode === "same" && plan.target.id.startsWith("new-")) {
+        out.set(r.key, { ...plan, twin: true });
+        continue;
+      }
+      out.set(r.key, plan);
+      if (plan.mode === "same" || plan.mode === "replace") known.splice(known.indexOf(plan.target), 1, line);
+      else known.push(line);
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- asLine reads branch
+  }, [rows, existing, branch]);
   const picked = rows.filter((r) => r.on);
-  // A missing date or a doubled line blocks saving; VAT off by more than ฿1 is only shown (the single sheet allows it too)
-  const bad = picked.filter((r) => !r.date || twice.has(`${r.date}|${r.channel}`));
+  // A missing date or the same report twice blocks saving; VAT off by more than ฿1 is only shown
+  const bad = picked.filter((r) => !r.date || plans.get(r.key)?.twin);
   const total = fromSatang(picked.reduce((a, r) => a + toSatang(r.gross), 0));
 
   const save = async () => {
@@ -59,7 +74,8 @@ export function SalesReview({ photos, branchId, existing, onClose }: { photos: R
     let locked = 0;
     let failed = 0;
     for (const r of picked) {
-      const old = sameAs(r);
+      const plan = plans.get(r.key);
+      const old = plan && (plan.mode === "same" || plan.mode === "replace") && !plan.target.id.startsWith("new-") ? plan.target : null;
       const draft: SaleDraft = { branchId: branch, date: r.date, channel: r.channel, docFrom: r.docFrom, docTo: r.docTo, bills: r.bills, gross: r.gross, vat: r.vat, exempt: r.exempt, note: r.note, source: "photo" };
       try {
         await saveSale({ ...draft, id: old?.id }, photos[r.photo].file);
@@ -113,8 +129,8 @@ export function SalesReview({ photos, branchId, existing, onClose }: { photos: R
                   <ul className="grid gap-2">
                     {mine.map((r) => {
                       const un = new Set(r.unclear);
-                      const dup = twice.has(`${r.date}|${r.channel}`) && r.on;
-                      const old = sameAs(r);
+                      const plan = r.on ? plans.get(r.key) : undefined;
+                      const dup = !!plan?.twin;
                       return (
                         <li key={r.key} className={cn("grid gap-2 rounded-xl bg-card p-3 ring-1 ring-border", !r.on && "opacity-50")}>
                           <div className="grid grid-cols-[auto_minmax(0,1.25fr)_minmax(0,1fr)] items-center gap-2">
@@ -138,7 +154,11 @@ export function SalesReview({ photos, branchId, existing, onClose }: { photos: R
                               ))}
                             </select>
                           </div>
-                          {old && <span className="w-fit rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-semibold text-brand">{t("sales.batch.replaces")}</span>}
+                          {plan && plan.mode !== "new" && !dup && (
+                            <span className="w-fit rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-semibold text-brand">
+                              {plan.mode === "add" ? t("sales.batch.adds", { n: plan.count, total: baht(plan.total) }) : plan.mode === "same" ? t("sales.batch.same") : t("sales.batch.replaces")}
+                            </span>
+                          )}
                           <div className="grid grid-cols-2 gap-2">
                             <label className="grid gap-1">
                               <span className="text-xs text-muted-foreground">{t("sales.gross")}</span>

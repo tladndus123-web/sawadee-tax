@@ -1,7 +1,8 @@
 "use client";
 
-// One day of one channel: check what the AI read from the closing report (or type it in), then save.
-// Saving a day and channel that already exist replaces them (a re-shot report corrects, never double-counts).
+// One closing report: check what the AI read (or type it in), then save. A day may have several reports (breakfast ·
+// lunch · dinner): a new one adds to the day, the same one read again replaces itself, and a typed / imported day
+// total is replaced (lib/sales-slips).
 
 import { Calculator, FileText, Loader2, Save, Trash2, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -16,6 +17,8 @@ import { isMonthLocked } from "@/lib/month-lock-store";
 import { useMe } from "@/lib/role-store";
 import { CHANNELS, type Sale, saleVatOk, vatInsideSales } from "@/lib/sales";
 import { deleteSale, saveSale } from "@/lib/sales-store";
+import { sameDay, slipPlan } from "@/lib/sales-slips";
+import { baht } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { useChannelLabel } from "./channel-name";
 import { DateInput } from "@/components/ui/date-input";
@@ -27,7 +30,7 @@ export function SaleSheet({
   photo,
   preview,
   unclear = [],
-  existing,
+  all = [],
   onClose,
 }: {
   draft: SaleDraft;
@@ -36,8 +39,8 @@ export function SaleSheet({
   /** Picture to show next to the form (object URL or signed URL) */
   preview?: string | null;
   unclear?: string[];
-  /** The same day and channel already in the books (a save replaces it) */
-  existing?: Sale | null;
+  /** Every line in the books (to see what is already in for the day) */
+  all?: Sale[];
   onClose: () => void;
 }) {
   const t = useTranslations();
@@ -48,12 +51,17 @@ export function SaleSheet({
   const un = new Set(unclear);
   const chName = useChannelLabel();
   const vatOk = saleVatOk(s);
+  // The other slips of this day, branch and channel, and what saving does next to them
+  const day = sameDay(all, s);
+  const plan = s.id ? null : slipPlan(day, s);
+  const dayTotal = day.reduce((a, x) => a + Math.round(x.gross * 100), 0) / 100;
 
   const save = async () => {
     if (!s.date) return toast.error(t("sales.needDate"));
     setBusy("save");
     try {
-      await saveSale({ ...s, id: existing && !s.id ? existing.id : s.id }, photo);
+      const target = plan && (plan.mode === "same" || plan.mode === "replace") ? plan.target : null;
+      await saveSale({ ...s, id: s.id ?? target?.id }, photo);
       toast.success(t("sales.saved"));
       onClose();
     } catch (e) {
@@ -100,10 +108,15 @@ export function SaleSheet({
           )}
 
           <div className="grid content-start gap-4 text-sm">
-            {existing && !s.id && (
+            {plan && plan.mode !== "new" && (
               <p className="flex items-start gap-2 rounded-xl bg-brand-soft px-3 py-2 text-xs text-foreground">
                 <TriangleAlert className="mt-0.5 size-3.5 flex-none text-brand" aria-hidden />
-                {t("sales.replaces")}
+                {plan.mode === "add" ? t("sales.slipAdd", { n: plan.count, total: baht(plan.total) }) : plan.mode === "same" ? t("sales.slipSame") : t("sales.replaces")}
+              </p>
+            )}
+            {s.id && day.length > 0 && (
+              <p className="rounded-xl bg-muted px-3 py-2 text-xs text-foreground">
+                {t("sales.slipDay", { n: day.length + 1, total: baht(dayTotal + s.gross) })}
               </p>
             )}
             <div className="grid gap-4 sm:grid-cols-2">

@@ -1,7 +1,7 @@
 -- RLS / trigger rules. Run: npm run db:test  (supabase test db, pgTAP; everything rolls back)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(247);
+select plan(254);
 
 -- Original PDFs (e-Tax Invoices) are kept next to the photos
 select ok((select 'application/pdf' = any(allowed_mime_types) from storage.buckets where id = 'documents'), 'the documents bucket keeps original PDFs');
@@ -199,10 +199,13 @@ delete from public.month_locks where month = '2026-05';
 -- Sales: members add one line per day and channel; closed months are frozen; only admins delete
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select lives_ok($$ insert into public.sales (sale_date, channel, gross, vat) values ('2026-06-10', 'store', 10700, 700) $$, 'staff add a day of sales');
-select throws_ok($$ insert into public.sales (sale_date, channel, gross, vat) values ('2026-06-10', 'store', 1, 0) $$, '23505', NULL, 'one line per day and channel');
+select throws_ok($$ insert into public.sales (sale_date, channel, part, gross, vat) values ('2026-06-10', 'store', 1, 1, 0) $$, '23505', NULL, 'one line per day, channel and slip');
+select lives_ok($$ insert into public.sales (sale_date, channel, gross, vat) values ('2026-06-10', 'store', 5350, 350) $$, 'another slip of the same day (e.g. lunch)');
+select is((select array_agg(part order by part) from public.sales where sale_date = '2026-06-10'), array[1, 2]::smallint[], 'slips are numbered 1, 2 …');
+select is((select sum(gross) from public.sales where sale_date = '2026-06-10'), 16050.00, 'the day adds the slips up');
 select throws_ok($$ insert into public.sales (sale_date, channel, gross, vat) values ('2026-06-11', 'store', 100, 200) $$, '23514', NULL, 'VAT cannot exceed the sales');
 delete from public.sales where sale_date = '2026-06-10';
-select is((select count(*)::int from public.sales where sale_date = '2026-06-10'), 1, 'staff cannot delete sales');
+select is((select count(*)::int from public.sales where sale_date = '2026-06-10'), 2, 'staff cannot delete sales');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
 insert into public.month_locks (month) values ('2026-06');
 select throws_like($$ update public.sales set gross = 20000 where sale_date = '2026-06-10' $$, 'month_locked%', 'a closed month''s sales cannot change');
@@ -234,7 +237,11 @@ select is((select count(*)::int from public.branches where no = '09991'), 1, 'an
 select is((select branch_id from public.documents where id = '00000000-0000-0000-0000-0000000000a1'), public.head_branch(), 'a document saved without a branch is in the head office');
 select lives_ok($$ insert into public.sales (branch_id, sale_date, channel, gross, vat) values ('00000000-0000-0000-0000-0000000000b1', '2026-06-20', 'store', 107, 7) $$, 'a day of sales for the branch');
 select lives_ok($$ insert into public.sales (sale_date, channel, gross, vat) values ('2026-06-20', 'store', 214, 14) $$, 'the same day and channel in the head office is another line');
-select throws_ok($$ insert into public.sales (sale_date, channel, gross, vat) values ('2026-06-20', 'store', 1, 0) $$, '23505', NULL, 'but only one per branch, day and channel');
+select throws_ok($$ insert into public.sales (sale_date, channel, part, gross, vat) values ('2026-06-20', 'store', 1, 1, 0) $$, '23505', NULL, 'but only one slip 1 per branch, day and channel');
+select is((select part from public.sales where branch_id = '00000000-0000-0000-0000-0000000000b1' and sale_date = '2026-06-20'), 1::smallint, 'slips are counted per branch');
+select lives_ok($$ insert into public.sales (sale_date, channel, gross, vat) values ('2026-06-20', 'store', 107, 7) $$, 'a second slip in the head office');
+select is(public.sales_clear_extra_slips(null, array['2026-06-20'::date], array['store']), 1, 'a POS import clears the extra slips of its days');
+select is((select count(*)::int from public.sales where sale_date = '2026-06-20'), 2, 'leaving slip 1 of each branch');
 delete from public.sales where sale_date = '2026-06-20';
 select throws_like($$ delete from public.branches where no = '00000' $$, 'head office%', 'the head office cannot be removed');
 update public.documents set branch_id = '00000000-0000-0000-0000-0000000000b1' where id = '00000000-0000-0000-0000-0000000000a1';

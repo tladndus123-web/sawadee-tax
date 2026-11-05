@@ -1016,8 +1016,8 @@
     "billsN": "{count} bills",
     "newTitle": "Add sales",
     "editTitle": "Edit sales",
-    "sheetHint": "One line per day and channel. Saving the same day and channel again replaces it.",
-    "replaces": "This day and channel already has sales. Saving replaces them with these numbers.",
+    "sheetHint": "One closing report is one line. Several reports a day (breakfast · lunch · dinner) add up to the day automatically.",
+    "replaces": "This day and channel has sales typed in. Saving replaces them with this report.",
     "date": "Date",
     "bills": "Bills",
     "channel": "Channel",
@@ -1062,7 +1062,7 @@
       "hint": "Check the date, channel and sales read from each photo, then save them together. Yellow fields are ones the AI was unsure of.",
       "include": "Include",
       "replaces": "Already there · replace",
-      "twice": "The same date and channel appear twice. Untick one or change its channel.",
+      "twice": "The same report is here twice. Untick one.",
       "vatOff": "VAT does not match 7% of the sales. Please check.",
       "check": "Please check the yellow fields.",
       "picked": "{count} picked",
@@ -1071,9 +1071,16 @@
       "locked": "{count} are in a closed month and were not saved.",
       "failed": "{count} could not be saved. Please try again.",
       "max": "Up to {count} photos at a time.",
-      "progress": "Read {done} of {total}"
+      "progress": "Read {done} of {total}",
+      "adds": "Adds as report {n} · day {total}",
+      "same": "Already in · replaces it"
     },
-    "branchCol": "Branch"
+    "branchCol": "Branch",
+    "slipAdd": "Adds as report {n} of this day · day total {total}",
+    "slipSame": "This report is already in. It is replaced, not counted twice.",
+    "slipDay": "{n} reports this day · day total {total}",
+    "slipsN": "{count} reports",
+    "slipNo": "Report {n}"
   },
   "pos": {
     "button": "POS Excel",

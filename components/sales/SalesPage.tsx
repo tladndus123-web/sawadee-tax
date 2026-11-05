@@ -5,7 +5,7 @@
 
 import { Camera, ChevronDown, FileSpreadsheet, FileText, Info, Keyboard, Loader2, Table2, TrendingUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useScreenDate } from "@/components/ScreenDate";
 import { ReadingLoader } from "@/components/upload/ReadingLoader";
@@ -13,7 +13,7 @@ import { useMonthLabel } from "@/components/ledger/Stickers";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { invoiceMonth, NO_DATE } from "@/lib/archive";
-import { ALL, branchLabel } from "@/lib/branches";
+import { ALL, branchLabel, headOf } from "@/lib/branches";
 import { BranchAvatar, useBranchName } from "@/components/layout/branch-switcher";
 import { useBranch, useBranches } from "@/lib/branch-store";
 import { useCompany } from "@/lib/company-store";
@@ -31,6 +31,7 @@ import { monthFees } from "@/lib/app-fees";
 import { AppFeesCard } from "./AppFeesCard";
 import { PosImport } from "./PosImport";
 import { type SaleDraft, SaleSheet } from "./SaleSheet";
+import { groupSlips, type SlipGroup } from "@/lib/sales-slips";
 import { type ReadPhoto, SalesReview } from "./SalesReview";
 import { useChannelLabel } from "./channel-name";
 import { CostCard } from "./CostCard";
@@ -57,9 +58,10 @@ export function SalesPage() {
   const monthLabel = useMonthLabel();
   const company = useCompany();
   const branch = useBranch();
-  const branchId = branch === ALL ? "" : branch;
   const { sales, loaded } = useSales();
   const { branches } = useBranches();
+  // "All branches": a new day goes to the head office — named, so it matches the head office's days already in
+  const branchId = branch === ALL ? (headOf(branches)?.id ?? "") : branch;
   const names = useBranchName();
   const shownBranches = useMemo(() => (branch === ALL ? branches : branches.filter((b) => b.id === branch)), [branch, branches]);
   const { entries } = useLedger();
@@ -103,7 +105,17 @@ export function SalesPage() {
       .filter((s) => saleMonth(s) === month)
       .sort((a, b) => b.date.localeCompare(a.date) || (order.get(a.branchId) ?? 99) - (order.get(b.branchId) ?? 99) || a.channel.localeCompare(b.channel));
   }, [sales, month, branches]);
-  const existingFor = (d: SaleDraft) => sales.find((x) => x.date === d.date && x.channel === d.channel && (x.branchId || "") === (d.branchId || "") && x.id !== d.id) ?? null;
+  // One row per branch, day and channel; a day of several closing reports (breakfast · lunch · dinner) opens into them
+  const dayRows = useMemo(() => groupSlips(days), [days]);
+  const [unfolded, setUnfolded] = useState<ReadonlySet<string>>(new Set());
+  const fold = (key: string) =>
+    setUnfolded((cur) => {
+      const next = new Set(cur);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  const tapDay = (g: SlipGroup) => (g.slips.length > 1 ? fold(g.key) : void openSale(g.slips[0]));
 
   // Closing reports: prepare each picture and let the AI read it (two at a time). One photo with one line opens the
   // sheet as before; anything more is checked together in SalesReview.
@@ -347,11 +359,18 @@ export function SalesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {days.slice(0, shown).map((s) => (
-                  <tr key={s.id} onClick={() => void openSale(s)} className="cursor-pointer hover:bg-muted/40">
+                {dayRows.slice(0, shown).map((s) => (
+                  <Fragment key={s.key}>
+                  <tr onClick={() => tapDay(s)} className="cursor-pointer hover:bg-muted/40" aria-expanded={s.slips.length > 1 ? unfolded.has(s.key) : undefined}>
                     <td className="px-4 py-2.5 font-semibold whitespace-nowrap">
-                      <button type="button" onClick={(e) => (e.stopPropagation(), void openSale(s))} className="text-left hover:underline">
+                      <button type="button" onClick={(e) => (e.stopPropagation(), tapDay(s))} className="flex items-center gap-1.5 text-left hover:underline">
                         {sd(s.date)}
+                        {s.slips.length > 1 && (
+                          <span className="flex items-center gap-0.5 rounded-full bg-brand-soft px-1.5 py-0.5 text-[11px] font-semibold text-brand">
+                            {t("sales.slipsN", { count: s.slips.length })}
+                            <ChevronDown className={cn("size-3 transition-transform", unfolded.has(s.key) && "rotate-180")} aria-hidden />
+                          </span>
+                        )}
                       </button>
                     </td>
                     {many && (
@@ -374,16 +393,37 @@ export function SalesPage() {
                     <td className="px-3 py-2.5 text-right font-semibold tabular-nums">{baht(s.gross)}</td>
                     <td className="px-4 py-2.5 text-right text-muted-foreground tabular-nums">{baht(s.vat)}</td>
                   </tr>
+                  {s.slips.length > 1 &&
+                    unfolded.has(s.key) &&
+                    s.slips.map((x, i) => (
+                      <tr key={x.id} onClick={() => void openSale(x)} className="cursor-pointer bg-muted/25 text-[13px] hover:bg-muted/50">
+                        <td className="py-2 pr-3 pl-9 text-muted-foreground">{t("sales.slipNo", { n: i + 1 })}</td>
+                        {many && <td />}
+                        <td />
+                        <td className="px-3 py-2 text-muted-foreground">{x.docFrom ? `${x.docFrom} – ${x.docTo}` : "—"}</td>
+                        <td className="px-3 py-2 text-right text-muted-foreground tabular-nums">{x.bills || "—"}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{baht(x.gross)}</td>
+                        <td className="px-4 py-2 text-right text-muted-foreground tabular-nums">{baht(x.vat)}</td>
+                      </tr>
+                    ))}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
           </div>
-          {days.slice(0, shown).map((s) => (
-            <button key={s.id} type="button" onClick={() => void openSale(s)} className="workspace-panel hover-lift [--lift:1.015] tap-row flex items-center gap-3 p-4 text-left md:hidden">
+          {dayRows.slice(0, shown).map((s) => (
+            <Fragment key={s.key}>
+            <button type="button" onClick={() => tapDay(s)} aria-expanded={s.slips.length > 1 ? unfolded.has(s.key) : undefined} className="workspace-panel hover-lift [--lift:1.015] tap-row flex items-center gap-3 p-4 text-left md:hidden">
               <span className="grid min-w-0 flex-1 gap-0.5">
                 <span className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">
                   {sd(s.date)}
                   <ChannelChip channel={s.channel} label={chName(s.channel)} />
+                  {s.slips.length > 1 && (
+                    <span className="flex items-center gap-0.5 rounded-full bg-brand-soft px-1.5 py-0.5 text-[11px] font-semibold text-brand">
+                      {t("sales.slipsN", { count: s.slips.length })}
+                      <ChevronDown className={cn("size-3 transition-transform", unfolded.has(s.key) && "rotate-180")} aria-hidden />
+                    </span>
+                  )}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {[many && branchOf(s.branchId) ? branchLabel(branchOf(s.branchId)!, names) : "", s.docFrom && `${s.docFrom} – ${s.docTo}`, s.bills ? t("sales.billsN", { count: s.bills }) : ""].filter(Boolean).join(" · ") || "—"}
@@ -394,18 +434,31 @@ export function SalesPage() {
                 <span className="text-xs text-muted-foreground tabular-nums">VAT {baht(s.vat)}</span>
               </span>
             </button>
+            {s.slips.length > 1 && unfolded.has(s.key) && (
+              <div className="-mt-1 grid gap-1 md:hidden">
+                {s.slips.map((x, i) => (
+                  <button key={x.id} type="button" onClick={() => void openSale(x)} className="tap-row ml-4 flex items-center gap-3 rounded-2xl bg-muted/50 px-4 py-2.5 text-left text-[13px]">
+                    <span className="flex-1 text-muted-foreground">
+                      {[t("sales.slipNo", { n: i + 1 }), x.docFrom && `${x.docFrom} – ${x.docTo}`].filter(Boolean).join(" · ")}
+                    </span>
+                    <span className="font-semibold tabular-nums">{baht(x.gross)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            </Fragment>
           ))}
           </>
         )}
-        {days.length > PAGE && (
+        {dayRows.length > PAGE && (
           <button
             type="button"
-            onClick={() => setShown((n) => (n >= days.length ? PAGE : n + MORE))}
-            aria-expanded={shown >= days.length}
+            onClick={() => setShown((n) => (n >= dayRows.length ? PAGE : n + MORE))}
+            aria-expanded={shown >= dayRows.length}
             className="press flex h-10 items-center justify-center gap-1 rounded-full text-sm font-medium text-primary hover:bg-primary/10"
           >
-            {shown >= days.length ? t("dash.upcomingLess") : t("dash.upcomingMore", { count: Math.min(MORE, days.length - shown) })}
-            <ChevronDown className={cn("size-4 transition-transform", shown >= days.length && "rotate-180")} aria-hidden />
+            {shown >= dayRows.length ? t("dash.upcomingLess") : t("dash.upcomingMore", { count: Math.min(MORE, dayRows.length - shown) })}
+            <ChevronDown className={cn("size-4 transition-transform", shown >= dayRows.length && "rotate-180")} aria-hidden />
           </button>
         )}
       </section>
@@ -429,7 +482,7 @@ export function SalesPage() {
           photo={open.photo}
           preview={open.preview}
           unclear={open.unclear}
-          existing={open.draft.id ? null : existingFor(open.draft)}
+          all={sales}
           onClose={() => {
             if (open.preview?.startsWith("blob:")) URL.revokeObjectURL(open.preview);
             setOpen(null);

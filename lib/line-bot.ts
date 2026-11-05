@@ -438,8 +438,16 @@ async function importSales(event: { replyToken?: string }, lineUser: string, use
   const closed = new Set((locks ?? []).map((l) => l.month as string));
   const open = valid.filter((d) => !closed.has(d.date.slice(0, 7)));
   if (open.length) {
+    // Whole days from the file: the extra slips of those days go, slip 1 is overwritten (as in the app)
+    const { error: cleared } = await admin.rpc("sales_clear_extra_slips", {
+      p_branch: branch?.id ?? null,
+      p_dates: open.map((d) => d.date),
+      p_channels: open.map((d) => d.channel),
+    });
+    if (cleared) throw cleared;
     const { error } = await admin.from("sales").upsert(
       open.map((d) => ({
+        part: 1,
         ...(branch ? { branch_id: branch.id } : {}),
         sale_date: d.date,
         channel: d.channel,
@@ -452,7 +460,7 @@ async function importSales(event: { replyToken?: string }, lineUser: string, use
         note: "LINE",
         source: "excel",
       })),
-      { onConflict: "branch_id,sale_date,channel" },
+      { onConflict: "branch_id,sale_date,channel,part" },
     );
     if (error) throw error;
   }

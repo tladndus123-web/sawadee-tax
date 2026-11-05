@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (534) · `npm run db:test` (372 in 6 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (537) · `npm run db:test` (379 in 6 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy app | `npx vercel deploy --prod` (this PC is logged in to Vercel). Then check `GET /api/extract` → `{"slipPieces":true}` and `POST` → 401. If broken: `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>` |
 | Deploy DB changes | `npx supabase db push` (linked to the cloud project) then `npx supabase test db --linked` |
@@ -142,6 +142,11 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   reminders/reports go only to `fullAdmin`s (owners, or admins with no screen list and no blocked branch —
   lib/full-admin-server); claim notices skip admins without the expenses screen; the menu waits for the member to
   load; "more" hides when empty.
+- **Several closing reports a day** (2026-11-05, YUNA feedback: breakfast · lunch · dinner; …003500): `sales.part`
+  (1, 2 …; unique branch+date+channel+part; part 0 on insert = next, trigger `sales_part`). Each report is a line, the
+  day is their sum. `lib/sales-slips` decides add / same (read twice: same receipt range, or same figures with none)
+  / replace (a typed or imported day total). `saveSale` without id inserts a new slip. POS file imports (app + LINE)
+  call `sales_clear_extra_slips` then upsert part 1. The sales list groups a day ("3장") and opens into its slips.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).
