@@ -73,15 +73,7 @@
     "foot": "Tax IDs are checked with the Revenue Department check-digit rule. Confirm with your accountant before filing.",
     "typeSign": "Type a signature here",
     "print": "Print",
-    "sameAsDoc": "Same as document",
-    "companyHint": "Our company as payslips and filing lists print it. Left empty, it is taken from the invoices we received.",
-    "companyNameTh": "Company name (Thai)",
-    "companyNameEn": "Company name (English)",
-    "companyBranch": "Branch no. (head office 00000)",
-    "companyAddrTh": "Address (Thai)",
-    "companyAddrEn": "Address (English)",
-    "companyBranchBad": "The branch number is 5 digits.",
-    "companySaveFail": "Could not save. Please try again."
+    "sameAsDoc": "Same as document"
   },
   "checks": {
     "sellerTax": "Seller tax ID (13 digits)",

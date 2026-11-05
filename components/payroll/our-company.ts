@@ -1,8 +1,7 @@
 "use client";
 
-// Our company as the filing lists and payslips print it: the tax ID from the settings; the name, address and branch
-// number as typed in the settings (owner, 2026-11-06), else as the latest invoice addressed to us printed them (a chosen
-// branch's number first).
+// Our company as the filing lists and payslips print it: the tax ID from the settings, the Thai name as the latest
+// invoice addressed to us printed it, and the branch number (a chosen branch, else what the invoices said).
 
 import { useMemo } from "react";
 import { ALL, byId } from "@/lib/branches";
@@ -28,9 +27,9 @@ export function useOurCompany(): { loaded: boolean; taxId: string; name: string;
     return {
       loaded: company.loaded,
       taxId: id,
-      name: company.name.th || company.name.en || d?.customer.name.th || d?.customer.name.en || "",
-      address: company.address.th || company.address.en || d?.customer.address.th || d?.customer.address.en || "",
-      branchNo: workingNo ?? (/^\d{5}$/.test(company.branch) ? company.branch : undefined) ?? branchNo(d?.customer.branch) ?? "",
+      name: d?.customer.name.th || d?.customer.name.en || "",
+      address: d?.customer.address.th || d?.customer.address.en || "",
+      branchNo: workingNo ?? branchNo(d?.customer.branch) ?? "",
     };
-  }, [company.loaded, company.taxId, company.name, company.address, company.branch, entries, workingNo]);
+  }, [company.loaded, company.taxId, entries, workingNo]);
 }

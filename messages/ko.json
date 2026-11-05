@@ -73,15 +73,7 @@
     "foot": "세금번호는 태국 국세청 규칙(마지막 숫자 확인)으로 자동 점검해요. 최종 신고 전에는 회계사와 꼭 확인하세요.",
     "typeSign": "여기에 서명을 입력하세요",
     "print": "인쇄",
-    "sameAsDoc": "서류와 같음",
-    "companyHint": "급여명세서와 신고 목록에 찍히는 우리 회사 정보예요. 비워 두면 받은 세금계산서에서 가져와요.",
-    "companyNameTh": "회사 이름 (태국어)",
-    "companyNameEn": "회사 이름 (영어)",
-    "companyBranch": "지점 번호 (본점 00000)",
-    "companyAddrTh": "주소 (태국어)",
-    "companyAddrEn": "주소 (영어)",
-    "companyBranchBad": "지점 번호는 숫자 5자리예요.",
-    "companySaveFail": "저장하지 못했어요. 다시 해 주세요."
+    "sameAsDoc": "서류와 같음"
   },
   "checks": {
     "sellerTax": "판매자 세금번호 13자리",

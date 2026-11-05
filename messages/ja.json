@@ -73,15 +73,7 @@
     "foot": "納税者番号はタイ歳入局のチェックディジット規則で自動確認します。申告前に必ず会計士にご確認ください。",
     "typeSign": "ここに署名を入力",
     "print": "印刷",
-    "sameAsDoc": "書類と同じ",
-    "companyHint": "給与明細や申告リストに印字される自社情報です。空欄なら受け取った請求書から読み取ります。",
-    "companyNameTh": "会社名（タイ語）",
-    "companyNameEn": "会社名（英語）",
-    "companyBranch": "支店番号（本店は00000）",
-    "companyAddrTh": "住所（タイ語）",
-    "companyAddrEn": "住所（英語）",
-    "companyBranchBad": "支店番号は数字5桁です。",
-    "companySaveFail": "保存できませんでした。もう一度お試しください。"
+    "sameAsDoc": "書類と同じ"
   },
   "checks": {
     "sellerTax": "売り手の納税者番号（13桁）",

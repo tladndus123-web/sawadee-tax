@@ -158,8 +158,8 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 - **Staff schedule feed + company details** (2026-11-06, …003700): 급여 → 근태 → "캘린더로 공유" (`StaffCalendarShare`:
   team link + one per person, LINE / QR / share / copy, renew). `/api/calendar/feed?who=staff&t=…[&emp=id]` →
   `staffFeedIcs` (attendance today−14…+120, sick shown as leave, absences left out, Thai holidays); its own secret
-  (`calendar_feed` id 2, `calendar_feed_token(p_new, p_which)`). Settings → company: Thai/English name, address
-  (`company_settings.address` {th,en}) and branch no.; `useOurCompany` prefers them over what invoices printed.
+  (`calendar_feed` id 2, `calendar_feed_token(p_new, p_which)`). The company name/address fields in settings were
+  taken out again the same day (owner); the column `company_settings.address` stays, unused.
 - **Sales AI + reading model by count** (2026-11-06): sales screen "AI 매출 분석" (`SalesInsight` →
   `/api/sales/insights` → `salesReport`, facts from pure `lib/sales-insight.ts`; full admins; kept in `ai_notes`).
   Reading: Sonnet 5.5 by default, Opus 5.5 (`bulkSetup`) when 3+ are read together — app uploads picked/taken at once
