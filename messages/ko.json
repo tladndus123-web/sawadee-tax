@@ -2046,7 +2046,50 @@
     "adminOnly": "일정은 관리자만 볼 수 있어요.",
     "more": "{n}건 더 보기",
     "less": "접기",
-    "twoWeeks": "2주 안"
+    "twoWeeks": "2주 안",
+    "x": {
+      "nextTitle": "다음 마감",
+      "lateLabel": "지남",
+      "todayLabel": "오늘",
+      "refund": "돌려받을 돈 (예상)",
+      "toPay": "낼 돈 (예상)",
+      "ready": "준비 상태",
+      "readyLine": "확인 끝 {done} / 전체 {total}건",
+      "toCheck": "확인이 필요한 서류 {n}건이 남았어요",
+      "prepare": "준비하러 가기",
+      "briefTitle": "이번 주 할 일 · AI 브리핑",
+      "briefAdmins": "AI 브리핑은 대표와 제한 없는 관리자만 볼 수 있어요.",
+      "briefMaking": "AI가 일정과 장부를 보고 정리하는 중…",
+      "briefFail": "지금은 브리핑을 불러오지 못했어요.",
+      "briefNone": "이번 주에 챙길 일이 없어요.",
+      "outTitle": "{month} 나갈 돈",
+      "out": {
+        "tax": "세금",
+        "bill": "거래처 결제",
+        "event": "회사 일정"
+      },
+      "week": "{n}주",
+      "shortWarn": "앞으로 7일 동안 나갈 돈 {out}이 지난 7일 매출 {sales}보다 많아요. 통장 잔액을 확인해 주세요.",
+      "speakLabel": "말로 일정 추가",
+      "speakPh": "예) 매달 25일 임대료 35,000 / 12월 10일 소방 점검",
+      "speakGo": "일정 만들기",
+      "speakNone": "문장에서 날짜를 찾지 못했어요. 날짜를 넣어 다시 써 주세요.",
+      "speakRate": "잠시 뒤 다시 해 주세요.",
+      "speakFail": "지금은 일정을 만들지 못했어요.",
+      "icalButton": "휴대폰 캘린더 연결",
+      "icalTitle": "휴대폰·구글 캘린더에 연결",
+      "icalSub": "세금 마감, 거래처 결제일, 회사 일정이 휴대폰 기본 캘린더에도 떠요. 6시간마다 자동으로 바뀌어요.",
+      "icalOpen": "이 기기 캘린더에 추가",
+      "icalCopy": "주소 복사",
+      "icalCopied": "주소를 복사했어요",
+      "icalIphone": "아이폰: 위 버튼을 누르고 '구독'을 누르면 끝이에요.",
+      "icalGoogle": "구글 캘린더(PC): 다른 캘린더 + → URL로 추가 → 복사한 주소 붙여넣기",
+      "icalSecret": "이 주소를 아는 사람은 일정을 볼 수 있어요. 다른 사람에게 보내지 마세요.",
+      "icalRenew": "주소 새로 만들기",
+      "icalRenewAsk": "새 주소를 만들면 지금 연결된 캘린더는 더 이상 바뀌지 않아요. 새로 만들까요?",
+      "icalRenewed": "새 주소를 만들었어요. 캘린더에 다시 추가해 주세요.",
+      "icalFail": "지금은 연결 주소를 만들지 못했어요."
+    }
   },
   "expenses": {
     "title": "경비 청구",
@@ -2183,6 +2226,36 @@
       "total": "합계",
       "note": "메모",
       "ledger": "장부 서류 보기"
+    },
+    "over": {
+      "title": "{month} 경비",
+      "vsLast": "지난달보다 {pct}%",
+      "count": "{n}건 · 반려 제외",
+      "byCategory": "어디에 썼나요",
+      "byPerson": "많이 청구한 사람",
+      "none": "이 달 청구가 아직 없어요.",
+      "aiTitle": "AI가 본 이번 달",
+      "aiAdmins": "AI 분석은 대표와 제한 없는 관리자만 볼 수 있어요.",
+      "aiNothing": "이 달 청구가 생기면 AI가 정리해 드려요.",
+      "aiReading": "AI가 이번 달 청구를 살펴보는 중…",
+      "aiFail": "지금은 AI 분석을 불러오지 못했어요."
+    },
+    "quick": {
+      "open": "빠른 승인 {n}",
+      "title": "빠른 승인",
+      "progress": "{total}건 중 {n}번째",
+      "done": "모두 확인했어요",
+      "doneSub": "승인 {ok} · 반려 {no}",
+      "close": "닫기",
+      "skip": "건너뛰기",
+      "hint": "휴대폰: 오른쪽으로 밀면 승인, 왼쪽으로 밀면 건너뛰기 · PC: → 승인, ← 건너뛰기"
+    },
+    "steps": {
+      "label": "진행 단계",
+      "sent": "보냄",
+      "approved": "승인",
+      "paid": "돌려줌",
+      "rejected": "반려"
     }
   },
   "aiPanel": {

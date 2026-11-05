@@ -2046,7 +2046,50 @@
     "adminOnly": "Only admins can see the calendar.",
     "more": "Show {n} more",
     "less": "Show less",
-    "twoWeeks": "Next 2 weeks"
+    "twoWeeks": "Next 2 weeks",
+    "x": {
+      "nextTitle": "Next deadline",
+      "lateLabel": "LATE",
+      "todayLabel": "TODAY",
+      "refund": "To get back (est.)",
+      "toPay": "To pay (est.)",
+      "ready": "How ready",
+      "readyLine": "{done} of {total} checked",
+      "toCheck": "{n} documents still need a look",
+      "prepare": "Get it ready",
+      "briefTitle": "This week · AI briefing",
+      "briefAdmins": "The AI briefing is for owners and admins without limits.",
+      "briefMaking": "The AI is reading the calendar and the books…",
+      "briefFail": "Couldn't load the briefing right now.",
+      "briefNone": "Nothing to do this week.",
+      "outTitle": "Going out in {month}",
+      "out": {
+        "tax": "Tax",
+        "bill": "Supplier bills",
+        "event": "Company dates"
+      },
+      "week": "W{n}",
+      "shortWarn": "The next 7 days need {out}, more than the last 7 days of sales ({sales}). Check the bank balance.",
+      "speakLabel": "Add a date in words",
+      "speakPh": "e.g. rent 35,000 on the 25th every month / fire check on 10 Dec",
+      "speakGo": "Make it",
+      "speakNone": "No date found in that sentence. Add a date and try again.",
+      "speakRate": "Please try again in a moment.",
+      "speakFail": "Couldn't make the date right now.",
+      "icalButton": "Phone calendar",
+      "icalTitle": "Connect your phone / Google calendar",
+      "icalSub": "Tax deadlines, supplier payment days and company dates show in your phone's own calendar too. It updates every 6 hours.",
+      "icalOpen": "Add to this device's calendar",
+      "icalCopy": "Copy address",
+      "icalCopied": "Address copied",
+      "icalIphone": "iPhone: tap the button above, then Subscribe.",
+      "icalGoogle": "Google Calendar (PC): Other calendars + → From URL → paste the address",
+      "icalSecret": "Anyone with this address can see the dates. Don't send it to others.",
+      "icalRenew": "Make a new address",
+      "icalRenewAsk": "A new address stops the calendars connected now from updating. Make a new one?",
+      "icalRenewed": "New address made. Add it to your calendar again.",
+      "icalFail": "Couldn't make the address right now."
+    }
   },
   "expenses": {
     "title": "Expense claims",
@@ -2183,6 +2226,36 @@
       "total": "Total",
       "note": "Note",
       "ledger": "Open the ledger document"
+    },
+    "over": {
+      "title": "Expenses in {month}",
+      "vsLast": "{pct}% vs last month",
+      "count": "{n} claims · rejected left out",
+      "byCategory": "Where it went",
+      "byPerson": "Who claimed most",
+      "none": "No claims this month yet.",
+      "aiTitle": "The AI's read of the month",
+      "aiAdmins": "The AI analysis is for owners and admins without limits.",
+      "aiNothing": "Once there are claims this month, the AI sums them up.",
+      "aiReading": "The AI is looking over this month's claims…",
+      "aiFail": "Couldn't load the AI analysis right now."
+    },
+    "quick": {
+      "open": "Quick review {n}",
+      "title": "Quick review",
+      "progress": "{n} of {total}",
+      "done": "All checked",
+      "doneSub": "Approved {ok} · rejected {no}",
+      "close": "Close",
+      "skip": "Skip",
+      "hint": "Phone: swipe right to approve, left to skip · PC: → approve, ← skip"
+    },
+    "steps": {
+      "label": "Progress",
+      "sent": "Sent",
+      "approved": "Approved",
+      "paid": "Paid back",
+      "rejected": "Rejected"
     }
   },
   "aiPanel": {

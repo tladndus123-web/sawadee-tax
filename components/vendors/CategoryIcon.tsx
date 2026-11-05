@@ -77,6 +77,24 @@ export const CATEGORY_COLORS = {
   slate: "bg-muted text-muted-foreground",
 } as const;
 export type CategoryColor = keyof typeof CATEGORY_COLORS;
+/** The same colours, solid (bars and dots) */
+export const CATEGORY_SOLID: Record<CategoryColor, string> = {
+  orange: "bg-orange-500",
+  blue: "bg-sky-500",
+  amber: "bg-amber-500",
+  purple: "bg-indigo-500",
+  teal: "bg-teal-500",
+  green: "bg-emerald-500",
+  pink: "bg-pink-500",
+  red: "bg-red-500",
+  slate: "bg-slate-400",
+};
+
+/** A category's solid colour class (its own setting, else the built-in look) */
+export function useCategorySolid(): (key: string) => string {
+  const { rows } = useCategories();
+  return useCallback((key: string) => CATEGORY_SOLID[lookOf(key, rows.find((r) => r.key === key)).color], [rows]);
+}
 
 const BUILTIN_LOOK: Record<BuiltinCategory, { icon: CategoryIconName; color: CategoryColor }> = {
   food: { icon: "utensils", color: "orange" },

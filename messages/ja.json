@@ -2046,7 +2046,50 @@
     "adminOnly": "予定は管理者だけが見られます。",
     "more": "あと{n}件を表示",
     "less": "閉じる",
-    "twoWeeks": "2週間以内"
+    "twoWeeks": "2週間以内",
+    "x": {
+      "nextTitle": "次の締め切り",
+      "lateLabel": "経過",
+      "todayLabel": "今日",
+      "refund": "還付見込み",
+      "toPay": "納付見込み",
+      "ready": "準備状況",
+      "readyLine": "確認済み {done} / 全{total}件",
+      "toCheck": "確認が必要な書類が{n}件残っています",
+      "prepare": "準備する",
+      "briefTitle": "今週やること · AIブリーフィング",
+      "briefAdmins": "AIブリーフィングは代表と制限のない管理者だけが見られます。",
+      "briefMaking": "AIが予定と帳簿を見てまとめています…",
+      "briefFail": "今はブリーフィングを読み込めませんでした。",
+      "briefNone": "今週やることはありません。",
+      "outTitle": "{month}の支出予定",
+      "out": {
+        "tax": "税金",
+        "bill": "取引先への支払い",
+        "event": "会社の予定"
+      },
+      "week": "第{n}週",
+      "shortWarn": "これから7日間の支出 {out} が直近7日の売上 {sales} より多くなっています。口座残高を確認してください。",
+      "speakLabel": "文章で予定を追加",
+      "speakPh": "例）毎月25日 家賃 35,000 / 12月10日 消防点検",
+      "speakGo": "予定を作る",
+      "speakNone": "文章から日付が見つかりませんでした。日付を入れてもう一度どうぞ。",
+      "speakRate": "少し待ってからもう一度どうぞ。",
+      "speakFail": "今は予定を作れませんでした。",
+      "icalButton": "スマホのカレンダーに連携",
+      "icalTitle": "スマホ・Googleカレンダーに連携",
+      "icalSub": "税金の締め切り、取引先への支払日、会社の予定がスマホの標準カレンダーにも表示されます。6時間ごとに自動で更新されます。",
+      "icalOpen": "この端末のカレンダーに追加",
+      "icalCopy": "アドレスをコピー",
+      "icalCopied": "アドレスをコピーしました",
+      "icalIphone": "iPhone：上のボタンを押して「照会」を押せば完了です。",
+      "icalGoogle": "Googleカレンダー（PC）：他のカレンダー ＋ → URLで追加 → コピーしたアドレスを貼り付け",
+      "icalSecret": "このアドレスを知っている人は予定を見られます。他の人に送らないでください。",
+      "icalRenew": "アドレスを作り直す",
+      "icalRenewAsk": "作り直すと、今連携しているカレンダーは更新されなくなります。作り直しますか？",
+      "icalRenewed": "新しいアドレスを作りました。カレンダーにもう一度追加してください。",
+      "icalFail": "今は連携アドレスを作れませんでした。"
+    }
   },
   "expenses": {
     "title": "経費精算",
@@ -2183,6 +2226,36 @@
       "total": "合計",
       "note": "メモ",
       "ledger": "帳簿の書類を見る"
+    },
+    "over": {
+      "title": "{month}の経費",
+      "vsLast": "先月比 {pct}%",
+      "count": "{n}件 · 却下を除く",
+      "byCategory": "何に使ったか",
+      "byPerson": "申請が多い人",
+      "none": "今月の申請はまだありません。",
+      "aiTitle": "AIが見た今月",
+      "aiAdmins": "AI分析は代表と制限のない管理者だけが見られます。",
+      "aiNothing": "今月の申請があるとAIがまとめます。",
+      "aiReading": "AIが今月の申請を確認しています…",
+      "aiFail": "今はAI分析を読み込めませんでした。"
+    },
+    "quick": {
+      "open": "まとめて承認 {n}",
+      "title": "まとめて承認",
+      "progress": "{total}件中 {n}件目",
+      "done": "すべて確認しました",
+      "doneSub": "承認 {ok} · 却下 {no}",
+      "close": "閉じる",
+      "skip": "スキップ",
+      "hint": "スマホ：右にスワイプで承認、左でスキップ · PC：→ 承認、← スキップ"
+    },
+    "steps": {
+      "label": "進み具合",
+      "sent": "申請",
+      "approved": "承認",
+      "paid": "精算済み",
+      "rejected": "却下"
     }
   },
   "aiPanel": {

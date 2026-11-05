@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (537) · `npm run db:test` (379 in 6 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (546) · `npm run db:test` (387 in 7 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy (app + DB) | **Push to `main` and let GitHub Actions deploy** (`.github/workflows/deploy.yml`: checks → migrations → pgTAP on the cloud DB → Vercel → live check). Cursor pushes to `main` too, so never deploy from this PC (`vercel deploy`) — a local build can put an older tree live over theirs (happened twice 2026-11-05). Check the run with the GitHub API (token from `git credential fill` for github.com, never printed): `GET https://api.github.com/repos/tladndus123-web/sawadee-tax/actions/runs?per_page=3`. Only if Actions is down: `npx vercel deploy --prod` from an up-to-date `main` |
 | If a deploy is broken | `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>`. A failed Actions run leaves the site as it was |
@@ -147,6 +147,14 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   day is their sum. `lib/sales-slips` decides add / same (read twice: same receipt range, or same figures with none)
   / replace (a typed or imported day total). `saveSale` without id inserts a new slip. POS file imports (app + LINE)
   call `sales_clear_extra_slips` then upsert part 1. The sales list groups a day ("3장") and opens into its slips.
+- **Expenses + calendar upgrade** (2026-11-06, …003600): expenses — month overview (total vs last month, category
+  bar, who claimed most), receipt thumbnails, steps (sent → approved → paid), quick review (one card at a time, swipe /
+  arrow keys), AI month report + one line per claim (`/api/expenses/insights`). Calendar — next deadline card (late
+  ones first, VAT estimate, documents checked), AI week briefing (`/api/calendar/brief`), a sentence → a date
+  (`/api/calendar/parse`, confirmed in the form), money going out by kind/week with a short-cash warning, busy weeks
+  tinted, missed days red, phone calendar (iCal `/api/calendar/feed?t=…`, secret in `calendar_feed`,
+  `calendar_feed_token()`). AI answers are kept in `ai_notes` (stamp = what they were made from + prompt version
+  `PROMPTS` in lib/insights-server) and only full admins get them.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

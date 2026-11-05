@@ -5,7 +5,7 @@
 // everyone's, who is owed how much, and the settings (what may be claimed, self-approval under an amount, photo
 // needed, LINE). lib/expenses has the rules, lib/expense-store the data.
 
-import { Check, ChevronRight, CircleCheck, HandCoins, Image as ImageIcon, Loader2, Pencil, Plus, Receipt, Settings2, Trash2, TriangleAlert, X } from "lucide-react";
+import { Check, ChevronRight, CircleCheck, HandCoins, Image as ImageIcon, Layers, Loader2, Pencil, Plus, Receipt, Settings2, Sparkles, Trash2, TriangleAlert, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -16,7 +16,8 @@ import { Input } from "@/components/ui/input";
 import { CategoryIcon, useCategoryLabel } from "@/components/vendors/CategoryIcon";
 import { Link } from "@/i18n/navigation";
 import { useCompany } from "@/lib/company-store";
-import { decideClaims, payClaims, removeClaim, useClaims } from "@/lib/expense-store";
+import { claimPhotoUrls, decideClaims, payClaims, removeClaim, useClaims } from "@/lib/expense-store";
+import { fullAdmin } from "@/lib/screens";
 import { claimFlags, type Flag } from "@/lib/expense-checks";
 import { type Claim, type ClaimStatus, claimSummary, owed, PAID_HOW, type PaidHow } from "@/lib/expenses";
 import { knownPhotos } from "@/lib/ledger-store";
@@ -26,7 +27,9 @@ import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { ClaimDetail, firstItem } from "./ClaimDetail";
 import { ClaimDialog } from "./ClaimDialog";
+import { ExpenseOverview } from "./ExpenseOverview";
 import { ExpenseSettingsPanel } from "./ExpenseSettingsPanel";
+import { QuickReview } from "./QuickReview";
 
 type Tab = "pending" | "approved" | "paid" | "rejected" | "all";
 const STATUS_TONE: Record<ClaimStatus, string> = {
@@ -60,6 +63,18 @@ export function ExpensesPage() {
   const mine = isAdmin ? claims : claims.filter((c) => c.userId === me.userId);
   const list = tab === "all" ? mine : mine.filter((c) => c.status === tab);
   const count = (s: Tab) => (s === "all" ? mine.length : mine.filter((c) => c.status === s).length);
+  // The AI's one-line notes per claim (from the month's report), the quick review, the receipt thumbnails
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [quick, setQuick] = useState(false);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const thumbKey = list.map((c) => c.photoPath ?? "").join("|");
+  useEffect(() => {
+    const paths = list.map((c) => c.photoPath).filter((x): x is string => !!x && !thumbs[x]);
+    if (paths.length) void claimPhotoUrls(paths).then((m) => setThumbs((cur) => ({ ...cur, ...m })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the shown photos change
+  }, [thumbKey]);
+  const flagText = useFlagText();
+  const pendingList = mine.filter((c) => c.status === "pending");
   const dayLabel = (d: string) => new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", weekday: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
 
   const approve = async (ids: string[]) => {
@@ -88,12 +103,21 @@ export function ExpensesPage() {
               {t("settings")}
             </Button>
           )}
+          {isAdmin && pendingList.length > 0 && (
+            <Button type="button" variant="secondary" className="h-11 rounded-full px-4" onClick={() => setQuick(true)}>
+              <Layers className="size-4" />
+              {t("quick.open", { n: pendingList.length })}
+            </Button>
+          )}
           <Button type="button" className="h-11 rounded-full px-5" onClick={() => setEditing("new")}>
             <Plus className="size-4" />
             {t("new")}
           </Button>
         </div>
       </header>
+
+      {/* Admins: the month at a glance and the AI's read of it */}
+      {isAdmin && <ExpenseOverview claims={claims} month={today.slice(0, 7)} canAi={fullAdmin(me)} onNotes={setNotes} />}
 
       {showSettings && isAdmin && <ExpenseSettingsPanel onClose={() => setShowSettings(false)} />}
 
@@ -181,6 +205,9 @@ export function ExpensesPage() {
               busy={busy}
               day={dayLabel(c.day)}
               flags={c.status === "pending" || c.status === "approved" ? (flags.get(c.id) ?? []) : []}
+              thumb={c.photoPath ? thumbs[c.photoPath] : undefined}
+              note={isAdmin && (c.status === "pending" || c.status === "approved") ? notes[c.id] : undefined}
+              flagText={flagText}
               onApprove={() => void approve([c.id])}
               onReject={() => setRejecting(c)}
               onPay={() => setPaying([c])}
@@ -193,6 +220,7 @@ export function ExpensesPage() {
       {editing && <ClaimDialog claim={editing === "new" ? null : editing} onClose={() => setEditing(null)} />}
       {paying && <PayDialog claims={paying} onClose={() => setPaying(null)} />}
       {rejecting && <RejectDialog claim={rejecting} onClose={() => setRejecting(null)} />}
+      {quick && <QuickReview claims={pendingList} flags={flags} notes={notes} flagText={flagText} onClose={() => setQuick(false)} />}
     </div>
   );
 }
@@ -208,9 +236,17 @@ function ClaimRow({
   onReject,
   onPay,
   onEdit,
+  thumb,
+  note,
+  flagText,
 }: {
   c: Claim;
   flags: Flag[];
+  /** The receipt photo, small (signed link) */
+  thumb?: string;
+  /** The AI's one line on this claim */
+  note?: string;
+  flagText: (f: Flag) => string;
   isAdmin: boolean;
   mine: boolean;
   busy: boolean;
@@ -226,22 +262,21 @@ function ClaimRow({
   // The receipt and what was bought, in full
   const [open, setOpen] = useState(false);
   const bought = firstItem(c.doc, locale);
-  const flagText = (f: Flag) =>
-    f.kind === "mismatch"
-      ? t("flag.mismatch", { amount: baht(fromSatang(f.n ?? 0)) })
-      : f.kind === "old"
-        ? t("flag.old", { n: f.n ?? 0 })
-        : f.kind === "big"
-          ? t("flag.big", { amount: baht(fromSatang(f.n ?? 0)) })
-          : f.kind === "personal"
-            ? t("flag.personal", { word: f.word ?? "" })
-            : t(`flag.${f.kind}`);
   return (
     <li className="grid gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-5">
       {open && <ClaimDetail c={c} isAdmin={isAdmin} onClose={() => setOpen(false)} />}
       <button type="button" onClick={() => setOpen(true)} className="-m-1.5 flex min-w-0 items-start gap-3 rounded-2xl p-1.5 text-left hover:bg-muted/50" aria-label={t("detail.open")}>
-        <CategoryIcon category={c.category} />
-        <div className="grid min-w-0 flex-1 gap-0.5">
+        {/* The receipt itself when there is a photo (its category as a badge), else the category */}
+        {thumb ? (
+          <span className="relative size-14 flex-none">
+            {/* eslint-disable-next-line @next/next/no-img-element -- signed link */}
+            <img src={thumb} alt="" className="size-14 rounded-2xl object-cover ring-1 ring-border" loading="lazy" />
+            <CategoryIcon category={c.category} className="absolute -right-1.5 -bottom-1.5 size-6 rounded-lg ring-2 ring-card" />
+          </span>
+        ) : (
+          <CategoryIcon category={c.category} className="size-14" />
+        )}
+        <div className="grid min-w-0 flex-1 gap-1">
           <div className="flex items-baseline justify-between gap-3">
             <p className="min-w-0 truncate text-[15px] font-semibold">{isAdmin ? `${c.name} · ${c.seller || catLabel(c.category)}` : c.seller || catLabel(c.category)}</p>
             <b className="flex-none text-[16px] tabular-nums">{baht(fromSatang(c.amount))}</b>
@@ -266,6 +301,13 @@ function ClaimRow({
             {c.status === "rejected" && c.reason && <span className="text-bad">“{c.reason}”</span>}
             {!c.photoPath && !flags.length && <span>· {t("noPhoto")}</span>}
           </p>
+          <ClaimSteps status={c.status} />
+          {note && (
+            <p className="mt-1 flex items-start gap-1.5 rounded-xl bg-primary/8 px-3 py-1.5 text-[12.5px] text-foreground">
+              <Sparkles className="mt-0.5 size-3.5 flex-none text-primary" aria-hidden />
+              {note}
+            </p>
+          )}
           {flags.length > 0 && (
             <ul className="mt-1 grid gap-1 rounded-xl bg-warn-soft px-3 py-2 text-[12px] text-warn">
               {flags.map((f) => (
@@ -433,5 +475,44 @@ function RejectDialog({ claim, onClose }: { claim: Claim; onClose: () => void })
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** How a check reads on screen (the list and the quick review) */
+function useFlagText() {
+  const t = useTranslations("expenses");
+  return (f: Flag) =>
+    f.kind === "mismatch"
+      ? t("flag.mismatch", { amount: baht(fromSatang(f.n ?? 0)) })
+      : f.kind === "old"
+        ? t("flag.old", { n: f.n ?? 0 })
+        : f.kind === "big"
+          ? t("flag.big", { amount: baht(fromSatang(f.n ?? 0)) })
+          : f.kind === "personal"
+            ? t("flag.personal", { word: f.word ?? "" })
+            : t(`flag.${f.kind}`);
+}
+
+/** Sent → approved → paid back (or sent → rejected), as three small steps */
+function ClaimSteps({ status }: { status: ClaimStatus }) {
+  const t = useTranslations("expenses.steps");
+  const reached = status === "pending" ? 1 : status === "approved" ? 2 : status === "paid" ? 3 : 1;
+  const steps = status === "rejected" ? (["sent", "rejected"] as const) : (["sent", "approved", "paid"] as const);
+  return (
+    <ol className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold" aria-label={t("label")}>
+      {steps.map((s, i) => {
+        const on = status === "rejected" ? true : i < reached;
+        const bad = s === "rejected";
+        return (
+          <li key={s} className="flex items-center gap-1">
+            {i > 0 && <span className={cn("h-0.5 w-4 rounded-full", on ? (bad ? "bg-bad/50" : "bg-primary/60") : "bg-border")} aria-hidden />}
+            <span className={cn("flex items-center gap-1 rounded-full px-2 py-0.5", on ? (bad ? "bg-bad-soft text-bad" : "bg-primary/10 text-primary") : "bg-muted text-muted-foreground")}>
+              {on && !bad && <Check className="size-3" aria-hidden />}
+              {t(s)}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

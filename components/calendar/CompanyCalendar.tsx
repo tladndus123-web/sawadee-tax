@@ -5,7 +5,7 @@
 // Admins only (owner's choice: money owed and staff visas); they tick items off and add, change or remove company
 // dates; a closed month's VAT return shows as done by itself.
 
-import { BadgeCheck, CalendarPlus, Camera, ChevronDown, ChevronLeft, ChevronRight, Circle, CircleCheck, FileText, Landmark, Loader2, Pencil, Receipt, Repeat, Sparkles, Trash2, Users, X } from "lucide-react";
+import { BadgeCheck, CalendarPlus, CalendarSync, Camera, ChevronDown, ChevronLeft, ChevronRight, Circle, CircleCheck, FileText, Landmark, Loader2, Pencil, Receipt, Repeat, Sparkles, Trash2, Users, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -31,6 +31,9 @@ import { todayBangkok } from "@/lib/thai-tax";
 import type { FoundDate } from "@/lib/calendar-read-server";
 import { preparePhoto } from "@/lib/upload-queue";
 import { cn } from "@/lib/utils";
+import { summarize } from "@/lib/dashboard";
+import { fullAdmin } from "@/lib/screens";
+import { compactBaht, MoneyOut, NextDeadline, type OutKind, PhoneCalendar, SpeakAdd, WeekBrief } from "./CalendarExtras";
 
 type Group = "tax" | "doc" | "bill" | "event";
 const groupOf = (k: CalKind): Group => (TAX_KINDS.includes(k) ? "tax" : (k as Group));
@@ -64,9 +67,11 @@ export function CompanyCalendar() {
   const [editing, setEditing] = useState<(Partial<CalEvent> & { open: true }) | null>(null);
   // The list: what is late and the next two weeks first (at least 5), the rest (to 60 days) behind "more"
   const [all, setAll] = useState(false);
+  const [phoneCal, setPhoneCal] = useState(false);
 
   // Everything from the month shown to 60 days ahead of today
-  const from = `${shiftMonth(month, 0)}-01`;
+  // (and the last 30 days, so a missed deadline from last month still shows — the next-deadline card and the list)
+  const from = [`${shiftMonth(month, 0)}-01`, addDays(today, -30)].sort()[0];
   const to = [addDays(today, 60), `${shiftMonth(month, 1)}-01`].sort().at(-1)!;
   const items = useMemo(
     () =>
@@ -145,6 +150,42 @@ export function CompanyCalendar() {
   const shown = day || all ? upcoming : soon.length >= 5 ? soon : upcoming.slice(0, 5);
   const hidden = upcoming.length - shown.length;
 
+  // What an item costs, baht: its own amount, or the VAT return's estimate (refunds count as nothing going out)
+  const costOf = (i: CalItem) => (i.kind === "vat" && i.period ? Math.max(0, vatEstimate(i.period) ?? 0) : (i.amount ?? 0));
+  const outKind = (i: CalItem): OutKind => (TAX_KINDS.includes(i.kind) ? "tax" : i.kind === "bill" ? "bill" : "event");
+
+  // The next deadline: the first tax date not done (a late one first), else the first thing coming
+  const next = useMemo(() => {
+    const open = items.filter((i) => !i.done && daysTo(today, i.date) >= -30 && (i.kind !== "bill" || i.date >= today));
+    return open.find((i) => TAX_KINDS.includes(i.kind)) ?? open.find((i) => i.date >= today) ?? null;
+  }, [items, today]);
+  const nextReady = next?.kind === "vat" && next.period ? (() => {
+    const s = summarize(ledgerDocs, next.period, company.taxId, today);
+    return { checked: Math.max(0, s.count - s.toCheck), total: s.count };
+  })() : null;
+
+  // The shown month's money going out, by kind and by week; the next 7 days against the last 7 days of sales
+  const monthOut = useMemo(() => {
+    const byKind: Record<OutKind, number> = { tax: 0, bill: 0, event: 0 };
+    const weeks = [0, 0, 0, 0, 0];
+    for (const i of items) {
+      if (i.done || !i.date.startsWith(month)) continue;
+      const v = costOf(i);
+      if (!v) continue;
+      byKind[outKind(i)] += v;
+      weeks[Math.min(4, Math.floor((Number(i.date.slice(8)) - 1) / 7))] += v;
+    }
+    return { byKind, weeks };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- costOf reads the same inputs
+  }, [items, month, sales, ledgerDocs]);
+  const nextWeek = items.filter((i) => !i.done && i.date >= today && i.date <= addDays(today, 7)).reduce((a, i) => a + costOf(i), 0);
+  const lastWeekSales = sales.length ? sales.filter((s) => s.date >= addDays(today, -7) && s.date < today).reduce((a, s) => a + s.gross, 0) : null;
+
+  // The grid: each day's money, busy weeks, missed deadlines
+  const dayMoney = new Map<string, number>();
+  for (const i of items) if (!i.done && costOf(i)) dayMoney.set(i.date, (dayMoney.get(i.date) ?? 0) + costOf(i));
+  const missed = (d: string) => d < today && (byDay.get(d) ?? []).some((i) => !i.done);
+
   const toggle = async (i: CalItem) => {
     try {
       await setDone(i.key, !i.done);
@@ -162,12 +203,40 @@ export function CompanyCalendar() {
           <p className="text-[15px] text-muted-foreground">{t("sub")}</p>
         </div>
         {isAdmin && (
-          <Button type="button" className="h-11 rounded-full px-5" onClick={() => setEditing({ open: true, date: day ?? today, repeat: "none", remindDays: 7, title: "", note: "" })}>
-            <CalendarPlus className="size-4" />
-            {t("add")}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="ghost" className="h-11 rounded-full px-4" onClick={() => setPhoneCal(true)}>
+              <CalendarSync className="size-4" />
+              {t("x.icalButton")}
+            </Button>
+            <Button type="button" className="h-11 rounded-full px-5" onClick={() => setEditing({ open: true, date: day ?? today, repeat: "none", remindDays: 7, title: "", note: "" })}>
+              <CalendarPlus className="size-4" />
+              {t("add")}
+            </Button>
+          </div>
         )}
       </div>
+
+      {/* The next deadline, big, and this week's three things from the AI */}
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        {next && (
+          <NextDeadline
+            title={title(next)}
+            date={dateText(next.date)}
+            daysLeft={daysTo(today, next.date)}
+            amount={next.kind === "vat" && next.period ? vatEstimate(next.period) : (next.amount ?? null)}
+            ready={nextReady}
+            href={HREF[next.kind]}
+          />
+        )}
+        <WeekBrief canAi={fullAdmin(me)} />
+      </div>
+
+      {/* A sentence becomes a date (confirmed in the form before saving) */}
+      {isAdmin && (
+        <SpeakAdd
+          onEvent={(e) => setEditing({ open: true, title: e.title, date: e.date, repeat: e.repeat, remindDays: e.remindDays, amount: e.amount ? toSatang(e.amount) : null, note: e.note })}
+        />
+      )}
 
       {/* What to show */}
       <div className="flex flex-wrap gap-2" role="group" aria-label={t("filter")}>
@@ -213,6 +282,11 @@ export function CompanyCalendar() {
               if (!d) return <span key={i} />;
               const its = byDay.get(d) ?? [];
               const off = new Date(`${d}T00:00:00Z`).getUTCDay() % 6 === 0 || THAI_HOLIDAYS.has(d);
+              // A busy week (3 or more dates) is tinted; a missed date is red; each day shows its money
+              const week = Math.floor(i / 7);
+              const busyWeek = cells.slice(week * 7, week * 7 + 7).reduce((a, c) => a + (c ? (byDay.get(c)?.length ?? 0) : 0), 0) >= 3;
+              const late = missed(d);
+              const money = dayMoney.get(d) ?? 0;
               return (
                 <button
                   key={d}
@@ -222,11 +296,14 @@ export function CompanyCalendar() {
                   aria-label={`${dateText(d)} ${its.length ? `· ${its.length}` : ""}`}
                   className={cn(
                     "grid min-h-11 content-start justify-items-center gap-1 rounded-xl p-1 text-left transition-colors sm:min-h-20 sm:justify-items-stretch sm:p-1.5",
-                    day === d ? "bg-primary/10 ring-2 ring-primary/40" : "hover:bg-muted/60",
+                    day === d ? "bg-primary/10 ring-2 ring-primary/40" : late ? "bg-bad-soft/70 ring-1 ring-bad/40 hover:bg-bad-soft" : busyWeek ? "bg-primary/[0.06] hover:bg-primary/10" : "hover:bg-muted/60",
                   )}
                 >
-                  <span className={cn("text-[13px] font-semibold tabular-nums", off && "text-bad", d === today && "grid size-6 place-items-center rounded-full bg-primary text-primary-foreground")}>
-                    {Number(d.slice(8))}
+                  <span className="flex w-full items-center justify-between gap-1">
+                    <span className={cn("text-[13px] font-semibold tabular-nums", off && "text-bad", d === today && "grid size-6 place-items-center rounded-full bg-primary text-primary-foreground", late && d !== today && "text-bad")}>
+                      {Number(d.slice(8))}
+                    </span>
+                    {money > 0 && <span className="text-[10px] font-semibold text-foreground/70 tabular-nums max-sm:hidden">{compactBaht(money)}</span>}
                   </span>
                   {its.slice(0, 2).map((x) => (
                     <span key={x.key} className={cn("line-clamp-2 rounded px-1 text-[10px] leading-[13px] font-medium [overflow-wrap:anywhere] max-sm:hidden", TONE[groupOf(x.kind)].chip, x.done && "line-through opacity-60")}>
@@ -344,7 +421,11 @@ export function CompanyCalendar() {
         </section>
       </div>
 
+      {/* The month's money going out */}
+      <MoneyOut monthName={monthName(month)} byKind={monthOut.byKind} weeks={monthOut.weeks} nextWeek={nextWeek} lastWeekSales={lastWeekSales} />
+
       {editing && <EventDialog initial={editing} onClose={() => setEditing(null)} />}
+      {phoneCal && <PhoneCalendar onClose={() => setPhoneCal(false)} />}
     </div>
   );
 }

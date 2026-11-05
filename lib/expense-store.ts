@@ -147,6 +147,14 @@ export async function claimPhotoUrl(path: string): Promise<string | null> {
   return data?.signedUrl ?? null;
 }
 
+/** Many receipt photos at once (the list's thumbnails), path → 10-minute link */
+export async function claimPhotoUrls(paths: string[]): Promise<Record<string, string>> {
+  const list = [...new Set(paths.filter(Boolean))].slice(0, 60);
+  // One link each (the same call the detail view uses; the batch call answers without paths on some setups)
+  const links = await Promise.all(list.map(async (p) => [p, await claimPhotoUrl(p)] as const));
+  return Object.fromEntries(links.filter((l): l is readonly [string, string] => !!l[1]));
+}
+
 export async function saveExpenseSettings(s: ExpenseSettings) {
   const { data, error } = await supabaseBrowser().from("company_settings").update({ expenses: s }).eq("id", 1).select("id");
   if (error) throw error;

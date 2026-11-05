@@ -1,0 +1,352 @@
+"use client";
+
+// The calendar screen's upgrade (owner, 2026-11-06: "심심하지 않게, AI로"): the next deadline big with how ready it is,
+// this week's three things from the AI, the month's money going out (by kind and week, with a warning when the next
+// week needs more than the last week brought in), a sentence that becomes a date, and the phone-calendar link.
+
+import { AlarmClock, ArrowRight, CalendarSync, Check, Copy, Loader2, RefreshCw, Sparkles, TriangleAlert, Wand2 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Link } from "@/i18n/navigation";
+import type { AiEvent } from "@/lib/assistant";
+import { bahtWhole } from "@/lib/money";
+import { supabaseBrowser } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+
+// ── Next deadline ────────────────────────────────────────────────────────────────────────────────────────────────
+
+export function NextDeadline({
+  title,
+  date,
+  daysLeft,
+  amount,
+  ready,
+  href,
+}: {
+  title: string;
+  date: string;
+  daysLeft: number;
+  /** Baht to pay (estimated), when known */
+  amount: number | null;
+  /** Documents checked out of all, for the VAT return */
+  ready: { checked: number; total: number } | null;
+  href?: string;
+}) {
+  const t = useTranslations("calendar.x");
+  const late = daysLeft < 0;
+  const pct = ready && ready.total ? Math.round((ready.checked / ready.total) * 100) : null;
+  return (
+    <section className={cn("workspace-panel relative grid gap-4 overflow-hidden p-5 sm:p-6", late && "ring-2 ring-bad/40")} aria-label={t("nextTitle")}>
+      <span className={cn("pointer-events-none absolute -top-20 -right-20 size-56 rounded-full blur-3xl", late ? "bg-bad/15" : "bg-primary/12")} aria-hidden />
+      <div className="flex items-start justify-between gap-3">
+        <div className="grid min-w-0 gap-1">
+          <span className="flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground">
+            <AlarmClock className="size-4" aria-hidden />
+            {t("nextTitle")}
+          </span>
+          <p className="text-[19px] leading-snug font-semibold text-pretty">{title}</p>
+          <span className="text-[13px] text-muted-foreground">{date}</span>
+        </div>
+        <div className={cn("grid flex-none justify-items-center rounded-2xl px-4 py-2.5 text-center", late ? "bg-bad text-white" : daysLeft <= 3 ? "bg-warn text-white" : "bg-primary text-primary-foreground")}>
+          <span className="text-[11px] font-semibold opacity-90">{late ? t("lateLabel") : daysLeft === 0 ? t("todayLabel") : "D-DAY"}</span>
+          <b className="text-[30px] leading-none font-bold tabular-nums">{late ? `+${-daysLeft}` : daysLeft === 0 ? "!" : daysLeft}</b>
+        </div>
+      </div>
+      {amount !== null && (
+        <div className="flex items-baseline justify-between gap-3 rounded-2xl bg-muted/60 px-4 py-3">
+          <span className="text-[13px] text-muted-foreground">{amount < 0 ? t("refund") : t("toPay")}</span>
+          <b className="text-[22px] tabular-nums">{bahtWhole(Math.abs(amount))}</b>
+        </div>
+      )}
+      {ready && ready.total > 0 && pct !== null && (
+        <div className="grid gap-1.5">
+          <div className="flex items-center justify-between text-[12.5px]">
+            <span className="font-medium">{t("ready")}</span>
+            <span className="text-muted-foreground tabular-nums">{t("readyLine", { done: ready.checked, total: ready.total })}</span>
+          </div>
+          <span className="h-2.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+            <span className={cn("block h-full rounded-full transition-[width]", pct === 100 ? "bg-ok" : "bg-primary")} style={{ width: `${pct}%` }} />
+          </span>
+          {ready.total > ready.checked && (
+            <span className="text-[12px] text-warn">{t("toCheck", { n: ready.total - ready.checked })}</span>
+          )}
+        </div>
+      )}
+      {href && (
+        <Button asChild className="h-10 w-fit rounded-full px-4">
+          <Link href={href}>
+            {t("prepare")}
+            <ArrowRight className="size-4" />
+          </Link>
+        </Button>
+      )}
+    </section>
+  );
+}
+
+// ── This week from the AI ────────────────────────────────────────────────────────────────────────────────────────
+
+interface Brief {
+  summary: string;
+  items: { title: string; why: string; link: string }[];
+}
+
+export function WeekBrief({ canAi }: { canAi: boolean }) {
+  const t = useTranslations("calendar.x");
+  const locale = useLocale();
+  const [brief, setBrief] = useState<Brief | null>(null);
+  const [state, setState] = useState<"loading" | "ok" | "none" | "fail">("loading");
+  useEffect(() => {
+    if (!canAi) return;
+    let live = true;
+    void fetch("/api/calendar/brief", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ lang: locale }) })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((j: { body?: Brief | null }) => live && (j.body ? (setBrief(j.body), setState("ok")) : setState("none")))
+      .catch(() => live && setState("fail"));
+    return () => void (live = false);
+  }, [canAi, locale]);
+  return (
+    <section className="workspace-panel ai-ring grid content-start gap-3 p-5 sm:p-6" aria-label={t("briefTitle")}>
+      <span className="flex items-center gap-2 text-[13px] font-semibold text-primary">
+        <Sparkles className="size-4" aria-hidden />
+        {t("briefTitle")}
+      </span>
+      {!canAi ? (
+        <p className="text-[14px] text-muted-foreground">{t("briefAdmins")}</p>
+      ) : state === "loading" ? (
+        <div className="grid gap-2.5" aria-busy>
+          <span className="flex items-center gap-2 text-[13px] text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+            {t("briefMaking")}
+          </span>
+          {[1, 2, 3].map((n) => (
+            <span key={n} className="h-11 animate-pulse rounded-2xl bg-muted" />
+          ))}
+        </div>
+      ) : state === "ok" && brief ? (
+        <>
+          {brief.summary && <p className="text-[14px] leading-relaxed text-pretty text-foreground/80">{brief.summary}</p>}
+          <ol className="grid gap-2">
+            {brief.items.map((i, n) => {
+              const body = (
+                <>
+                  <span className={cn("grid size-7 flex-none place-items-center rounded-full text-[13px] font-bold", n === 0 ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")}>{n + 1}</span>
+                  <span className="grid min-w-0 flex-1 gap-0.5">
+                    <b className="text-[14.5px] leading-snug">{i.title}</b>
+                    {i.why && <span className="text-[12.5px] leading-snug text-muted-foreground">{i.why}</span>}
+                  </span>
+                  {i.link && <ArrowRight className="mt-1 size-4 flex-none text-muted-foreground" aria-hidden />}
+                </>
+              );
+              return (
+                <li key={n}>
+                  {i.link ? (
+                    <Link href={i.link} className="press flex items-start gap-3 rounded-2xl bg-muted/50 px-3.5 py-3 hover:bg-muted">
+                      {body}
+                    </Link>
+                  ) : (
+                    <div className="flex items-start gap-3 rounded-2xl bg-muted/50 px-3.5 py-3">{body}</div>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </>
+      ) : (
+        <p className="text-[14px] text-muted-foreground">{state === "fail" ? t("briefFail") : t("briefNone")}</p>
+      )}
+    </section>
+  );
+}
+
+// ── Money going out this month ───────────────────────────────────────────────────────────────────────────────────
+
+/** ฿45k, ฿1.2k, ฿850 — for small spaces (calendar days, week bars) */
+export const compactBaht = (v: number) => {
+  const a = Math.abs(v);
+  return a >= 1000 ? `฿${(a / 1000).toFixed(a >= 10_000 ? 0 : 1).replace(/\.0$/, "")}k` : bahtWhole(a);
+};
+
+export type OutKind = "tax" | "bill" | "event";
+const OUT_COLOR: Record<OutKind, string> = { tax: "bg-primary", bill: "bg-bad", event: "bg-[#7c5cff]" };
+
+export function MoneyOut({
+  monthName,
+  byKind,
+  weeks,
+  nextWeek,
+  lastWeekSales,
+}: {
+  monthName: string;
+  byKind: Record<OutKind, number>;
+  /** Week 1…5 of the month, baht */
+  weeks: number[];
+  /** Baht due in the next 7 days, and what the last 7 days of sales brought in (with VAT) */
+  nextWeek: number;
+  lastWeekSales: number | null;
+}) {
+  const t = useTranslations("calendar.x");
+  const total = byKind.tax + byKind.bill + byKind.event;
+  const max = Math.max(1, ...weeks);
+  const short = lastWeekSales !== null && nextWeek > 0 && nextWeek > lastWeekSales;
+  return (
+    <section className="workspace-panel grid gap-4 p-5 sm:p-6" aria-label={t("outTitle", { month: monthName })}>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="grid gap-0.5">
+          <span className="text-[13px] font-semibold text-muted-foreground">{t("outTitle", { month: monthName })}</span>
+          <b className="text-[28px] leading-tight font-bold tabular-nums">{bahtWhole(total)}</b>
+        </div>
+        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
+          {(["tax", "bill", "event"] as const).map((k) => (
+            <li key={k} className="flex items-center gap-1.5">
+              <span className={cn("size-2.5 rounded-full", OUT_COLOR[k])} aria-hidden />
+              <span className="text-muted-foreground">{t(`out.${k}`)}</span>
+              <b className="tabular-nums">{bahtWhole(byKind[k])}</b>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {total > 0 && (
+        <div className="flex h-3 overflow-hidden rounded-full bg-muted" role="img" aria-label={t("outTitle", { month: monthName })}>
+          {(["tax", "bill", "event"] as const).map((k) => (byKind[k] > 0 ? <span key={k} className={cn("h-full", OUT_COLOR[k])} style={{ width: `${(byKind[k] / total) * 100}%` }} /> : null))}
+        </div>
+      )}
+      {/* By week */}
+      <div className="grid grid-cols-5 items-end gap-2 sm:gap-3">
+        {weeks.map((v, i) => (
+          <div key={i} className="grid justify-items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground tabular-nums">{v ? compactBaht(v) : "—"}</span>
+            <span className="flex h-20 w-full items-end overflow-hidden rounded-xl bg-muted/60">
+              <span className="w-full rounded-xl bg-gradient-to-t from-primary to-primary/60" style={{ height: `${(v / max) * 100}%` }} />
+            </span>
+            <span className="text-[11.5px] font-medium text-muted-foreground">{t("week", { n: i + 1 })}</span>
+          </div>
+        ))}
+      </div>
+      {short && (
+        <p role="alert" className="flex items-start gap-2 rounded-2xl bg-warn-soft px-3.5 py-2.5 text-[13px] text-foreground">
+          <TriangleAlert className="mt-0.5 size-4 flex-none text-warn" aria-hidden />
+          {t("shortWarn", { out: bahtWhole(nextWeek), sales: bahtWhole(lastWeekSales ?? 0) })}
+        </p>
+      )}
+    </section>
+  );
+}
+
+// ── A sentence becomes a date ────────────────────────────────────────────────────────────────────────────────────
+
+export function SpeakAdd({ onEvent }: { onEvent: (e: AiEvent) => void }) {
+  const t = useTranslations("calendar.x");
+  const locale = useLocale();
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const go = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim() || busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/calendar/parse", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text, lang: locale }) });
+      const j = (await res.json().catch(() => ({}))) as { event?: AiEvent; error?: string };
+      if (j.event) {
+        onEvent(j.event);
+        setText("");
+      } else toast.error(j.error === "none" ? t("speakNone") : j.error === "rate" ? t("speakRate") : t("speakFail"));
+    } catch {
+      toast.error(t("speakFail"));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <form onSubmit={go} className="workspace-panel ai-ring flex flex-wrap items-center gap-2 p-2.5 pl-4">
+      <Wand2 className="size-5 flex-none text-primary" aria-hidden />
+      <Input value={text} onChange={(e) => setText(e.target.value)} maxLength={300} placeholder={t("speakPh")} aria-label={t("speakLabel")} className="h-11 min-w-0 flex-1 border-0 bg-transparent px-1 text-[15px] shadow-none focus-visible:ring-0" />
+      <Button type="submit" className="h-10 rounded-full px-4" disabled={busy || !text.trim()}>
+        {busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+        {t("speakGo")}
+      </Button>
+    </form>
+  );
+}
+
+// ── Phone calendar (iCal) ────────────────────────────────────────────────────────────────────────────────────────
+
+export function PhoneCalendar({ onClose }: { onClose: () => void }) {
+  const t = useTranslations("calendar.x");
+  const locale = useLocale();
+  const [token, setToken] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const load = async (fresh: boolean) => {
+    setBusy(true);
+    const { data, error } = await supabaseBrowser().rpc("calendar_feed_token", { p_new: fresh });
+    setBusy(false);
+    if (error) return void toast.error(t("icalFail"));
+    setToken(data as string);
+    if (fresh) toast.success(t("icalRenewed"));
+  };
+  useEffect(() => void load(false), []); // eslint-disable-line react-hooks/exhaustive-deps -- once
+  const url = token ? `${window.location.origin}/api/calendar/feed?t=${token}&lang=${locale}` : "";
+  const webcal = url.replace(/^https?:/, "webcal:");
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t("icalCopied"));
+    } catch {
+      toast.error(t("icalFail"));
+    }
+  };
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="rounded-3xl sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarSync className="size-5 text-primary" aria-hidden />
+            {t("icalTitle")}
+          </DialogTitle>
+          <DialogDescription>{t("icalSub")}</DialogDescription>
+        </DialogHeader>
+        {!token ? (
+          <Loader2 className="mx-auto size-6 animate-spin text-muted-foreground" aria-hidden />
+        ) : (
+          <div className="grid gap-3">
+            <Button asChild className="h-12 rounded-full text-[15px]">
+              <a href={webcal}>
+                <CalendarSync className="size-4" />
+                {t("icalOpen")}
+              </a>
+            </Button>
+            <div className="flex items-center gap-2 rounded-2xl bg-muted/60 p-2 pl-3">
+              <code className="min-w-0 flex-1 truncate text-[12px]">{url}</code>
+              <Button type="button" variant="secondary" className="h-9 rounded-full px-3" onClick={() => void copy()}>
+                <Copy className="size-4" />
+                {t("icalCopy")}
+              </Button>
+            </div>
+            <ul className="grid gap-1.5 text-[13px] leading-relaxed text-muted-foreground">
+              <li className="flex gap-2">
+                <Check className="mt-0.5 size-4 flex-none text-ok" aria-hidden />
+                {t("icalIphone")}
+              </li>
+              <li className="flex gap-2">
+                <Check className="mt-0.5 size-4 flex-none text-ok" aria-hidden />
+                {t("icalGoogle")}
+              </li>
+              <li className="flex gap-2">
+                <TriangleAlert className="mt-0.5 size-4 flex-none text-warn" aria-hidden />
+                {t("icalSecret")}
+              </li>
+            </ul>
+            <Button type="button" variant="ghost" className="h-10 w-fit rounded-full text-bad" disabled={busy} onClick={() => window.confirm(t("icalRenewAsk")) && void load(true)}>
+              <RefreshCw className="size-4" />
+              {t("icalRenew")}
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
