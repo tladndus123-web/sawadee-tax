@@ -220,9 +220,8 @@ export function PayRunTab({ month }: { month: string }) {
   const stale = staff.some((e) => savedRates.has(e.id) && !sameRates(savedRates.get(e.id)!, lineRates(settings.ot, e.payType)));
 
   if (!loaded || !ready || !company.loaded) return <Loader2 className="mx-auto my-10 size-5 animate-spin text-muted-foreground" aria-hidden />;
-  const empty = rosterEmpty(employees.length, staff.length);
-  // staff.length === 0 is "nobody employed this month", not "no attendance rows". People already
-  // on file should not be told to add employees; the pay form stays when the roster is non-empty.
+  const empty = rosterEmpty({ employeesInScope: employees.length, onRoster: staff.length });
+  // "Add employees" only when this branch scope is empty. Existing staff with no attendance stay on the form.
   if (empty)
     return (
       <div className="grid gap-3">

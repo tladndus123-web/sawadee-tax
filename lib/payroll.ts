@@ -280,14 +280,25 @@ export function employedInMonth(e: Pick<Employee, "startDate" | "endDate">, mont
 }
 
 /**
- * Why a payroll tab has nobody to list. "Add employees" only when this branch scope is empty.
- * People on file whose start/end dates miss the month are not the same as a company with no staff.
+ * Which empty payroll panel to show.
+ * "add-employees" only when this branch scope has nobody at all.
+ * People already on file — including a full roster with zero attendance or zero worked days —
+ * are never told to add employees. A non-empty roster keeps the pay form.
  */
-export type RosterEmpty = "add-employees" | "off-roster";
+export type RosterEmpty = "add-employees" | "mark-attendance";
 
-export function rosterEmpty(employeesInScope: number, onRoster: number): RosterEmpty | null {
-  if (onRoster > 0) return null;
-  return employeesInScope > 0 ? "off-roster" : "add-employees";
+export function rosterEmpty(input: {
+  employeesInScope: number;
+  onRoster: number;
+  /** Passed through so a month with no attendance marks cannot be treated as "add employees". */
+  withAttendance?: number;
+  /** Passed through so a month with no worked days cannot be treated as "add employees". */
+  withWorkedDays?: number;
+}): RosterEmpty | null {
+  const people = Math.max(0, input.employeesInScope);
+  const roster = Math.max(0, input.onRoster);
+  if (roster > 0) return null;
+  return people > 0 ? "mark-attendance" : "add-employees";
 }
 
 export type PayIssue = "noRate" | "noDays" | "noId" | "badId" | "absentAll";

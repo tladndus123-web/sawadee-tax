@@ -121,7 +121,7 @@ export function AttendanceTab({ month, preview }: { month: string; preview?: Att
   };
 
   if (!loaded || !rows) return <Loader2 className="mx-auto my-10 size-5 animate-spin text-muted-foreground" aria-hidden />;
-  const empty = rosterEmpty(employees.length, staff.length);
+  const empty = rosterEmpty({ employeesInScope: employees.length, onRoster: staff.length });
   if (empty) return <p className="workspace-panel px-5 py-10 text-center text-sm text-muted-foreground">{t(empty === "add-employees" ? "noStaffThisMonth" : "noRosterThisMonth")}</p>;
 
   return (
