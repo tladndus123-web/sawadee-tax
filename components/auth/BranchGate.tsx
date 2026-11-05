@@ -197,7 +197,7 @@ export function BranchGate({ children }: { children: ReactNode }) {
   const t = useTranslations("gate");
   const me = useMe();
   const { branches, loaded } = useBranches();
-  const { pins, loaded: pinsLoaded } = useBranchPins();
+  const { pins, all: allPin, loaded: pinsLoaded } = useBranchPins();
   const selected = useBranch();
   const [state, setState] = useState<"checking" | "open" | "ask">("checking");
 
@@ -221,13 +221,16 @@ export function BranchGate({ children }: { children: ReactNode }) {
 
   if (state === "open") return <>{children}</>;
   if (state === "checking") return <Loader2 className="mx-auto mt-16 size-6 animate-spin text-muted-foreground" aria-label="Loading" />;
+  // Admins open a branch with no lock code. A kept-out branch, or "all branches" when that lock is set, still asks —
+  // then the shared hint stays, so this screen never says a lock code is unnecessary.
+  const adminOpensFree = me.role === "admin" && pins.size === 0 && !(me.allBranches && allPin);
   return (
     <section className="mx-auto grid w-full max-w-md grid-cols-[minmax(0,1fr)] gap-5 pt-4 sm:pt-10" aria-labelledby="gate-title">
       <div className="grid gap-1.5 text-center">
         <h1 id="gate-title" className="text-2xl font-semibold tracking-tight">
           {t("title")}
         </h1>
-        <p className="text-sm text-muted-foreground">{t("hint")}</p>
+        <p className="text-sm text-muted-foreground">{adminOpensFree ? t("hintAdmin") : t("hint")}</p>
       </div>
       <BranchPicker openHome onDone={() => setState("open")} />
     </section>
