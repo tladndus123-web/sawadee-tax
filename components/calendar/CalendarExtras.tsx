@@ -301,27 +301,27 @@ export function PhoneCalendar({ onClose }: { onClose: () => void }) {
   };
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="rounded-3xl sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="overflow-x-clip rounded-3xl sm:max-w-lg">
+        <DialogHeader className="min-w-0">
           <DialogTitle className="flex items-center gap-2">
-            <CalendarSync className="size-5 text-primary" aria-hidden />
-            {t("icalTitle")}
+            <CalendarSync className="size-5 shrink-0 text-primary" aria-hidden />
+            <span className="min-w-0">{t("icalTitle")}</span>
           </DialogTitle>
           <DialogDescription>{t("icalSub")}</DialogDescription>
         </DialogHeader>
         {!token ? (
           <Loader2 className="mx-auto size-6 animate-spin text-muted-foreground" aria-hidden />
         ) : (
-          <div className="grid gap-3">
-            <Button asChild className="h-12 rounded-full text-[15px]">
+          <div className="grid min-w-0 gap-3">
+            <Button asChild className="h-12 w-full min-w-0 rounded-full text-[15px]">
               <a href={webcal}>
                 <CalendarSync className="size-4" />
                 {t("icalOpen")}
               </a>
             </Button>
-            <div className="flex items-center gap-2 rounded-2xl bg-muted/60 p-2 pl-3">
+            <div className="flex min-w-0 items-center gap-2 overflow-hidden rounded-2xl bg-muted/60 p-2 pl-3">
               <code className="min-w-0 flex-1 truncate text-[12px]">{url}</code>
-              <Button type="button" variant="secondary" className="h-9 rounded-full px-3" onClick={() => void copy()}>
+              <Button type="button" variant="secondary" className="h-9 shrink-0 rounded-full px-3" onClick={() => void copy()}>
                 <Copy className="size-4" />
                 {t("icalCopy")}
               </Button>
