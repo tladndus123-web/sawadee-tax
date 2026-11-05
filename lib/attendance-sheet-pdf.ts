@@ -64,9 +64,9 @@ function colorOf(hex: string) {
   return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
 }
 
-/** Top-left layout y → PDF baseline. */
-function baseline(top: number, size: number): number {
-  return SHEET_PAGE.height - top - size * 0.8;
+/** Top-left layout y → PDF baseline on a page of this height. */
+function baseline(pageH: number, top: number, size: number): number {
+  return pageH - top - size * 0.8;
 }
 
 async function openFonts(fonts: SheetFontBytes): Promise<{ measure: (text: string, size: number) => number; doc: PDFDocument; embedded: Record<Face, PDFFont>; faces: Record<Face, GlyphFont> }> {
@@ -97,12 +97,13 @@ export async function buildAttendancePdf(sheet: AttendanceSheet, labels: Attenda
   const { doc, measure, embedded, faces } = await openFonts(fonts);
   const placed = placeSheet(sheet, labels, measure);
   const pages: PDFPage[] = [];
-  for (let i = 0; i < placed.pageCount; i++) pages.push(doc.addPage([SHEET_PAGE.width, SHEET_PAGE.height]));
+  for (let i = 0; i < placed.pageCount; i++) pages.push(doc.addPage([SHEET_PAGE.width, placed.pageHeights[i] ?? SHEET_PAGE.height]));
 
   const paint = (block: SheetBlock) => {
+    const pageH = placed.pageHeights[block.page] ?? SHEET_PAGE.height;
     pages[block.page]?.drawRectangle({
       x: block.x,
-      y: SHEET_PAGE.height - block.y - block.h,
+      y: pageH - block.y - block.h,
       width: Math.max(0, block.w),
       height: Math.max(0, block.h),
       color: colorOf(block.fill),
@@ -110,14 +111,15 @@ export async function buildAttendancePdf(sheet: AttendanceSheet, labels: Attenda
   };
   for (const block of placed.blocks) paint(block);
   for (const rule of placed.rules) {
+    const pageH = placed.pageHeights[rule.page] ?? SHEET_PAGE.height;
     pages[rule.page]?.drawLine({
-      start: { x: rule.x, y: SHEET_PAGE.height - rule.y },
-      end: { x: rule.x + rule.w, y: SHEET_PAGE.height - rule.y },
+      start: { x: rule.x, y: pageH - rule.y },
+      end: { x: rule.x + rule.w, y: pageH - rule.y },
       thickness: 0.7,
       color: colorOf(rule.color),
     });
   }
-  for (const glyph of placed.glyphs) drawGlyph(pages[glyph.page], glyph, embedded, faces);
+  for (const glyph of placed.glyphs) drawGlyph(pages[glyph.page], placed.pageHeights[glyph.page] ?? SHEET_PAGE.height, glyph, embedded, faces);
 
   doc.setTitle(`${labels.title} ${sheet.month}`.trim());
   doc.setCreator("Sawadee TAX");
@@ -125,10 +127,10 @@ export async function buildAttendancePdf(sheet: AttendanceSheet, labels: Attenda
   return doc.save();
 }
 
-function drawGlyph(page: PDFPage | undefined, glyph: SheetGlyph, embedded: Record<Face, PDFFont>, faces: Record<Face, GlyphFont>) {
+function drawGlyph(page: PDFPage | undefined, pageH: number, glyph: SheetGlyph, embedded: Record<Face, PDFFont>, faces: Record<Face, GlyphFont>) {
   if (!page) return;
   let x = glyph.x;
-  const y = baseline(glyph.y, glyph.size);
+  const y = baseline(pageH, glyph.y, glyph.size);
   for (const run of runs(glyph.text, faces)) {
     page.drawText(run.text, { x, y, size: glyph.size, font: embedded[run.face], color: colorOf(glyph.color) });
     x += embedded[run.face].widthOfTextAtSize(run.text, glyph.size);

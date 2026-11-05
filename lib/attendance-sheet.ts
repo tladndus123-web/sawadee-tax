@@ -307,7 +307,10 @@ export interface SheetRule {
 
 export interface SheetPlacement {
   pageWidth: number;
+  /** Tallest page. A short roster is shorter than this, so the picture is not a blank A4. */
   pageHeight: number;
+  /** One height per page, content plus a small padding. Full of rows, this stays near A4. */
+  pageHeights: number[];
   pageCount: number;
   glyphs: SheetGlyph[];
   blocks: SheetBlock[];
@@ -368,24 +371,31 @@ function rowHeight(person: SheetPerson, showBranch: boolean, chunk: Chunk, markS
   return Math.max(22, height, cellH);
 }
 
+interface LeaveBlock {
+  title: boolean;
+  lines: { index: number; text: string; h: number; lines: string[] }[];
+}
 interface GridPage {
   type: "grid";
   chunk: Chunk;
   rowStart: number;
   rowEnd: number;
   heights: number[];
+  /** Leave that still fits under this grid. Only the last page tries. */
+  leave: LeaveBlock | null;
 }
 interface LeavePage {
   type: "leave";
   title: boolean;
-  lines: { index: number; text: string; h: number }[];
+  lines: LeaveBlock["lines"];
 }
 type PageDesc = GridPage | LeavePage;
 
 /**
  * Where every label and day sits. A row is never split. When the month is too wide for one page the
- * days continue on the next page with the names and the title again. The leave lines already on the
- * attendance screen follow the grid.
+ * days continue on the next page with the names and the title again. Leave lines sit under the grid
+ * when the page still has room; only the overflow gets another page. Each page is only as tall as
+ * its content, so a short roster is not a blank A4.
  */
 export function placeSheet(sheet: AttendanceSheet, labels: AttendanceSheetLabels, measure: TextMeasure): SheetPlacement {
   const weekdays = sheet.days.map((day) => day.weekday);
@@ -407,20 +417,20 @@ export function placeSheet(sheet: AttendanceSheet, labels: AttendanceSheetLabels
     const limitFor = headerHFor(chunkSubtitle(sheet, labels, chunk));
     const limit = contentBottom - (MY + limitFor + 6 + 24);
     if (!heights.length) {
-      pages.push({ type: "grid", chunk, rowStart: 0, rowEnd: 0, heights: [] });
+      pages.push({ type: "grid", chunk, rowStart: 0, rowEnd: 0, heights: [], leave: null });
       continue;
     }
     let start = 0;
     let used = 0;
     for (let i = 0; i < heights.length; i++) {
       if (used > 0 && used + heights[i] > limit) {
-        pages.push({ type: "grid", chunk, rowStart: start, rowEnd: i, heights: heights.slice(start, i) });
+        pages.push({ type: "grid", chunk, rowStart: start, rowEnd: i, heights: heights.slice(start, i), leave: null });
         start = i;
         used = 0;
       }
       used += heights[i];
     }
-    pages.push({ type: "grid", chunk, rowStart: start, rowEnd: heights.length, heights: heights.slice(start) });
+    pages.push({ type: "grid", chunk, rowStart: start, rowEnd: heights.length, heights: heights.slice(start), leave: null });
   }
 
   const leaveItems = sheet.people
@@ -430,31 +440,45 @@ export function placeSheet(sheet: AttendanceSheet, labels: AttendanceSheetLabels
       return { index, text, h: Math.max(13, lines.length * 11 + 2), lines };
     })
     .filter((item) => item.text);
-  if (leaveItems.length) {
-    const room = contentBottom - (MY + headerHFor(labels.subtitle) + 8);
-    const titleH = 18;
-    let cursor = 0;
-    while (cursor < leaveItems.length) {
-      let y = titleH;
-      const take: LeavePage["lines"] = [];
-      while (cursor < leaveItems.length && y + leaveItems[cursor].h <= room) {
-        take.push(leaveItems[cursor]);
-        y += leaveItems[cursor].h;
-        cursor++;
+  let leaveAt = 0;
+  const lastGrid = pages[pages.length - 1];
+  if (lastGrid?.type === "grid" && leaveItems.length) {
+    const used = lastGrid.heights.reduce((sum, h) => sum + h, 0);
+    const limit = contentBottom - (MY + headerHFor(chunkSubtitle(sheet, labels, lastGrid.chunk)) + 6 + (sheet.days.length ? 24 : 0));
+    const remain = limit - used - 10;
+    if (remain >= 18 + leaveItems[0].h) {
+      const take: LeaveBlock["lines"] = [];
+      let y = 18;
+      while (leaveAt < leaveItems.length && y + leaveItems[leaveAt].h <= remain) {
+        take.push(leaveItems[leaveAt]);
+        y += leaveItems[leaveAt].h;
+        leaveAt++;
       }
-      if (!take.length) {
-        take.push(leaveItems[cursor]);
-        cursor++;
-      }
-      pages.push({ type: "leave", title: true, lines: take });
+      if (take.length) lastGrid.leave = { title: true, lines: take };
     }
+  }
+  while (leaveAt < leaveItems.length) {
+    const room = contentBottom - (MY + headerHFor(labels.subtitle) + 8);
+    const take: LeaveBlock["lines"] = [];
+    let y = 18;
+    while (leaveAt < leaveItems.length && y + leaveItems[leaveAt].h <= room) {
+      take.push(leaveItems[leaveAt]);
+      y += leaveItems[leaveAt].h;
+      leaveAt++;
+    }
+    if (!take.length) {
+      take.push(leaveItems[leaveAt]);
+      leaveAt++;
+    }
+    pages.push({ type: "leave", title: true, lines: take });
   }
 
   const pageCount = Math.max(pages.length, 1);
   const glyphs: SheetGlyph[] = [];
   const blocks: SheetBlock[] = [];
   const rules: SheetRule[] = [];
-  const drawPages = pages.length ? pages : [{ type: "grid" as const, chunk: { start: 0, end: 0 }, rowStart: 0, rowEnd: 0, heights: [] }];
+  const pageHeights: number[] = [];
+  const drawPages = pages.length ? pages : [{ type: "grid" as const, chunk: { start: 0, end: 0 }, rowStart: 0, rowEnd: 0, heights: [] as number[], leave: null }];
 
   drawPages.forEach((desc, page) => {
     const subtitle = desc.type === "grid" ? chunkSubtitle(sheet, labels, desc.chunk) : labels.subtitle;
@@ -478,6 +502,7 @@ export function placeSheet(sheet: AttendanceSheet, labels: AttendanceSheetLabels
       role: "page",
     });
 
+    let contentEnd = MY + headerH + 4;
     if (desc.type === "grid" && sheet.days.length) {
       const colY = MY + headerH + 6;
       const colH = 24;
@@ -535,32 +560,36 @@ export function placeSheet(sheet: AttendanceSheet, labels: AttendanceSheetLabels
         }
         y += h;
       }
+      if (desc.leave) y = drawLeave(glyphs, page, desc.leave, y + 10, labels, measure);
+      contentEnd = y;
     }
 
-    if (desc.type === "leave") {
-      let y = MY + headerH + 10;
-      if (desc.title) {
-        put(glyphs, { page, text: labels.leaveTitle, x: MX + 2, y, size: 11, color: SHEET_COLORS.ink, box: { x: MX, y, w: innerW, h: 16 }, role: "leave" });
-        y += 18;
-      }
-      for (const line of desc.lines) {
-        const parts = wrapText(line.text, innerW - 8, 8, measure);
-        for (const part of parts) {
-          put(glyphs, { page, text: part, x: MX + 2, y, size: 8, color: SHEET_COLORS.ink, box: { x: MX, y: y - 1, w: innerW, h: 12 }, role: "leave" });
-          y += 11;
-        }
-        y += 2;
-      }
-    }
+    if (desc.type === "leave") contentEnd = drawLeave(glyphs, page, desc, MY + headerH + 10, labels, measure);
 
-    let legendY = SHEET_PAGE.height - MY - footerH + 4;
+    let legendY = contentEnd + 8;
     for (const line of legendLines) {
       put(glyphs, { page, text: line, x: MX, y: legendY, size: 6.5, color: SHEET_COLORS.muted, box: { x: MX, y: legendY - 1, w: innerW, h: 9 }, role: "legend" });
       legendY += 8.5;
     }
+    pageHeights[page] = Math.min(SHEET_PAGE.height, Math.max(legendY + 10, MY + headerH + footerH));
   });
 
-  return { pageWidth: SHEET_PAGE.width, pageHeight: SHEET_PAGE.height, pageCount, glyphs, blocks, rules };
+  return { pageWidth: SHEET_PAGE.width, pageHeight: Math.max(...pageHeights, 1), pageCount, pageHeights, glyphs, blocks, rules };
+}
+
+function drawLeave(glyphs: SheetGlyph[], page: number, leave: LeaveBlock, y: number, labels: AttendanceSheetLabels, measure: TextMeasure): number {
+  if (leave.title) {
+    put(glyphs, { page, text: labels.leaveTitle, x: MX + 2, y, size: 11, color: SHEET_COLORS.ink, box: { x: MX, y, w: innerW, h: 16 }, role: "leave" });
+    y += 16;
+  }
+  for (const line of leave.lines) {
+    const parts = line.lines.length ? line.lines : wrapText(line.text, innerW - 8, 8, measure);
+    for (const part of parts) {
+      put(glyphs, { page, text: part, x: MX + 2, y, size: 8, color: SHEET_COLORS.ink, box: { x: MX, y: y - 1, w: innerW, h: 12 }, role: "leave" });
+      y += 11;
+    }
+  }
+  return y;
 }
 
 function chunkSubtitle(sheet: AttendanceSheet, labels: AttendanceSheetLabels, chunk: Chunk): string {

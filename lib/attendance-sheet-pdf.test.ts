@@ -103,6 +103,9 @@ describe("attendance PDF", () => {
       expect(glyph.y + glyph.size, glyph.text).toBeLessThanOrEqual(SHEET_PAGE.height + 0.8);
       expect(width, glyph.text).toBeLessThanOrEqual(glyph.box.w + 0.8);
     }
+    expect(layout.pageCount).toBe(1);
+    expect(layout.glyphs.some((glyph) => glyph.role === "leave" && glyph.page === 0)).toBe(true);
+    expect(layout.pageHeights[0]).toBeLessThan(SHEET_PAGE.height * 0.85);
     expect(new Set(layout.glyphs.filter((glyph) => glyph.role === "col-day").map((glyph) => glyph.text)).size).toBe(31);
     const bytes = await buildAttendancePdf(sheet, labels, fonts);
     expect(Buffer.from(bytes.subarray(0, 5)).toString()).toBe("%PDF-");

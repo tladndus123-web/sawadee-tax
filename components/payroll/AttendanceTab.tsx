@@ -60,6 +60,8 @@ export function AttendanceTab({ month, preview }: { month: string; preview?: Att
   const [sheetShare, setSheetShare] = useState(false);
   const [fromPhoto, setFromPhoto] = useState(false);
   const [yearRows, setYearRows] = useState<AttendanceRow[]>(preview?.yearRows ?? []);
+  const [leaveReady, setLeaveReady] = useState(!!preview);
+  const [leaveFailed, setLeaveFailed] = useState(false);
   const [open, setOpen] = useState<{ employee: Employee; day: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const today = todayBangkok();
@@ -72,13 +74,18 @@ export function AttendanceTab({ month, preview }: { month: string; preview?: Att
   };
   useEffect(() => {
     if (preview) return;
+    setLeaveReady(false);
+    setLeaveFailed(false);
     setRows(null);
     void loadAttendance({ month })
       .then(setRows)
       .catch(() => setRows([]));
     void loadAttendance({ year })
-      .then(setYearRows)
-      .catch(() => undefined);
+      .then((loadedYear) => {
+        setYearRows(loadedYear);
+        setLeaveReady(true);
+      })
+      .catch(() => setLeaveFailed(true));
   }, [month, year, preview]);
 
   const staff = useMemo(() => employees.filter((e) => inMonth(e, month)), [employees, month]);
@@ -167,6 +174,8 @@ export function AttendanceTab({ month, preview }: { month: string; preview?: Att
           }))}
           rows={rows}
           yearRows={yearRows}
+          leaveReady={leaveReady}
+          leaveFailed={leaveFailed}
           branch={branchScope}
         />
       )}

@@ -188,6 +188,22 @@ describe("attendance sheet pages", () => {
     const joined = textOf(layout.glyphs, "name").join(" ");
     expect(joined).toContain("직원 01");
     expect(joined).toContain("직원 36");
+    expect(layout.pageHeights[0]).toBeGreaterThan(SHEET_PAGE.height * 0.8);
+    fits(layout.glyphs, approxTextWidth);
+  });
+
+  it("keeps leave under a short roster instead of a blank extra page", () => {
+    const people = Array.from({ length: 6 }, (_, i) => staff({ id: `e${i}`, name: `예시 ${i + 1}` }));
+    const { layout } = placed(people, { month: "2026-01" });
+    expect(layout.pageCount).toBe(1);
+    const leave = textOf(layout.glyphs, "leave").join(" ");
+    expect(leave).toContain("2026년 휴가");
+    expect(leave).toContain("예시 1");
+    expect(leave).toContain("예시 6");
+    const bottom = Math.max(...layout.glyphs.map((glyph) => glyph.y + glyph.size));
+    expect(layout.pageHeights[0]).toBeGreaterThan(bottom);
+    expect(layout.pageHeights[0] - bottom).toBeLessThan(36);
+    expect(layout.pageHeights[0]).toBeLessThan(SHEET_PAGE.height * 0.8);
     fits(layout.glyphs, approxTextWidth);
   });
 

@@ -6,9 +6,8 @@ import { routing } from "./i18n/routing";
 
 const intl = createMiddleware(routing);
 
-/** Pages that work without signing in: the login form, the magic-link landing page, an accountant's month link.
- *  "dev" is the local example attendance sheet; that page itself answers 404 in production. */
-const PUBLIC = new Set(["login", "auth", "share", "dev"]);
+/** Pages that work without signing in: the login form, the magic-link landing page, an accountant's month link. */
+const PUBLIC = new Set(["login", "auth", "share"]);
 
 export default async function middleware(req: NextRequest) {
   // Language: the one the person picked before (cookie), otherwise Japanese — not the browser's language.
@@ -37,7 +36,10 @@ export default async function middleware(req: NextRequest) {
 
   const [, locale, section] = req.nextUrl.pathname.split("/");
   const localized = (routing.locales as readonly string[]).includes(locale);
-  if (!localized || PUBLIC.has(section ?? "")) return res;
+  // The example attendance page exists only for local development. Production keeps it behind sign-in,
+  // and the page itself answers 404 there.
+  const devPreview = process.env.NODE_ENV !== "production" && section === "dev";
+  if (!localized || PUBLIC.has(section ?? "") || devPreview) return res;
 
   const toLogin = (reason?: "removed" | "expired") => {
     const to = new URL(`/${locale}/login`, req.url);

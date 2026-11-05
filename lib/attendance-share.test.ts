@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deliverAttendanceFiles, pngScaleFor, PNG_MAX_EDGE, type ShareFile } from "./attendance-share";
+import { attendanceExportStamp, deliverAttendanceFiles, pngScaleFor, PNG_MAX_EDGE, shareNow, type ShareFile } from "./attendance-share";
 
 const file = (name: string, type = "image/png"): ShareFile => ({ name, type });
 
@@ -94,6 +94,54 @@ describe("sharing an attendance file", () => {
     });
     expect(result).toEqual({ status: "saved-instead", reason: "failed", files: ["a.pdf", "b.pdf"] });
     expect(downloaded).toEqual(["a.pdf", "b.pdf"]);
+  });
+});
+
+describe("share stays inside the click", () => {
+  const person = (id: string, annualUsed = 0) => ({ id, cells: [{ kind: "work" as string | null, otHours: 0 }], annualUsed, annualEntitled: 6, sickUsed: 0 });
+
+  it("calls share before a later turn can clear the gesture", async () => {
+    let active = true;
+    const seen: string[] = [];
+    const pending = shareNow(() => {
+      seen.push(active ? "in-gesture" : "too-late");
+      if (!active) {
+        const error = new Error("not allowed");
+        error.name = "NotAllowedError";
+        throw error;
+      }
+      return Promise.resolve();
+    });
+    expect(seen).toEqual(["in-gesture"]);
+    active = false;
+    await expect(pending).resolves.toBe("shared");
+  });
+
+  it("the same guard rejects a share that waits for preparation first", async () => {
+    let active = true;
+    const prepare = async () => {
+      await Promise.resolve();
+      active = false;
+    };
+    await prepare();
+    await expect(
+      shareNow(() => {
+        if (!active) {
+          const error = new Error("not allowed");
+          error.name = "NotAllowedError";
+          throw error;
+        }
+        return Promise.resolve();
+      }),
+    ).resolves.toBe("failed");
+  });
+
+  it("a new person or a new leave total is a different file", () => {
+    const base = { month: "2026-01", branchId: "b", personId: "", format: "pdf", people: [person("a", 1), person("b")] };
+    expect(attendanceExportStamp(base)).toBe(attendanceExportStamp({ ...base, people: [person("a", 1), person("b")] }));
+    expect(attendanceExportStamp({ ...base, personId: "a" })).not.toBe(attendanceExportStamp(base));
+    expect(attendanceExportStamp({ ...base, people: [person("a", 2), person("b")] })).not.toBe(attendanceExportStamp(base));
+    expect(attendanceExportStamp({ ...base, format: "png" })).not.toBe(attendanceExportStamp(base));
   });
 });
 

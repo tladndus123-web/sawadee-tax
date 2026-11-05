@@ -47,7 +47,39 @@ export async function deliverAttendanceFiles(input: {
   }
 }
 
-/** Save a file on this device. Several pictures are saved one after another. */
+/**
+ * Call the system share sheet in this turn. `share` runs before this function waits, so a click
+ * handler can pass `() => navigator.share(...)` and still be inside the user's gesture.
+ * Anything awaited before this call is too late on a slow phone.
+ */
+export function shareNow(share: () => Promise<void> | void): Promise<"shared" | "cancelled" | "failed"> {
+  try {
+    return Promise.resolve(share()).then(
+      () => "shared" as const,
+      (error: unknown) => classifyShareError(error),
+    );
+  } catch (error) {
+    return Promise.resolve(classifyShareError(error));
+  }
+}
+
+function classifyShareError(error: unknown): "cancelled" | "failed" {
+  const name = error && typeof error === "object" && "name" in error ? String((error as { name: unknown }).name) : "";
+  return name === "AbortError" ? "cancelled" : "failed";
+}
+
+/** Changes when the sheet, the person, or the file type changes, so a prepared file is not reused. */
+export function attendanceExportStamp(input: {
+  month: string;
+  branchId: string;
+  personId: string;
+  format: string;
+  people: readonly { id: string; cells: readonly { kind: string | null; otHours: number }[]; annualUsed: number; annualEntitled: number; sickUsed: number }[];
+}): string {
+  return JSON.stringify(input);
+}
+
+/** Save a file on this device. One click saves one file, so the browser is not asked for several at once. */
 export function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
