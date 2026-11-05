@@ -115,13 +115,15 @@
   --rule-soft: #e8e8ed;
   --shadow-soft: 0 1px 2px rgb(0 0 0 / 4%), 0 8px 28px rgb(0 0 0 / 5%);
   --shadow-lift: 0 2px 6px rgb(0 0 0 / 5%), 0 18px 48px rgb(0 0 0 / 9%);
-  /* Apple Intelligence spectrum */
-  --ai-1: #0894ff;
-  --ai-2: #c959dd;
-  --ai-3: #ff2e54;
-  --ai-4: #ff9004;
-  --ai-gradient: linear-gradient(115deg, var(--ai-1), var(--ai-2) 38%, var(--ai-3) 68%, var(--ai-4));
-  --ai-conic: conic-gradient(from 180deg, var(--ai-1), var(--ai-2), var(--ai-3), var(--ai-4), var(--ai-1));
+  /* Intelligence chrome: brand blues (app mark, login glow, upload drop).
+     The fill skips the pale halo so white icons and gradient text stay readable.
+     .intelligence-mark.is-soft does not use these — it stays gray. */
+  --ai-1: #8ebfff;
+  --ai-2: #3b8bff;
+  --ai-3: #0071e3;
+  --ai-4: #0a5ce6;
+  --ai-gradient: linear-gradient(160deg, var(--ai-2), var(--ai-3) 52%, var(--ai-4));
+  --ai-conic: conic-gradient(from 180deg, var(--ai-1), var(--ai-2), var(--ai-3), var(--ai-4), var(--ai-2), var(--ai-1));
   --sidebar: #fafafa;
   --sidebar-foreground: #1d1d1f;
   --sidebar-primary: #1d1d1f;
@@ -488,9 +490,7 @@
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 20%));
 }
 
-/* Photo drop zone only. The shared spectrum (--ai-gradient, pink / orange) stays on
-   other screens. This card's rim and wash use the app-mark blues and the pick
-   button (--brand). */
+/* Photo drop zone. Same blues as the shared --ai-gradient (app mark and the pick button). */
 .upload-drop {
   --ai-gradient: linear-gradient(160deg, #3b8bff, #0071e3 52%, #0a5ce6);
 }
@@ -985,8 +985,7 @@ html.print-fit .invoice-paper {
   to { opacity: 1; }
 }
 
-/* Login card only. The shared spectrum (--ai-conic, pink / orange) stays on confirm
-   cards and other marks. This halo uses the app-mark blues and the sign-in button. */
+/* Login card halo. Same blue family as --ai-conic and the sign-in button. */
 .login-card {
   isolation: isolate;
 }
