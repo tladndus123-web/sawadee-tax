@@ -24,4 +24,19 @@ describe("screen words", () => {
     expect(keys(th)).toEqual(keys(ko));
     expect(keys(en)).toEqual(keys(ko));
   });
+
+  // Account sign-in is a mail link. The branch gate is a separate lock, so its words must not
+  // sound like another login or like the password the sign-in screen said you do not have.
+  it("sign-in and the branch lock use different words", () => {
+    const banned = (m: unknown, phrases: string[]) =>
+      strings(m)
+        .filter(([path, s]) => (path === "auth.intro" || path.startsWith("gate.") || path === "branch.staffSwitchHint") && phrases.some((p) => s.includes(p)))
+        .map(([path]) => path);
+    expect(banned(ko, ["비밀번호는 필요 없습니다", "간편 로그인", "지점 비밀번호"])).toEqual([]);
+    expect(banned(ja, ["パスワードは不要です", "かんたんログイン", "店舗パスワード"])).toEqual([]);
+    expect(banned(en, ["No password needed", "quick sign-in", "Branch password", "branch password"])).toEqual([]);
+    expect(banned(th, ["ไม่ต้องใช้รหัสผ่าน", "เข้าสู่ระบบด่วน", "รหัสผ่านสาขา"])).toEqual([]);
+    expect(ko.gate.passkey).toBe("지점 잠금 해제");
+    expect(ko.gate.hintAdmin).toContain("잠금 번호");
+  });
 });
