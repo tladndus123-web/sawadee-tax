@@ -16,7 +16,8 @@ interface Report {
   actions: { title: string; why: string; link: string }[];
 }
 
-export function SalesInsight({ month }: { month: string }) {
+/** `wide`: a full-width card — the summary and the to-dos side by side on a wide screen */
+export function SalesInsight({ month, wide = false }: { month: string; wide?: boolean }) {
   const t = useTranslations("sales.ai");
   const locale = useLocale();
   const [report, setReport] = useState<Report | null>(null);
@@ -33,7 +34,7 @@ export function SalesInsight({ month }: { month: string }) {
   }, [month, locale, round]);
 
   return (
-    <section className="workspace-panel ai-ring grid content-start gap-3.5 p-5 sm:p-6" aria-label={t("title")} aria-busy={state === "loading"}>
+    <section className="workspace-panel ai-ring flex flex-col gap-3.5 p-5 sm:p-6" aria-label={t("title")} aria-busy={state === "loading"}>
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-[13px] font-semibold text-primary">
           <Sparkles className="size-4" aria-hidden />
@@ -57,7 +58,8 @@ export function SalesInsight({ month }: { month: string }) {
           ))}
         </div>
       ) : state === "ok" && report ? (
-        <>
+        <div className={cn("grid flex-1 content-start gap-3.5", wide && "lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-x-8")}>
+          <div className="grid content-start gap-3.5">
           <p className="text-[15.5px] leading-relaxed font-semibold text-pretty">{report.headline}</p>
           {report.points.length > 0 && (
             <ul className="grid gap-1.5">
@@ -69,8 +71,10 @@ export function SalesInsight({ month }: { month: string }) {
               ))}
             </ul>
           )}
+          {wide && <p className="hidden text-[11.5px] text-muted-foreground lg:block">{t("note")}</p>}
+          </div>
           {report.actions.length > 0 && (
-            <div className="grid gap-2">
+            <div className="grid content-start gap-2">
               <span className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground">
                 <Lightbulb className="size-3.5" aria-hidden />
                 {t("todo")}
@@ -104,8 +108,8 @@ export function SalesInsight({ month }: { month: string }) {
               </ol>
             </div>
           )}
-          <p className="text-[11.5px] text-muted-foreground">{t("note")}</p>
-        </>
+          <p className={cn("text-[11.5px] text-muted-foreground", wide && "lg:hidden")}>{t("note")}</p>
+        </div>
       ) : (
         <p className="text-[14px] text-muted-foreground">{state === "fail" ? t("fail") : t("none")}</p>
       )}

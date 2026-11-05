@@ -51,7 +51,7 @@ export function SaleCalendar({
   if (!cals.length) return null;
 
   return (
-    <section className="workspace-panel grid gap-4 p-5 sm:p-6" aria-labelledby="salecal-title">
+    <section className="workspace-panel grid content-start gap-4 p-5 sm:p-6" aria-labelledby="salecal-title">
       <div className="grid gap-1">
         <h2 id="salecal-title" className="flex items-center gap-2 text-sm font-semibold">
           <CalendarCheck className="size-4 text-brand" aria-hidden />

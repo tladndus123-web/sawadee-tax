@@ -199,11 +199,15 @@ export function SalesPage() {
   ) : null;
   const branchOf = (id: string) => branches.find((b) => b.id === id);
 
-  // The AI's look at the month (Sonnet; admins nobody limited) sits on the right; with one branch the right column
-  // already holds its input calendar, so the weekdays move left under the costs and the two columns end together
-  const ai = loaded && fullAdmin(me) ? <SalesInsight month={month} /> : null;
+  // Two columns with no hole (owner 2026-11-06: "빈자리가 싫어"): the cards are arranged so both columns hold about the
+  // same, and the last card of each column stretches to the row's height.
+  //   all branches:          costs | weekdays (+ app fees)          AI full width below (its two halves side by side)
+  //   one branch, app fees:  costs + weekdays | calendar + app fees  AI full width below
+  //   one branch, no fees:   costs + weekdays | calendar + AI
+  const showAi = loaded && fullAdmin(me);
+  const hasFees = fees.lines.length > 0;
+  const aiBeside = showAi && !many && !hasFees;
   const weekday = loaded ? <WeekdayCard sales={sales} today={today} /> : null;
-  const weekdayLeft = !!ai && !many;
 
   return (
     <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6">
@@ -328,22 +332,24 @@ export function SalesPage() {
 
       {/* PC: two columns (owner 2026-10-27: the page ran on in one long column) — costs left, the days right */}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-2">
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-6">
+      <div className="flex min-w-0 flex-col gap-6 xl:[&>*:last-child]:flex-1">
       {/* Food cost, labour and rent against sales */}
       <CostCard month={month} salesValue={r.salesValue} purchases={purchases} fixed={fixed} />
-
-      {/* Delivery apps: commission and payout (shown once the month has app sales) */}
-      {fees.lines.length > 0 && <AppFeesCard f={fees} />}
-      {weekdayLeft && weekday}
+      {/* Which weekdays sell (one branch: under the costs, the calendar takes the right) */}
+      {!many && weekday}
       </div>
-      <div className="grid min-w-0 content-start gap-6">
+      <div className="flex min-w-0 flex-col gap-6 xl:[&>*:last-child]:flex-1">
       {/* One branch: its input calendar here, beside the costs */}
       {!many && calendar}
-      {/* Which weekdays sell: the average day over the last weeks */}
-      {!weekdayLeft && weekday}
-      {ai}
+      {many && weekday}
+      {/* Delivery apps: commission and payout (shown once the month has app sales) */}
+      {hasFees && <AppFeesCard f={fees} />}
+      {aiBeside && <SalesInsight month={month} />}
       </div>
       </div>
+
+      {/* The AI's look at the month, full width (Sonnet; admins nobody limited) */}
+      {showAi && !aiBeside && <SalesInsight month={month} wide />}
 
       {/* All branches: their calendars in one row below (owner 2026-10-27: three in a 2-column card left one alone) */}
       {many && calendar}
