@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, ChevronDown, Download, FileImage, FilePen, FileText, Loader2, Printer, Save, X } from "lucide-react";
+import { CalendarDays, ChevronDown, Download, FileImage, FilePen, FileText, Loader2, Printer, Save, TriangleAlert, X } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
@@ -120,6 +121,11 @@ export function DocumentReview({
   const watched = useWatch({ control }) as LedgerDoc;
   const doc = useMemo(() => normalize({ ...watched, id: initial.id }), [watched, initial.id]);
   const results = useMemo(() => runChecks(doc, { companyTaxId, others }), [doc, companyTaxId, others]);
+  // The same seller and document number already in the ledger: saving again would claim its VAT twice. Shown on top;
+  // a new document is saved only after the person ticks that it is another one (owner 2026-11-06: check, not block)
+  const dupFound = results.some((c) => c.key === "dup" && !c.ok);
+  const dupOf = dupFound ? (others ?? []).find((x) => x.id !== initial.id && x.docNo === doc.docNo && x.sellerTaxId.replace(/\D/g, "") === doc.seller.taxId.replace(/\D/g, "")) : undefined;
+  const [dupChecked, setDupChecked] = useState(false);
   const categoryOptions = useCategoryOptions(doc.category);
 
   const [editing, setEditing] = useState(startEditing);
@@ -219,6 +225,11 @@ export function DocumentReview({
 
   const save = handleSubmit(
     async (d) => {
+      if (dupFound && isNew && !dupChecked) {
+        toast.error(t("dupBanner.needCheck"));
+        document.getElementById("dup-banner")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
       setBusy("save");
       try {
         await onSave(await translated(dropEmptyItems(normalize({ ...d, id: initial.id }))));
@@ -267,6 +278,29 @@ export function DocumentReview({
             <p className="text-[26px] leading-tight font-semibold tracking-tight tabular-nums [overflow-wrap:anywhere]">{baht(doc.totals.net)}</p>
           </div>
         </header>
+
+        {dupFound && (
+          <div id="dup-banner" role="alert" className={cn("grid gap-2 rounded-2xl border-2 border-bad/40 bg-bad-soft p-4 text-sm print:hidden", !manual && "lg:col-span-2")}>
+            <p className="flex items-center gap-2 text-[15px] font-semibold text-bad">
+              <TriangleAlert className="size-5 flex-none" aria-hidden />
+              {t("dupBanner.title")}
+            </p>
+            <p className="text-foreground/80">
+              {t("dupBanner.body", { no: doc.docNo })}{" "}
+              {dupOf?.id && (
+                <Link href={`/documents/${dupOf.id}`} className="font-semibold text-bad underline">
+                  {t("dupBanner.open")}
+                </Link>
+              )}
+            </p>
+            {isNew && (
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl bg-card px-3 font-medium">
+                <input type="checkbox" className="size-5" checked={dupChecked} onChange={(e) => setDupChecked(e.target.checked)} />
+                {t("dupBanner.check")}
+              </label>
+            )}
+          </div>
+        )}
 
         {!manual && <>
         <div className="sticky top-16 z-30 -mx-1 min-w-0 rounded-[14px] bg-background/80 p-1 backdrop-blur-xl lg:hidden print:hidden">

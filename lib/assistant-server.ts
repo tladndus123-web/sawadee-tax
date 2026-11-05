@@ -28,6 +28,10 @@ import { monthCosts } from "./cost-split";
 import { summarize, vatFiling } from "./dashboard";
 import { foodCostPct, ledger, salesOf, shiftMonth, sumOf, type Admin } from "./line-ask-server";
 import { priceRises } from "./price-watch";
+import { type Branch, branchSummaries } from "./branches";
+import { costInputs } from "./month-end-server";
+import { cashCostLines } from "./petty-cash";
+import { fixedForMonth } from "./fixed-costs";
 import { todayBangkok } from "./thai-tax";
 
 const r0 = (n: number) => Math.round(n);
@@ -37,13 +41,15 @@ export async function booksContext(admin: Admin, today: string, deep: boolean, a
   const month = today.slice(0, 7);
   const months = Array.from({ length: deep ? 6 : 3 }, (_, i) => shiftMonth(month, -i)).reverse();
   const first = `${months[0]}-01`;
-  const [{ saved, taxId, company }, sales, branches, cats, payroll, ownTargets] = await Promise.all([
+  const [{ saved, taxId, company }, sales, branches, cats, payroll, ownTargets, inputs] = await Promise.all([
     ledger(admin),
     salesOf(admin, first, today),
     admin.from("branches").select("id, no, name, sales_target").order("sort"),
     serverCategories(),
     admin.from("payroll_lines").select("month, gross, net, wht, ss_employee, ss_employer").in("month", months),
     admin.from("branch_targets").select("branch_id, amount").eq("month", month),
+    // Labour typed in, fixed costs without an invoice, petty cash, stock: the same as the dashboard and the P&L
+    costInputs(admin),
   ]);
   // This month's target per branch: its own for the month, else the standing one (sales without VAT)
   const targetOf = (b: { id: unknown; sales_target: unknown }) =>
@@ -59,7 +65,7 @@ export async function booksContext(admin: Admin, today: string, deep: boolean, a
   };
 
   const lines: string[] = [`# ${company || "Our company"} — books as of ${today} (Bangkok)`];
-  lines.push(`Branches: ${(branches.data ?? []).map((b) => `${branchName(b.id as string)}${targetOf(b) ? ` (target this month ${r0(targetOf(b))} without VAT)` : ""}`).join(", ") || "one"}`);
+  lines.push(`Branches (write "Head office" in the reader's language): ${(branches.data ?? []).map((b) => `${branchName(b.id as string)}${targetOf(b) ? ` (target this month ${r0(targetOf(b))} without VAT)` : ""}`).join(", ") || "one"}`);
 
   lines.push("", "## By month (sales gross incl. VAT; purchases = documents' net totals)");
   for (const m of months) {
@@ -74,6 +80,32 @@ export async function booksContext(admin: Admin, today: string, deep: boolean, a
         (byCat.length ? `\n  costs by category: ${byCat.map(([k, v]) => `${catName(k)} ${r0(v / 100)}`).join(", ")}` : ""),
     );
   }
+
+  // Profit as the dashboard and the P&L show it: sales without VAT − costs − labour, per branch too
+  const brs = (branches.data ?? []).map(
+    (b, i): Branch => ({ id: b.id as string, no: b.no as string, name: (b.name as string) ?? "", sort: i, color: "", closedDays: [], salesTarget: Number(b.sales_target) || 0 }),
+  );
+  const costLines = [...inputs.fixed, ...cashCostLines(inputs.cash)];
+  const pct = (part: number, whole: number) => (whole > 0 ? `${Math.round((part / whole) * 1000) / 10}%` : "—");
+  lines.push(
+    "",
+    "## Profit by month (as on the dashboard: sales without VAT; costs = purchases + fixed costs without an invoice (rent, internet …) + petty cash, stock change counted; labour = wages + social security typed in on the sales screen (cost control) or from saved payroll; profit = sales − costs − labour; labour % and costs % are of sales without VAT)",
+  );
+  for (const m of months) {
+    const { rows, total } = branchSummaries(brs, docs, inputs.sales, m, taxId, inputs.labor, costLines, inputs.stock);
+    const fixedM = r0([...fixedForMonth(inputs.fixed, m).values()].reduce((a, v) => a + v, 0) / 100);
+    const one = (name: string, r: typeof total) =>
+      `${name}: sales ${r0(r.salesValue)} · costs ${r0(r.purchasesCost)} (${pct(r.purchasesCost, r.salesValue)}) · labour ${r0(r.labor)} (${pct(r.labor, r.salesValue)}) · profit ${r0(r.profit)} (margin ${pct(r.profit, r.salesValue)})`;
+    lines.push(`${m}${m === month ? " (so far)" : ""} — ${one("all branches", total)}${fixedM ? ` · of the costs, fixed costs ${fixedM}` : ""}`);
+    if (rows.length > 1) for (const row of rows) if (row.result.salesValue || row.result.purchasesCost || row.result.labor) lines.push(`  ${one(branchName(row.branch.id), row.result)}`);
+  }
+  const labourMonths = months.filter((m) => inputs.labor.some((l) => l.month === m));
+  lines.push(
+    labourMonths.length
+      ? `Labour is typed in for: ${labourMonths.join(", ")}.`
+      : "No labour typed in for these months yet (it is typed in on the sales screen under cost control, or comes from saved payroll).",
+  );
+  lines.push("When naming screens or buttons, describe them in the reader's language; never quote English button names.");
 
   // Day by day from the start of last month (long analyses: three months), with the sales channels per month
   const since = `${shiftMonth(month, deep ? -2 : -1)}-01`;

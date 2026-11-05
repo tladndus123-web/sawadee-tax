@@ -1,6 +1,9 @@
 // Batch upload queue (step 6): up to MAX_QUEUE photos waiting, MAX_PHOTOS of them read by the AI at the same
 // time (the rest wait their turn — continuous shooting can add many quickly).
-// Kept in module memory so it survives moving between screens; the database replaces it in step 5.
+// Kept in module memory so it survives moving between screens, and on the device (IndexedDB, lib/idb-cache) so a
+// reload, a closed tab or the LINE browser going away keeps what was read — reading again would cost again
+// (owner 2026-11-06). A reading still running when the page goes comes back as "stopped" (try again). Signing out
+// clears it with the rest of the device cache.
 
 import { useSyncExternalStore } from "react";
 import { type ExtractErrorCode, MAX_PHOTOS, MAX_QUEUE } from "./extract-schema";
@@ -17,6 +20,7 @@ import { companyTaxId } from "./company-store";
 import { knownPhotos, saveEntry } from "./ledger-store";
 import { findDuplicate, photoHash } from "./photo-hash";
 import { supabaseBrowser } from "./supabase/client";
+import { cacheGet, cacheSet } from "./idb-cache";
 import { withVendor } from "./vendor-store";
 import { canAutoRegister, type VendorFix } from "./vendors";
 import type { LedgerDoc } from "./types";
@@ -61,7 +65,51 @@ const cutOuts = new Set<string>();
 /** How many receipts were cut from the same photo as this one (not set = a photo of its own) */
 const together = new Map<string, number>();
 
-const emit = () => listeners.forEach((l) => l());
+const KEPT = "upload:v1";
+type Kept = Omit<UploadItem, "preview"> & { photo: Blob | null; pdf: Blob | null; cutOut: boolean; together?: number };
+let keepTimer: ReturnType<typeof setTimeout> | undefined;
+/** Write the list to the device a moment after it changes (photos included) */
+function keep() {
+  if (typeof window === "undefined") return;
+  clearTimeout(keepTimer);
+  keepTimer = setTimeout(() => {
+    const kept: Kept[] = items
+      .filter((it) => it.status !== "preparing" && (photos.has(it.id) || it.doc))
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- the preview URL is made again on restore
+      .map(({ preview: _p, ...it }) => ({
+        ...it,
+        status: it.status === "reading" || it.status === "queued" ? "stopped" : it.status,
+        photo: photos.get(it.id) ?? null,
+        pdf: pdfs.get(it.id) ?? null,
+        cutOut: cutOuts.has(it.id),
+        together: together.get(it.id),
+      }));
+    void cacheSet(KEPT, kept.length ? kept : null);
+  }, 400);
+}
+let restored = false;
+/** Once per page: bring back the list kept on this device (only when nothing was added yet) */
+function restore() {
+  if (restored || typeof window === "undefined") return;
+  restored = true;
+  void cacheGet<Kept[]>(KEPT).then((kept) => {
+    if (!kept?.length || items.length) return;
+    const asFile = (b: Blob, name: string) => (b instanceof File ? b : new File([b], name, { type: b.type || "image/jpeg" }));
+    items = kept.map(({ photo, pdf, cutOut, together: n, ...it }) => {
+      if (photo) photos.set(it.id, asFile(photo, "photo.jpg"));
+      if (pdf) pdfs.set(it.id, asFile(pdf, it.name || "document.pdf"));
+      if (cutOut) cutOuts.add(it.id);
+      if (n) together.set(it.id, n);
+      return { ...it, preview: photo ? URL.createObjectURL(photo) : null };
+    });
+    emit();
+  });
+}
+
+const emit = () => {
+  listeners.forEach((l) => l());
+  keep();
+};
 const patch = (id: string, change: Partial<UploadItem>) => {
   items = items.map((it) => (it.id === id ? { ...it, ...change } : it));
   emit();
@@ -70,6 +118,7 @@ const patch = (id: string, change: Partial<UploadItem>) => {
 export function useUploadQueue(): UploadItem[] {
   return useSyncExternalStore(
     (l) => {
+      restore();
       listeners.add(l);
       return () => listeners.delete(l);
     },

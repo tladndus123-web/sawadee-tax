@@ -316,7 +316,7 @@ export function SalesPage() {
 
       {/* PC: two columns (owner 2026-10-27: the page ran on in one long column) — costs left, the days right */}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-2">
-      <div className="grid min-w-0 gap-6">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6">
       {/* Food cost, labour and rent against sales */}
       <CostCard month={month} salesValue={r.salesValue} purchases={purchases} fixed={fixed} />
 

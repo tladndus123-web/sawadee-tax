@@ -216,6 +216,7 @@ export function BatchUpload() {
               <Row
                 key={it.id}
                 it={it}
+                dupDoc={it.doc && it.doc.docNo ? others.find((o) => o.docNo === it.doc!.docNo && o.sellerTaxId.replace(/\D/g, "") === it.doc!.seller.taxId.replace(/\D/g, "")) : undefined}
                 now={now}
                 errorText={errorText}
                 onReview={() => setReviewing(it.id)}
@@ -248,12 +249,15 @@ function VendorNotice({ fixed }: { fixed: string[] }) {
 /** "Up to 5 at once" pill, also used on the dashboard */
 function Row({
   it,
+  dupDoc,
   now,
   errorText,
   onReview,
   onRetake,
 }: {
   it: UploadItem;
+  /** A ledger document with the same seller and number */
+  dupDoc?: { id: string };
   now: number;
   errorText: (e: UploadError | null) => string;
   onReview: () => void;
@@ -281,10 +285,19 @@ function Row({
       <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-semibold">{title}</p>
         {(it.status === "done" || it.status === "saved") && it.doc ? (
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground tabular-nums">{baht(it.doc.totals.net)}</span>
-            {it.doc.docNo && <span className="mono text-xs">{it.doc.docNo}</span>}
-          </p>
+          <>
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground tabular-nums">{baht(it.doc.totals.net)}</span>
+              {it.doc.docNo && <span className="mono text-xs">{it.doc.docNo}</span>}
+            </p>
+            {/* The same seller and number already in the ledger: check before saving (VAT would count twice) */}
+            {it.status === "done" && dupDoc && (
+              <p className="mt-1 flex w-fit items-center gap-1.5 rounded-full bg-bad-soft px-2.5 py-0.5 text-xs font-semibold text-bad">
+                <TriangleAlert className="size-3.5" aria-hidden />
+                {t("dupBanner.card")}
+              </p>
+            )}
+          </>
         ) : it.status === "check" ? (
           <p className="mt-0.5 text-xs leading-relaxed text-warn">
             {it.issues.map((i) => t(`batch.issue.${i}`)).join(" · ")}.{" "}

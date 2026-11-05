@@ -2237,5 +2237,13 @@
     "closedTitle": "You can’t open this screen",
     "closedHint": "Only the screens an owner chose can be opened.",
     "home": "Go to dashboard"
+  },
+  "dupBanner": {
+    "title": "This document is already in the ledger",
+    "body": "A document with the same seller and number ({no}) is already saved. Saving it again would claim its VAT twice.",
+    "open": "Open the saved one",
+    "check": "I checked: this is a different document (e.g. same number from another branch)",
+    "needCheck": "Check whether it is a duplicate, then tick the box.",
+    "card": "Possible duplicate · look when you check it"
   }
 }

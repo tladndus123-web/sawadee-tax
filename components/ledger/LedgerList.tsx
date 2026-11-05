@@ -96,7 +96,8 @@ export function LedgerList() {
 
   return (
     <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6">
-      <header className="grid gap-4">
+      {/* One column the width of the screen: a long label (Thai) wraps instead of widening the page */}
+      <header className="grid grid-cols-[minmax(0,1fr)] gap-4 [&>*]:min-w-0">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="grid gap-3">
             <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("nav.ledger")}</h1>
@@ -291,7 +292,8 @@ function FilterBar({ filter, onChange, entries }: { filter: ArchiveFilter; onCha
       on ? "bg-foreground text-background" : "bg-card text-muted-foreground shadow-[0_0_0_1px_var(--border)] hover:text-foreground",
     );
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label={t("stickers")}>
+    // Phones: one row that scrolls sideways, on its own line; min-w-0 so it never widens the page (a long category list)
+    <div className="-mx-4 flex min-w-0 basis-[calc(100%+2rem)] gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:basis-auto sm:flex-wrap sm:px-0" role="group" aria-label={t("stickers")}>
       <button type="button" aria-pressed={!filter.stickers.length} className={chip(!filter.stickers.length)} onClick={() => onChange({ ...filter, stickers: [] })}>
         {t("stickerAll")}
       </button>
@@ -323,7 +325,7 @@ function FilterBar({ filter, onChange, entries }: { filter: ArchiveFilter; onCha
         <select
           value={filter.category ?? ""}
           onChange={(e) => onChange({ ...filter, category: e.target.value || undefined })}
-          className={cn(chip(!!filter.category), "appearance-none pr-7")}
+          className={cn(chip(!!filter.category), "max-w-[13rem] appearance-none truncate pr-7")}
         >
           <option value="">{t("categoryAll")}</option>
           {cats.map((c) => (

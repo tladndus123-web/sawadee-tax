@@ -86,8 +86,8 @@ export function CostCard({ month, salesValue, purchases, fixed, fold }: { month:
   });
 
   return (
-    <section className="workspace-panel hover-lift [--lift:1.006] flex flex-col gap-4 p-5 sm:p-6" aria-labelledby="cost-title">
-      <div className="grid gap-3">
+    <section className="workspace-panel hover-lift [--lift:1.006] flex min-w-0 flex-col gap-4 p-5 sm:p-6" aria-labelledby="cost-title">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
         <div className="flex items-center gap-1">
           <h2 id="cost-title" className="flex min-w-0 flex-1 items-center gap-2 text-[15px] font-semibold">
             <ChefHat className="size-4 flex-none text-brand" aria-hidden />
@@ -261,7 +261,8 @@ function Headline({ code, label, line }: { code: string; label: string; line: Co
       </span>
       <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className={cn("text-[28px] leading-tight font-semibold tracking-tight tabular-nums", TONE[line.level])}>{line.pct === null ? "–" : `${line.pct}%`}</span>
-        {line.level !== "none" && <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap", CHIP[line.level])}>{t(`lvl.${line.level}`)}</span>}
+        {/* May wrap: a long label (Thai) must never widen the card on a phone */}
+        {line.level !== "none" && <span className={cn("max-w-full rounded-full px-2 py-0.5 text-[11px] font-semibold", CHIP[line.level])}>{t(`lvl.${line.level}`)}</span>}
       </span>
       <span className="text-xs text-muted-foreground tabular-nums">
         {bahtWhole(fromSatang(line.amount))} · {t("target", { pct: line.target })}

@@ -14,8 +14,8 @@ import { type Category, isCategoryKey } from "./types";
 
 type Row = Record<string, unknown>;
 
-/** Everything the P&L needs, read with the service role (the same tables the screens read) */
-async function costInputs(admin: Admin) {
+/** Everything the P&L needs, read with the service role (the same tables the screens read); the AI assistant too */
+export async function costInputs(admin: Admin) {
   const [sales, labor, fixed, cash, stock] = await Promise.all([
     admin.from("sales").select("id, branch_id, sale_date, channel, gross, vat, exempt, bills"),
     admin.from("labor_costs").select("branch_id, month, wages, social_security, other, note"),
