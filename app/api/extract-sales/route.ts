@@ -42,7 +42,8 @@ export async function POST(req: Request) {
   if (!pdf && !IMAGE_TYPES.includes(file.type as ImageType)) return Response.json({ error: "badImage" }, { status: 400 });
 
   try {
-    const out = await readSalesReport(Buffer.from(await file.arrayBuffer()), (pdf ? "application/pdf" : file.type) as SourceType, req.signal);
+    const batch = Math.max(0, Math.min(99, Number(form?.get("batch")) || 0));
+    const out = await readSalesReport(Buffer.from(await file.arrayBuffer()), (pdf ? "application/pdf" : file.type) as SourceType, req.signal, batch);
     if (out.ok) return Response.json({ readings: out.readings });
     if (out.detail) console.error(`extract-sales: ${out.code}`, out.detail);
     return Response.json({ error: out.code }, { status: out.status });

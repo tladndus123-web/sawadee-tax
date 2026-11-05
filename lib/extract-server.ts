@@ -59,7 +59,11 @@ export const readingSetup = () => ({
   effort: ((process.env.ANTHROPIC_EFFORT || "").trim() || "medium") as Effort,
 });
 
-/** From this many receipts in ONE photo (cut apart in "several" mode), the reading switches to the bulk setup */
+/**
+ * From this many receipts read together, the reading switches to the bulk setup: pieces cut from one photo
+ * ("several" mode), photos picked or taken together on the upload screen, or closing reports picked together on the
+ * sales screen (owner, 2026-11-06: "사진캡쳐는 소넷5.5, 3장 이상은 오푸스").
+ */
 export const BULK_FROM = 3;
 
 /**
@@ -72,7 +76,7 @@ export const bulkSetup = () => ({
   effort: ((process.env.ANTHROPIC_BULK_EFFORT || "").trim() || "low") as Effort,
 });
 
-/** The setup for a receipt cut from a photo of `batch` receipts (0 / 1 / unknown = a photo of its own) */
+/** The setup for a receipt read with `batch - 1` others (0 / 1 / unknown = on its own) */
 export const readingFor = (batch: number) => (batch >= BULK_FROM ? bulkSetup() : readingSetup());
 
 type ImageBlock = Anthropic.ImageBlockParam;

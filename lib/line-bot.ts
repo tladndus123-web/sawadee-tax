@@ -18,7 +18,7 @@ import { appUrl } from "./app-url";
 import { type LedgerRef, runChecks } from "./checks";
 import { docToRow } from "./db-map";
 import { paidAtTill } from "./archive";
-import { extractDocument, MAX_IMAGE_BYTES } from "./extract-server";
+import { extractDocument, MAX_IMAGE_BYTES, readingFor } from "./extract-server";
 import { assistantSay } from "./assistant";
 import { isExpenseWord } from "./expense-line";
 import { claimFromLine, expenseButton, inExpenseMode, notifyNewClaim, startExpenseMode } from "./expense-line-server";
@@ -265,6 +265,12 @@ async function usableBranches(userId: string): Promise<Branch[]> {
   return first ? [...list.filter((b) => b.id === first), ...list.filter((b) => b.id !== first)] : list;
 }
 
+/** How many photos were sent together with this one (LINE "image set"), 1 for a photo on its own */
+const setSize = (event: webhook.MessageEvent) => {
+  const m = event.message as { type?: string; imageSet?: { total?: number } };
+  return m.type === "image" ? Math.max(1, Number(m.imageSet?.total) || 1) : 1;
+};
+
 async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messageId: string) {
   const member = await memberFor(lineUser);
   if (!member) return send(event, lineUser, [text(say.welcome)]);
@@ -311,7 +317,8 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
     if (dup) return send(later, lineUser, [text(say.duplicate(`${appUrl()}/documents/${dup.id}`))]);
   }
 
-  const read = await extractDocument(photo, type);
+  // Photos sent together as one set: 3 or more are read with the stronger model (owner 2026-11-06, lib/extract-server)
+  const read = await extractDocument(photo, type, readingFor(setSize(event)));
   const aiMs = Date.now() - started;
   if (!read.ok) {
     if (read.detail) console.error(`[line] extract: ${read.code}`, read.detail);
@@ -389,7 +396,7 @@ async function expensePhoto(event: webhook.MessageEvent, lineUser: string, userI
   if (!type) return send(event, lineUser, [text(say.unreadable)]);
   if (photo.length > MAX_IMAGE_BYTES) return send(event, lineUser, [text(say.tooBig)]);
   const r = await claimFromLine(lineUser, photo, type, await photoHashServer(photo), branchId, async (p) => {
-    const read = await extractDocument(p, type);
+    const read = await extractDocument(p, type, readingFor(setSize(event)));
     if (!read.ok && read.detail) console.error(`[line] expense extract: ${read.code}`, read.detail);
     return read.ok ? { ok: true, doc: read.doc } : { ok: false };
   });

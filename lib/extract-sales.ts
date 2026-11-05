@@ -2,7 +2,7 @@
 // Same model and effort as the document reading (readingSetup). Returns one entry per day and channel (lib/sales-reading).
 
 import Anthropic from "@anthropic-ai/sdk";
-import { readingSetup, type SourceType } from "./extract-server";
+import { readingFor, type SourceType } from "./extract-server";
 import { parseSalesReply, type SalesReading } from "./sales-reading";
 
 export type { SalesReading };
@@ -33,9 +33,10 @@ let client: Anthropic | null = null;
 export type SalesOutcome = { ok: true; readings: SalesReading[] } | { ok: false; code: "notReport" | "aiFail" | "busy"; status: number; detail?: string };
 
 
-export async function readSalesReport(file: Buffer, type: SourceType, signal?: AbortSignal): Promise<SalesOutcome> {
+/** `batch`: how many reports were picked together — 3 or more are read with the bulk setup (Opus 5.5) */
+export async function readSalesReport(file: Buffer, type: SourceType, signal?: AbortSignal, batch = 1): Promise<SalesOutcome> {
   client ??= new Anthropic({ maxRetries: 2 });
-  const { model, effort } = readingSetup();
+  const { model, effort } = readingFor(batch);
   const data = file.toString("base64");
   const source: Anthropic.ContentBlockParam =
     type === "application/pdf"

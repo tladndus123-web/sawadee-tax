@@ -1,4 +1,4 @@
-// AI on the expenses and calendar screens (owner, 2026-11-06: "심심하지 않게, AI로"). Three small jobs for Sonnet:
+// AI on the expenses, calendar and sales screens (owner, 2026-11-06: "심심하지 않게, AI로"). Three small jobs for Sonnet:
 // - the month's expense claims → a short report (headline, three points, one tip) and a line per claim worth a look
 //   ("weekend beer?", "3× the usual", "same receipt again"), from the automatic checks (lib/expense-checks);
 // - this week's to-do briefing from the calendar and the books (three things, in order);
@@ -13,6 +13,8 @@ import { booksContext, calendarContext } from "./assistant-server";
 import { claimFlags, type Flag } from "./expense-checks";
 import { type Claim, rowToClaim } from "./expenses";
 import type { Admin } from "./line-ask-server";
+import { costInputs, monthBooks } from "./month-end-server";
+import { salesFacts } from "./sales-insight";
 import { serverCategories } from "./categories-server";
 import en from "@/messages/en.json";
 import ja from "@/messages/ja.json";
@@ -221,4 +223,65 @@ export async function eventFromText(text: string, today: string, lang: string): 
   )) as Record<string, unknown> | null;
   if (!raw || raw.found !== true) return null;
   return parseEvent(raw);
+}
+
+// ── Sales ────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+export interface SalesReport {
+  headline: string;
+  points: string[];
+  actions: { title: string; why: string; link: string }[];
+}
+
+const SALES_LINKS = ["/sales", "/ledger", "/payroll", "/vendors", "/calendar", ""] as const;
+const SALES_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["headline", "points", "actions"],
+  properties: {
+    headline: { type: "string" },
+    points: { type: "array", items: { type: "string" } },
+    actions: {
+      type: "array",
+      items: { type: "object", additionalProperties: false, required: ["title", "why", "link"], properties: { title: { type: "string" }, why: { type: "string" }, link: { type: "string", enum: [...SALES_LINKS] } } },
+    },
+  },
+} as const;
+
+/** The sales screen's AI: how the month is going and what to do about it (owner, 2026-11-06, Sonnet) */
+export async function salesReport(admin: Admin, month: string, today: string, lang: string): Promise<{ body: SalesReport; madeAt: string } | null> {
+  const [{ data: branches }, inputs, books] = await Promise.all([admin.from("branches").select("id, name").order("sort"), costInputs(admin), monthBooks(admin, month)]);
+  const facts = salesFacts(inputs.sales, (branches ?? []).map((b) => ({ id: b.id as string, name: (b.name as string) ?? "" })), month, today);
+  if (!facts.lines.length) return null;
+  const r = books.result;
+  const pct = (v: number) => (r.salesValue ? `${Math.round((v / r.salesValue) * 100)}%` : "—");
+  const money =
+    `Whole company ${month} (without VAT): sales ${Math.round(r.salesValue)}, costs ${Math.round(r.purchasesCost)} (${pct(r.purchasesCost)}), ` +
+    `labour ${Math.round(r.labor)} (${pct(r.labor)}${r.labor ? "" : " — not entered yet"}), left ${Math.round(r.profit)}. ` +
+    `Last month whole: sales ${Math.round(books.previous.salesValue)}, left ${Math.round(books.previous.profit)}.` +
+    (books.target ? ` Monthly target ${Math.round(books.target)}.` : "");
+  const data = `${money}\n${facts.lines.join("\n")}`;
+  return kept<SalesReport>(admin, `sales:${month}:${lang}`, hash(`${lang}|${today}|${data}`), 6 * 3_600_000, async () => {
+    const raw = (await ask(
+      `You look at the sales of a small restaurant / café company in Thailand for the owner (today is ${today}, Bangkok; ` +
+        `the figures run to day ${facts.elapsed} of the month; today's sales are entered after closing, so never call today missing). Write in ${LANG_NAME[lang]}, plainly. headline: one sentence — how the month is ` +
+        `going against the same days of last month, and where it will end at this pace (say it is an estimate). points: at most ` +
+        `three short findings that matter, with numbers: the branch rising or falling most, a weak or strong weekday, a ` +
+        `change in average bill or customers, the delivery-app share, costs or labour against sales. actions: at most three ` +
+        `concrete things to do, most useful first — e.g. enter the missing days (name the branch and days; a day may also be ` +
+        `a closing day, so say "check"), a promotion for the weak weekday, enter labour costs. title max 50 characters, why ` +
+        `max 80, link = the app page. Amounts are Thai baht without VAT; write them like ฿12,345. Use only the data; never ` +
+        `invent numbers. "bills" are the receipts printed (about the number of customers), not invoices from suppliers. Channel keys (store, grab, lineman …) are names: write store as the shop / in-store in the reader's language.`,
+      data,
+      SALES_SCHEMA,
+      1400,
+    )) as { headline?: unknown; points?: unknown; actions?: unknown } | null;
+    if (!raw) return null;
+    const actions = (Array.isArray(raw.actions) ? (raw.actions as Record<string, unknown>[]) : [])
+      .map((i) => ({ title: str(i.title, 80), why: str(i.why, 140), link: (SALES_LINKS as readonly string[]).includes(String(i.link)) ? String(i.link) : "" }))
+      .filter((i) => i.title)
+      .slice(0, 3);
+    const headline = str(raw.headline, 240);
+    return headline ? { headline, points: (Array.isArray(raw.points) ? raw.points : []).map((p) => str(p, 200)).filter(Boolean).slice(0, 3), actions } : null;
+  });
 }

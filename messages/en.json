@@ -1090,7 +1090,16 @@
     "slipSame": "This report is already in. It is replaced, not counted twice.",
     "slipDay": "{n} reports this day · day total {total}",
     "slipsN": "{count} reports",
-    "slipNo": "Report {n}"
+    "slipNo": "Report {n}",
+    "ai": {
+      "title": "AI sales review",
+      "making": "The AI is looking at this month’s sales…",
+      "none": "No sales to look at yet.",
+      "fail": "Could not load the AI review.",
+      "retry": "Try again",
+      "todo": "Try this",
+      "note": "Written by the AI from the sales and cost figures only. Estimates are a guide."
+    }
   },
   "pos": {
     "button": "POS Excel",

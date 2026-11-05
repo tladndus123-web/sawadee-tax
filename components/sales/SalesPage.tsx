@@ -37,6 +37,9 @@ import { useChannelLabel } from "./channel-name";
 import { CostCard } from "./CostCard";
 import { SaleCalendar } from "./SaleCalendar";
 import { WeekdayCard } from "./WeekdayCard";
+import { SalesInsight } from "./SalesInsight";
+import { useMe } from "@/lib/role-store";
+import { fullAdmin } from "@/lib/screens";
 import { monthLabor } from "@/lib/cost-control";
 import { useLabor } from "@/lib/labor-store";
 import { stockChange } from "@/lib/stock";
@@ -58,6 +61,7 @@ export function SalesPage() {
   const monthLabel = useMonthLabel();
   const company = useCompany();
   const branch = useBranch();
+  const me = useMe();
   const { sales, loaded } = useSales();
   const { branches } = useBranches();
   // "All branches": a new day goes to the head office — named, so it matches the head office's days already in
@@ -119,13 +123,15 @@ export function SalesPage() {
 
   // Closing reports: prepare each picture and let the AI read it (two at a time). One photo with one line opens the
   // sheet as before; anything more is checked together in SalesReview.
-  const readOne = async (file: File): Promise<ReadPhoto> => {
+  const readOne = async (file: File, batch: number): Promise<ReadPhoto> => {
     const pdf = isPdf(file);
     let prepared: File | null = null;
     try {
       prepared = pdf ? file : await preparePhoto(file);
       const body = new FormData();
       body.append("file", prepared, pdf ? file.name : "report.jpg");
+      // 3 or more picked together → the stronger model (server decides, lib/extract-server readingFor)
+      body.append("batch", String(batch));
       const res = await fetch("/api/extract-sales", { method: "POST", body });
       const json = (await res.json().catch(() => ({}))) as { readings?: (SaleDraft & { unclear: string[] })[]; error?: string };
       const preview = pdf ? null : URL.createObjectURL(prepared);
@@ -151,7 +157,7 @@ export function SalesPage() {
       [0, 1].map(async () => {
         while (next < files.length) {
           const i = next++;
-          out[i] = await readOne(files[i]);
+          out[i] = await readOne(files[i], files.length);
           setProgress((p) => (p ? { ...p, done: p.done + 1 } : p));
         }
       }),
@@ -192,6 +198,12 @@ export function SalesPage() {
         />
   ) : null;
   const branchOf = (id: string) => branches.find((b) => b.id === id);
+
+  // The AI's look at the month (Sonnet; admins nobody limited) sits on the right; with one branch the right column
+  // already holds its input calendar, so the weekdays move left under the costs and the two columns end together
+  const ai = loaded && fullAdmin(me) ? <SalesInsight month={month} /> : null;
+  const weekday = loaded ? <WeekdayCard sales={sales} today={today} /> : null;
+  const weekdayLeft = !!ai && !many;
 
   return (
     <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-6">
@@ -316,18 +328,20 @@ export function SalesPage() {
 
       {/* PC: two columns (owner 2026-10-27: the page ran on in one long column) — costs left, the days right */}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-2">
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-6">
       {/* Food cost, labour and rent against sales */}
       <CostCard month={month} salesValue={r.salesValue} purchases={purchases} fixed={fixed} />
 
       {/* Delivery apps: commission and payout (shown once the month has app sales) */}
       {fees.lines.length > 0 && <AppFeesCard f={fees} />}
+      {weekdayLeft && weekday}
       </div>
-      <div className="grid min-w-0 gap-6">
+      <div className="grid min-w-0 content-start gap-6">
       {/* One branch: its input calendar here, beside the costs */}
       {!many && calendar}
       {/* Which weekdays sell: the average day over the last weeks */}
-      {loaded && <WeekdayCard sales={sales} today={today} />}
+      {!weekdayLeft && weekday}
+      {ai}
       </div>
       </div>
 
