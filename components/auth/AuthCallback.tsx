@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { safeNext } from "@/lib/auth/safe-next";
 
 /**
  * The browser client finishes the sign-in on its own when it starts: it exchanges ?code= (magic link)
@@ -41,8 +42,8 @@ export function AuthCallback() {
         return setProblem("notMember");
       }
       const next = new URLSearchParams(window.location.search).get("next");
-      // Only same-site paths, never an absolute URL from the link
-      window.location.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : `/${locale}`);
+      // Only a path on this site, never another site from the link (lib/auth/safe-next)
+      window.location.replace(safeNext(next, `/${locale}`));
     })();
   }, [locale]);
 

@@ -33,7 +33,7 @@
     "heic2any": "^0.0.4",
     "lenis": "^1.3.26",
     "lucide-react": "^1.48.0",
-    "next": "^15.5.27",
+    "next": "^15.5.29",
     "next-intl": "^4.14.7",
     "next-themes": "^0.4.6",
     "pdfjs-dist": "^6.3.289",
@@ -47,7 +47,7 @@
     "sonner": "^2.0.8",
     "tw-animate-css": "^1.4.0",
     "web-push": "^3.6.7",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -60,7 +60,7 @@
     "@types/web-push": "^3.6.4",
     "dotenv": "^18.0.3",
     "eslint": "^9",
-    "eslint-config-next": "^15.5.27",
+    "eslint-config-next": "^15.5.29",
     "supabase": "^2.117.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
