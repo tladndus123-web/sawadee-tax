@@ -323,8 +323,9 @@ function Row({
         {it.vendorFixed.length > 0 && <VendorNotice fixed={it.vendorFixed} />}
       </div>
 
-      {/* Phones: when there are several choices they get their own line, so the message keeps the width */}
-      <div className={cn("flex flex-none items-center gap-1", it.status === "check" && "max-sm:basis-full max-sm:justify-end")}>
+      {/* Phones: the buttons get their own line under the text, so the message and the vendor chips keep the width
+          (2026-11-06: beside the thumbnail they left the text a third of the screen and the chips broke word by word) */}
+      <div className="flex flex-none items-center gap-1 max-sm:basis-full max-sm:justify-end">
         {it.status === "check" && (
           <>
             {it.dupOf ? (

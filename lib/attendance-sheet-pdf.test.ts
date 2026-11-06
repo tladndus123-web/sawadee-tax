@@ -71,6 +71,8 @@ function pageCount(pdf: Uint8Array): number {
   return Buffer.from(pdf).toString("latin1").match(/\/Type \/Page(?!s)/g)?.length ?? 0;
 }
 
+// Four Noto faces are subset and embedded: 3–4 s on this PC, more under load, so these two get 30 s (the default 5 s
+// failed once in a full run, 2026-11-06)
 describe("attendance PDF", () => {
   it("embeds Korean, Thai, Japanese and English and leaves secrets out", async () => {
     const staff: SheetStaff[] = [
@@ -113,7 +115,7 @@ describe("attendance PDF", () => {
     const text = pdfText(bytes);
     for (const word of ["출근표", "민수", "สมชาย", "山田太郎", "Christopher", "All branches", "หยุด", "ป่วย"]) expect(hasWord(text.chars, word), word).toBe(true);
     for (const secret of ["1103700999991", "SECRET-ADDRESS", "NOTE-SECRET-99"]) expect(text.raw).not.toContain(secret);
-  });
+  }, 30_000);
 
   it("paginates many people and keeps 29 February", async () => {
     const many = Array.from({ length: 28 }, (_, i) => person({ id: `p${i}`, name: i === 0 ? "첫번째긴이름김철수" : i === 27 ? "สุดท้ายสมหญิง" : `Staff ${i + 1}` }));
@@ -139,5 +141,5 @@ describe("attendance PDF", () => {
     expect(hasWord(text.chars, "ตารางลงเวลา")).toBe(true);
     expect(hasWord(text.chars, "첫번째긴이름김철수")).toBe(true);
     expect(hasWord(text.chars, "สุดท้ายสมหญิง")).toBe(true);
-  });
+  }, 30_000);
 });
