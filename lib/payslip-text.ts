@@ -22,6 +22,8 @@ export interface SlipInput {
   rate: number;
   first: SlipHalf | null;
   second: SlipHalf | null;
+  /** Expense claims paid back with this pay (baht): their own line, not pay (no tax, no social security) */
+  refund?: number;
 }
 
 const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -31,29 +33,30 @@ const TH_MONTHS = ["มกราคม", "กุมภาพันธ์", "ม�
 /** The month as the slip prints it: ตุลาคม 2569 */
 export const thaiMonth = (ym: string) => `${TH_MONTHS[Number(ym.slice(5, 7)) - 1]} ${Number(ym.slice(0, 4)) + 543}`;
 
-type Labels = Record<"title" | "name" | "salary" | "dayRate" | "gross" | "ss" | "tax" | "other" | "net" | "paid" | "monthNet", string>;
+type Labels = Record<"title" | "name" | "salary" | "dayRate" | "gross" | "ss" | "tax" | "other" | "net" | "paid" | "monthNet" | "refund" | "toReceive", string>;
 
 /** Thai with English beside (the printed slip); or one language, the employee's phone language (2026-10-26) */
 const LABELS: Record<"both" | LineLang, Labels> = {
   both: {
     title: "ใบแจ้งเงินเดือน / Payslip", name: "ชื่อ / Name", salary: "เงินเดือน / Salary", dayRate: "ค่าจ้างรายวัน / Day rate", gross: "รวมเงินได้ / Gross",
     ss: "ประกันสังคม / Social security", tax: "ภาษีหัก ณ ที่จ่าย / Tax", other: "หักอื่น ๆ / Other", net: "เงินได้สุทธิ / Net", paid: "จ่ายวันที่ / Paid", monthNet: "รวมสุทธิทั้งเดือน / Month net",
+    refund: "คืนค่าใช้จ่าย / Expense refund", toReceive: "รวมรับทั้งหมด / Total to receive",
   },
   th: {
     title: "ใบแจ้งเงินเดือน", name: "ชื่อ", salary: "เงินเดือน", dayRate: "ค่าจ้างรายวัน", gross: "รวมเงินได้", ss: "ประกันสังคม", tax: "ภาษีหัก ณ ที่จ่าย",
-    other: "หักอื่น ๆ", net: "เงินได้สุทธิ", paid: "จ่ายวันที่", monthNet: "รวมสุทธิทั้งเดือน",
+    other: "หักอื่น ๆ", net: "เงินได้สุทธิ", paid: "จ่ายวันที่", monthNet: "รวมสุทธิทั้งเดือน", refund: "คืนค่าใช้จ่าย", toReceive: "รวมรับทั้งหมด",
   },
   en: {
     title: "Payslip", name: "Name", salary: "Salary", dayRate: "Day rate", gross: "Gross", ss: "Social security", tax: "Tax", other: "Other",
-    net: "Net", paid: "Paid", monthNet: "Month net",
+    net: "Net", paid: "Paid", monthNet: "Month net", refund: "Expense refund", toReceive: "Total to receive",
   },
   ja: {
     title: "給与明細", name: "氏名", salary: "月給", dayRate: "日給", gross: "総支給額", ss: "社会保険", tax: "源泉徴収税", other: "その他控除",
-    net: "差引支給額", paid: "支払日", monthNet: "今月の手取り合計",
+    net: "差引支給額", paid: "支払日", monthNet: "今月の手取り合計", refund: "経費の払い戻し", toReceive: "受取額の合計",
   },
   ko: {
     title: "급여명세서", name: "이름", salary: "월급", dayRate: "일당", gross: "총 지급액", ss: "사회보험", tax: "원천징수세", other: "기타 공제",
-    net: "실수령액", paid: "지급일", monthNet: "이번 달 실수령 합계",
+    net: "실수령액", paid: "지급일", monthNet: "이번 달 실수령 합계", refund: "경비 돌려주기", toReceive: "받을 돈 합계",
   },
 };
 
@@ -91,5 +94,9 @@ export function payslipText(s: SlipInput, lang?: LineLang): string {
   const total = add(s.first?.net ?? 0, s.second?.net ?? 0);
   lines.push("");
   lines.push(`${L.monthNet}: ฿${fmt(total)}`);
+  if (s.refund && s.refund > 0) {
+    lines.push(`${L.refund}: +฿${fmt(s.refund)}`);
+    lines.push(`${L.toReceive}: ฿${fmt(add(total, s.refund))}`);
+  }
   return lines.join("\n");
 }

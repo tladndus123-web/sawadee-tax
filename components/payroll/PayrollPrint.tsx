@@ -14,7 +14,9 @@ import { Link } from "@/i18n/navigation";
 import { ALLOWANCE_PRINT, rowsFromSaved } from "@/lib/allowances";
 import { monthDate } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
-import { fmt } from "@/lib/money";
+import { useClaims } from "@/lib/expense-store";
+import { payrollRefunds } from "@/lib/expenses";
+import { fmt, fromSatang } from "@/lib/money";
 import { type Employee, maskId, payrollDeadlines, payrollSettingsOf, periodPay, timesText } from "@/lib/payroll";
 import { loadPayroll, type PayrollLineRow, useBranchEmployees } from "@/lib/payroll-store";
 import { useMe } from "@/lib/role-store";
@@ -34,6 +36,8 @@ interface Person {
   ssEmployer: number;
   wht: number;
   paidOn: string;
+  /** Expense claims paid back with this pay (baht): their own line after the net, not pay */
+  refund: number;
 }
 
 const add = (...v: number[]) => v.reduce((a, n) => a + Math.round((n || 0) * 100), 0) / 100;
@@ -46,6 +50,8 @@ export function PayrollPrint({ form, month }: { form: PayForm; month: string }) 
   const settings = payrollSettingsOf(company.payrollSettings);
   const { employees, loaded, branch } = useBranchEmployees();
   const [lines, setLines] = useState<PayrollLineRow[] | null>(null);
+  const { claims } = useClaims();
+  const refunds = useMemo(() => payrollRefunds(claims, month), [claims, month]);
   const [only, setOnly] = useState("");
   const [autoPrint, setAutoPrint] = useState(false);
   // Opened from the pay run ("PDF"): one employee and the print dialog straight away
@@ -79,11 +85,12 @@ export function PayrollPrint({ form, month }: { form: PayForm; month: string }) 
           ssEmployer: add(...mine.map((l) => l.ssEmployer)),
           wht: add(...mine.map((l) => l.wht)),
           paidOn: second?.paidOn || first?.paidOn || "",
+          refund: fromSatang(refunds.get(employee.id)?.amount ?? 0),
         };
       })
       // Nothing paid this month (e.g. a daily worker with no days): not on the lists or payslips
       .filter((p): p is Person => !!p && p.gross > 0);
-  }, [employees, lines]);
+  }, [employees, lines, refunds]);
 
   useEffect(() => {
     if (!autoPrint || !people.length) return;
@@ -411,6 +418,24 @@ function Slip({ p, us, period, month }: { p: Person; us: Us; period: string; mon
             <td className={num}>{fmt(net2)}</td>
             <td className={num}>{fmt(add(net1, net2))}</td>
           </tr>
+          {p.refund > 0 && (
+            <>
+              <tr className="border-b border-neutral-200">
+                <td className="px-2 py-1">
+                  คืนค่าใช้จ่าย <span className="text-neutral-500">/ Expense refund</span>
+                </td>
+                <td className={num}>—</td>
+                <td className={num}>+{fmt(p.refund)}</td>
+                <td className={num}>+{fmt(p.refund)}</td>
+              </tr>
+              <tr className="border-b-2 border-neutral-900 text-[13px] font-bold">
+                <td className="px-2 py-1.5">รวมรับทั้งหมด / Total to receive</td>
+                <td className={num}>{fmt(net1)}</td>
+                <td className={num}>{fmt(add(net2, p.refund))}</td>
+                <td className={num}>{fmt(add(net1, net2, p.refund))}</td>
+              </tr>
+            </>
+          )}
           <tr className="text-neutral-600">
             <td className="px-2 py-1">วันที่จ่าย / Paid on</td>
             <td className={num}>{dmy(p.first?.paidOn)}</td>

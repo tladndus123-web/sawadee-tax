@@ -19,8 +19,9 @@ import { useCompany } from "@/lib/company-store";
 import { claimPhotoUrls, decideClaims, payClaims, removeClaim, useClaims } from "@/lib/expense-store";
 import { fullAdmin } from "@/lib/screens";
 import { claimFlags, type Flag } from "@/lib/expense-checks";
-import { type Claim, type ClaimStatus, claimSummary, owed, PAID_HOW, type PaidHow } from "@/lib/expenses";
+import { type Claim, type ClaimStatus, claimSummary, guessEmployee, owed, PAID_HOW, type PaidHow } from "@/lib/expenses";
 import { knownPhotos } from "@/lib/ledger-store";
+import { useEmployees } from "@/lib/payroll-store";
 import { baht, fromSatang } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
 import { todayBangkok } from "@/lib/thai-tax";
@@ -371,11 +372,16 @@ function PayDialog({ claims, onClose }: { claims: Claim[]; onClose: () => void }
   const [day, setDay] = useState(todayBangkok());
   const [how, setHow] = useState<PaidHow>("cash");
   const [busy, setBusy] = useState(false);
+  // "With the pay": whose pay it goes with (the claimer is an app member, the pay is an employee's) — guessed by name
+  const { employees } = useEmployees();
+  const [employee, setEmployee] = useState("");
+  const guess = useMemo(() => guessEmployee(claims[0]?.name ?? "", employees) ?? "", [claims, employees]);
+  const chosen = employee || guess;
   const total = claims.reduce((a, c) => a + c.amount, 0);
   const pay = async () => {
     setBusy(true);
     try {
-      await payClaims(claims, day, how, company.taxId);
+      await payClaims(claims, day, how, company.taxId, how === "payroll" ? chosen : null);
       toast.success(t("paidDone", { n: claims.length }));
       onClose();
     } catch {
@@ -407,7 +413,20 @@ function PayDialog({ claims, onClose }: { claims: Claim[]; onClose: () => void }
               </button>
             ))}
           </div>
-          {how === "payroll" && <p className="text-[12px] text-muted-foreground">{t("payrollNote")}</p>}
+          {how === "payroll" && (
+            <label className="mt-1 grid gap-1.5">
+              <span className="text-sm font-semibold">{t("payrollWho")}</span>
+              <select className="h-11 rounded-xl border bg-card px-3 text-[14px]" value={chosen} onChange={(e) => setEmployee(e.target.value)} aria-label={t("payrollWho")}>
+                <option value="">{t("payrollPick")}</option>
+                {employees.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.nickname ? `${e.name} (${e.nickname})` : e.name}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[12px] text-muted-foreground">{t("payrollNote", { month: Number(day.slice(5, 7)) || "" })}</span>
+            </label>
+          )}
         </div>
         <label className="grid gap-1.5">
           <span className="text-sm font-semibold">{t("payDay")}</span>
@@ -418,7 +437,7 @@ function PayDialog({ claims, onClose }: { claims: Claim[]; onClose: () => void }
           <Button type="button" variant="ghost" className="rounded-full" onClick={onClose} disabled={busy}>
             {t("cancel")}
           </Button>
-          <Button type="button" className="h-11 rounded-full px-6" disabled={busy || !day} onClick={() => void pay()}>
+          <Button type="button" className="h-11 rounded-full px-6" disabled={busy || !day || (how === "payroll" && !chosen)} onClick={() => void pay()}>
             {busy && <Loader2 className="size-4 animate-spin" />}
             {t("paidBack")}
           </Button>

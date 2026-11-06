@@ -18,7 +18,9 @@ import { periodFromAttendance } from "@/lib/attendance";
 import { loadAttendance } from "@/lib/attendance-store";
 import { useCompany } from "@/lib/company-store";
 import { refreshLabor } from "@/lib/labor-store";
-import { fmt } from "@/lib/money";
+import { useClaims } from "@/lib/expense-store";
+import { payrollRefunds } from "@/lib/expenses";
+import { fmt, fromSatang } from "@/lib/money";
 import { isMonthLocked, useMonthLocks } from "@/lib/month-lock-store";
 import { daysNotEmployed, type Employee, employedInMonth, payIssues, EMPTY_PERIOD, type LineRates, lineRates, monthPay, payrollSettingsOf, type PeriodInput, rosterEmpty, sameRates, timesText } from "@/lib/payroll";
 import { SendSlipsButton } from "./SendSlips";
@@ -113,6 +115,11 @@ export function PayRunTab({ month }: { month: string }) {
   }, [staff, inputs, month]);
   const rowOf = (id: string) => rows.get(id) ?? EMPTY_ROW;
   const pays = useMemo(() => new Map(staff.map((e) => [e.id, monthPay(e, rows.get(e.id)!.first, rows.get(e.id)!.second, settings)])), [staff, rows, settings]);
+  // Expense claims paid back with this month's pay: their own line, added to the month-end payment (not wages)
+  const { claims } = useClaims();
+  const refunds = useMemo(() => payrollRefunds(claims, month), [claims, month]);
+  const refundOf = (id: string) => fromSatang(refunds.get(id)?.amount ?? 0);
+  const refundTotal = staff.reduce((a, e) => a + (refunds.get(e.id)?.amount ?? 0), 0);
   const total = [...pays.values()].reduce(
     (a, m) => ({ gross: a.gross + m.gross, ss: a.ss + m.ssEmployee, er: a.er + m.ssEmployer, wht: a.wht + m.wht, net: a.net + m.netFirst + m.netSecond, cost: a.cost + m.employerCost }),
     { gross: 0, ss: 0, er: 0, wht: 0, net: 0, cost: 0 },
@@ -276,6 +283,12 @@ export function PayRunTab({ month }: { month: string }) {
           const issueText = issues.map((i) => t(`issue.${i}`)).join(" · ");
           const check = checks.get(e.id);
           const canCheck = saved.has(e.id) && !dirty;
+          const refund = refundOf(e.id);
+          const refundChip = refund > 0 && (
+            <span className="text-[11px] font-medium text-ok" title={t("refundHint", { n: refunds.get(e.id)?.claims.length ?? 0 })}>
+              {t("refundChip", { amount: fmt(refund) })}
+            </span>
+          );
           return (
             <li key={e.id} className={cn(ROW, "workspace-panel overflow-hidden p-0")}>
               <button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : e.id)} className="press w-full px-4 py-3 text-left">
@@ -297,6 +310,7 @@ export function PayRunTab({ month }: { month: string }) {
                     <span>
                       {t("deducted")} {deducted ? fmt(-deducted) : fmt(0)}
                     </span>
+                    {refundChip}
                     {!saved.has(e.id) && <span className="text-warn">{t("notSaved")}</span>}
                     {issues.length > 0 && <span className="font-medium text-bad">⚠ {issueText}</span>}
                   </span>
@@ -306,6 +320,7 @@ export function PayRunTab({ month }: { month: string }) {
                   <span className="truncate text-sm text-muted-foreground">{e.position || "—"}</span>
                   <span className="grid min-w-0">
                     <span className="truncate text-[15px] font-semibold">{e.name}</span>
+                    {refundChip}
                     {!saved.has(e.id) && <span className="text-[11px] text-warn">{t("notSaved")}</span>}
                     {issues.length > 0 && <span className="truncate text-[11px] font-medium text-bad" title={issueText}>⚠ {issueText}</span>}
                   </span>
@@ -348,7 +363,8 @@ export function PayRunTab({ month }: { month: string }) {
                   {([1, 2] as const).map((half) => {
                     const at = paid.get(e.id)?.[half] ?? null;
                     const busyHere = paying === `${e.id}:${half}`;
-                    const amount = half === 1 ? m.netFirst : m.netSecond;
+                    // The month-end payment carries the expenses paid back with the pay
+                    const amount = half === 1 ? m.netFirst : Math.round((m.netSecond + refund) * 100) / 100;
                     return (
                       <button
                         key={half}
@@ -389,6 +405,7 @@ export function PayRunTab({ month }: { month: string }) {
             ["netTotal", total.net],
             ["ssEmployer", total.er],
             ["employerCost", total.cost],
+            ...(refundTotal > 0 ? ([["refundTotal", fromSatang(refundTotal)]] as const) : []),
           ] as const
         ).map(([k, v]) => (
           <div key={k} className="grid">

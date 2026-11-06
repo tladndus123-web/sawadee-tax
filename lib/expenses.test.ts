@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { monthExpenses, type Claim, claimDoc, claimFromDocument, claimProblems, claimSummary, DEFAULT_EXPENSE_CATEGORIES, docAmount, owed, readExpenseSettings } from "./expenses";
+import { monthExpenses, type Claim, claimDoc, claimFromDocument, claimProblems, claimSummary, DEFAULT_EXPENSE_CATEGORIES, docAmount, guessEmployee, owed, payrollRefunds, readExpenseSettings } from "./expenses";
 import { normalize } from "./normalize";
 
 const claim = (over: Partial<Claim>): Claim => ({
@@ -19,6 +19,7 @@ const claim = (over: Partial<Claim>): Claim => ({
   decidedAt: null,
   paidOn: null,
   paidHow: null,
+  employeeId: null,
   documentId: null,
   createdAt: "2026-10-26T02:00:00Z",
   ...over,
@@ -99,5 +100,41 @@ describe("ledger document → expense claim", () => {
     const row = claimFromDocument(doc, "d1", { userId: "u1", name: " Somchai " }, "ice");
     expect(row).toMatchObject({ user_id: "u1", name: "Somchai", branch_id: "b1", day: "2026-10-20", seller: "MAKRO", amount: 123450, category: "food", note: "ice", status: "approved", document_id: "d1" });
     expect(row.doc).toBe(doc);
+  });
+});
+
+describe("claims paid back with the pay", () => {
+  it("adds up each employee's claims paid with that month's pay, and nothing else", () => {
+    const r = payrollRefunds(
+      [
+        claim({ id: "a", status: "paid", paidHow: "payroll", employeeId: "e1", paidOn: "2026-11-06", amount: 35000 }),
+        claim({ id: "b", status: "paid", paidHow: "payroll", employeeId: "e1", paidOn: "2026-11-20", amount: 50000 }),
+        claim({ id: "c", status: "paid", paidHow: "payroll", employeeId: "e2", paidOn: "2026-11-01", amount: 43000 }),
+        claim({ id: "d", status: "paid", paidHow: "payroll", employeeId: "e1", paidOn: "2026-10-31", amount: 9900 }),
+        claim({ id: "e", status: "paid", paidHow: "cash", employeeId: null, paidOn: "2026-11-06", amount: 9900 }),
+        claim({ id: "f", status: "approved", paidHow: null, employeeId: null, amount: 9900 }),
+        claim({ id: "g", status: "paid", paidHow: "payroll", employeeId: null, paidOn: "2026-11-06", amount: 9900 }),
+      ],
+      "2026-11",
+    );
+    expect([...r.keys()]).toEqual(["e1", "e2"]);
+    expect(r.get("e1")?.amount).toBe(85000);
+    expect(r.get("e1")?.claims.map((c) => c.id)).toEqual(["a", "b"]);
+    expect(r.get("e2")?.amount).toBe(43000);
+  });
+  it("guesses the employee from the claimer's name only when one fits", () => {
+    const staff = [
+      { id: "1", name: "Somchai Jaidee", nickname: "Nok" },
+      { id: "2", name: "Art Wong", nickname: "Art" },
+      { id: "3", name: "Fon Saetang", nickname: "" },
+    ];
+    expect(guessEmployee("nok", staff)).toBe("1");
+    expect(guessEmployee("Somchai", staff)).toBe("1");
+    expect(guessEmployee("Art Wong", staff)).toBe("2");
+    expect(guessEmployee("Fon", staff)).toBe("3");
+    expect(guessEmployee("Mint", staff)).toBeNull();
+    expect(guessEmployee("", staff)).toBeNull();
+    expect(guessEmployee("Art", [...staff, { id: "4", name: "Art Chai", nickname: "" }])).toBe("2");
+    expect(guessEmployee("Chai", [...staff, { id: "4", name: "Art Chai", nickname: "" }])).toBeNull();
   });
 });

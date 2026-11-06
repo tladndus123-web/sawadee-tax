@@ -121,9 +121,10 @@ export async function decideClaims(ids: string[], status: "approved" | "rejected
 
 /**
  * Paid back: each claim becomes a paid document in the ledger (id = the claim's id, its photo kept) and is marked
- * paid. A claim already in the ledger is only marked.
+ * paid. A claim already in the ledger is only marked. "With the pay" names the employee: the pay run then adds it to
+ * that month's month-end payment as its own line (lib/expenses payrollRefunds).
  */
-export async function payClaims(claims: Claim[], paidOn: string, how: PaidHow, companyTaxId?: string) {
+export async function payClaims(claims: Claim[], paidOn: string, how: PaidHow, companyTaxId?: string, employeeId?: string | null) {
   const sb = supabaseBrowser();
   for (const c of claims) {
     if (!c.documentId) {
@@ -133,7 +134,7 @@ export async function payClaims(claims: Claim[], paidOn: string, how: PaidHow, c
       const { error } = await sb.rpc("save_document", { p_id: c.id, p_row: c.photoPath ? { ...row, photo_path: c.photoPath } : row, p_items: items });
       if (error) throw error;
     }
-    const { error } = await sb.from("expense_claims").update({ status: "paid", paid_on: paidOn, paid_how: how, document_id: c.documentId ?? c.id }).eq("id", c.id);
+    const { error } = await sb.from("expense_claims").update({ status: "paid", paid_on: paidOn, paid_how: how, employee_id: how === "payroll" ? (employeeId ?? null) : null, document_id: c.documentId ?? c.id }).eq("id", c.id);
     if (error) throw error;
     // A document moved over from the ledger: it is now paid (by the company, to the person)
     if (c.documentId) await setPaidMany([c.documentId], true, paidOn);

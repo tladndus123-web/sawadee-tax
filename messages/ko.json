@@ -1823,7 +1823,11 @@
     "shareCalSub": "직원 휴대폰 캘린더에 뜨고, 바뀌면 자동으로 따라가요.",
     "sheetShareSub": "이 달 출근표를 이미지·PDF로 저장하거나 보내요.",
     "sumCol": "합계",
-    "sumWork": "출근 {n}일"
+    "sumWork": "출근 {n}일",
+    "refund": "경비 돌려주기",
+    "refundChip": "경비 +{amount}",
+    "refundHint": "급여로 돌려주기로 한 경비 {n}건이에요. 세금·사회보험 없이 말일 지급액에 더해요.",
+    "refundTotal": "경비 돌려주기"
   },
   "fixed": {
     "title": "고정비 (영수증 없는 비용)",
@@ -2279,7 +2283,7 @@
     "payTitle": "{name} 님에게 돌려주기",
     "paySub": "승인된 청구 {n}건",
     "payHow": "어떻게 줬나요?",
-    "payrollNote": "급여 계산에 자동으로 더해지지는 않아요. 이번 급여를 줄 때 같이 주세요.",
+    "payrollNote": "{month}월 말일 급여에 '경비 돌려주기'로 따로 한 줄 들어가요. 세금·사회보험은 붙지 않아요.",
     "payDay": "준 날",
     "payLedger": "누르면 영수증이 장부에 '결제 완료'로 들어가요. 부가세가 있는 영수증은 부가세 공제에도 잡혀요.",
     "rejectTitle": "반려하기",
@@ -2394,7 +2398,9 @@
       "approved": "승인",
       "paid": "돌려줌",
       "rejected": "반려"
-    }
+    },
+    "payrollWho": "누구 급여와 함께 줄까요?",
+    "payrollPick": "직원 고르기"
   },
   "aiPanel": {
     "title": "AI 비서",

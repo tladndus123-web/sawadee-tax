@@ -35,6 +35,8 @@ export interface Claim {
   decidedAt: string | null;
   paidOn: string | null;
   paidHow: PaidHow | null;
+  /** Paid back with this employee's pay (paidHow "payroll"); null otherwise */
+  employeeId: string | null;
   documentId: string | null;
   createdAt: string;
 }
@@ -195,6 +197,7 @@ export const rowToClaim = (r: Record<string, unknown>): Claim => ({
   decidedAt: (r.decided_at as string) ?? null,
   paidOn: (r.paid_on as string) ?? null,
   paidHow: (r.paid_how as PaidHow) ?? null,
+  employeeId: (r.employee_id as string) ?? null,
   documentId: (r.document_id as string) ?? null,
   createdAt: r.created_at as string,
 });
@@ -219,4 +222,41 @@ export function claimFromDocument(doc: LedgerDoc, documentId: string, person: { 
     status: "approved" as const,
     document_id: documentId,
   };
+}
+
+/** Claims paid back with a month's pay (owner, 2026-11-06), per employee: their own line on the pay run, added to the
+ * month-end payment — not wages (no tax, no social security, not labour cost). The month is the one the paid day falls in. */
+export interface Refund {
+  /** Satang */
+  amount: number;
+  claims: Claim[];
+}
+
+export function payrollRefunds(claims: Claim[], month: string): Map<string, Refund> {
+  const out = new Map<string, Refund>();
+  for (const c of claims) {
+    if (c.status !== "paid" || c.paidHow !== "payroll" || !c.employeeId || !c.paidOn?.startsWith(month)) continue;
+    const r = out.get(c.employeeId) ?? { amount: 0, claims: [] };
+    r.amount += c.amount;
+    r.claims.push(c);
+    out.set(c.employeeId, r);
+  }
+  return out;
+}
+
+const plain = (s: string) => s.toLowerCase().replace(/[\s.·_-]+/g, "");
+
+/** The employee a claimer most likely is: same name or nickname, or one name inside the other — only when just one fits */
+export function guessEmployee(claimer: string, employees: { id: string; name: string; nickname: string }[]): string | null {
+  const who = plain(claimer);
+  if (!who) return null;
+  const exact = employees.filter((e) => plain(e.name) === who || (e.nickname && plain(e.nickname) === who));
+  if (exact.length === 1) return exact[0].id;
+  if (exact.length > 1) return null;
+  const part = employees.filter((e) => {
+    const n = plain(e.name);
+    const k = plain(e.nickname);
+    return (n.length >= 2 && (n.includes(who) || who.includes(n))) || (k.length >= 2 && (k.includes(who) || who.includes(k)));
+  });
+  return part.length === 1 ? part[0].id : null;
 }

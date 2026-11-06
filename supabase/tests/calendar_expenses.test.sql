@@ -2,7 +2,7 @@
 -- Everything rolls back; the claims are dated in 2001 so they never touch a real month.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(26);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000e0a01', 'boss@test.local'),
@@ -45,6 +45,13 @@ select lives_ok($$ update public.expense_claims set status = 'approved' where id
 select is((select decided_by::text from public.expense_claims where id = '00000000-0000-0000-0000-0000000e0c01'), '00000000-0000-0000-0000-0000000e0a01', 'stamped with who decided');
 select lives_ok($$ update public.expense_claims set status = 'paid', paid_how = 'cash' where id = '00000000-0000-0000-0000-0000000e0c01' $$, 'and marks it paid back');
 
+-- Paid back with the pay (…003800): linked to the employee by an admin, only while it is paid with the pay
+insert into public.employees (id, name, rate, pay_type) values ('00000000-0000-0000-0000-0000000e0e01', 'Som', 15000, 'monthly');
+update public.expense_claims set paid_how = 'payroll', employee_id = '00000000-0000-0000-0000-0000000e0e01' where id = '00000000-0000-0000-0000-0000000e0c01';
+select is((select employee_id::text from public.expense_claims where id = '00000000-0000-0000-0000-0000000e0c01'), '00000000-0000-0000-0000-0000000e0e01', 'an admin pays a claim with an employee''s pay');
+update public.expense_claims set paid_how = 'cash' where id = '00000000-0000-0000-0000-0000000e0c01';
+select is((select employee_id from public.expense_claims where id = '00000000-0000-0000-0000-0000000e0c01'), null, 'paid another way, the link goes');
+
 select pg_temp.act_as('00000000-0000-0000-0000-0000000e0a02');
 with d as (delete from public.expense_claims where id = '00000000-0000-0000-0000-0000000e0c01' returning 1)
 select is((select count(*)::int from d), 0, 'a paid claim cannot be removed by its member');
@@ -55,6 +62,9 @@ update public.company_settings set expenses = '{"autoUnder": 100}' where id = 1;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000e0a03');
 insert into public.expense_claims (id, name, day, amount) values ('00000000-0000-0000-0000-0000000e0c02', 'Mai', '2001-05-03', 8000);
 select is((select status from public.expense_claims where id = '00000000-0000-0000-0000-0000000e0c02'), 'approved', 'a claim under the company''s amount is approved by itself');
+insert into public.expense_claims (id, name, day, amount, employee_id) values ('00000000-0000-0000-0000-0000000e0c03', 'Mai', '2001-05-03', 900000, '00000000-0000-0000-0000-0000000e0e01');
+select is((select employee_id from public.expense_claims where id = '00000000-0000-0000-0000-0000000e0c03'), null, 'a member cannot link their claim to an employee''s pay');
+select throws_like($$ update public.expense_claims set employee_id = '00000000-0000-0000-0000-0000000e0e01' where id = '00000000-0000-0000-0000-0000000e0c03' $$, '%only an admin decides%', 'nor later');
 select pg_temp.act_as('00000000-0000-0000-0000-0000000e0a01');
 update public.expense_claims set status = 'rejected' where id = '00000000-0000-0000-0000-0000000e0c02';
 select throws_like($$ update public.expense_claims set status = 'paid' where id = '00000000-0000-0000-0000-0000000e0c02' $$, '%rejected claim is not paid%', 'a rejected claim is never paid');

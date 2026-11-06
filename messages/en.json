@@ -1823,7 +1823,11 @@
     "shareCalSub": "Appears in the staff’s phone calendars and follows changes.",
     "sheetShareSub": "Save or send this month’s sheet as a picture or PDF.",
     "sumCol": "Total",
-    "sumWork": "{n} days worked"
+    "sumWork": "{n} days worked",
+    "refund": "Expense refund",
+    "refundChip": "Expenses +{amount}",
+    "refundHint": "{n} expense claims paid back with the pay: added to the month-end payment, without tax or social security.",
+    "refundTotal": "Expense refunds"
   },
   "fixed": {
     "title": "Fixed costs (no invoice)",
@@ -2279,7 +2283,7 @@
     "payTitle": "Pay back {name}",
     "paySub": "{n, plural, one {# approved claim} other {# approved claims}}",
     "payHow": "How was it paid?",
-    "payrollNote": "It isn't added to the payroll by itself — hand it over with this pay.",
+    "payrollNote": "Added to month {month}'s end-of-month pay as its own line, \"Expense refund\" — no tax or social security.",
     "payDay": "Paid on",
     "payLedger": "The receipts go into the ledger as paid. Receipts with VAT count as input VAT too.",
     "rejectTitle": "Reject",
@@ -2394,7 +2398,9 @@
       "approved": "Approved",
       "paid": "Paid back",
       "rejected": "Rejected"
-    }
+    },
+    "payrollWho": "With whose pay?",
+    "payrollPick": "Pick an employee"
   },
   "aiPanel": {
     "title": "AI assistant",

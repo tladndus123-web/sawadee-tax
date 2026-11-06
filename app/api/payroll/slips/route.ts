@@ -5,6 +5,8 @@
 import { endIfExpired } from "@/lib/auth/session-guard";
 import { lineClient } from "@/lib/line";
 import { profileLang } from "@/lib/line-menu";
+import { payrollRefunds, rowToClaim } from "@/lib/expenses";
+import { fromSatang } from "@/lib/money";
 import { payslipText, type SlipHalf } from "@/lib/payslip-text";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -40,15 +42,19 @@ export async function POST(req: Request) {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return Response.json({ error: "badMonth" }, { status: 400 });
   const ids = Array.isArray(body.employeeIds) ? body.employeeIds.filter((x) => typeof x === "string").slice(0, 200) : null;
 
+  const nextMonth = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 1)).toISOString().slice(0, 10);
   const admin = supabaseAdmin();
   let q = admin.from("employees").select("id, name, line_user_id");
   if (ids) q = q.in("id", ids);
-  const [{ data: employees, error: e1 }, { data: lines, error: e2 }, { data: company }] = await Promise.all([
+  const [{ data: employees, error: e1 }, { data: lines, error: e2 }, { data: company }, { data: claims, error: e3 }] = await Promise.all([
     q,
     admin.from("payroll_lines").select("employee_id, period, gross, ss_employee, wht, other_deduction, net, paid_on, pay_type, rate").eq("month", month),
     admin.from("company_settings").select("name").eq("id", 1).maybeSingle(),
+    // Expense claims paid back with this month's pay (lib/expenses payrollRefunds)
+    admin.from("expense_claims").select("*").eq("status", "paid").eq("paid_how", "payroll").not("employee_id", "is", null).gte("paid_on", `${month}-01`).lt("paid_on", nextMonth),
   ]);
-  if (e1 || e2) return Response.json({ error: "db" }, { status: 500 });
+  if (e1 || e2 || e3) return Response.json({ error: "db" }, { status: 500 });
+  const refunds = payrollRefunds((claims ?? []).map(rowToClaim), month);
   const name = (company?.name ?? {}) as { th?: string; en?: string };
   const companyName = name.th || name.en || "";
 
@@ -74,7 +80,7 @@ export async function POST(req: Request) {
       continue;
     }
     const any = mine[0];
-    const text = payslipText({ company: companyName, employee: e.name, month, payType: any.pay_type, rate: n(any.rate), first, second }, await profileLang(e.line_user_id));
+    const text = payslipText({ company: companyName, employee: e.name, month, payType: any.pay_type, rate: n(any.rate), first, second, refund: fromSatang(refunds.get(e.id)?.amount ?? 0) }, await profileLang(e.line_user_id));
     try {
       await client.pushMessage({ to: e.line_user_id, messages: [{ type: "text", text }] });
       sent.push(e.name);

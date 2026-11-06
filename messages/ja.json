@@ -1823,7 +1823,11 @@
     "shareCalSub": "スタッフのスマホのカレンダーに表示され、変更も自動で反映。",
     "sheetShareSub": "今月の勤務表を画像・PDFで保存または送付。",
     "sumCol": "合計",
-    "sumWork": "出勤 {n}日"
+    "sumWork": "出勤 {n}日",
+    "refund": "経費の払い戻し",
+    "refundChip": "経費 +{amount}",
+    "refundHint": "給与で払い戻す経費 {n}件です。税金・社会保険なしで月末の支給額に加えます。",
+    "refundTotal": "経費の払い戻し"
   },
   "fixed": {
     "title": "固定費（領収書のない費用）",
@@ -2279,7 +2283,7 @@
     "payTitle": "{name} さんへ精算",
     "paySub": "承認済みの申請 {n} 件",
     "payHow": "どのように渡しましたか？",
-    "payrollNote": "給与計算に自動では加算されません。今回の給与と一緒に渡してください。",
+    "payrollNote": "{month}月末の給与に「経費の払い戻し」として別の行で入ります。税金・社会保険はかかりません。",
     "payDay": "渡した日",
     "payLedger": "押すと領収書が「支払済み」で台帳に入ります。VAT のある領収書は仕入税額控除にも入ります。",
     "rejectTitle": "却下する",
@@ -2394,7 +2398,9 @@
       "approved": "承認",
       "paid": "精算済み",
       "rejected": "却下"
-    }
+    },
+    "payrollWho": "誰の給与と一緒に渡しますか？",
+    "payrollPick": "従業員を選ぶ"
   },
   "aiPanel": {
     "title": "AI秘書",

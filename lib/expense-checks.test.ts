@@ -20,6 +20,7 @@ const claim = (over: Partial<Claim>): Claim => ({
   decidedAt: null,
   paidOn: null,
   paidHow: null,
+  employeeId: null,
   documentId: null,
   createdAt: "2026-10-26T05:00:00Z",
   ...over,

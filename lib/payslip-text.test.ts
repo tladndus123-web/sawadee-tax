@@ -23,6 +23,14 @@ describe("payslipText", () => {
     expect(t.endsWith("รวมสุทธิทั้งเดือน / Month net: ฿17,150.00")).toBe(true);
   });
 
+  it("adds expenses paid back with the pay as their own line, after the pay's net", () => {
+    const slip = { company: "", employee: "Fon", month: "2026-11", payType: "monthly" as const, rate: 18000, first: null, second: { gross: 9000, ssEmployee: 750, wht: 0, otherDeduction: 0, net: 8250, paidOn: "" } };
+    const t = payslipText({ ...slip, refund: 850 });
+    expect(t.endsWith("รวมสุทธิทั้งเดือน / Month net: ฿8,250.00\nคืนค่าใช้จ่าย / Expense refund: +฿850.00\nรวมรับทั้งหมด / Total to receive: ฿9,100.00")).toBe(true);
+    expect(payslipText({ ...slip, refund: 850 }, "ko")).toContain("경비 돌려주기: +฿850.00\n받을 돈 합계: ฿9,100.00");
+    expect(payslipText({ ...slip, refund: 0 })).not.toContain("Expense refund");
+  });
+
   it("leaves out a half with nothing paid", () => {
     const t = payslipText({ company: "", employee: "Malee", month: "2026-02", payType: "daily", rate: 400, first: null, second: { gross: 4000, ssEmployee: 200, wht: 0, otherDeduction: 0, net: 3800, paidOn: "" } });
     expect(t).not.toContain("▪ 1–15");
