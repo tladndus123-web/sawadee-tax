@@ -4,7 +4,7 @@
 // against last month, where the money went (a coloured bar by category), who claimed most, and the AI's read of the
 // month (lib/insights-server expenseReport) — which also gives the one-line notes on the claims below.
 
-import { ArrowDownRight, ArrowUpRight, Lightbulb, Loader2, Sparkles } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ChevronRight, Lightbulb, Loader2, Sparkles } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { useCategoryLabel, useCategorySolid } from "@/components/vendors/CategoryIcon";
@@ -39,8 +39,22 @@ export function monthBreakdown(claims: Claim[], month: string) {
   };
 }
 
-export function ExpenseOverview({ claims, month, canAi, onNotes }: { claims: Claim[]; month: string; canAi: boolean; onNotes: (n: Record<string, string>) => void }) {
+export function ExpenseOverview({
+  claims,
+  month,
+  canAi,
+  onNotes,
+  status,
+}: {
+  claims: Claim[];
+  month: string;
+  canAi: boolean;
+  onNotes: (n: Record<string, string>) => void;
+  /** What waits, what is owed and what was paid back this month (satang) — one line under the big number */
+  status?: { pending: number; owed: number; paid: number; onPending: () => void; onOwed: () => void };
+}) {
   const t = useTranslations("expenses.over");
+  const ts = useTranslations("expenses");
   const locale = useLocale();
   const catLabel = useCategoryLabel();
   const solid = useCategorySolid();
@@ -89,6 +103,21 @@ export function ExpenseOverview({ claims, month, canAi, onNotes }: { claims: Cla
           </div>
           <span className="text-[13px] text-muted-foreground">{t("count", { n: b.count })}</span>
         </div>
+        {status && (
+          <div className="flex flex-wrap gap-2" role="group" aria-label={ts("summary")}>
+            <button type="button" onClick={status.onPending} className={cn("press inline-flex h-9 items-center gap-1.5 rounded-full pr-2.5 pl-3 text-[13px] font-semibold", status.pending > 0 ? "bg-warn-soft text-warn" : "bg-muted text-muted-foreground")}>
+              {ts("sumPending")} {ts("countN", { n: status.pending })}
+              <ChevronRight className="size-3.5 opacity-70" aria-hidden />
+            </button>
+            <button type="button" onClick={status.onOwed} className={cn("press inline-flex h-9 items-center gap-1.5 rounded-full pr-2.5 pl-3 text-[13px] font-semibold tabular-nums", status.owed > 0 ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+              {ts("sumOwed")} {bahtWhole(fromSatang(status.owed))}
+              <ChevronRight className="size-3.5 opacity-70" aria-hidden />
+            </button>
+            <span className="inline-flex h-9 items-center rounded-full bg-muted px-3 text-[13px] text-muted-foreground tabular-nums">
+              {ts("sumPaid")} {bahtWhole(fromSatang(status.paid))}
+            </span>
+          </div>
+        )}
 
         {b.total > 0 ? (
           <>

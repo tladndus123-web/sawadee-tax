@@ -4,13 +4,14 @@
 // sheet (worked / day off / absent / annual / sick, overtime hours). Phones scroll it sideways with the names pinned.
 // Under it, each person's leave for the year. The pay run reads its inputs from here ("from attendance").
 
-import { CalendarCheck, CalendarSync, Loader2, Lock, ScanLine, Share2 } from "lucide-react";
+import { CalendarCheck, CalendarSync, ChevronDown, FileImage, Loader2, Lock, ScanLine, Share2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { MoneyInput } from "@/components/invoice/fields";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ATTENDANCE_KINDS, type AttendanceKind, type AttendanceRow, daysOfMonth, leaveBalance } from "@/lib/attendance";
 import { fillWorked, loadAttendance, saveAttendance } from "@/lib/attendance-store";
 import { ALL, branchLabel } from "@/lib/branches";
@@ -103,6 +104,17 @@ export function AttendanceTab({ month, preview }: { month: string; preview?: Att
   };
   const days = useMemo(() => daysOfMonth(month), [month]);
   const cellOf = useMemo(() => new Map((rows ?? []).map((r) => [`${r.employeeId}|${r.day}`, r])), [rows]);
+  // Each person's month at the row's end (owner, 2026-11-06): days by kind and the overtime hours
+  const sums = useMemo(() => {
+    const m = new Map<string, Record<AttendanceKind, number> & { ot: number }>();
+    for (const r of rows ?? []) {
+      const s = m.get(r.employeeId) ?? { work: 0, off: 0, absent: 0, annual: 0, sick: 0, ot: 0 };
+      s[r.kind] += 1;
+      s.ot += r.otHours;
+      m.set(r.employeeId, s);
+    }
+    return m;
+  }, [rows]);
   const weekday = new Intl.DateTimeFormat(locale, { weekday: "narrow", timeZone: "UTC" });
   const isWeekend = (d: string) => [0, 6].includes(new Date(`${d}T00:00:00Z`).getUTCDay());
 
@@ -126,9 +138,9 @@ export function AttendanceTab({ month, preview }: { month: string; preview?: Att
 
   return (
     <div className="grid gap-3">
-      {/* The schedule on the staff's own phone calendars */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-primary/6 px-4 py-2.5">
-        <span className="text-[13px] text-foreground/80">{t("shareHint")}</span>
+      {/* Fill from a photo, and one share menu: the staff's phone calendars, or the sheet as a picture / PDF */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-[13px] text-muted-foreground">{t("shareHint")}</span>
         <span className="flex flex-wrap gap-2">
           {!locked && (
             <Button type="button" variant="secondary" className="h-10 rounded-full px-4" onClick={() => setFromPhoto(true)}>
@@ -136,14 +148,31 @@ export function AttendanceTab({ month, preview }: { month: string; preview?: Att
               {t("sheet.button")}
             </Button>
           )}
-          <Button type="button" variant="secondary" className="h-10 rounded-full px-4" onClick={() => setSharing(true)}>
-            <CalendarSync className="size-4" />
-            {t("shareCal")}
-          </Button>
-          <Button type="button" className="h-10 rounded-full px-4" disabled={!!open || fromPhoto} title={open || fromPhoto ? t("sheetShare.saveFirst") : undefined} onClick={() => setSheetShare(true)}>
-            <Share2 className="size-4" />
-            {t("sheetShare.button")}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" className="h-10 rounded-full px-4">
+                <Share2 className="size-4" />
+                {t("shareMenu")}
+                <ChevronDown className="size-3.5 opacity-70" aria-hidden />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-72 rounded-xl">
+              <DropdownMenuItem onSelect={() => setSharing(true)} className="items-start gap-2.5 py-2.5">
+                <CalendarSync className="mt-0.5 size-4 text-primary" />
+                <span className="grid gap-0.5">
+                  {t("shareCal")}
+                  <span className="text-[11.5px] leading-snug text-muted-foreground">{t("shareCalSub")}</span>
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={!!open || fromPhoto} onSelect={() => setSheetShare(true)} className="items-start gap-2.5 py-2.5">
+                <FileImage className="mt-0.5 size-4 text-primary" />
+                <span className="grid gap-0.5">
+                  {t("sheetShare.button")}
+                  <span className="text-[11.5px] leading-snug text-muted-foreground">{t("sheetShareSub")}</span>
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </span>
       </div>
       {fromPhoto && (
@@ -197,6 +226,7 @@ export function AttendanceTab({ month, preview }: { month: string; preview?: Att
                   <span className="block text-[11px] leading-none text-muted-foreground">{weekday.format(new Date(`${d}T00:00:00Z`))}</span>
                 </th>
               ))}
+              <th className="min-w-[7.5rem] bg-card px-3 py-2 text-left font-semibold sm:sticky sm:right-0 sm:z-10 sm:shadow-[-6px_0_8px_-6px_rgb(0_0_0/0.15)]">{t("sumCol")}</th>
             </tr>
           </thead>
           <tbody>
@@ -229,6 +259,17 @@ export function AttendanceTab({ month, preview }: { month: string; preview?: Att
                     </td>
                   );
                 })}
+                {(() => {
+                  const s = sums.get(e.id);
+                  const parts = s ? (["off", "annual", "sick", "absent"] as const).filter((k) => s[k] > 0).map((k) => `${t(`kindShort.${k}`)} ${s[k]}`) : [];
+                  if (s && s.ot > 0) parts.push(`OT ${s.ot}h`);
+                  return (
+                    <td className="bg-card px-3 py-1.5 align-middle text-[12px] sm:sticky sm:right-0 sm:z-10 sm:shadow-[-6px_0_8px_-6px_rgb(0_0_0/0.15)]">
+                      <span className="block font-semibold whitespace-nowrap text-ok">{s ? t("sumWork", { n: s.work }) : "—"}</span>
+                      {parts.length > 0 && <span className="block whitespace-nowrap text-[11px] text-muted-foreground">{parts.join(" · ")}</span>}
+                    </td>
+                  );
+                })()}
               </tr>
             ))}
           </tbody>

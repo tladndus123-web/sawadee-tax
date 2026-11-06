@@ -57,26 +57,23 @@ export function PasskeyOffer() {
   };
 
   return (
-    <section aria-labelledby="passkey-offer" className="workspace-panel relative mx-auto mb-5 grid w-full max-w-6xl grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-3 p-4 pr-11 sm:p-5 sm:pr-12">
+    // One strip (owner, 2026-11-06: the banner took half a phone screen): mark, title (the reason on wider screens),
+    // the register button; "later" is the × and hides it for two weeks as before
+    <section aria-labelledby="passkey-offer" className="workspace-panel relative mx-auto mb-5 flex w-full max-w-6xl items-center gap-3 py-2.5 pr-11 pl-3 sm:pl-4">
       {/* 간편 로그인 mark (public/quick-signin.svg), the app icon's family */}
       {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG */}
-      <img src="/quick-signin.svg" alt="" aria-hidden="true" className="size-10 rounded-[11px] shadow-[0_4px_10px_rgb(10_92_230/0.3)]" />
-      <div className="grid gap-0.5">
-        <h2 id="passkey-offer" className="text-[15px] font-semibold">
+      <img src="/quick-signin.svg" alt="" aria-hidden="true" className="size-8 flex-none rounded-[9px] shadow-[0_3px_8px_rgb(10_92_230/0.3)]" />
+      <div className="grid min-w-0 flex-1 gap-0">
+        <h2 id="passkey-offer" className="line-clamp-2 text-[14px] leading-snug font-semibold sm:truncate">
           {t("offerTitle")}
         </h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">{t("offerBody")}</p>
+        <p className="truncate text-[12px] text-muted-foreground max-sm:hidden">{t("offerBody")}</p>
       </div>
-      <div className="col-start-2 flex flex-wrap gap-2">
-        <Button type="button" className="h-10 rounded-full px-5" disabled={busy} onClick={() => void register()}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
-          {t("register")}
-        </Button>
-        <Button type="button" variant="ghost" className="h-10 rounded-full px-4" disabled={busy} onClick={later}>
-          {t("later")}
-        </Button>
-      </div>
-      <button type="button" onClick={later} aria-label={t("later")} className="press absolute top-3 right-3 grid size-8 place-items-center rounded-full text-muted-foreground hover:bg-muted">
+      <Button type="button" className="h-9 flex-none rounded-full px-4" disabled={busy} onClick={() => void register()}>
+        {busy ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
+        {t("register")}
+      </Button>
+      <button type="button" onClick={later} aria-label={t("later")} title={t("later")} className="press absolute top-1/2 right-2 grid size-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted">
         <X className="size-4" />
       </button>
     </section>

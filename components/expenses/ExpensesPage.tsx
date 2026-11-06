@@ -117,27 +117,19 @@ export function ExpensesPage() {
       </header>
 
       {/* Admins: the month at a glance and the AI's read of it */}
-      {isAdmin && <ExpenseOverview claims={claims} month={today.slice(0, 7)} canAi={fullAdmin(me)} onNotes={setNotes} />}
+      {isAdmin && (
+        <ExpenseOverview
+          claims={claims}
+          month={today.slice(0, 7)}
+          canAi={fullAdmin(me)}
+          onNotes={setNotes}
+          status={{ pending: sum.pending, owed: sum.owed, paid: sum.paid, onPending: () => setTab("pending"), onOwed: () => setTab("approved") }}
+        />
+      )}
 
       {showSettings && isAdmin && <ExpenseSettingsPanel onClose={() => setShowSettings(false)} />}
 
-      {/* Admins: what waits and who is owed */}
-      {isAdmin && (
-        <section className="grid gap-3 sm:grid-cols-3" aria-label={t("summary")}>
-          <button type="button" onClick={() => setTab("pending")} className="workspace-panel grid gap-0.5 p-4 text-left">
-            <span className="text-[13px] text-muted-foreground">{t("sumPending")}</span>
-            <b className="text-[26px] leading-tight font-semibold text-warn tabular-nums">{t("countN", { n: sum.pending })}</b>
-          </button>
-          <button type="button" onClick={() => setTab("approved")} className="workspace-panel grid gap-0.5 p-4 text-left">
-            <span className="text-[13px] text-muted-foreground">{t("sumOwed")}</span>
-            <b className="text-[26px] leading-tight font-semibold text-primary tabular-nums">{baht(fromSatang(sum.owed))}</b>
-          </button>
-          <div className="workspace-panel grid gap-0.5 p-4">
-            <span className="text-[13px] text-muted-foreground">{t("sumPaid")}</span>
-            <b className="text-[26px] leading-tight font-semibold tabular-nums">{baht(fromSatang(sum.paid))}</b>
-          </div>
-        </section>
-      )}
+      {/* Admins: who is owed (what waits and what was paid back are in the overview card) */}
       {isAdmin && owe.length > 0 && (
         <section className="workspace-panel grid gap-2 p-4 sm:p-5" aria-labelledby="owed-title">
           <h2 id="owed-title" className="flex items-center gap-2 text-[15px] font-semibold">
@@ -146,14 +138,15 @@ export function ExpensesPage() {
           </h2>
           <ul className="grid gap-2">
             {owe.map((o) => (
-              <li key={o.userId ?? o.name} className="flex flex-wrap items-center gap-3 rounded-2xl bg-muted/50 px-4 py-3">
+              // Phones: name · count and the amount on one line, the button full width under them
+              <li key={o.userId ?? o.name} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 rounded-2xl bg-muted/50 px-4 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
                 <span className="grid size-9 flex-none place-items-center rounded-full bg-primary/10 text-[13px] font-bold text-primary">{(o.name || "?").slice(0, 1)}</span>
-                <span className="grid min-w-0 flex-1">
+                <span className="flex min-w-0 items-baseline gap-2">
                   <b className="truncate text-[15px]">{o.name}</b>
-                  <span className="text-[12px] text-muted-foreground">{t("owedCount", { n: o.ids.length })}</span>
+                  <span className="flex-none text-[12px] whitespace-nowrap text-muted-foreground">{t("owedCount", { n: o.ids.length })}</span>
                 </span>
-                <b className="text-[18px] tabular-nums">{baht(fromSatang(o.amount))}</b>
-                <Button type="button" className="h-9 rounded-full px-4" onClick={() => setPaying(claims.filter((c) => o.ids.includes(c.id)))}>
+                <b className="text-[18px] whitespace-nowrap tabular-nums">{baht(fromSatang(o.amount))}</b>
+                <Button type="button" className="col-span-3 h-10 w-full rounded-full px-4 sm:col-span-1 sm:h-9 sm:w-auto" onClick={() => setPaying(claims.filter((c) => o.ids.includes(c.id)))}>
                   <Check className="size-4" />
                   {t("paidBack")}
                 </Button>

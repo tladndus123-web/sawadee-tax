@@ -29,6 +29,7 @@ import { CostCard } from "@/components/sales/CostCard";
 import { useMe } from "@/lib/role-store";
 import { ALL } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
+import { BalancedColumns } from "./BalancedColumns";
 import { BranchTable } from "./BranchTable";
 import { DashEditor } from "./DashEditor";
 import { ADMIN_ONLY, arrange, CARD_SCREEN, DASH_CARDS, type DashCard } from "@/lib/dash-layout";
@@ -270,15 +271,7 @@ export function Dashboard() {
       {layout.wide.map((k) => (
         <div key={k}>{cards[k]}</div>
       ))}
-      {layout.rest.length > 0 && (
-        <div className="-mb-5 gap-5 lg:columns-2 [&>*]:mb-5 [&>*]:break-inside-avoid">
-          {layout.rest.map((k) => (
-            <div key={k} className="min-w-0">
-              {cards[k]}
-            </div>
-          ))}
-        </div>
-      )}
+      {layout.rest.length > 0 && <BalancedColumns items={layout.rest.map((k) => ({ key: k, node: cards[k] }))} />}
 
       {/* Phones, until installed or closed: put the app on the home screen */}
       <InstallCard compact />

@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { promptInstall, useInstall } from "@/lib/install-app";
+import { cn } from "@/lib/utils";
 import { useFoldStatus } from "./SettingsFold";
 
 const HIDE_KEY = "trl.installTipHidden";
@@ -43,36 +44,37 @@ export function InstallCard({ compact }: { compact?: boolean }) {
 
   const steps =
     state === "ios" ? (
-      <ol className="grid gap-1.5 text-sm">
-        <li className="flex items-center gap-2">
-          <span className="grid size-6 flex-none place-items-center rounded-full bg-muted text-xs font-semibold">1</span>
+      <ol className={compact ? "flex flex-wrap gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground" : "grid gap-1.5 text-sm"}>
+        <li className="flex items-center gap-1.5">
+          <span className={cn("grid flex-none place-items-center rounded-full bg-muted font-semibold", compact ? "size-5 text-[10px]" : "size-6 text-xs")}>1</span>
           <span>{t.rich("ios1", { icon: () => <Share className="inline size-4 align-[-3px] text-primary" aria-label="Share" /> })}</span>
         </li>
-        <li className="flex items-center gap-2">
-          <span className="grid size-6 flex-none place-items-center rounded-full bg-muted text-xs font-semibold">2</span>
+        <li className="flex items-center gap-1.5">
+          <span className={cn("grid flex-none place-items-center rounded-full bg-muted font-semibold", compact ? "size-5 text-[10px]" : "size-6 text-xs")}>2</span>
           <span>{t.rich("ios2", { icon: () => <SquarePlus className="inline size-4 align-[-3px]" aria-hidden /> })}</span>
         </li>
       </ol>
     ) : state === "prompt" ? (
-      <Button type="button" className="h-10 w-fit rounded-full px-5" onClick={() => void promptInstall()}>
+      <Button type="button" className={cn("w-fit rounded-full", compact ? "h-9 px-4" : "h-10 px-5")} onClick={() => void promptInstall()}>
         <Download className="size-4" />
         {t("button")}
       </Button>
     ) : state === "manual" ? (
-      <p className="text-sm leading-relaxed text-muted-foreground">
+      <p className={compact ? "text-[12.5px] leading-snug text-muted-foreground" : "text-sm leading-relaxed text-muted-foreground"}>
         {t.rich("manual", { icon: () => <EllipsisVertical className="inline size-4 align-[-3px] text-foreground" aria-label="Menu" /> })}
       </p>
     ) : null;
 
   if (compact) {
+    // A short strip (owner, 2026-11-06): the tip and the steps side by side, × hides it
     return (
-      <section className="workspace-panel relative grid gap-2.5 p-4 pr-11 md:hidden" aria-label={t("title")}>
-        <p className="flex items-center gap-2 text-sm font-semibold">
+      <section className="workspace-panel relative flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 pr-11 pl-4 md:hidden" aria-label={t("title")}>
+        <p className="flex items-center gap-2 text-[13px] font-semibold">
           <Smartphone className="size-4 text-brand" aria-hidden />
           {t("tip")}
         </p>
         {steps}
-        <button type="button" onClick={hide} aria-label={t("hide")} className="absolute top-2 right-2 grid size-10 place-items-center rounded-full text-muted-foreground hover:bg-muted">
+        <button type="button" onClick={hide} aria-label={t("hide")} className="absolute top-1/2 right-2 grid size-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted">
           <X className="size-4" />
         </button>
       </section>

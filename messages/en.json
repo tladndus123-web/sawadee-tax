@@ -1723,7 +1723,7 @@
       "rate": "Too many sends. Try again in a minute.",
       "fail": "Could not send."
     },
-    "shareHint": "Put the schedule on the staff phone calendars — changes follow by themselves.",
+    "shareHint": "Share the schedule to the staff’s phone calendars or as a PDF.",
     "shareCal": "Share as calendar",
     "sheetShare": {
       "button": "Share attendance sheet",
@@ -1764,7 +1764,7 @@
       "allBranches": "Every branch on screen is included. The branch is under each name."
     },
     "sheet": {
-      "button": "Schedule from photo",
+      "button": "Fill from a photo",
       "title": "Make the schedule from a photo",
       "sub": "Take a photo of the schedule (paper, whiteboard or a spreadsheet) and the AI fills in the attendance. You check it before saving.",
       "pick": "Pick or take schedule photos",
@@ -1818,7 +1818,12 @@
         "slips": "All handed out",
         "filing": "Filed"
       }
-    }
+    },
+    "shareMenu": "Share",
+    "shareCalSub": "Appears in the staff’s phone calendars and follows changes.",
+    "sheetShareSub": "Save or send this month’s sheet as a picture or PDF.",
+    "sumCol": "Total",
+    "sumWork": "{n} days worked"
   },
   "fixed": {
     "title": "Fixed costs (no invoice)",
