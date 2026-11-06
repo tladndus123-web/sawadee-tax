@@ -46,10 +46,20 @@ async function ask(system: string, user: string, schema: Record<string, unknown>
   }
 }
 
-/** Kept, or made (and kept) when missing, made from something else, or older than `maxAgeMs` */
-async function kept<T>(admin: Admin, key: string, stamp: string, maxAgeMs: number, make: () => Promise<T | null>): Promise<{ body: T; madeAt: string } | null> {
+/** Making a new answer is over the person's limit and nothing was kept to show instead (the route answers 429) */
+export class AiBusy extends Error {}
+/** May a new answer be made now (lib/api-admin-server spend); none = always */
+export type CanMake = () => boolean;
+
+/** Kept, or made (and kept) when missing, made from something else, or older than `maxAgeMs`. Over the limit, the
+ * last kept answer is shown even if it is out of date. */
+async function kept<T>(admin: Admin, key: string, stamp: string, maxAgeMs: number, make: () => Promise<T | null>, canMake?: CanMake): Promise<{ body: T; madeAt: string } | null> {
   const { data } = await admin.from("ai_notes").select("body, stamp, made_at").eq("key", key).maybeSingle();
   if (data && data.stamp === stamp && Date.now() - Date.parse(data.made_at as string) < maxAgeMs) return { body: data.body as T, madeAt: data.made_at as string };
+  if (canMake && !canMake()) {
+    if (data) return { body: data.body as T, madeAt: data.made_at as string };
+    throw new AiBusy();
+  }
   const body = await make();
   if (!body) return data ? { body: data.body as T, madeAt: data.made_at as string } : null;
   const madeAt = new Date().toISOString();
@@ -100,7 +110,7 @@ export function claimLines(all: Claim[], month: string, flags: (c: Claim) => Fla
   return { lines, ids: mine.map((c) => c.id) };
 }
 
-export async function expenseReport(admin: Admin, month: string, lang: string): Promise<{ body: ExpenseReport; madeAt: string } | null> {
+export async function expenseReport(admin: Admin, month: string, lang: string, canMake?: CanMake): Promise<{ body: ExpenseReport; madeAt: string } | null> {
   const [{ data: rows }, { data: photos }, cats] = await Promise.all([
     admin.from("expense_claims").select("*"),
     admin.from("documents").select("id, photo_hash").is("deleted_at", null).not("photo_hash", "is", null),
@@ -147,7 +157,7 @@ export async function expenseReport(admin: Admin, month: string, lang: string): 
       tip: str(raw.tip, 240),
       notes,
     };
-  });
+  }, canMake);
 }
 
 // ── Calendar ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -171,7 +181,7 @@ const BRIEF_SCHEMA = {
   },
 } as const;
 
-export async function weekBrief(admin: Admin, today: string, lang: string): Promise<{ body: WeekBrief; madeAt: string } | null> {
+export async function weekBrief(admin: Admin, today: string, lang: string, canMake?: CanMake): Promise<{ body: WeekBrief; madeAt: string } | null> {
   const [cal, books] = await Promise.all([calendarContext(admin, today), booksContext(admin, today, false)]);
   return kept<WeekBrief>(admin, `brief:${today}:${lang}`, hash(cal), 6 * 3_600_000, async () => {
     const raw = (await ask(
@@ -191,7 +201,7 @@ export async function weekBrief(admin: Admin, today: string, lang: string): Prom
       .filter((i) => i.title)
       .slice(0, 3);
     return items.length ? { summary: str(raw.summary, 200), items } : null;
-  });
+  }, canMake);
 }
 
 const EVENT_SCHEMA = {
@@ -249,7 +259,7 @@ const SALES_SCHEMA = {
 } as const;
 
 /** The sales screen's AI: how the month is going and what to do about it (owner, 2026-11-06, Sonnet) */
-export async function salesReport(admin: Admin, month: string, today: string, lang: string): Promise<{ body: SalesReport; madeAt: string } | null> {
+export async function salesReport(admin: Admin, month: string, today: string, lang: string, canMake?: CanMake): Promise<{ body: SalesReport; madeAt: string } | null> {
   const [{ data: branches }, inputs, books] = await Promise.all([admin.from("branches").select("id, name").order("sort"), costInputs(admin), monthBooks(admin, month)]);
   const facts = salesFacts(inputs.sales, (branches ?? []).map((b) => ({ id: b.id as string, name: (b.name as string) ?? "" })), month, today);
   if (!facts.lines.length) return null;
@@ -283,5 +293,5 @@ export async function salesReport(admin: Admin, month: string, today: string, la
       .slice(0, 3);
     const headline = str(raw.headline, 240);
     return headline ? { headline, points: (Array.isArray(raw.points) ? raw.points : []).map((p) => str(p, 200)).filter(Boolean).slice(0, 3), actions } : null;
-  });
+  }, canMake);
 }

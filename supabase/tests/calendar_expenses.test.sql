@@ -2,7 +2,7 @@
 -- Everything rolls back; the claims are dated in 2001 so they never touch a real month.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(26);
+select plan(28);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000e0a01', 'boss@test.local'),
@@ -65,6 +65,15 @@ select is((select status from public.expense_claims where id = '00000000-0000-00
 insert into public.expense_claims (id, name, day, amount, employee_id) values ('00000000-0000-0000-0000-0000000e0c03', 'Mai', '2001-05-03', 900000, '00000000-0000-0000-0000-0000000e0e01');
 select is((select employee_id from public.expense_claims where id = '00000000-0000-0000-0000-0000000e0c03'), null, 'a member cannot link their claim to an employee''s pay');
 select throws_like($$ update public.expense_claims set employee_id = '00000000-0000-0000-0000-0000000e0e01' where id = '00000000-0000-0000-0000-0000000e0c03' $$, '%only an admin decides%', 'nor later');
+
+-- The receipt photo of a waiting claim (…003900): its member sees it, another member does not
+reset role;
+insert into storage.objects (bucket_id, name) values ('documents', '00000000-0000-0000-0000-0000000e0c03/receipt.jpg');
+set local role authenticated;
+select is((select count(*)::int from storage.objects where name = '00000000-0000-0000-0000-0000000e0c03/receipt.jpg'), 1, 'a member sees the photo of their own waiting claim');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000e0a02');
+select is((select count(*)::int from storage.objects where name = '00000000-0000-0000-0000-0000000e0c03/receipt.jpg'), 0, 'another member does not');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000e0a03');
 select pg_temp.act_as('00000000-0000-0000-0000-0000000e0a01');
 update public.expense_claims set status = 'rejected' where id = '00000000-0000-0000-0000-0000000e0c02';
 select throws_like($$ update public.expense_claims set status = 'paid' where id = '00000000-0000-0000-0000-0000000e0c02' $$, '%rejected claim is not paid%', 'a rejected claim is never paid');
