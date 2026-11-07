@@ -2,7 +2,7 @@
 //   GET   ?client_id&redirect_uri → { name } when the request is good (the page shows who is asking)
 //   POST  { client_id, redirect_uri, code_challenge, state, allow } → { redirect } back to the agent
 //         (with a one-time code valid 5 minutes, or error=access_denied)
-import { newCode, redirectOk, sha256hex, withParams } from "@/lib/oauth";
+import { agentName, newCode, redirectOk, sha256hex, withParams } from "@/lib/oauth";
 import { ownerOf } from "@/lib/owner-server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 async function client(clientId: string, redirectUri: string) {
   if (!/^mcp_[A-Za-z0-9]{24}$/.test(clientId) || !redirectOk(redirectUri)) return null;
   const { data } = await supabaseAdmin().from("oauth_clients").select("name, redirect_uris").eq("client_id", clientId).maybeSingle();
-  return data && (data.redirect_uris as string[]).includes(redirectUri) ? { name: data.name as string } : null;
+  return data && (data.redirect_uris as string[]).includes(redirectUri) ? { name: agentName(data.name as string) } : null;
 }
 
 export async function GET(req: Request) {

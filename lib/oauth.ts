@@ -66,6 +66,9 @@ export function readAuthRequest(q: URLSearchParams): AuthRequest | { error: stri
   return { clientId, redirectUri, challenge, state };
 }
 
+/** The name to show for an agent: Grok Bot is built on Cursor and registers as "Cursor" (seen on the live site 2026-11-08) */
+export const agentName = (name: string): string => (/^cursor$/i.test(name.trim()) ? "Grok Bot" : name.trim() || "AI agent");
+
 /** The metadata that tells an agent where to sign in (RFC 9728 resource + RFC 8414 server) */
 export function resourceMetadata(origin: string) {
   return { resource: `${origin}/api/mcp`, authorization_servers: [origin], bearer_methods_supported: ["header"], resource_name: "Sawadee TAX" };

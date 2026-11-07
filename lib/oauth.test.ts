@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { newClientId, newCode, pkceOk, readAuthRequest, redirectOk, serverMetadata, withParams } from "./oauth";
+import { agentName, newClientId, newCode, pkceOk, readAuthRequest, redirectOk, serverMetadata, withParams } from "./oauth";
 
 const verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
 const challenge = createHash("sha256").update(verifier).digest("base64url");
@@ -25,6 +25,11 @@ describe("agent sign-in (OAuth with PKCE)", () => {
   });
   it("adds the code and state to the way back", () => {
     expect(withParams("grokbot://app/cb?x=1", { code: "abc", state: "s", error: undefined })).toBe("grokbot://app/cb?x=1&code=abc&state=s");
+  });
+  it("shows Grok Bot for the Cursor-based client", () => {
+    expect(agentName("Cursor")).toBe("Grok Bot");
+    expect(agentName("Claude")).toBe("Claude");
+    expect(agentName("  ")).toBe("AI agent");
   });
   it("makes ids and codes of the right shape and tells where to sign in", () => {
     expect(newClientId()).toMatch(/^mcp_[A-Za-z0-9]{24}$/);

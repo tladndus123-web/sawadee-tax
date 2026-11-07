@@ -1,7 +1,7 @@
 // The agent swaps the one-time code for its key (PKCE checked, the code works once). The key is an ordinary bot_keys
 // row: listed in settings and disconnected there. Connecting again from the same agent replaces its old key.
 import { hashKey, keyHint, makeKey } from "@/lib/bot-keys";
-import { pkceOk, sha256hex } from "@/lib/oauth";
+import { agentName, pkceOk, sha256hex } from "@/lib/oauth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   const key = makeKey();
   const { error } = await admin
     .from("bot_keys")
-    .insert({ name: String(client?.name ?? "AI agent").slice(0, 40), key_hash: hashKey(key), hint: keyHint(key), created_by: code.user_id, client_id: f.client_id });
+    .insert({ name: agentName(String(client?.name ?? "")).slice(0, 40), key_hash: hashKey(key), hint: keyHint(key), created_by: code.user_id, client_id: f.client_id });
   if (error) return fail("server_error", 500);
   return Response.json({ access_token: key, token_type: "Bearer", scope: "books" }, { headers: CORS });
 }
