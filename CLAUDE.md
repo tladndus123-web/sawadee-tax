@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (587) · `npm run db:test` (395 in 7 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (594) · `npm run db:test` (395 in 7 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy (app + DB) | **Push to `main` and let GitHub Actions deploy** (`.github/workflows/deploy.yml`: checks → migrations → pgTAP on the cloud DB → Vercel → live check). Cursor pushes to `main` too, so never deploy from this PC (`vercel deploy`) — a local build can put an older tree live over theirs (happened twice 2026-11-05). Check the run with the GitHub API (token from `git credential fill` for github.com, never printed): `GET https://api.github.com/repos/tladndus123-web/sawadee-tax/actions/runs?per_page=3`. Only if Actions is down: `npx vercel deploy --prod` from an up-to-date `main` |
 | If a deploy is broken | `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>`. A failed Actions run leaves the site as it was |
@@ -190,6 +190,12 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 - **Security check fixes** (2026-11-07): Next 15.5.29 / Zod 4.6.7 (npm audit: 0 in production deps); the sign-in
   landing only follows a same-site path (`lib/auth/safe-next`, "/\x" was let through); `/api/expenses/notify` sends the
   same claim at most once a minute and 10 notices a minute per person.
+- **Tax return numbers** (2026-11-08, owner: "신고서 숫자 도우미"): `/ledger/filing/[month]` (`FilingHelper`, admins who may
+  open sales) — total due, the ภ.พ.30 boxes 1–12 in the form's numbering with a copy button each (plain "6300.00"; box 10
+  carried forward is typed, 11/12 follow), ภ.ง.ด.53 / ภ.ง.ด.3 tabs (`buildWhtFiling`: bad tax IDs, unpaid withholdings),
+  checks, and "filed" ticks = the tax calendar's `vat:YYYY-MM` / `monthly:YYYY-MM`. Pure `lib/filing.ts` (purchases by
+  claim month like the input tax report, sales by day, withholding by month paid). Opened from the dashboard VAT card and
+  the ledger export menu. Follows the branch being worked in.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

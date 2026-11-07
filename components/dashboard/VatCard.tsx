@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, CircleCheck, FileText, ListChecks, Lock, TriangleAlert } from "lucide-react";
+import { Calculator, CalendarClock, CircleCheck, FileText, ListChecks, Lock, TriangleAlert } from "lucide-react";
 import { useScreenDate } from "@/components/ScreenDate";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
@@ -23,6 +23,7 @@ export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry
   const t = useTranslations("vat");
   const sd = useScreenDate();
   const tf = useTranslations("flow");
+  const tfi = useTranslations("filing");
   const monthLabel = useMonthLabel();
   const locks = useMonthLocks();
   const f = vatFiling(today);
@@ -100,6 +101,13 @@ export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry
             {tf("start")}
           </Link>
         )}
+        <Link
+          href={`/ledger/filing/${f.month}`}
+          className="press inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-4 text-sm font-medium hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] active:scale-[0.97]"
+        >
+          <Calculator className="size-4 text-brand" aria-hidden />
+          {tfi("short")}
+        </Link>
         <Link
           href={`/ledger/report/${f.month}`}
           className="press inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-4 text-sm font-medium hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] active:scale-[0.97]"

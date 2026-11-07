@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Download, FileArchive, FileSpreadsheet, FileText, Loader2, ReceiptText } from "lucide-react";
+import { Calculator, ChevronDown, Download, FileArchive, FileSpreadsheet, FileText, Loader2, ReceiptText } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -199,6 +199,12 @@ export function ExportButtons({ month, entries, label }: { month: string; entrie
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild className="gap-2 py-2.5">
+          <Link href={`/ledger/filing/${month}`}>
+            <Calculator className="size-4 text-brand" />
+            {t("filing.short")}
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild className="gap-2 py-2.5">
           <Link href={`/ledger/wht/${month}`}>
             <ReceiptText className="size-4 text-muted-foreground" />
