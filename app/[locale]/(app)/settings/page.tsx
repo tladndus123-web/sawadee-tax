@@ -1,4 +1,4 @@
-import { Bell, CalendarClock, FileSpreadsheet, FileText, KeyRound, MessageCircle, Shapes, Smartphone, Store, Tag, UserPlus } from "lucide-react";
+import { Bell, Bot, CalendarClock, FileSpreadsheet, FileText, KeyRound, MessageCircle, Shapes, Smartphone, Store, Tag, UserPlus } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FormSettings } from "@/components/settings/FormSettings";
 import { ExcelFormatCard } from "@/components/settings/ExcelFormatCard";
@@ -8,6 +8,7 @@ import { OwnerOnly } from "@/components/settings/OwnerOnly";
 import { StickerNameSettings } from "@/components/ledger/Stickers";
 import { LineCard } from "@/components/settings/LineCard";
 import { BranchCard } from "@/components/settings/BranchCard";
+import { BotCard } from "@/components/settings/BotCard";
 import { CategoryCard } from "@/components/settings/CategoryCard";
 import { FixedCostCard } from "@/components/settings/FixedCostCard";
 import { InstallCard } from "@/components/settings/InstallCard";
@@ -66,6 +67,11 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
           <SettingsFold icon={<Bell className="text-primary" />} title={t("push.title")}>
             <PushCard />
           </SettingsFold>
+          <OwnerOnly>
+            <SettingsFold icon={<Bot className="text-primary" />} title={t("bot.title")}>
+              <BotCard />
+            </SettingsFold>
+          </OwnerOnly>
         </SettingsGroup>
         <SettingsGroup title={t("settings.group.device")}>
           <SettingsFold icon={<KeyRound className="text-primary" />} title={t("passkey.title")}>
