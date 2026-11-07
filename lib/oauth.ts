@@ -4,6 +4,7 @@
 // Pure rules here; routes in app/api/oauth/* and app/.well-known/*.
 
 import { createHash, randomBytes } from "node:crypto";
+import { CONNECTOR_ICON_PATH } from "./mcp";
 
 const ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 export const randomText = (n: number): string => {
@@ -69,9 +70,17 @@ export function readAuthRequest(q: URLSearchParams): AuthRequest | { error: stri
 /** The name to show for an agent: Grok Bot is built on Cursor and registers as "Cursor" (seen on the live site 2026-11-08) */
 export const agentName = (name: string): string => (/^cursor$/i.test(name.trim()) ? "Grok Bot" : name.trim() || "AI agent");
 
-/** The metadata that tells an agent where to sign in (RFC 9728 resource + RFC 8414 server) */
+/** The metadata that tells an agent where to sign in (RFC 9728 resource + RFC 8414 server).
+ * logo_uri is not part of those RFCs (the spec's logo_uri is on the agent's own client document).
+ * Some connector screens still read it here, before initialize, so it points at the same PNG as serverInfo.icons. */
 export function resourceMetadata(origin: string) {
-  return { resource: `${origin}/api/mcp`, authorization_servers: [origin], bearer_methods_supported: ["header"], resource_name: "Sawadee TAX" };
+  return {
+    resource: `${origin}/api/mcp`,
+    authorization_servers: [origin],
+    bearer_methods_supported: ["header"],
+    resource_name: "Sawadee TAX",
+    logo_uri: `${origin}${CONNECTOR_ICON_PATH}`,
+  };
 }
 export function serverMetadata(origin: string) {
   return {
@@ -84,5 +93,6 @@ export function serverMetadata(origin: string) {
     code_challenge_methods_supported: ["S256"],
     token_endpoint_auth_methods_supported: ["none"],
     scopes_supported: ["books"],
+    logo_uri: `${origin}${CONNECTOR_ICON_PATH}`,
   };
 }
