@@ -49,7 +49,11 @@ const nextConfig: NextConfig = {
     "/api/line/webhook": ["./docs/reference/extract-prompt.txt", ...SHARP_LINUX],
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Connector UIs load this PNG from another origin. The file itself is the owner's 130×135 image.
+      { source: "/mcp-icon.png", headers: [{ key: "Access-Control-Allow-Origin", value: "*" }] },
+    ];
   },
 };
 

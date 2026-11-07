@@ -11,7 +11,8 @@ export interface McpTool {
   run: (args: Record<string, unknown>) => Promise<unknown>;
 }
 
-export const MCP_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"];
+// Newest first. 2025-11-25 is the revision that defines serverInfo.icons; older ones stay so current clients still connect.
+export const MCP_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
 export interface ServerInfo {
   name: string;
@@ -19,7 +20,16 @@ export interface ServerInfo {
   instructions: string;
   title?: string;
   websiteUrl?: string;
-  icons?: { src: string; mimeType: string; sizes: string[] }[];
+  /** SEP-973 Icon: src is an https or data URI; sizes are "WxH" strings such as "130x135". */
+  icons?: { src: string; mimeType?: string; sizes?: string[] }[];
+}
+
+/** The connector tile. public/mcp-icon.png is the owner's PNG, stored as given (130×135), not resized. */
+export const CONNECTOR_ICON_PATH = "/mcp-icon.png";
+export const CONNECTOR_ICON_SIZE = "130x135";
+
+export function connectorIcons(origin: string): NonNullable<ServerInfo["icons"]> {
+  return [{ src: `${origin.replace(/\/$/, "")}${CONNECTOR_ICON_PATH}`, mimeType: "image/png", sizes: [CONNECTOR_ICON_SIZE] }];
 }
 
 type Msg = { jsonrpc?: string; id?: string | number | null; method?: string; params?: Record<string, unknown> };
