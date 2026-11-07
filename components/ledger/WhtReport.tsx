@@ -19,19 +19,9 @@ import { nextMonth } from "@/lib/month-lock-store";
 import { digitsOnly, dmy } from "@/lib/thai-tax";
 import type { Tri } from "@/lib/types";
 import { buildWhtList, type WhtRow } from "@/lib/wht";
+import { WHT_TYPE_TH as TYPE_TH } from "@/lib/wht-file";
 import { useMonthLabel } from "./Stickers";
 
-/** Kind of income as the attachment writes it (Thai, the legal form) */
-const TYPE_TH: Record<string, string> = {
-  service: "ค่าบริการ",
-  professional: "ค่าวิชาชีพอิสระ",
-  contract: "ค่าจ้างทำของ",
-  rent: "ค่าเช่า",
-  advertising: "ค่าโฆษณา",
-  transport: "ค่าขนส่ง",
-  other: "อื่น ๆ",
-  "": "ค่าบริการ",
-};
 
 const line = (t: Tri, lang: "th" | "en" | "ja") => t.th || t[lang] || t.en || t.ja;
 

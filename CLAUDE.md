@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (594) · `npm run db:test` (395 in 7 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (600) · `npm run db:test` (395 in 7 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy (app + DB) | **Push to `main` and let GitHub Actions deploy** (`.github/workflows/deploy.yml`: checks → migrations → pgTAP on the cloud DB → Vercel → live check). Cursor pushes to `main` too, so never deploy from this PC (`vercel deploy`) — a local build can put an older tree live over theirs (happened twice 2026-11-05). Check the run with the GitHub API (token from `git credential fill` for github.com, never printed): `GET https://api.github.com/repos/tladndus123-web/sawadee-tax/actions/runs?per_page=3`. Only if Actions is down: `npx vercel deploy --prod` from an up-to-date `main` |
 | If a deploy is broken | `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>`. A failed Actions run leaves the site as it was |
@@ -196,6 +196,10 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   checks, and "filed" ticks = the tax calendar's `vat:YYYY-MM` / `monthly:YYYY-MM`. Pure `lib/filing.ts` (purchases by
   claim month like the input tax report, sales by day, withholding by month paid). Opened from a blue button on every
   ledger month row (next to export, owner's pick), the dashboard VAT card and the export menu. Follows the branch being worked in.
+  Box 10 fills itself from last month's box 12 (`carriedIn`, month by month; typed over when a refund was asked). The
+  ภ.ง.ด.53 / 3 tabs download the attachment list for the Revenue Department's RD Prep (`lib/wht-file.ts`: the RD's
+  FORMAT กลาง rules — UTF-8, "|", CR/LF, Buddhist dd/mm/yyyy, no * + / \ ! $ % # & @ , ' "; column names on line 1;
+  name `PND53_<taxid>_<branch6>_<BE year>_<mm>_00_00.txt`) → RD Prep โอนย้ายข้อมูล → .rdx → e-Filing upload.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

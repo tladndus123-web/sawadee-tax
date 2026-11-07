@@ -132,3 +132,27 @@ export function filingMonth(today: string): string {
   const last = new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 7);
   return today <= vatDeadlines(last).dueOnline ? last : today.slice(0, 7);
 }
+
+/**
+ * Box 10 (ภาษีที่ชำระเกินยกมา): last month's box 12, worked out month by month from the first month with sales or
+ * purchases (at most 36 months back). Each month: its own VAT to pay − overpaid − what came in; a negative result goes
+ * on. Assumes every overpaid month was carried, not refunded — the person changes box 10 when a refund was asked for.
+ */
+export function carriedIn(sales: readonly Sale[], purchases: readonly LedgerDoc[], month: string, companyTaxId: string): number {
+  const shift = (ym: string, by: number) => new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)) - 1 + by, 1)).toISOString().slice(0, 7);
+  const floor = shift(month, -36);
+  let first = month;
+  for (const s of sales) if (s.date.slice(0, 7) < first) first = s.date.slice(0, 7);
+  for (const d of purchases) {
+    const m = monthKey(d);
+    if (/^\d{4}-\d{2}$/.test(m) && m < first) first = m;
+  }
+  if (first < floor) first = floor;
+  let carry = 0;
+  for (let m = first; m < month; m = shift(m, 1)) {
+    const { pp30 } = buildPp30(sales, purchases, m, companyTaxId);
+    const net = toSatang(pp30.toPay) - toSatang(pp30.overpaid) - carry;
+    carry = Math.max(-net, 0);
+  }
+  return fromSatang(carry);
+}

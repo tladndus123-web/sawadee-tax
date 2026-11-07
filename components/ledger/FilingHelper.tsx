@@ -5,7 +5,7 @@
 // and a "filed" tick that is the same tick as the tax calendar's. Follows the branch being worked in, like the input tax
 // report. Admins only (the numbers read the whole month's sales and purchases).
 
-import { Check, ChevronLeft, ChevronRight, CircleCheck, Copy, FileText, Loader2, ReceiptText, TriangleAlert } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CircleCheck, Copy, Download, FileText, Loader2, ReceiptText, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -17,7 +17,8 @@ import { useBranch, useBranches } from "@/lib/branch-store";
 import { setDone, useCalendar } from "@/lib/calendar-store";
 import { useCompany } from "@/lib/company-store";
 import { summarize } from "@/lib/dashboard";
-import { buildPp30, buildWhtFiling, filingDeadlines, totalToPay } from "@/lib/filing";
+import { downloadBlob } from "@/lib/attendance-share";
+import { buildPp30, buildWhtFiling, carriedIn, filingDeadlines, totalToPay } from "@/lib/filing";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { baht, fmt, fromSatang, toSatang } from "@/lib/money";
 import { nextMonth, useMonthLocks } from "@/lib/month-lock-store";
@@ -27,6 +28,7 @@ import { canOpen } from "@/lib/screens";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import type { WhtRow } from "@/lib/wht";
+import { whtFileName, whtFileText } from "@/lib/wht-file";
 import { useMonthLabel } from "./Stickers";
 
 type Tab = "vat" | "53" | "3";
@@ -49,7 +51,8 @@ export function FilingHelper({ month }: { month: string }) {
   const branch = useBranch();
   const { branches } = useBranches();
   const [tab, setTab] = useState<Tab>("vat");
-  const [carried, setCarried] = useState("");
+  // Box 10: null = worked out from last month (carriedIn), else what the person typed
+  const [carried, setCarried] = useState<string | null>(null);
   const today = todayBangkok();
 
   const ledger = useMemo(() => pick(entries, "ledger"), [entries]);
@@ -60,8 +63,9 @@ export function FilingHelper({ month }: { month: string }) {
   const drafts = useMemo(() => pick(entries, "drafts").filter((e) => monthKey(e.doc) === month).length, [entries, month]);
   const due = filingDeadlines(month);
 
-  // Box 10 (overpaid VAT carried from last month) is typed in; boxes 11 / 12 follow
-  const carry = Math.max(toSatang(Number(carried.replace(/,/g, "")) || 0), 0);
+  // Box 10 (overpaid VAT carried from last month): last month's box 12 unless typed over; boxes 11 / 12 follow
+  const autoCarry = useMemo(() => carriedIn(sales, ledger.map((e) => e.doc), month, company.taxId), [sales, ledger, month, company.taxId]);
+  const carry = carried === null ? toSatang(autoCarry) : Math.max(toSatang(Number(carried.replace(/,/g, "")) || 0), 0);
   const net = toSatang(pp30.toPay) - toSatang(pp30.overpaid) - carry;
   const box11 = fromSatang(Math.max(net, 0));
   const box12 = fromSatang(Math.max(-net, 0));
@@ -84,6 +88,13 @@ export function FilingHelper({ month }: { month: string }) {
     } catch {
       toast.error(t("copyFail", { value: plain(n) }));
     }
+  };
+  // The attachment list as a text file for RD Prep (lib/wht-file), named the Revenue Department's way
+  const saveFile = (form: "53" | "3") => {
+    const rows = form === "53" ? wht.pnd53 : wht.pnd3;
+    const no = branch !== ALL ? (byId(branches, branch)?.no ?? "") : "";
+    downloadBlob(new Blob([whtFileText(rows, form)], { type: "text/plain;charset=utf-8" }), whtFileName(form, company.taxId, month, (no || "0").padStart(6, "0")));
+    toast.success(t("file.saved"));
   };
   const tick = async (key: string, on: boolean) => {
     try {
@@ -283,7 +294,7 @@ export function FilingHelper({ month }: { month: string }) {
                       <input
                         id="filing-carried"
                         inputMode="decimal"
-                        value={carried}
+                        value={carried ?? (autoCarry ? plain(autoCarry) : "")}
                         onChange={(e) => setCarried(e.target.value.replace(/[^\d.,]/g, ""))}
                         placeholder="0.00"
                         aria-label={l.label}
@@ -302,6 +313,16 @@ export function FilingHelper({ month }: { month: string }) {
                   </li>
                 ))}
               </ol>
+              {(autoCarry > 0 || carried !== null) && (
+                <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-brand-soft px-4 py-2.5 text-[13px]">
+                  <span>{carried === null ? t("carryAuto", { amount: baht(autoCarry) }) : t("carryTyped", { amount: baht(autoCarry) })}</span>
+                  {carried !== null && (
+                    <button type="button" onClick={() => setCarried(null)} className="font-medium text-primary hover:underline">
+                      {t("carryReset")}
+                    </button>
+                  )}
+                </p>
+              )}
               <details className="group rounded-2xl bg-muted/50 px-4 py-3 text-[13px]">
                 <summary className="cursor-pointer font-medium text-primary">{t("from.title")}</summary>
                 <ul className="mt-2 grid list-disc gap-1 pl-5 text-muted-foreground">
@@ -323,6 +344,32 @@ export function FilingHelper({ month }: { month: string }) {
                 </div>
               </div>
               {tab === "53" ? <WhtTable rows={wht.pnd53} sum={wht.totals.pnd53} form="53" /> : <WhtTable rows={wht.pnd3} sum={wht.totals.pnd3} form="3" />}
+              <div className="grid gap-3 rounded-2xl bg-muted/50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="grid gap-0.5">
+                    <span className="text-[14px] font-semibold">{t("file.title")}</span>
+                    <span className="text-[13px] text-muted-foreground">{t("file.sub")}</span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!(tab === "53" ? wht.pnd53 : wht.pnd3).length}
+                    onClick={() => saveFile(tab as "53" | "3")}
+                    className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    <Download className="size-4" aria-hidden />
+                    {t("file.button", { form: tab === "53" ? "ภ.ง.ด.53" : "ภ.ง.ด.3" })}
+                  </button>
+                </div>
+                {(tab === "53" ? wht.pnd53 : wht.pnd3).some((r) => wht.badIds.includes(r.id)) && <p className="text-[13px] font-medium text-bad">{t("file.badIds")}</p>}
+                <details className="text-[13px]">
+                  <summary className="cursor-pointer font-medium text-primary">{t("file.how")}</summary>
+                  <ol className="mt-2 grid list-decimal gap-1 pl-5 text-muted-foreground">
+                    {(["1", "2", "3", "4", "5"] as const).map((k) => (
+                      <li key={k}>{t(`file.steps.${k}`)}</li>
+                    ))}
+                  </ol>
+                </details>
+              </div>
             </div>
           )}
         </section>

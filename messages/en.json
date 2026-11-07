@@ -2588,6 +2588,24 @@
     "copyFail": "Could not copy: {value}",
     "markedDone": "Marked filed in the tax calendar",
     "unmarked": "Filed mark removed",
-    "markFail": "Could not save. Try again."
+    "markFail": "Could not save. Try again.",
+    "carryAuto": "Box 10 was filled from last month's box 12 (overpaid {amount}). If you asked for a refund last month, change it to 0.",
+    "carryTyped": "You changed box 10. (Worked out: {amount})",
+    "carryReset": "Use the worked-out value",
+    "file": {
+      "title": "File for the Revenue Department upload",
+      "sub": "Instead of typing each payee, upload the attachment list with this file.",
+      "button": "Download {form} file",
+      "saved": "Downloaded. Open it in RD Prep as below.",
+      "badIds": "Some payees have a missing or wrong tax ID. Fix them first or RD Prep will not take the file.",
+      "how": "How to upload this file",
+      "steps": {
+        "1": "Install the Revenue Department's RD Prep on a PC (once, free at rd.go.th).",
+        "2": "RD Prep → โอนย้ายข้อมูล → pick the same form (ภ.ง.ด.53 or ภ.ง.ด.3) and this file. Separator | (pipe), tick first line as column names.",
+        "3": "Drag the columns with the same names together. For dates choose พ.ศ. · dd/mm/yyyy.",
+        "4": "โอนย้าย → บันทึกและสร้างไฟล์ข้อมูล makes the .rdx file.",
+        "5": "Sign in to e-Filing → the same form → upload attachment (อัปโหลดไฟล์) and pick the .rdx file."
+      }
+    }
   }
 }

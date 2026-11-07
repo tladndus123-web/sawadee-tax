@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPp30, buildWhtFiling, filingDeadlines, filingMonth, totalToPay } from "./filing";
+import { buildPp30, buildWhtFiling, carriedIn, filingDeadlines, filingMonth, totalToPay } from "./filing";
 import type { Sale } from "./sales";
 import { sampleDoc } from "./sample";
 import type { LedgerDoc } from "./types";
@@ -81,5 +81,17 @@ describe("deadlines and which month", () => {
   it("last month until its e-filing date, then this month", () => {
     expect(filingMonth("2026-11-08")).toBe("2026-10");
     expect(filingMonth("2026-11-24")).toBe("2026-11");
+  });
+});
+
+describe("box 10: overpaid VAT carried in", () => {
+  it("last month's box 12, carried on until used", () => {
+    // Sep: input 4,200, no sales → 4,200 overpaid; Oct: output 700 → 3,500 left; Nov: output 7,000 → nothing left
+    const purchases = [doc((x) => (x.date = "2026-09-05"))];
+    const sales = [sale("2026-10-01", 10700, 700), sale("2026-11-01", 107000, 7000)];
+    expect(carriedIn(sales, purchases, "2026-09", CO)).toBe(0);
+    expect(carriedIn(sales, purchases, "2026-10", CO)).toBe(4200);
+    expect(carriedIn(sales, purchases, "2026-11", CO)).toBe(3500);
+    expect(carriedIn(sales, purchases, "2026-12", CO)).toBe(0);
   });
 });
