@@ -203,7 +203,9 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 - **Grok Bot connection** (2026-11-08, owner: "설정에서 GROK BOT 연결 … 하루하루 총합 … 예약도"; Grok Bot = the owner's xAI desktop
   agent app, Cursor-based, with connectors + routines): settings → 알림 → Grok Bot 연결 (`BotCard`, owners) makes a key
   (`sk_sawa_…`, only its SHA-256 in `bot_keys`, …004000, server only; `/api/bot-keys` GET/POST/DELETE owners) and shows the
-  connector JSON (`npx -y mcp-remote <site>/api/mcp --header Authorization:${SAWADEE_KEY}`) and a daily routine text.
+  connector to add in Grok Bot ("Add a custom connector": Server URL `<site>/api/mcp` + HTTP header `Authorization: Bearer <key>`,
+  or its "MCP server JSON" = `{"sawadee-tax": {"type": "http", url, headers}}`; checked in Grok Bot 0.79.2 — its Bot runs on its
+  own cloud computer, so a URL, not a local command) and a daily routine sentence to say to it.
   `/api/mcp` = MCP over HTTP (`lib/mcp.ts` JSON-RPC: initialize / tools/list / tools/call; 60 calls a minute per key);
   tools in `lib/bot-server.ts`: day_summary, books_overview, calendar, tax_return_numbers (read, whole company),
   add_calendar_date / remove_calendar_date (`calendar_events.source = 'bot'`; it removes only its own). It cannot change

@@ -2621,12 +2621,10 @@
     "yourKey": "Connection key",
     "onlyOnce": "This key is shown only now. Copy it into step 2. If you lose it, make a new one.",
     "step2": "Add a connector in Grok Bot",
-    "step2Sub": "Grok Bot → Settings → Connectors → Add (JSON), paste the text below. Copied after making the key, it already has the key.",
-    "config": "Connector settings",
-    "urlOnly": "If the screen asks for URL and header separately",
-    "header": "Header",
+    "step2Sub": "In Grok Bot → Connectors → Add a custom connector, enter the three items below. Copied after making the key, they already have it.",
+    "config": "MCP server JSON",
     "step3": "Make a daily routine (optional)",
-    "routineLabel": "Text for the Grok Bot routine",
+    "routineLabel": "Say this to Grok Bot and it sets up the routine",
     "routine": "Every night at 10 pm (Bangkok time), use day_summary of the sawadee-tax connector to read today's books and tell me in 5 lines: sales (against the same weekday last week), receipts that came in, money to pay and what to check. Say anything unusual first.",
     "askExamples": "You can also ask: how far to this month's target? · what do I pay next week? · put a PANFOOD meeting on 20 November",
     "keys": "Connected keys",
@@ -2643,6 +2641,11 @@
     "copy": "Copy",
     "copied": "Copied",
     "copyFail": "Could not copy. Select the text and copy it.",
-    "privacy": "Once connected, the numbers Grok Bot reads go to xAI (the company behind Grok). Only owners can make keys; disconnecting stops it at once."
+    "privacy": "Once connected, the numbers Grok Bot reads go to xAI (the company behind Grok). Only owners can make keys; disconnecting stops it at once.",
+    "serverUrl": "Server URL",
+    "headerName": "HTTP header name",
+    "headerValue": "HTTP header value",
+    "jsonInstead": "If the screen asks for JSON (MCP server JSON)",
+    "netNote": "If it does not connect: in Grok Bot settings → Network → Allowed destinations, check this site is not blocked."
   }
 }

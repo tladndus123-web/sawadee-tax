@@ -1,7 +1,7 @@
 "use client";
 
-// Connect Grok Bot (or another AI agent) to the books (owner, 2026-11-08): make a key, paste the connector settings into
-// Grok Bot, add a daily routine. The agent may read summaries and put dates in the tax calendar (lib/bot-server.ts).
+// Connect Grok Bot (or another AI agent) to the books (owner, 2026-11-08): make a key, add a custom connector in Grok Bot
+// (server URL + Authorization header), ask it for a daily routine. The agent may read summaries and put dates in the tax calendar (lib/bot-server.ts).
 // Owners only; the key is shown once.
 
 import { Ban, Check, CircleCheck, Copy, KeyRound, Link2Off, Loader2, Plus } from "lucide-react";
@@ -59,11 +59,9 @@ export function BotCard() {
 
   const url = typeof window === "undefined" ? "/api/mcp" : `${window.location.origin}/api/mcp`;
   const key = fresh ?? "sk_sawa_…";
-  const config = JSON.stringify(
-    { mcpServers: { "sawadee-tax": { command: "npx", args: ["-y", "mcp-remote", url, "--header", "Authorization:${SAWADEE_KEY}"], env: { SAWADEE_KEY: `Bearer ${key}` } } } },
-    null,
-    2,
-  );
+  // Grok Bot's "Add a custom connector": Server URL + HTTP headers, or "MCP server JSON" = one object keyed by the
+  // server name (checked against Grok Bot 0.79.2, 2026-11-08). Its Bot runs on its own computer, so a URL, not a command.
+  const config = JSON.stringify({ "sawadee-tax": { type: "http", url, headers: { Authorization: `Bearer ${key}` } } }, null, 2);
 
   const make = async () => {
     setBusy(true);
@@ -115,12 +113,15 @@ export function BotCard() {
         <li className="grid gap-2">
           <span className="text-[14px] font-semibold">2. {t("step2")}</span>
           <p className="text-[13px] text-muted-foreground">{t("step2Sub")}</p>
-          <CopyBox text={config} label={t("config")} />
+          <CopyBox text={url} label={t("serverUrl")} />
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,0.6fr)_minmax(0,1.4fr)]">
+            <CopyBox text="Authorization" label={t("headerName")} />
+            <CopyBox text={`Bearer ${key}`} label={t("headerValue")} />
+          </div>
           <details className="text-[13px]">
-            <summary className="cursor-pointer font-medium text-primary">{t("urlOnly")}</summary>
-            <div className="mt-2 grid gap-2">
-              <CopyBox text={url} label="URL" />
-              <CopyBox text={`Authorization: Bearer ${key}`} label={t("header")} />
+            <summary className="cursor-pointer font-medium text-primary">{t("jsonInstead")}</summary>
+            <div className="mt-2">
+              <CopyBox text={config} label={t("config")} />
             </div>
           </details>
         </li>
@@ -167,6 +168,7 @@ export function BotCard() {
           </ul>
         </div>
       )}
+      <p className="text-[12px] leading-relaxed text-muted-foreground">{t("netNote")}</p>
       <p className="text-[12px] leading-relaxed text-muted-foreground">{t("privacy")}</p>
     </div>
   );
