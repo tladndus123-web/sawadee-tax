@@ -13,6 +13,8 @@ import { useScreenDate } from "@/components/ScreenDate";
 import { todayBangkok } from "@/lib/thai-tax";
 import { useFoldStatus } from "./SettingsFold";
 
+const ROUTINES = ["daily", "morning", "watch", "weekly", "filing", "email"] as const;
+
 type KeyRow = { id: string; name: string; hint: string; created_at: string; last_used_at: string | null };
 
 function CopyBox({ text, label, mono = true }: { text: string; label: string; mono?: boolean }) {
@@ -92,6 +94,8 @@ export function BotCard() {
       <ul className="grid gap-1.5 text-[13.5px]">
         <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.read")}</li>
         <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.calendar")}</li>
+        <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.draft")}</li>
+        <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.line")}</li>
         <li className="flex gap-2"><Ban className="mt-0.5 size-4 flex-none text-bad" aria-hidden />{t("can.not")}</li>
       </ul>
 
@@ -155,9 +159,32 @@ export function BotCard() {
         </ol>
       </details>
 
-      <section className="grid gap-2">
-        <span className="text-[14px] font-semibold">{t("step3")}</span>
-        <CopyBox text={t("routine")} label={t("routineLabel")} mono={false} />
+      {/* Ready-made routines (owner 2026-11-08: "일이나 보고 여러 일정을 줄이는"): each opens Grok Bot with the sentence typed */}
+      <section className="grid gap-3">
+        <span className="text-[14px] font-semibold">{t("rec.title")}</span>
+        <ul className="grid gap-2">
+          {ROUTINES.map((k) => (
+            <li key={k} className="grid gap-2 rounded-2xl px-3.5 py-3 shadow-[0_0_0_1px_var(--border)]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[14px] font-medium">{t(`rec.items.${k}.when`)}</span>
+                <a
+                  href={`grokbot://app/v1/prompt?text=${encodeURIComponent(t(`rec.items.${k}.text`))}`}
+                  className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-primary px-3.5 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  <ExternalLink className="size-3.5" aria-hidden />
+                  {t("rec.make")}
+                </a>
+              </div>
+              <details className="text-[13px]">
+                <summary className="cursor-pointer text-muted-foreground">{t("rec.show")}</summary>
+                <div className="mt-2">
+                  <CopyBox text={t(`rec.items.${k}.text`)} label={t("routineLabel")} mono={false} />
+                </div>
+              </details>
+              {k === "email" && <p className="text-[12.5px] text-muted-foreground">{t("rec.emailNote")}</p>}
+            </li>
+          ))}
+        </ul>
         <p className="text-[13px] text-muted-foreground">{t("askExamples")}</p>
       </section>
 

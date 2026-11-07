@@ -6,6 +6,10 @@
 import { isUnpaid } from "./archive";
 import { booksContext, calendarContext } from "./assistant-server";
 import { hashKey, keyFromHeader } from "./bot-keys";
+import { addDocumentFromFile, fromBase64 } from "./bot-docs-server";
+import { lineClient } from "./line";
+import { noticeMessage } from "./line-dash";
+import { LANG_SPLIT, lineLang } from "./line-lang";
 import { needsCheck } from "./dashboard";
 import { rowToClaim } from "./expenses";
 import { buildPp30, buildWhtFiling, carriedIn, filingDeadlines, filingMonth } from "./filing";
@@ -17,15 +21,15 @@ import { isIsoDate, todayBangkok } from "./thai-tax";
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** The key's row if the key is live; marks it used (at most once a minute) */
-export async function keyOwner(admin: Admin, header: string | null): Promise<{ id: string; name: string } | null> {
+export async function keyOwner(admin: Admin, header: string | null): Promise<{ id: string; name: string; createdBy: string | null } | null> {
   const key = keyFromHeader(header);
   if (!key) return null;
-  const { data } = await admin.from("bot_keys").select("id, name, last_used_at").eq("key_hash", hashKey(key)).is("revoked_at", null).maybeSingle();
+  const { data } = await admin.from("bot_keys").select("id, name, last_used_at, created_by").eq("key_hash", hashKey(key)).is("revoked_at", null).maybeSingle();
   if (!data) return null;
   if (!data.last_used_at || Date.now() - Date.parse(data.last_used_at as string) > 60_000) {
     await admin.from("bot_keys").update({ last_used_at: new Date().toISOString() }).eq("id", data.id);
   }
-  return { id: data.id as string, name: data.name as string };
+  return { id: data.id as string, name: data.name as string, createdBy: (data.created_by as string | null) ?? null };
 }
 
 async function allSales(admin: Admin, from?: string, to?: string): Promise<Sale[]> {
@@ -136,8 +140,104 @@ const dateArg = (v: unknown, fallback: string) => {
   return s;
 };
 
+/** Documents matching a search, newest first (saved ones unless asked for drafts) */
+export async function findDocuments(admin: Admin, a: Record<string, unknown>, appUrl: string) {
+  const books = await ledger(admin);
+  const pool = a.drafts === true ? books.drafts : books.saved;
+  const words = String(a.text ?? "").trim().toLowerCase();
+  const from = typeof a.from === "string" ? a.from : "";
+  const to = typeof a.to === "string" ? a.to : "";
+  const min = typeof a.min_baht === "number" ? a.min_baht : null;
+  const max = typeof a.max_baht === "number" ? a.max_baht : null;
+  const limit = Math.min(Math.max(Math.round(Number(a.limit) || 20), 1), 50);
+  const hits = pool
+    .filter(({ doc }) => {
+      const hay = [doc.seller.name.th, doc.seller.name.en, doc.seller.name.ja, doc.docNo, doc.seller.taxId, doc.memo ?? ""].join(" ").toLowerCase();
+      return (
+        (!words || words.split(/\s+/).every((w) => hay.includes(w))) &&
+        (!from || doc.date >= from) &&
+        (!to || doc.date <= to) &&
+        (min === null || doc.totals.net >= min) &&
+        (max === null || doc.totals.net <= max) &&
+        (a.unpaid_only !== true || isUnpaid(doc))
+      );
+    })
+    .sort((x, y) => y.doc.date.localeCompare(x.doc.date));
+  return {
+    found: hits.length,
+    total: r2(hits.reduce((sum, d) => sum + d.doc.totals.net, 0)),
+    documents: hits.slice(0, limit).map(({ id, doc }) => ({
+      id,
+      date: doc.date,
+      supplier: doc.seller.name.en || doc.seller.name.th || doc.seller.name.ja || "?",
+      docNo: doc.docNo,
+      total: doc.totals.net,
+      vat: doc.totals.vat,
+      category: doc.category,
+      paid: !isUnpaid(doc),
+      dueDate: doc.dueDate || null,
+      open: `${appUrl}/documents/${id}`,
+    })),
+  };
+}
+
+/** Each supplier's month against the month before, biggest first, with what is unpaid */
+export async function supplierSummary(admin: Admin, month: string) {
+  const books = await ledger(admin);
+  const [y, m] = month.split("-").map(Number);
+  const prev = new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 7);
+  const by = new Map<string, { supplier: string; taxId: string; thisMonth: number; lastMonth: number; documents: number; unpaid: number }>();
+  for (const { doc } of books.saved) {
+    const mk = doc.taxMonth || doc.date.slice(0, 7);
+    const k = doc.seller.taxId.replace(/\D/g, "") || (doc.seller.name.en || doc.seller.name.th || "?").toLowerCase();
+    const e = by.get(k) ?? { supplier: doc.seller.name.en || doc.seller.name.th || doc.seller.name.ja || "?", taxId: doc.seller.taxId, thisMonth: 0, lastMonth: 0, documents: 0, unpaid: 0 };
+    if (mk === month) {
+      e.thisMonth = r2(e.thisMonth + doc.totals.net);
+      e.documents += 1;
+    }
+    if (mk === prev) e.lastMonth = r2(e.lastMonth + doc.totals.net);
+    if (isUnpaid(doc)) e.unpaid = r2(e.unpaid + doc.totals.net);
+    by.set(k, e);
+  }
+  const list = [...by.values()].filter((e) => e.thisMonth || e.lastMonth || e.unpaid).sort((a, b) => b.thisMonth - a.thisMonth || b.unpaid - a.unpaid);
+  return {
+    month,
+    previousMonth: prev,
+    suppliers: list.slice(0, 40).map((e) => ({ ...e, change: e.lastMonth ? `${Math.round(((e.thisMonth - e.lastMonth) / e.lastMonth) * 100)}%` : null })),
+    note: "Totals include VAT (what was paid). 'unpaid' is across all months.",
+  };
+}
+
+/** The card's text for the owner's LINE: title, a blank subtitle, the lines, the app link last (lib/line-dash noticeBubble) */
+export function lineCardText(title: unknown, lines: unknown, appUrl: string): { text: string; count: number } | null {
+  const clean = (v: unknown, n: number) => String(v ?? "").split(LANG_SPLIT).join("").replace(/\r/g, "").trim().slice(0, n);
+  const list = (Array.isArray(lines) ? lines : String(lines ?? "").split("\n")).map((l) => clean(l, 120)).filter((l) => l && !/^https?:\/\//.test(l)).slice(0, 12);
+  if (!list.length) return null;
+  return { text: [clean(title, 40) || "Grok Bot", "", ...list, `${appUrl}/`].join("\n"), count: list.length };
+}
+
+/** A short card to the LINE of the owner who connected the agent, at most 10 a day */
+export async function lineToOwner(admin: Admin, who: { id: string; createdBy: string | null }, a: Record<string, unknown>, appUrl: string) {
+  if (!who.createdBy) return { sent: false, reason: "This connection has no owner." };
+  const { data: m } = await admin.from("members").select("line_user_id, owner, disabled_at").eq("user_id", who.createdBy).maybeSingle();
+  if (!m?.owner || m.disabled_at) return { sent: false, reason: "The connecting owner is no longer an owner." };
+  if (!m.line_user_id) return { sent: false, reason: "The owner has not linked LINE (Settings → LINE)." };
+  const card = lineCardText(a.title, a.lines, appUrl);
+  if (!card) return { sent: false, reason: "Nothing to send." };
+  const since = new Date(Date.now() - 86_400_000).toISOString();
+  const { count } = await admin.from("bot_line_sends").select("id", { count: "exact", head: true }).eq("key_id", who.id).gte("sent_at", since);
+  if ((count ?? 0) >= 10) return { sent: false, reason: "Already 10 LINE messages in the last 24 hours." };
+  const lang = await lineClient()
+    .getProfile(m.line_user_id as string)
+    .then((p) => lineLang(p.language))
+    .catch(() => "ko" as const);
+  await lineClient().pushMessage({ to: m.line_user_id as string, messages: [noticeMessage([card.text], "Grok Bot", lang)] });
+  await admin.from("bot_line_sends").insert({ key_id: who.id });
+  return { sent: true, to: "the owner's LINE", lines: card.count };
+}
+
 /** The tools, for one request */
-export function botTools(admin: Admin, appUrl: string, today = todayBangkok()): McpTool[] {
+export function botTools(admin: Admin, appUrl: string, today = todayBangkok(), who: { id: string; createdBy: string | null } = { id: "", createdBy: null }): McpTool[] {
   return [
     {
       name: "day_summary",
@@ -205,6 +305,66 @@ export function botTools(admin: Admin, appUrl: string, today = todayBangkok()): 
       },
     },
     {
+      name: "find_documents",
+      description: "Search the ledger's documents (receipts, tax invoices): by words (supplier name, document number, tax ID, memo), dates, amount, unpaid only, or drafts. Gives each one's date, supplier, total, VAT, paid or not, and a link.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          text: { type: "string", description: "Words to find, e.g. PANFOOD" },
+          from: { type: "string", description: "YYYY-MM-DD" },
+          to: { type: "string", description: "YYYY-MM-DD" },
+          min_baht: { type: "number" },
+          max_baht: { type: "number" },
+          unpaid_only: { type: "boolean" },
+          drafts: { type: "boolean", description: "Search the drafts waiting to be checked instead" },
+          limit: { type: "integer", description: "1–50, default 20" },
+        },
+        additionalProperties: false,
+      },
+      run: (a) => findDocuments(admin, a, appUrl),
+    },
+    {
+      name: "supplier_summary",
+      description: "Each supplier's total this month against last month (with the change in %), number of documents and what is still unpaid, biggest first.",
+      inputSchema: { type: "object", properties: { month: { type: "string", description: "YYYY-MM; default this month" } }, additionalProperties: false },
+      run: (a) => {
+        const m = typeof a.month === "string" && a.month ? a.month : today.slice(0, 7);
+        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(m)) throw new Error("month must be YYYY-MM");
+        return supplierSummary(admin, m);
+      },
+    },
+    {
+      name: "send_line_to_owner",
+      description:
+        "Send a short card to the LINE of the owner who connected you: a title and up to 12 lines ('Label: value' lines show as rows). Use it for the daily wrap-up or something urgent, at most 10 a day. It goes to that owner only, never to staff.",
+      writes: true,
+      inputSchema: {
+        type: "object",
+        properties: { title: { type: "string", description: "Up to 40 characters" }, lines: { type: "array", items: { type: "string" }, description: "Up to 12 lines of up to 120 characters" } },
+        required: ["title", "lines"],
+        additionalProperties: false,
+      },
+      run: (a) => lineToOwner(admin, who, a, appUrl),
+    },
+    {
+      name: "add_receipt",
+      description:
+        "Put a receipt or tax invoice into the ledger as a DRAFT for a person to check (read by the app's AI like a photo upload; nothing counts until a person saves it). Send a JPEG/PNG/WebP picture as base64; for a PDF e-tax invoice send each page as a picture. The same receipt twice is refused.",
+      writes: true,
+      inputSchema: {
+        type: "object",
+        properties: { image_base64: { type: "string", description: "The picture, base64 (up to about 3 MB)" }, note: { type: "string", description: "Optional, e.g. 'from the PANFOOD email of 8 Nov'" } },
+        required: ["image_base64"],
+        additionalProperties: false,
+      },
+      run: async (a) => {
+        if (!who.createdBy) throw new Error("This connection has no owner.");
+        const file = fromBase64(String(a.image_base64));
+        if (!file) throw new Error("image_base64 is not base64");
+        return addDocumentFromFile(admin, who.createdBy, file, String(a.note ?? ""), appUrl);
+      },
+    },
+    {
       name: "remove_calendar_date",
       description: "Take out a date this agent put in the calendar (by its id from add_calendar_date). Dates people added stay.",
       writes: true,
@@ -224,6 +384,6 @@ export const BOT_INFO = {
   name: "sawadee-tax",
   version: "1.0.0",
   instructions:
-    "Sawadee TAX: the books of a restaurant company in Thailand (receipts, sales, tax calendar). You may read summaries and put dates in the calendar; you cannot change documents, pay or send messages. For the daily wrap-up call day_summary. Amounts are Thai baht. Dates are Bangkok time.",
+    "Sawadee TAX: the books of a restaurant company in Thailand (receipts, sales, tax calendar). You may read summaries, search documents, put dates in the calendar, add receipts as drafts for a person to check, and send short cards to the connecting owner's LINE. You cannot change saved documents, pay, approve or message staff. For the daily wrap-up call day_summary. Amounts are Thai baht. Dates are Bangkok time.",
 };
 

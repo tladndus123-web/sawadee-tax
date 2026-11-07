@@ -2612,9 +2612,11 @@
     "title": "Connect Grok Bot",
     "intro": "Let Grok Bot read the books directly: wrap up each day, answer questions and put dates in the tax calendar.",
     "can": {
-      "read": "Read: daily and monthly sales, receipts that came in, money to pay, tax return numbers, coming dates",
+      "read": "Read: daily and monthly sales, receipts that came in, totals by supplier, document search, money to pay, tax return numbers, coming dates",
       "calendar": "Add dates: bookings, meetings, payments to the tax calendar (it can remove only its own)",
-      "not": "Cannot: change or delete documents, mark payments, send LINE messages"
+      "draft": "Add receipts: emailed receipts as drafts (they count only after a person checks and saves them)",
+      "line": "Send LINE: only to the connecting owner's LINE, up to 10 a day",
+      "not": "Cannot: change or delete saved documents, mark payments, approve claims, message staff"
     },
     "step1": "Make a connection key",
     "make": "Make a connection key",
@@ -2623,10 +2625,9 @@
     "step2": "Add a connector in Grok Bot",
     "step2Sub": "In Grok Bot → Connectors → Add a custom connector, enter the three items below. Copied after making the key, they already have it.",
     "config": "MCP server JSON",
-    "step3": "Make a daily routine (optional)",
     "routineLabel": "Say this to Grok Bot and it sets up the routine",
-    "routine": "Every night at 10 pm (Bangkok time), use day_summary of the sawadee-tax connector to read today's books and tell me in 5 lines: sales (against the same weekday last week), receipts that came in, money to pay and what to check. Say anything unusual first.",
-    "askExamples": "You can also ask: how far to this month's target? · what do I pay next week? · put a PANFOOD meeting on 20 November",
+    "routine": "Every night at 10 pm (Bangkok time), read today's books with day_summary of sawadee-tax and send a wrap-up to my LINE with send_line_to_owner. Title 'Today', lines like 'Sales: ฿… (±% vs same weekday last week)', 'To target: ฿…', 'Receipts in: n', 'To pay by tomorrow: ฿…', 'To check: n', at most 6 lines. Put anything unusual first.",
+    "askExamples": "You can also ask: find PANFOOD's October receipts · which suppliers grew most this month? · what do I pay next week · put a PANFOOD meeting on 20 November",
     "keys": "Connected keys",
     "madeOn": "made {date}",
     "usedOn": "last used {date}",
@@ -2655,7 +2656,39 @@
       "2": "When Grok Bot opens the sign-in, this site opens. Tap \"Allow\".",
       "3": "Done. The connection shows in the list below and can be disconnected here."
     },
-    "keyWay": "Connect with a key instead (other way)"
+    "keyWay": "Connect with a key instead (other way)",
+    "rec": {
+      "title": "Recommended routines (tap to set one up in Grok Bot)",
+      "make": "Make it in Grok Bot",
+      "emailNote": "For emailed receipts, first give Grok Bot its own email address (Grok Bot → Email) and ask suppliers to send tax invoices there.",
+      "items": {
+        "daily": {
+          "when": "Every night 10 pm · daily wrap-up",
+          "text": "Every night at 10 pm (Bangkok time), read today's books with day_summary of sawadee-tax and send a wrap-up to my LINE with send_line_to_owner. Title 'Today', lines like 'Sales: ฿… (±% vs same weekday last week)', 'To target: ฿…', 'Receipts in: n', 'To pay by tomorrow: ฿…', 'To check: n', at most 6 lines. Put anything unusual first."
+        },
+        "morning": {
+          "when": "Every morning 8 am · today's to-dos (only when any)",
+          "text": "Every morning at 8 am (Bangkok time), look at calendar of sawadee-tax and only when something is due today or tomorrow, money to pay today, or a late bill, send 'Today' in up to 3 lines with send_line_to_owner. Otherwise send nothing."
+        },
+        "watch": {
+          "when": "Every day 3 pm · watch for gaps (only on a problem)",
+          "text": "Every day at 3 pm (Bangkok time), check yesterday with day_summary of sawadee-tax and only when yesterday's sales are empty, more than 10 documents need a look, or more than 5 drafts wait, tell me with send_line_to_owner. Otherwise send nothing."
+        },
+        "weekly": {
+          "when": "Every Monday 9 am · last week compared",
+          "text": "Every Monday at 9 am (Bangkok time), use books_overview and supplier_summary of sawadee-tax to compare last week's sales and costs with the week before, name the 3 suppliers that grew most and items whose price rose, and send it in up to 8 lines with send_line_to_owner."
+        },
+        "filing": {
+          "when": "The 10th and 20th · tax returns",
+          "text": "On the 10th of every month at 9 am (Bangkok time), send me with send_line_to_owner last month's VAT (ภ.พ.30) and withholding (ภ.ง.ด.3/53) to pay, the deadlines and what to fix first, from tax_return_numbers of sawadee-tax. On the 20th, look at calendar and only if a return is not done yet, remind me of the days left and the amount."
+        },
+        "email": {
+          "when": "When an email comes · receipts in by themselves",
+          "text": "When a receipt or tax invoice (e-Tax Invoice) email arrives at my Grok Bot email, turn each attachment page into a picture (PNG/JPEG) and add it as a draft with add_receipt of sawadee-tax, with the sender and email date in note. Tell me the day's count in the 10 pm wrap-up as 'n drafts added, please check'. Do not add emails that are not receipts."
+        }
+      },
+      "show": "See the text · copy"
+    }
   },
   "connect": {
     "title": "{name} wants to connect to your books",

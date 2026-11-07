@@ -13,6 +13,15 @@ export interface McpTool {
 
 export const MCP_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 
+export interface ServerInfo {
+  name: string;
+  version: string;
+  instructions: string;
+  title?: string;
+  websiteUrl?: string;
+  icons?: { src: string; mimeType: string; sizes: string[] }[];
+}
+
 type Msg = { jsonrpc?: string; id?: string | number | null; method?: string; params?: Record<string, unknown> };
 type Reply = { jsonrpc: "2.0"; id: string | number | null; result?: unknown; error?: { code: number; message: string } };
 
@@ -29,7 +38,7 @@ export function badArgs(tool: McpTool, args: Record<string, unknown>): string | 
 }
 
 /** Answer one message; notifications (no id) get no answer */
-export async function handleOne(m: Msg, tools: McpTool[], info: { name: string; version: string; instructions: string }): Promise<Reply | null> {
+export async function handleOne(m: Msg, tools: McpTool[], info: ServerInfo): Promise<Reply | null> {
   const id = m.id ?? null;
   const ok = (result: unknown): Reply => ({ jsonrpc: "2.0", id, result });
   const err = (code: number, message: string): Reply => ({ jsonrpc: "2.0", id, error: { code, message } });
@@ -41,7 +50,7 @@ export async function handleOne(m: Msg, tools: McpTool[], info: { name: string; 
       return ok({
         protocolVersion: MCP_VERSIONS.includes(asked) ? asked : MCP_VERSIONS[0],
         capabilities: { tools: { listChanged: false } },
-        serverInfo: { name: info.name, version: info.version },
+        serverInfo: { name: info.name, version: info.version, ...(info.title ? { title: info.title } : {}), ...(info.websiteUrl ? { websiteUrl: info.websiteUrl } : {}), ...(info.icons ? { icons: info.icons } : {}) },
         instructions: info.instructions,
       });
     }
@@ -70,7 +79,7 @@ export async function handleOne(m: Msg, tools: McpTool[], info: { name: string; 
 }
 
 /** A POST body: one message or a batch → the JSON to send back (null = 202, nothing to say) */
-export async function handleBody(body: unknown, tools: McpTool[], info: { name: string; version: string; instructions: string }): Promise<unknown | null> {
+export async function handleBody(body: unknown, tools: McpTool[], info: ServerInfo): Promise<unknown | null> {
   if (Array.isArray(body)) {
     const out = (await Promise.all(body.slice(0, 20).map((m) => handleOne(m as Msg, tools, info)))).filter(Boolean);
     return out.length ? out : null;

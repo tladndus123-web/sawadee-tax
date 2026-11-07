@@ -74,6 +74,14 @@ export function ConnectConsent() {
           {tb("can.calendar")}
         </li>
         <li className="flex gap-2">
+          <CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />
+          {tb("can.draft")}
+        </li>
+        <li className="flex gap-2">
+          <CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />
+          {tb("can.line")}
+        </li>
+        <li className="flex gap-2">
           <Ban className="mt-0.5 size-4 flex-none text-bad" aria-hidden />
           {tb("can.not")}
         </li>

@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (613) · `npm run db:test` (406 in 8 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (616) · `npm run db:test` (412 in 8 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy (app + DB) | **Push to `main` and let GitHub Actions deploy** (`.github/workflows/deploy.yml`: checks → migrations → pgTAP on the cloud DB → Vercel → live check). Cursor pushes to `main` too, so never deploy from this PC (`vercel deploy`) — a local build can put an older tree live over theirs (happened twice 2026-11-05). Check the run with the GitHub API (token from `git credential fill` for github.com, never printed): `GET https://api.github.com/repos/tladndus123-web/sawadee-tax/actions/runs?per_page=3`. Only if Actions is down: `npx vercel deploy --prod` from an up-to-date `main` |
 | If a deploy is broken | `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>`. A failed Actions run leaves the site as it was |
@@ -218,6 +218,12 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   `/api/oauth/token` (PKCE S256, code once) → an ordinary `bot_keys` row with `client_id` (reconnecting replaces it).
   Pure rules `lib/oauth.ts`. Buttons on the card: `grokbot://app/v1/open` and `grokbot://app/v1/prompt?text=<routine>`
   (Grok Bot's own links, ≤ 1000 chars).
+  **More work for the agent** (same day, owner: "일이나 보고 여러 일정을 줄이는"): tools find_documents, supplier_summary,
+  send_line_to_owner (a noticeMessage card to the connecting owner's LINE only, 10 a day, `bot_line_sends`) and add_receipt
+  (a picture as base64 → `lib/bot-docs-server` = the LINE photo path → saved as a **draft** by `bot_save_document`, owners,
+  drafts only, …004200; PDFs: the agent sends each page as a picture). The card lists six ready routines (daily wrap-up to
+  LINE, morning to-dos, gap watch, weekly, filing, emailed receipts) as `grokbot://app/v1/prompt` buttons. The site has
+  `app/favicon.ico` + `public/icon-512.png` (Grok Bot showed a letter without them) and MCP serverInfo title + icons.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).
