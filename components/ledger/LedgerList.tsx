@@ -4,7 +4,7 @@ import { useBranchName } from "@/components/layout/branch-switcher";
 import { ALL, BRANCH_COLORS, branchLabel, byId, colorOf, headOf } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
 import { isDepreciated } from "@/lib/cost-split";
-import { ArchiveRestore, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, CircleCheck, CircleDollarSign, Coins, Copy, Ellipsis, FilePen, ImagePlus, ListChecks, Loader2, Lock, Refrigerator, Search, SlidersHorizontal, Tags, Trash2, TriangleAlert, UserCheck, X } from "lucide-react";
+import { ArchiveRestore, Bookmark, Calculator, CalendarDays, Check, ChevronDown, ChevronRight, CircleCheck, CircleDollarSign, Coins, Copy, Ellipsis, FilePen, ImagePlus, ListChecks, Loader2, Lock, Refrigerator, Search, SlidersHorizontal, Tags, Trash2, TriangleAlert, UserCheck, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
 import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
@@ -27,6 +27,7 @@ import { useCompany } from "@/lib/company-store";
 import { openWarnings } from "@/lib/dashboard";
 import { baht, fromSatang, toSatang } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
+import { canOpen } from "@/lib/screens";
 import { todayBangkok } from "@/lib/thai-tax";
 import { STICKERS, type Sticker } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -458,6 +459,10 @@ const MonthSection = memo(function MonthSection({
 }) {
   const t = useTranslations("archive");
   const tl = useTranslations("lock");
+  const tf = useTranslations("filing");
+  const me = useMe();
+  // The tax return numbers of this month (owner, 2026-11-08: shown next to the export, not inside its menu)
+  const canFile = isAdmin && canOpen(me, "sales");
   const monthLabel = useMonthLabel();
   const current = group.key === monthKey({ date: todayBangkok() });
   const td = useTranslations("archive.days");
@@ -505,7 +510,18 @@ const MonthSection = memo(function MonthSection({
           {group.key !== NO_DATE && (
             <div className="flex flex-wrap items-center justify-between gap-2">
               {isAdmin ? <MonthLockButton month={group.key} label={monthLabel(group.key)} locked={locked} /> : <span />}
-              <ExportButtons month={group.key} entries={monthEntries} />
+              <div className="flex flex-wrap items-center gap-2">
+                {canFile && (
+                  <Link
+                    href={`/ledger/filing/${group.key}`}
+                    className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 active:scale-[0.97] pointer-fine:h-9"
+                  >
+                    <Calculator className="size-4" aria-hidden />
+                    {tf("short")}
+                  </Link>
+                )}
+                <ExportButtons month={group.key} entries={monthEntries} />
+              </div>
             </div>
           )}
           {/* Rows in date groups: today, yesterday, this week, last week, then weeks of the month (owner, 2026-11-06) */}

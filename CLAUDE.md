@@ -194,8 +194,8 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   open sales) — total due, the ภ.พ.30 boxes 1–12 in the form's numbering with a copy button each (plain "6300.00"; box 10
   carried forward is typed, 11/12 follow), ภ.ง.ด.53 / ภ.ง.ด.3 tabs (`buildWhtFiling`: bad tax IDs, unpaid withholdings),
   checks, and "filed" ticks = the tax calendar's `vat:YYYY-MM` / `monthly:YYYY-MM`. Pure `lib/filing.ts` (purchases by
-  claim month like the input tax report, sales by day, withholding by month paid). Opened from the dashboard VAT card and
-  the ledger export menu. Follows the branch being worked in.
+  claim month like the input tax report, sales by day, withholding by month paid). Opened from a blue button on every
+  ledger month row (next to export, owner's pick), the dashboard VAT card and the export menu. Follows the branch being worked in.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).
