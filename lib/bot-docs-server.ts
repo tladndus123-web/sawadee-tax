@@ -27,6 +27,11 @@ export function fromBase64(s: string): Buffer | null {
 }
 
 export async function addDocumentFromFile(admin: Admin, ownerId: string, file: Buffer, note: string, appUrl: string): Promise<AddResult> {
+  // A leaked key must not run up the AI bill: at most 30 readings an hour per owner (counted in the database, so it holds
+  // across servers); a person uploading in the app is not counted (no "Grok Bot" memo)
+  const since = new Date(Date.now() - 3_600_000).toISOString();
+  const { count } = await admin.from("documents").select("id", { count: "exact", head: true }).eq("created_by", ownerId).gte("created_at", since).ilike("memo", "Grok Bot%");
+  if ((count ?? 0) >= 30) return { added: false, reason: "Already 30 receipts in the last hour. Try again later." };
   const type = imageType(file);
   if (!type) return { added: false, reason: "Send a JPEG, PNG or WebP picture. For a PDF, send each page as a picture." };
   if (file.length > MAX_IMAGE_BYTES) return { added: false, reason: "The picture is over 4.5 MB. Send a smaller one." };
@@ -63,7 +68,8 @@ export async function addDocumentFromFile(admin: Admin, ownerId: string, file: B
     doc = applyRule(doc, toVendor(vendor.data as VendorRow)).doc;
   }
   doc = paidAtTill(doc);
-  if (note.trim()) doc = { ...doc, memo: [doc.memo, `Grok Bot: ${note.trim().slice(0, 200)}`].filter(Boolean).join("\n") };
+  // Always marked as the agent's (the hourly limit above counts these)
+  doc = { ...doc, memo: [doc.memo, `Grok Bot${note.trim() ? `: ${note.trim().slice(0, 200)}` : ""}`].filter(Boolean).join("\n") };
   const companyTaxId = (company.data?.tax_id as string | undefined) ?? "";
   const others: LedgerRef[] = (same?.data ?? []).map((d) => ({ id: d.id as string, docNo: d.doc_no as string, sellerTaxId: ((d.seller as { taxId?: string } | null)?.taxId as string) ?? "" }));
 
