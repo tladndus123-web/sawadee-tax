@@ -2646,6 +2646,28 @@
     "headerName": "HTTPヘッダー名",
     "headerValue": "HTTPヘッダーの値",
     "jsonInstead": "JSONで入れる画面なら（MCP server JSON）",
-    "netNote": "つながらない場合：Grok Botの設定 → ネットワーク → 許可する接続先（Allowed destinations）でこのサイトが止められていないか確認してください。"
+    "netNote": "つながらない場合：Grok Botの設定 → ネットワーク → 許可する接続先（Allowed destinations）でこのサイトが止められていないか確認してください。",
+    "openBot": "Grok Botを開く",
+    "routineButton": "ルーチンを作る（Grok Botで開く）",
+    "signIn": {
+      "title": "ログインで連携（おすすめ）",
+      "1": "Grok Bot → コネクタ → カスタムコネクタを追加 で、下のサーバーURLだけを貼り付けます。ヘッダーは空のままにします。",
+      "2": "Grok Botがログイン画面を開くと、このサイトが開きます。「許可」を押してください。",
+      "3": "これで完了です。つながったキーは下の一覧に出て、ここで切れます。"
+    },
+    "keyWay": "キーを直接入れて連携（別の方法）"
+  },
+  "connect": {
+    "title": "{name}が帳簿への連携を求めています",
+    "sub": "許可すると、Grok BotがSawadee TAXの帳簿を読み、税務カレンダーに予定を入れられます。",
+    "allow": "許可",
+    "deny": "拒否",
+    "note": "設定 → Grok Bot 連携でいつでも切れます。読んだ数字はxAIに送られます。",
+    "ownerOnly": "連携を許可できるのは代表者だけです。",
+    "bad": "この連携リクエストは正しくありません。Grok Botからもう一度つないでください。",
+    "connected": "連携しました",
+    "refused": "拒否しました",
+    "backToBot": "Grok Botに戻ってください。自動で開かない場合は下を押してください。",
+    "openBot": "Grok Botを開く"
   }
 }

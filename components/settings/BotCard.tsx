@@ -4,7 +4,7 @@
 // (server URL + Authorization header), ask it for a daily routine. The agent may read summaries and put dates in the tax calendar (lib/bot-server.ts).
 // Owners only; the key is shown once.
 
-import { Ban, Check, CircleCheck, Copy, KeyRound, Link2Off, Loader2, Plus } from "lucide-react";
+import { Ban, CalendarClock, Check, CircleCheck, Copy, ExternalLink, KeyRound, Link2Off, Loader2, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -95,42 +95,71 @@ export function BotCard() {
         <li className="flex gap-2"><Ban className="mt-0.5 size-4 flex-none text-bad" aria-hidden />{t("can.not")}</li>
       </ul>
 
-      <ol className="grid gap-5">
-        <li className="grid gap-2">
-          <span className="text-[14px] font-semibold">1. {t("step1")}</span>
-          {fresh ? (
-            <div className="grid gap-2 rounded-2xl bg-warn-soft p-3">
-              <CopyBox text={fresh} label={t("yourKey")} />
-              <p className="text-[12.5px] text-warn">{t("onlyOnce")}</p>
+      {/* Grok Bot's own links (grokbot://app/v1/open, /v1/prompt?text=…, checked in Grok Bot 0.79.2) */}
+      <div className="flex flex-wrap gap-2">
+        <a href="grokbot://app/v1/open" className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+          <ExternalLink className="size-4" aria-hidden />
+          {t("openBot")}
+        </a>
+        <a
+          href={`grokbot://app/v1/prompt?text=${encodeURIComponent(t("routine"))}`}
+          className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-secondary px-4 text-sm font-medium hover:bg-muted"
+        >
+          <CalendarClock className="size-4 text-primary" aria-hidden />
+          {t("routineButton")}
+        </a>
+      </div>
+
+      <section className="grid gap-3 rounded-2xl bg-brand-soft/60 p-4">
+        <span className="text-[14px] font-semibold">{t("signIn.title")}</span>
+        <ol className="grid list-decimal gap-1.5 pl-5 text-[13.5px]">
+          <li>{t("signIn.1")}</li>
+          <li>{t("signIn.2")}</li>
+          <li>{t("signIn.3")}</li>
+        </ol>
+        <CopyBox text={url} label={t("serverUrl")} />
+      </section>
+
+      <details className="rounded-2xl px-4 py-3 shadow-[0_0_0_1px_var(--border)]">
+        <summary className="cursor-pointer text-[14px] font-medium text-primary">{t("keyWay")}</summary>
+        <ol className="mt-3 grid gap-5">
+          <li className="grid gap-2">
+            <span className="text-[14px] font-semibold">1. {t("step1")}</span>
+            {fresh ? (
+              <div className="grid gap-2 rounded-2xl bg-warn-soft p-3">
+                <CopyBox text={fresh} label={t("yourKey")} />
+                <p className="text-[12.5px] text-warn">{t("onlyOnce")}</p>
+              </div>
+            ) : (
+              <Button type="button" onClick={() => void make()} disabled={busy} className="w-fit rounded-full">
+                {busy ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+                {t("make")}
+              </Button>
+            )}
+          </li>
+          <li className="grid gap-2">
+            <span className="text-[14px] font-semibold">2. {t("step2")}</span>
+            <p className="text-[13px] text-muted-foreground">{t("step2Sub")}</p>
+            <CopyBox text={url} label={t("serverUrl")} />
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,0.6fr)_minmax(0,1.4fr)]">
+              <CopyBox text="Authorization" label={t("headerName")} />
+              <CopyBox text={`Bearer ${key}`} label={t("headerValue")} />
             </div>
-          ) : (
-            <Button type="button" onClick={() => void make()} disabled={busy} className="w-fit rounded-full">
-              {busy ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-              {t("make")}
-            </Button>
-          )}
-        </li>
-        <li className="grid gap-2">
-          <span className="text-[14px] font-semibold">2. {t("step2")}</span>
-          <p className="text-[13px] text-muted-foreground">{t("step2Sub")}</p>
-          <CopyBox text={url} label={t("serverUrl")} />
-          <div className="grid gap-2 sm:grid-cols-[minmax(0,0.6fr)_minmax(0,1.4fr)]">
-            <CopyBox text="Authorization" label={t("headerName")} />
-            <CopyBox text={`Bearer ${key}`} label={t("headerValue")} />
-          </div>
-          <details className="text-[13px]">
-            <summary className="cursor-pointer font-medium text-primary">{t("jsonInstead")}</summary>
-            <div className="mt-2">
-              <CopyBox text={config} label={t("config")} />
-            </div>
-          </details>
-        </li>
-        <li className="grid gap-2">
-          <span className="text-[14px] font-semibold">3. {t("step3")}</span>
-          <CopyBox text={t("routine")} label={t("routineLabel")} mono={false} />
-          <p className="text-[13px] text-muted-foreground">{t("askExamples")}</p>
-        </li>
-      </ol>
+            <details className="text-[13px]">
+              <summary className="cursor-pointer font-medium text-primary">{t("jsonInstead")}</summary>
+              <div className="mt-2">
+                <CopyBox text={config} label={t("config")} />
+              </div>
+            </details>
+          </li>
+        </ol>
+      </details>
+
+      <section className="grid gap-2">
+        <span className="text-[14px] font-semibold">{t("step3")}</span>
+        <CopyBox text={t("routine")} label={t("routineLabel")} mono={false} />
+        <p className="text-[13px] text-muted-foreground">{t("askExamples")}</p>
+      </section>
 
       {keys && keys.length > 0 && (
         <div className="grid gap-2">

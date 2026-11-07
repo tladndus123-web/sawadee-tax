@@ -2646,6 +2646,28 @@
     "headerName": "HTTP header name",
     "headerValue": "HTTP header value",
     "jsonInstead": "If the screen asks for JSON (MCP server JSON)",
-    "netNote": "If it does not connect: in Grok Bot settings → Network → Allowed destinations, check this site is not blocked."
+    "netNote": "If it does not connect: in Grok Bot settings → Network → Allowed destinations, check this site is not blocked.",
+    "openBot": "Open Grok Bot",
+    "routineButton": "Make the routine (opens Grok Bot)",
+    "signIn": {
+      "title": "Connect by signing in (recommended)",
+      "1": "In Grok Bot → Connectors → Add a custom connector, paste only the server URL below. Leave the headers empty.",
+      "2": "When Grok Bot opens the sign-in, this site opens. Tap \"Allow\".",
+      "3": "Done. The connection shows in the list below and can be disconnected here."
+    },
+    "keyWay": "Connect with a key instead (other way)"
+  },
+  "connect": {
+    "title": "{name} wants to connect to your books",
+    "sub": "If you allow it, Grok Bot can read the Sawadee TAX books and put dates in the tax calendar.",
+    "allow": "Allow",
+    "deny": "Refuse",
+    "note": "Disconnect any time in Settings → Connect Grok Bot. The numbers it reads go to xAI.",
+    "ownerOnly": "Only owners can allow a connection.",
+    "bad": "This connection request is not valid. Connect again from Grok Bot.",
+    "connected": "Connected",
+    "refused": "Refused",
+    "backToBot": "Go back to Grok Bot. If it does not open by itself, tap below.",
+    "openBot": "Open Grok Bot"
   }
 }

@@ -5,6 +5,7 @@
 import { appUrl } from "@/lib/app-url";
 import { BOT_INFO, botTools, keyOwner } from "@/lib/bot-server";
 import { handleBody } from "@/lib/mcp";
+import { originOf } from "@/lib/owner-server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -26,7 +27,12 @@ const json = (body: unknown, status = 200) => Response.json(body, { status, head
 export async function POST(req: Request) {
   const admin = supabaseAdmin();
   const who = await keyOwner(admin, req.headers.get("authorization"));
-  if (!who) return json({ error: "A Sawadee TAX connection key is needed (Settings → Grok Bot)." }, 401);
+  // No key: the header tells an MCP client where to sign in (lib/oauth, the owner's "허용" page)
+  if (!who)
+    return Response.json(
+      { error: "A Sawadee TAX connection is needed: sign in, or a key from Settings → Grok Bot." },
+      { status: 401, headers: { "cache-control": "no-store", "www-authenticate": `Bearer resource_metadata="${originOf(req)}/.well-known/oauth-protected-resource"` } },
+    );
   if (tooMany(who.id)) return json({ error: "Too many calls. Try again in a minute." }, 429);
   const body = await req.json().catch(() => undefined);
   const out = await handleBody(body, botTools(admin, appUrl()), BOT_INFO);
