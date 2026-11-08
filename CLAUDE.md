@@ -223,7 +223,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   (a picture as base64 → `lib/bot-docs-server` = the LINE photo path, 30 an hour per owner → saved as a **draft** by `bot_save_document`, owners,
   drafts only, …004200; PDFs: the agent sends each page as a picture). The card lists six ready routines (daily wrap-up to
   LINE, morning to-dos, gap watch, weekly, filing, emailed receipts) as `grokbot://app/v1/prompt` buttons. The site has
-  `app/favicon.ico` + `public/icon-512.png` (Grok Bot showed a letter without them). The connector tile is the owner's PNG at `public/mcp-icon.png` (130×135, not resized): `serverInfo.icons` on initialize, and `logo_uri` on the OAuth metadata (extra field; Grok Bot drawing it is not confirmed).
+  `app/favicon.ico` + `public/icon-512.png` (Grok Bot showed a letter without them) and MCP serverInfo title + icons.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

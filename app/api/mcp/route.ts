@@ -4,7 +4,7 @@
 
 import { appUrl } from "@/lib/app-url";
 import { BOT_INFO, botTools, keyOwner } from "@/lib/bot-server";
-import { connectorIcons, handleBody } from "@/lib/mcp";
+import { handleBody } from "@/lib/mcp";
 import { originOf } from "@/lib/owner-server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   if (tooMany(who.id)) return json({ error: "Too many calls. Try again in a minute." }, 429);
   const body = await req.json().catch(() => undefined);
   const origin = originOf(req);
-  const info = { ...BOT_INFO, title: "Sawadee TAX", websiteUrl: origin, icons: connectorIcons(origin) };
+  const info = { ...BOT_INFO, title: "Sawadee TAX", websiteUrl: origin, icons: [{ src: `${origin}/icon-512.png`, mimeType: "image/png", sizes: ["512x512"] }] };
   const out = await handleBody(body, botTools(admin, appUrl(), undefined, who), info);
   return out === null ? new Response(null, { status: 202 }) : json(out);
 }

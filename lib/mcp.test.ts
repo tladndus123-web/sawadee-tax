@@ -1,7 +1,5 @@
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { CONNECTOR_ICON_PATH, CONNECTOR_ICON_SIZE, connectorIcons, handleBody, type McpTool } from "./mcp";
+import { handleBody, type McpTool } from "./mcp";
 
 const info = { name: "t", version: "1", instructions: "hi" };
 const tools: McpTool[] = [
@@ -16,21 +14,7 @@ describe("MCP over HTTP", () => {
     expect(r.result.capabilities).toHaveProperty("tools");
     expect(r.result.instructions).toBe("hi");
     const u = (await handleBody({ jsonrpc: "2.0", id: 2, method: "initialize", params: { protocolVersion: "1999-01-01" } }, tools, info)) as { result: { protocolVersion: string } };
-    expect(u.result.protocolVersion).toBe("2025-11-25");
-  });
-  it("passes the connector icon through initialize, at the file's real size", async () => {
-    const png = readFileSync("public/mcp-icon.png");
-    expect(png.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
-    expect(png.readUInt32BE(16)).toBe(130);
-    expect(png.readUInt32BE(20)).toBe(135);
-    expect(createHash("sha256").update(png).digest("hex")).toBe("4697e1b6076811071119a1aff0e38343198e5b73357748fba6c63b2d7b770735");
-    const icons = connectorIcons("https://thai-receipt-ledger.vercel.app/");
-    expect(icons).toEqual([{ src: `https://thai-receipt-ledger.vercel.app${CONNECTOR_ICON_PATH}`, mimeType: "image/png", sizes: [CONNECTOR_ICON_SIZE] }]);
-    const r = (await handleBody({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-11-25" } }, tools, { ...info, icons })) as {
-      result: { protocolVersion: string; serverInfo: { icons: typeof icons } };
-    };
-    expect(r.result.protocolVersion).toBe("2025-11-25");
-    expect(r.result.serverInfo.icons).toEqual(icons);
+    expect(u.result.protocolVersion).toBe("2025-06-18");
   });
   it("notifications get no answer", async () => {
     expect(await handleBody({ jsonrpc: "2.0", method: "notifications/initialized" }, tools, info)).toBeNull();

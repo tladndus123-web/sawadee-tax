@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { CONNECTOR_ICON_PATH } from "./mcp";
-import { agentName, newClientId, newCode, pkceOk, readAuthRequest, redirectOk, resourceMetadata, serverMetadata, withParams } from "./oauth";
+import { agentName, newClientId, newCode, pkceOk, readAuthRequest, redirectOk, serverMetadata, withParams } from "./oauth";
 
 const verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
 const challenge = createHash("sha256").update(verifier).digest("base64url");
@@ -35,7 +34,6 @@ describe("agent sign-in (OAuth with PKCE)", () => {
   it("makes ids and codes of the right shape and tells where to sign in", () => {
     expect(newClientId()).toMatch(/^mcp_[A-Za-z0-9]{24}$/);
     expect(newCode()).toHaveLength(43);
-    expect(serverMetadata("https://a.b")).toMatchObject({ authorization_endpoint: "https://a.b/api/oauth/authorize", code_challenge_methods_supported: ["S256"], logo_uri: `https://a.b${CONNECTOR_ICON_PATH}` });
-    expect(resourceMetadata("https://a.b").logo_uri).toBe(`https://a.b${CONNECTOR_ICON_PATH}`);
+    expect(serverMetadata("https://a.b")).toMatchObject({ authorization_endpoint: "https://a.b/api/oauth/authorize", code_challenge_methods_supported: ["S256"] });
   });
 });
