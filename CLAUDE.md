@@ -233,7 +233,14 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   (session, 30/min) from `saveEntry`. (2) Tools **unusual_things**, **price_rises**, **sales_detail**,
   **add_document_note** (memo only, "Grok Bot: …", refused in a closed month) — 14 tools now. (3) A **SKILL.md**
   (`lib/bot-skill.ts`, English: which tool for what, the rules) downloaded from the card, and a memory sentence to tell
-  Grok Bot once (`bot.skill.memory`, 4 languages).
+  Grok Bot once (`bot.skill.memory`, 4 languages). **Setup from the site** (owner: "웹사이트에서 모든 설정을 끝낼 수 있게"):
+  the card's first section is 5 numbered buttons — ① `grokbot://app/v1/settings?id=integrations` + our URL on the clipboard
+  (done = a live key exists), ② a prompt telling Grok Bot to fetch the public `/api/bot-skill` (SKILL.md, no secrets) and
+  save it as a skill, ③ the memory prompt, ④ a prompt to create the webhook routine and then call the tool
+  **set_event_webhook** (15 tools; https only, same URL replaces, ≤ 3, sends the test event; done = a hook exists),
+  ⑤ the nightly routine prompt. Every prompt link stays under Grok Bot's 1000-character limit (checked in a test script).
+  Live check 2026-11-08: the dup rule found 9 real duplicate pairs in October (same seller, doc no., date, amount; ≈ ฿10,804
+  counted twice) — the owner decides how to remove them.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

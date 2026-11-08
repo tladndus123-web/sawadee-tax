@@ -13,6 +13,7 @@ import { useScreenDate } from "@/components/ScreenDate";
 import { todayBangkok } from "@/lib/thai-tax";
 import { downloadBlob } from "@/lib/attendance-share";
 import { skillMarkdown } from "@/lib/bot-skill";
+import { cn } from "@/lib/utils";
 import { useFoldStatus } from "./SettingsFold";
 
 const ROUTINES = ["daily", "morning", "watch", "weekly", "filing", "email"] as const;
@@ -142,6 +143,44 @@ export function BotCard() {
         <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.line")}</li>
         <li className="flex gap-2"><Ban className="mt-0.5 size-4 flex-none text-bad" aria-hidden />{t("can.not")}</li>
       </ul>
+
+      {/* Finish the setup from here (owner 2026-11-08: "웹사이트에서 모든 설정을 끝낼 수 있게"): each button opens Grok Bot with
+          the sentence typed, or its connectors screen with our address on the clipboard; the agent does the rest itself */}
+      <section className="grid gap-3 rounded-2xl bg-brand-soft/60 p-4">
+        <span className="text-[14px] font-semibold">{t("setup.title")}</span>
+        <ol className="grid gap-2">
+          {(
+            [
+              { k: "connector", done: (keys?.length ?? 0) > 0, href: "grokbot://app/v1/settings?id=integrations", copy: url },
+              { k: "skill", done: null, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("setup.skillPrompt", { url: `${url.replace(/\/api\/mcp$/, "")}/api/bot-skill` }))}` },
+              { k: "memory", done: null, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("skill.memory"))}` },
+              { k: "hook", done: hooks.length > 0, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("setup.hookPrompt", { text: t("hook.routineText") }))}` },
+              { k: "routine", done: null, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("rec.items.daily.text"))}` },
+            ] as const
+          ).map((s, i) => (
+            <li key={s.k} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-card px-3.5 py-2.5 shadow-[0_0_0_1px_var(--border)]">
+              <span className="flex min-w-0 items-center gap-2.5">
+                <span className={cn("grid size-7 flex-none place-items-center rounded-full text-[13px] font-bold", s.done ? "bg-ok text-white" : "bg-primary/10 text-primary")}>{s.done ? <Check className="size-4" aria-hidden /> : i + 1}</span>
+                <span className="grid min-w-0">
+                  <span className="text-[14px] font-medium">{t(`setup.${s.k}`)}</span>
+                  <span className="text-[12px] text-muted-foreground">{s.done === true ? t("setup.done") : t(`setup.${s.k}Sub`)}</span>
+                </span>
+              </span>
+              <a
+                href={s.href}
+                onClick={() => {
+                  if ("copy" in s && s.copy) void navigator.clipboard.writeText(s.copy).then(() => toast.success(t("setup.copiedUrl"))).catch(() => undefined);
+                }}
+                className={cn("press inline-flex h-9 flex-none items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium", s.done ? "bg-secondary hover:bg-muted" : "bg-primary text-primary-foreground hover:bg-primary/90")}
+              >
+                <ExternalLink className="size-3.5" aria-hidden />
+                {t(s.done ? "setup.again" : "setup.go")}
+              </a>
+            </li>
+          ))}
+        </ol>
+        <p className="text-[12px] text-muted-foreground">{t("setup.note")}</p>
+      </section>
 
       {/* Grok Bot's own links (grokbot://app/v1/open, /v1/prompt?text=…, checked in Grok Bot 0.79.2) */}
       <div className="flex flex-wrap gap-2">

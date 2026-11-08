@@ -24,7 +24,7 @@ describe("the skill for Grok Bot", () => {
   it("names every tool and the rules", () => {
     const md = skillMarkdown("https://x.app");
     expect(md.startsWith("---\nname: sawadee-tax\n")).toBe(true);
-    for (const tool of ["day_summary", "books_overview", "calendar", "tax_return_numbers", "find_documents", "supplier_summary", "unusual_things", "price_rises", "sales_detail", "add_calendar_date", "remove_calendar_date", "add_document_note", "add_receipt", "send_line_to_owner"]) expect(md).toContain(`**${tool}**`);
+    for (const tool of ["day_summary", "books_overview", "calendar", "tax_return_numbers", "find_documents", "supplier_summary", "unusual_things", "price_rises", "sales_detail", "add_calendar_date", "remove_calendar_date", "add_document_note", "add_receipt", "set_event_webhook", "send_line_to_owner"]) expect(md).toContain(`**${tool}**`);
     expect(md).toContain("https://x.app/api/mcp");
     expect(md).toContain("DRAFT");
   });

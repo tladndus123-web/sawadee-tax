@@ -2722,6 +2722,26 @@
       "show": "See the text · copy",
       "memoryLabel": "Tell Grok Bot once (memory)",
       "memory": "Remember: I am the owner of a restaurant in Thailand using Sawadee TAX. Answer questions about the books with the sawadee-tax connector. Sales targets are without VAT. Do not keep the books' numbers in your memory. Never change receipts, approve or pay yourself; ask me. Answer in English."
+    },
+    "setup": {
+      "title": "Finish the setup from this site (a button opens Grok Bot; it does the rest itself)",
+      "connector": "① Connect the connector",
+      "connectorSub": "Grok Bot's connectors screen opens and the server URL is copied. Paste it in 'Add a custom connector' and tap 'Allow' on the sign-in.",
+      "skill": "② Make the skill",
+      "skillSub": "Grok Bot reads the skill file from this site and saves it itself. Allow it when it asks to save.",
+      "memory": "③ Tell it the memory",
+      "memorySub": "The basics are typed into the chat. Just send.",
+      "hook": "④ Instant-events routine",
+      "hookSub": "Grok Bot makes the webhook routine and registers its URL and key with this site by itself. Nothing to copy.",
+      "routine": "⑤ Nightly 10 pm wrap-up routine",
+      "routineSub": "The routine that sends the wrap-up to LINE is typed into the chat. Just send.",
+      "go": "Open",
+      "again": "Again",
+      "done": "Done",
+      "copiedUrl": "Server URL copied. Paste it in Grok Bot.",
+      "note": "① and ④ turn into a green check here once done. ② ③ ⑤ can only be seen inside Grok Bot.",
+      "skillPrompt": "Read the SKILL.md at {url} and save its content as a skill named 'sawadee-tax', unchanged. When saved, tell me the skill's name and the first line of its description.",
+      "hookPrompt": "Create a routine that starts 'when a webhook is triggered', named 'Sawadee TAX events', with this instruction: {text} After saving it, register that routine's webhook URL and webhook key with the set_event_webhook tool of the sawadee-tax connector, and tell me the result (testDelivered)."
     }
   },
   "connect": {

@@ -8,6 +8,7 @@ import { booksContext, calendarContext } from "./assistant-server";
 import { hashKey, keyFromHeader } from "./bot-keys";
 import { findAnomalies } from "./anomalies";
 import { addDocumentFromFile, fromBase64 } from "./bot-docs-server";
+import { sendBotEvent, testEvent } from "./bot-events-server";
 import { priceRises } from "./price-watch";
 import { saleValue } from "./sales";
 import { lineClient } from "./line";
@@ -448,6 +449,40 @@ export function botTools(admin: Admin, appUrl: string, today = todayBangkok(), w
         const { error } = await admin.from("documents").update({ memo }).eq("id", id);
         if (error) return { added: false, reason: /month_locked/.test(error.message) ? "That tax month is closed." : error.message };
         return { added: true, id, open: `${appUrl}/documents/${id}` };
+      },
+    },
+    {
+      name: "set_event_webhook",
+      description:
+        "Register the webhook of one of YOUR routines (one started 'when a webhook is triggered') so the books can send you events the moment they happen: a new staff expense claim, a saved receipt worth a look. Pass the routine's webhook URL (https) and its key; the books will call it with 'Authorization: Bearer <key>'. A test event is sent at once. Call this right after you created such a routine.",
+      writes: true,
+      inputSchema: {
+        type: "object",
+        properties: { url: { type: "string", description: "The routine's webhook URL (https://…)" }, key: { type: "string", description: "The routine's webhook key" }, name: { type: "string", description: "Optional label, e.g. the routine's name" } },
+        required: ["url", "key"],
+        additionalProperties: false,
+      },
+      run: async (a) => {
+        if (!who.createdBy) throw new Error("This connection has no owner.");
+        const url = String(a.url).trim();
+        const key = String(a.key).trim();
+        let u: URL;
+        try {
+          u = new URL(url);
+        } catch {
+          throw new Error("url is not a URL");
+        }
+        if (u.protocol !== "https:" || url.length > 500) throw new Error("url must start with https://");
+        if (key.length < 8 || key.length > 300 || /\s/.test(key)) throw new Error("key is missing or too short");
+        const name = String(a.name ?? "Grok Bot routine").trim().slice(0, 60) || "Grok Bot routine";
+        // The same URL again replaces the old row; otherwise at most 3
+        await admin.from("bot_webhooks").delete().eq("url", url);
+        const { count } = await admin.from("bot_webhooks").select("id", { count: "exact", head: true });
+        if ((count ?? 0) >= 3) throw new Error("Already 3 webhooks. The owner removes one in Settings → Grok Bot.");
+        const { error } = await admin.from("bot_webhooks").insert({ name, url, key, created_by: who.createdBy });
+        if (error) throw new Error(error.message);
+        const sent = await sendBotEvent(admin, testEvent(appUrl));
+        return { registered: true, host: u.host, testDelivered: sent > 0, note: sent > 0 ? "The test event reached your routine. From now on claims and receipts worth a look arrive the same way." : "Registered, but the test event was not accepted by that URL. Check the URL and key; the owner sees the status in Settings → Grok Bot." };
       },
     },
     {

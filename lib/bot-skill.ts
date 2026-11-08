@@ -29,6 +29,7 @@ Thai tax words: ภ.พ.30 = monthly VAT return, ภ.ง.ด.3 / ภ.ง.ด.53 
 - Put a date in the tax calendar (booking, supplier call, a payment to remember): **add_calendar_date**; take out one you added: **remove_calendar_date**.
 - A note on a receipt ("checked with supplier", "ask the accountant"): **add_document_note**.
 - A receipt or tax invoice that arrived as a picture or email: **add_receipt** (base64 picture; for a PDF send each page as a picture). It becomes a DRAFT — say so; a person checks and saves it.
+- After you create a routine that starts "when a webhook is triggered", register its webhook URL and key with **set_event_webhook** so the books can send you events (claims, receipts worth a look) the moment they happen.
 - Tell the owner something on LINE: **send_line_to_owner** (title + up to 12 short lines; at most 10 a day — use it for the wrap-up and for anything urgent, not for every answer).
 
 ## Rules
