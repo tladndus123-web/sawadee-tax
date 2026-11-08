@@ -284,10 +284,10 @@ export async function loadPayrollChecks(month: string): Promise<Map<string, Payr
   const sb = supabaseBrowser();
   const [{ data, error }, { data: members }] = await Promise.all([
     sb.from("payroll_checks").select("employee_id, checked_at, checked_by").eq("month", month),
-    sb.from("members").select("user_id, name, email"),
+    sb.rpc("member_names"),
   ]);
   if (error) throw error;
-  const who = new Map((members ?? []).map((m) => [m.user_id as string, (m.name as string) || (m.email as string)]));
+  const who = new Map(((members ?? []) as { user_id: string; name: string; email: string | null }[]).map((m) => [m.user_id, m.name || m.email || ""]));
   return new Map(
     (data ?? []).map((r) => [r.employee_id as string, { checkedAt: Date.parse(r.checked_at as string), checkedBy: r.checked_by ? (who.get(r.checked_by as string) ?? null) : null }]),
   );

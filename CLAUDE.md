@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (620) · `npm run db:test` (415 in 8 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (620) · `npm run db:test` (423 in 9 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy (app + DB) | **Push to `main` and let GitHub Actions deploy** (`.github/workflows/deploy.yml`: checks → migrations → pgTAP on the cloud DB → Vercel → live check). Cursor pushes to `main` too, so never deploy from this PC (`vercel deploy`) — a local build can put an older tree live over theirs (happened twice 2026-11-05). Check the run with the GitHub API (token from `git credential fill` for github.com, never printed): `GET https://api.github.com/repos/tladndus123-web/sawadee-tax/actions/runs?per_page=3`. Only if Actions is down: `npx vercel deploy --prod` from an up-to-date `main` |
 | If a deploy is broken | `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>`. A failed Actions run leaves the site as it was |
@@ -245,6 +245,12 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   connector JSON; the card polls /api/bot-keys every 4 s and ticks itself on the key's first use (`last_used_at`).
   ② one sentence (`bot.setup.allInOne`, < 1000 chars) makes Grok Bot save the skill, the memory, the webhook routine
   (set_event_webhook) and the nightly routine; done when a hook exists or "했어요". The OAuth routes stay (advanced).
+  Step ③ (added after Grok Bot reported it cannot see its own routine's webhook URL / key): the owner pastes them in the
+  card ("저장하고 테스트" = POST /api/bot-webhooks then the test event); the all-in-one sentence no longer asks Grok Bot to
+  call set_event_webhook. **Staff no longer read the member list** (…004400: "members read" = admins, or your own row while
+  active; names for "who checked / deleted" come from `member_names()` — emails only for admins; ledger-store, activity,
+  payroll-store use it; tests `supabase/tests/members_private.test.sql`). **Filing → close**: ticking "부가세 신고 완료" on
+  the filing screen asks "장부도 마감할까요?" (admins; `closeMonth`).
   Live check 2026-11-08: the dup rule found 9 real duplicate pairs in October (same seller, doc no., date, amount; ≈ ฿10,804
   counted twice) — the owner removes them by hand: the duplicate banner on a saved document (`DocumentReview`, admins)
   now has **"중복으로 처리 (휴지통으로)"** (ask once more → `onDelete` with reason `dupBanner.reason` → trash, restorable;

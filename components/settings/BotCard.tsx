@@ -70,12 +70,13 @@ export function BotCard() {
     setHookBusy("add");
     try {
       const r = await fetch("/api/bot-webhooks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: hookUrl, key: hookKey, name: "Grok Bot" }) });
-      const j = (await r.json()) as { error?: string };
+      const j = (await r.json()) as { error?: string; hook?: { id: string } };
       if (!r.ok) throw new Error(j.error);
       setHookUrl("");
       setHookKey("");
       await loadHooks();
       toast.success(t("hook.added"));
+      if (j.hook?.id) await testHook(j.hook.id);
     } catch (e) {
       const m = e instanceof Error ? e.message : "";
       toast.error(m === "url" ? t("hook.badUrl") : m === "key" ? t("hook.badKey") : m === "tooMany" ? t("hook.tooMany") : t("fail"));
@@ -141,8 +142,9 @@ export function BotCard() {
   const linked = (keys ?? []).some((k) => !!k.last_used_at);
   const skillUrl = `${url.replace(/\/api\/mcp$/, "")}/api/bot-skill`;
   const allInOne = t("setup.allInOne", { url: skillUrl });
-  const setupDone = hooks.length > 0 || marked.includes("all");
-  const current = !linked ? 0 : !setupDone ? 1 : -1;
+  const setupDone = marked.includes("all");
+  const hooked = hooks.length > 0;
+  const current = !linked ? 0 : !setupDone ? 1 : !hooked && !marked.includes("nohook") ? 2 : -1;
   const connect = async () => {
     await make();
   };
@@ -168,7 +170,7 @@ export function BotCard() {
       <section className="grid gap-3 rounded-2xl bg-brand-soft/60 p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <span className="text-[14px] font-semibold">{t("setup.short")}</span>
-          <span className={cn("text-[13px] font-medium tabular-nums", current === -1 ? "text-ok" : "text-primary")}>{t("setup.progress", { done: current === -1 ? 2 : current, total: 2 })}</span>
+          <span className={cn("text-[13px] font-medium tabular-nums", current === -1 ? "text-ok" : "text-primary")}>{t("setup.progress", { done: current === -1 ? 3 : current, total: 3 })}</span>
         </div>
         <ol className="grid gap-1.5">
           {/* ① connect */}
@@ -245,6 +247,40 @@ export function BotCard() {
                   </button>
                 </div>
                 <p className="text-[12px] text-muted-foreground">{t("setup.draftNote")}</p>
+              </div>
+            )}
+          </li>
+          {/* ③ events: paste the routine's webhook URL + key (Grok Bot cannot see them itself) */}
+          <li className={cn("grid gap-2 rounded-2xl px-3.5 py-2.5", current === 2 ? "bg-card shadow-[0_0_0_1px_var(--border)]" : "")}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="flex items-center gap-2.5">
+                <span className={cn("grid size-7 flex-none place-items-center rounded-full text-[13px] font-bold", hooked ? "bg-ok text-white" : current === 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{hooked ? <Check className="size-4" aria-hidden /> : 3}</span>
+                <span className={cn("text-[14px] font-medium", current !== 2 && !hooked && "text-muted-foreground")}>{t("setup.hookTitle")}</span>
+              </span>
+              {hooked && (
+                <span className="text-[12px] text-muted-foreground">
+                  {hooks[0].last_status !== null && hooks[0].last_status >= 200 && hooks[0].last_status < 300 ? t("hook.okShort") : t("hook.never")}
+                </span>
+              )}
+            </div>
+            {current === 2 && (
+              <div className="grid gap-2.5 pl-[38px]">
+                <ol className="grid list-decimal gap-1 pl-5 text-[13.5px]">
+                  <li>{t("setup.hook1")}</li>
+                  <li>{t("setup.hook2")}</li>
+                  <li>{t("setup.hook3")}</li>
+                </ol>
+                <input id="bot-hook-url-step" value={hookUrl} onChange={(e) => setHookUrl(e.target.value)} placeholder={t("hook.url") + " (https://…)"} aria-label={t("hook.url")} className="h-10 rounded-xl bg-card px-3 text-[14px] shadow-[0_0_0_1px_var(--border)] outline-none focus:shadow-[0_0_0_2px_var(--primary)]" />
+                <input id="bot-hook-key-step" value={hookKey} onChange={(e) => setHookKey(e.target.value)} placeholder={t("hook.key")} aria-label={t("hook.key")} type="password" autoComplete="off" className="h-10 rounded-xl bg-card px-3 text-[14px] shadow-[0_0_0_1px_var(--border)] outline-none focus:shadow-[0_0_0_2px_var(--primary)]" />
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" onClick={() => void addHook()} disabled={hookBusy === "add" || !hookUrl || !hookKey} className="h-10 rounded-full">
+                    {hookBusy === "add" ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                    {t("setup.hookSave")}
+                  </Button>
+                  <button type="button" onClick={() => setMarked([...marked, "nohook"])} className="press inline-flex h-10 items-center rounded-full bg-card px-4 text-[14px] font-medium shadow-[0_0_0_1px_var(--border)] hover:bg-muted">
+                    {t("setup.hookSkip")}
+                  </button>
+                </div>
               </div>
             )}
           </li>

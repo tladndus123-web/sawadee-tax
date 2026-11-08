@@ -2611,7 +2611,11 @@
         "4": "โอนย้าย → บันทึกและสร้างไฟล์ข้อมูล makes the .rdx file.",
         "5": "Sign in to e-Filing → the same form → upload attachment (อัปโหลดไฟล์) and pick the .rdx file."
       }
-    }
+    },
+    "closeAsk": "Close the books for {month} too?",
+    "closeWhy": "Locks this month's documents so the filed numbers cannot change. Paid marks and stickers can still change, and admins can reopen any time.",
+    "closeYes": "Yes, close it",
+    "closeLater": "Later"
   },
   "bot": {
     "title": "Connect Grok Bot",
@@ -2745,7 +2749,7 @@
       "note": "① and ④ turn into a green check here once done. ② ③ ⑤ can only be seen inside Grok Bot.",
       "skillPrompt": "Read the SKILL.md at {url} and save its content as a skill named 'sawadee-tax', unchanged. When saved, tell me the skill's name and the first line of its description.",
       "hookPrompt": "Create a routine that starts 'when a webhook is triggered', named 'Sawadee TAX events', with this instruction: {text} After saving it, register that routine's webhook URL and webhook key with the set_event_webhook tool of the sawadee-tax connector, and tell me the result (testDelivered).",
-      "short": "Setup (2 steps)",
+      "short": "Setup (3 steps)",
       "progress": "{done}/{total} done",
       "markDone": "Done",
       "allDone": "Setup is done. Ask Grok Bot about the books.",
@@ -2768,7 +2772,13 @@
       "waiting": "When Grok Bot first reads the books, this turns to 'Connected' by itself.",
       "allTitle": "② Set up everything at once (skill · memory · events · 10 pm wrap-up)",
       "allSub": "Send the one sentence below to Grok Bot and it sets up all four itself. Allow it when it asks.",
-      "allInOne": "Using the sawadee-tax connector, do these in order. 1) Read the SKILL.md at {url} and save it unchanged as the skill 'sawadee-tax'. 2) Remember: I own a restaurant in Thailand using Sawadee TAX. Sales targets are without VAT. Do not keep the books' numbers in your memory. Never change receipts, approve or pay yourself; ask me. Answer in English. 3) Create a routine 'Sawadee TAX events' that starts 'when a webhook is triggered' (instruction: when an event comes from the books, tell me in 3-5 lines what it is and what I must decide; do not act on it), then register its webhook URL and key with set_event_webhook. 4) A routine every night at 10 pm (Bangkok): read today's books with day_summary and send a wrap-up of up to 6 lines with send_line_to_owner. Then tell me the result of 1-4, one line each."
+      "allInOne": "Using the sawadee-tax connector, do these in order. 1) Read the SKILL.md at {url} and save it unchanged as the skill 'sawadee-tax'. 2) Remember: I own a restaurant in Thailand using Sawadee TAX. Sales targets are without VAT. Do not keep the books' numbers in your memory. Never change receipts, approve or pay yourself; ask me. Answer in English. 3) Create a routine 'Sawadee TAX events' that starts 'when a webhook is triggered' (instruction: when an event comes from the books, tell me in 3-5 lines what it is and what I must decide; do not act on it), just save it; I will paste its webhook URL and key into the site myself. 4) A routine every night at 10 pm (Bangkok): read today's books with day_summary and send a wrap-up of up to 6 lines with send_line_to_owner. Then tell me the result of 1-4, one line each.",
+      "hookTitle": "③ Connect instant events (webhook)",
+      "hook1": "In Grok Bot → Routines, open 'Sawadee TAX events'.",
+      "hook2": "Copy its webhook URL and webhook key (Grok Bot cannot see these itself, so they are pasted by hand).",
+      "hook3": "Paste them below and tap 'Save and test'.",
+      "hookSave": "Save and test",
+      "hookSkip": "Later"
     }
   },
   "connect": {

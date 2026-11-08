@@ -155,7 +155,7 @@ async function reload() {
   }
   const [index, { data: members }] = await Promise.all([
     rows.length ? supabase.from("documents").select("id, updated_at").order("created_at", { ascending: false }) : null,
-    supabase.from("members").select("user_id, name, email"),
+    supabase.rpc("member_names"),
   ]);
   let fresh: Row[];
   if (!index) {
@@ -175,7 +175,7 @@ async function reload() {
     // In the server's order; anything no longer there (removed for good, or out of reach) drops out
     fresh = (index.data ?? []).map((x) => have.get(x.id as string)).filter((r): r is Row => !!r);
   }
-  const who = new Map((members ?? []).map((m) => [m.user_id as string, (m.name as string) || (m.email as string)]));
+  const who = new Map(((members ?? []) as { user_id: string; name: string; email: string | null }[]).map((m) => [m.user_id, m.name || m.email || ""]));
   names = who;
   rows = fresh;
   entries = toEntries(rows, who);

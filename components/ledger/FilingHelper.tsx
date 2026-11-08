@@ -5,7 +5,7 @@
 // and a "filed" tick that is the same tick as the tax calendar's. Follows the branch being worked in, like the input tax
 // report. Admins only (the numbers read the whole month's sales and purchases).
 
-import { Check, ChevronLeft, ChevronRight, CircleCheck, Copy, Download, FileText, Loader2, ReceiptText, TriangleAlert } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CircleCheck, Copy, Download, FileText, Loader2, Lock, ReceiptText, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -21,7 +21,7 @@ import { downloadBlob } from "@/lib/attendance-share";
 import { buildPp30, buildWhtFiling, carriedIn, filingDeadlines, totalToPay } from "@/lib/filing";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { baht, fmt, fromSatang, toSatang } from "@/lib/money";
-import { nextMonth, useMonthLocks } from "@/lib/month-lock-store";
+import { closeMonth, nextMonth, useMonthLocks } from "@/lib/month-lock-store";
 import { useMe } from "@/lib/role-store";
 import { useSales } from "@/lib/sales-store";
 import { canOpen } from "@/lib/screens";
@@ -39,6 +39,7 @@ const plain = (n: number) => n.toFixed(2);
 
 export function FilingHelper({ month }: { month: string }) {
   const t = useTranslations("filing");
+  const tl = useTranslations("lock");
   const tw = useTranslations("tax.whtType");
   const sd = useScreenDate();
   const monthLabel = useMonthLabel();
@@ -51,6 +52,8 @@ export function FilingHelper({ month }: { month: string }) {
   const branch = useBranch();
   const { branches } = useBranches();
   const [tab, setTab] = useState<Tab>("vat");
+  const [askClose, setAskClose] = useState(false);
+  const [closing, setClosing] = useState(false);
   // Box 10: null = worked out from last month (carriedIn), else what the person typed
   const [carried, setCarried] = useState<string | null>(null);
   const today = todayBangkok();
@@ -100,8 +103,22 @@ export function FilingHelper({ month }: { month: string }) {
     try {
       await setDone(key, on);
       toast.success(on ? t("markedDone") : t("unmarked"));
+      // VAT filed → the numbers must not change any more: offer to close the month (admins; the database decides)
+      if (on && key === vatKey && !locks.has(month) && me.role === "admin") setAskClose(true);
     } catch {
       toast.error(t("markFail"));
+    }
+  };
+  const close = async () => {
+    setClosing(true);
+    try {
+      await closeMonth(month);
+      toast.success(tl("closed", { month: monthLabel(month) }));
+      setAskClose(false);
+    } catch {
+      toast.error(tl("fail"));
+    } finally {
+      setClosing(false);
     }
   };
 
@@ -428,6 +445,24 @@ export function FilingHelper({ month }: { month: string }) {
                   {b.done ? t("doneLabel", { what: b.label }) : b.label}
                 </button>
               ))}
+              {askClose && !locks.has(month) && (
+                <div className="grid gap-2 rounded-2xl bg-brand-soft p-3.5" role="status">
+                  <p className="flex items-center gap-2 text-[14px] font-semibold">
+                    <Lock className="size-4 text-brand" aria-hidden />
+                    {t("closeAsk", { month: monthLabel(month) })}
+                  </p>
+                  <p className="text-[12.5px] text-muted-foreground">{t("closeWhy")}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" disabled={closing} onClick={() => void close()} className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-[14px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60">
+                      {closing ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Lock className="size-4" aria-hidden />}
+                      {t("closeYes")}
+                    </button>
+                    <button type="button" disabled={closing} onClick={() => setAskClose(false)} className="press inline-flex h-10 items-center rounded-full bg-card px-4 text-[14px] font-medium shadow-[0_0_0_1px_var(--border)] hover:bg-muted">
+                      {t("closeLater")}
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <Link href={`/ledger/report/${month}`} className="press inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-secondary px-3 text-[13px] font-medium hover:bg-muted">
                   <FileText className="size-4 text-bad" aria-hidden />
