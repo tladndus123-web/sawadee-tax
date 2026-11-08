@@ -5,6 +5,7 @@
 import { monthKey } from "./archive";
 import type { Branch } from "./branches";
 import { needsCheck } from "./dashboard";
+import { dupGroupsIn } from "./dup-groups";
 import { employedInMonth, type Employee } from "./payroll";
 import { missingDays, saleDays } from "./sale-days";
 import { type Sale, saleMonth } from "./sales";
@@ -31,6 +32,8 @@ export interface CloseTodo {
   missingDays: number;
   /** Staff on the payroll that month whose pay is not checked; null when there is nobody on the payroll */
   payroll: { staff: number; left: number } | null;
+  /** Groups of possible duplicates (same seller + document number) with a document in the month */
+  dups: number;
 }
 
 export function closeTodo(opts: {
@@ -52,6 +55,7 @@ export function closeTodo(opts: {
     companyTaxId,
     today,
   );
+  const saved = entries.filter((e) => e.status !== "draft");
   const docs = inMonth.filter((e) => e.status === "draft" || e.checkedAt === null || warned.has(e.id)).length;
   const missing = opts.branches.reduce((n, b) => n + missingDays(saleDays(opts.sales, b.id, month, today, b.closedDays)).length, 0);
   const staff = opts.employees.filter((e) => employedInMonth(e, month));
@@ -59,8 +63,9 @@ export function closeTodo(opts: {
     docs,
     missingDays: missing,
     payroll: staff.length ? { staff: staff.length, left: staff.filter((e) => !opts.payChecked.has(e.id)).length } : null,
+    dups: dupGroupsIn(saved, month),
   };
 }
 
-/** How many of the three are still open */
-export const openCount = (t: CloseTodo) => Number(t.docs > 0) + Number(t.missingDays > 0) + Number(!!t.payroll?.left);
+/** How many of the four are still open */
+export const openCount = (t: CloseTodo) => Number(t.docs > 0) + Number(t.missingDays > 0) + Number(!!t.payroll?.left) + Number(t.dups > 0);

@@ -7,7 +7,7 @@ import { isDepreciated } from "@/lib/cost-split";
 import { ArchiveRestore, Bookmark, Calculator, CalendarDays, Check, ChevronDown, ChevronRight, CircleCheck, CircleDollarSign, Coins, Copy, Ellipsis, FilePen, ImagePlus, ListChecks, Loader2, Lock, Refrigerator, Search, SlidersHorizontal, Tags, Trash2, TriangleAlert, UserCheck, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useScreenDate } from "@/components/ScreenDate";
-import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { BulkCategoryBar } from "./BulkCategoryBar";
 import { BulkPayBar } from "./BulkPayBar";
 import { DupReview } from "./DupReview";
+import { dupGroupsIn } from "@/lib/dup-groups";
 import { ExportButtons } from "./ExportButtons";
 import { SavedViews } from "./SavedViews";
 import { MonthLockButton } from "./MonthLockButton";
@@ -90,6 +91,16 @@ export function LedgerList() {
     }),
     [check, entries],
   );
+  // A link can open the ledger at the duplicate review (/ledger?status=dup: month-end checklist, the close dialog)
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("status") === "dup") setStatus("dup");
+  }, []);
+  const reviewDups = useCallback(() => {
+    setTab("ledger");
+    setStatus("dup");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+  const savedDocs = useMemo(() => pick(entries, "ledger"), [entries]);
   // Once the last duplicate has gone to the trash the "중복 의심" chip disappears, so the list falls back to all documents
   const status = statusPick === "dup" && statusCounts.dup === 0 ? null : statusPick;
   // The box shows every key at once; the list follows a moment later, so typing never waits for it
@@ -355,6 +366,8 @@ export function LedgerList() {
               monthEntries={monthEntries}
               check={check}
               locked={locks.has(group.key)}
+              dups={isAdmin && !locks.has(group.key) ? dupGroupsIn(savedDocs, group.key) : 0}
+              onDups={reviewDups}
               isAdmin={isAdmin}
               selecting={selecting ? mode : null}
               selected={selected}
@@ -445,6 +458,8 @@ const MonthSection = memo(function MonthSection({
   monthEntries,
   check,
   locked,
+  dups,
+  onDups,
   isAdmin,
   selecting,
   selected,
@@ -457,6 +472,9 @@ const MonthSection = memo(function MonthSection({
   check: Map<string, string[]>;
   /** Tax month closed (month_locks): its saved documents can't change */
   locked: boolean;
+  /** Possible duplicate groups with a document in this month (the close dialog warns) */
+  dups: number;
+  onDups: () => void;
   isAdmin: boolean;
   /** Ticking for a payment run ("pay": unpaid only) or for a category ("category": any, closed months excepted) */
   selecting: "pay" | "category" | null;
@@ -515,7 +533,7 @@ const MonthSection = memo(function MonthSection({
         <div className="grid gap-2 border-t bg-muted/30 p-2 sm:p-3">
           {group.key !== NO_DATE && (
             <div className="flex flex-wrap items-center justify-between gap-2">
-              {isAdmin ? <MonthLockButton month={group.key} label={monthLabel(group.key)} locked={locked} /> : <span />}
+              {isAdmin ? <MonthLockButton month={group.key} label={monthLabel(group.key)} locked={locked} dups={dups} onDups={onDups} /> : <span />}
               <div className="flex flex-wrap items-center gap-2">
                 {canFile && (
                   <Link

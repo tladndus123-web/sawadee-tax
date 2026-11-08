@@ -4,7 +4,7 @@
 // documents to look at, missing days of shop sales, staff pay to check. Each line opens the place to fix it; the
 // month can be closed anyway (asks first, with what is left).
 
-import { ChevronRight, CircleCheck, FileText, Store, Users, type LucideIcon } from "lucide-react";
+import { ChevronRight, CircleCheck, Copy, FileText, Store, Users, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { MonthLockButton } from "@/components/ledger/MonthLockButton";
@@ -73,7 +73,7 @@ export function MonthCloseCard() {
           </h2>
           <p className={cn("text-xs font-medium", left ? "text-warn" : "text-ok")}>{left ? t("left", { count: left }) : t("ready")}</p>
         </div>
-        <MonthLockButton month={month} label={label} locked={false} primary={!left} note={left ? t("warn", { count: left }) : undefined} />
+        <MonthLockButton month={month} label={label} locked={false} primary={!left} note={left ? t("warn", { count: left }) : undefined} dups={todo.dups} />
       </div>
       <ul className="grid gap-1.5">
         <Item icon={FileText} href="/ledger" count={todo.docs} text={t("docs", { count: todo.docs })} done={t("docsDone")} />
@@ -81,6 +81,7 @@ export function MonthCloseCard() {
         {todo.payroll && (
           <Item icon={Users} href={`/payroll?month=${month}`} count={todo.payroll.left} text={t("pay", { count: todo.payroll.left })} done={t("payDone")} />
         )}
+        <Item icon={Copy} href="/ledger?status=dup" count={todo.dups} text={t("dups", { count: todo.dups })} done={t("dupsDone")} />
       </ul>
     </section>
   );

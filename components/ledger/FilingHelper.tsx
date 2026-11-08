@@ -20,6 +20,7 @@ import { summarize } from "@/lib/dashboard";
 import { downloadBlob } from "@/lib/attendance-share";
 import { buildPp30, buildWhtFiling, carriedIn, filingDeadlines, totalToPay } from "@/lib/filing";
 import { pick, useLedger } from "@/lib/ledger-store";
+import { dupGroupsIn } from "@/lib/dup-groups";
 import { baht, fmt, fromSatang, toSatang } from "@/lib/money";
 import { closeMonth, nextMonth, useMonthLocks } from "@/lib/month-lock-store";
 import { useMe } from "@/lib/role-store";
@@ -59,6 +60,8 @@ export function FilingHelper({ month }: { month: string }) {
   const today = todayBangkok();
 
   const ledger = useMemo(() => pick(entries, "ledger"), [entries]);
+  // Possible duplicates in the month: said before closing (owner 2026-11-08)
+  const dupCount = useMemo(() => dupGroupsIn(ledger, month), [ledger, month]);
   const docs = useMemo(() => ledger.map((e) => ({ id: e.id, doc: e.doc, ack: e.ackFlags })), [ledger]);
   const { pp30, from } = useMemo(() => buildPp30(sales, ledger.map((e) => e.doc), month, company.taxId), [sales, ledger, month, company.taxId]);
   const wht = useMemo(() => buildWhtFiling(docs, month), [docs, month]);
@@ -452,6 +455,11 @@ export function FilingHelper({ month }: { month: string }) {
                     {t("closeAsk", { month: monthLabel(month) })}
                   </p>
                   <p className="text-[12.5px] text-muted-foreground">{t("closeWhy")}</p>
+                  {dupCount > 0 && (
+                    <Link href="/ledger?status=dup" className="flex items-center gap-1.5 rounded-xl bg-bad-soft px-3 py-2 text-[13px] font-semibold text-bad hover:underline">
+                      {tl("dups", { count: dupCount })} · {tl("dupsGo")} →
+                    </Link>
+                  )}
                   <div className="flex flex-wrap gap-2">
                     <button type="button" disabled={closing} onClick={() => void close()} className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-[14px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60">
                       {closing ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Lock className="size-4" aria-hidden />}

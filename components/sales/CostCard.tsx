@@ -168,7 +168,7 @@ export function CostCard({ month, salesValue, purchases, fixed, fold }: { month:
         isAdmin={isAdmin}
         onAction={(a) => (a === "labor" ? setLaborOpen(true) : a === "stock" ? setStockOpen(true) : undefined)}
       />
-      {rises.length > 0 && <Rises rises={rises} />}
+      {rises.length > 0 && <Rises rises={rises} month={month} />}
       <p className="text-xs text-muted-foreground tabular-nums">{t("base", { sales: bahtWhole(salesValue) })}</p>
       </div>
 
@@ -182,7 +182,7 @@ export function CostCard({ month, salesValue, purchases, fixed, fold }: { month:
 const DOT = { bad: "bg-risk-over", warn: "bg-risk-near", ok: "bg-risk-ok", info: "bg-primary" } as const;
 
 /** Food prices up this month (lib/price-watch): the three biggest, each a tap away from its document */
-function Rises({ rises }: { rises: PriceRise[] }) {
+function Rises({ rises, month }: { rises: PriceRise[]; month: string }) {
   const t = useTranslations("cost.rises");
   const locale = useLocale();
   const vendor = (n: PriceRise["vendorName"]) => (locale === "ja" && n.ja) || n.th || n.en || n.ja;
@@ -209,6 +209,9 @@ function Rises({ rises }: { rises: PriceRise[] }) {
         ))}
       </ul>
       {rises.length > 3 && <p className="text-[11px] text-muted-foreground">{t("more", { count: rises.length - 3 })}</p>}
+      <Link href={`/vendors/prices?month=${month}`} className="-my-1 w-fit py-1 text-[12.5px] font-medium text-primary hover:underline">
+        {t("all")} →
+      </Link>
     </div>
   );
 }

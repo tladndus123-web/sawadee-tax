@@ -1,16 +1,7 @@
 "use client";
 
-import {
-  Building2,
-  ChevronDown,
-  FolderClosed,
-  List,
-  Loader2,
-  Pencil,
-  Search,
-  Trash2,
-  Wand2,
-} from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { Building2, ChevronDown, FolderClosed, List, Loader2, Pencil, Search, Trash2, TrendingUp, Wand2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useScreenDate } from "@/components/ScreenDate";
@@ -123,6 +114,11 @@ export function VendorList() {
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
           {t("hint")}
         </p>
+        {/* 거래처별 가격 변화 (components/vendors/PriceChanges) */}
+        <Link href="/vendors/prices" className="press mt-1 inline-flex h-10 w-fit items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90">
+          <TrendingUp className="size-4" aria-hidden />
+          {t("prices")}
+        </Link>
       </header>
       {vendors.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">

@@ -690,7 +690,8 @@
       "eom": "End of month",
       "next": "Day {n} of next month",
       "hint": "With payment terms set, this supplier's documents without a printed due date get one automatically."
-    }
+    },
+    "prices": "Price changes"
   },
   "dash": {
     "title": "Dashboard",
@@ -859,7 +860,10 @@
     "reopened": "{month} is open again.",
     "fail": "Couldn't change it. Only admins can close or reopen a month.",
     "blocked": "This month is closed. To edit, an admin has to reopen it in the ledger.",
-    "docBanner": "This document's month is closed. Its contents can't change; only payment and stickers can. To edit, an admin has to reopen the month in the ledger."
+    "docBanner": "This document's month is closed. Its contents can't change; only payment and stickers can. To edit, an admin has to reopen the month in the ledger.",
+    "dups": "{count} groups of possible duplicates are left",
+    "dupsWhy": "A closed month cannot be fixed. A document saved twice counts its cost and VAT twice.",
+    "dupsGo": "Review the duplicates first"
   },
   "vat": {
     "title": "VAT return · {month}",
@@ -1489,7 +1493,8 @@
     "rises": {
       "title": "{count} items dearer than last time",
       "open": "Open",
-      "more": "and {count} more · up 5% or more from the same vendor's last price"
+      "more": "and {count} more · up 5% or more from the same vendor's last price",
+      "all": "See all price changes"
     }
   },
   "pay": {
@@ -1885,7 +1890,9 @@
     "warn": "{count, plural, one {# thing is still open.} other {# things are still open.}} Close the month anyway?",
     "row": "Month-end close",
     "leftShort": "{count} left",
-    "readyShort": "Ready"
+    "readyShort": "Ready",
+    "dups": "Possible duplicates: {count}",
+    "dupsDone": "No duplicates"
   },
   "fold": {
     "branches": "{count, plural, one {# branch} other {# branches}}",
@@ -2814,5 +2821,36 @@
     "fail": "Could not move them. Admins only.",
     "none": "No possible duplicates.",
     "reason": "Duplicate: a document with the same seller and number was saved first (duplicate review)"
+  },
+  "prices": {
+    "title": "Price changes by supplier",
+    "hint": "Items bought this month against what the same supplier charged last time: what went up, what went down, and how much more you paid this month.",
+    "back": "Suppliers",
+    "prev": "Previous month",
+    "next": "Next month",
+    "paidMore": "Paid more (rises)",
+    "upCount": "{count} items up",
+    "saved": "Saved (falls)",
+    "downCount": "{count} items down",
+    "sameLabel": "Unchanged",
+    "sameSub": "under 1 % change",
+    "firstLabel": "Bought for the first time",
+    "firstSub": "no earlier price to compare",
+    "show": "Show",
+    "f": {
+      "up": "Up {count}",
+      "down": "Down {count}",
+      "all": "All {count}"
+    },
+    "search": "Search item · supplier",
+    "vendorMore": "+{amount} more",
+    "vendorLess": "{amount} saved",
+    "itemMore": "+{amount}",
+    "itemLess": "−{amount}",
+    "same": "same",
+    "open": "Open document",
+    "none": "Nothing to compare this month. Items show once they were bought from the same supplier at least twice.",
+    "noneHere": "No items match.",
+    "how": "Unit price as printed (else amount ÷ quantity). The month's last purchase is compared with the last one before the month; items whose unit changed are left out. Paid more = (this month's price − earlier price) × this month's quantity."
   }
 }

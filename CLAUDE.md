@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (622) · `npm run db:test` (423 in 9 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (625) · `npm run db:test` (423 in 9 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy (app + DB) | **Push to `main` and let GitHub Actions deploy** (`.github/workflows/deploy.yml`: checks → migrations → pgTAP on the cloud DB → Vercel → live check). Cursor pushes to `main` too, so never deploy from this PC (`vercel deploy`) — a local build can put an older tree live over theirs (happened twice 2026-11-05). Check the run with the GitHub API (token from `git credential fill` for github.com, never printed): `GET https://api.github.com/repos/tladndus123-web/sawadee-tax/actions/runs?per_page=3`. Only if Actions is down: `npx vercel deploy --prod` from an up-to-date `main` |
 | If a deploy is broken | `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>`. A failed Actions run leaves the site as it was |
@@ -258,7 +258,16 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   **Bulk duplicate review** (owner: "중복 의심에서 … 여러 개 선택해서 삭제"): the ledger's "중복 의심" chip (admins) shows
   `DupReview` — groups of the same seller tax ID + doc no. (`lib/dup-groups`), oldest first with a "먼저 저장" badge; the later
   ones of a group whose date and amount match are pre-ticked (`likelyCopies`), differing groups are not; one sticky button →
-  ask once → `softDeleteMany` (trash, reason `dupReview.reason`, restorable). When none are left the chip and the view go. Automatic deletion of live data is
+  ask once → `softDeleteMany` (trash, reason `dupReview.reason`, restorable). When none are left the chip and the view go.
+  **Duplicates before closing** (owner, same day): the close dialog (`MonthLockButton` `dups` / `onDups`) says "중복 의심 n쌍"
+  with "먼저 중복 정리하기" (in the ledger it opens the review in place, elsewhere `/ledger?status=dup`); the dashboard's
+  month-end checklist has a 4th line (`CloseTodo.dups` = `dupGroupsIn`, counted in `openCount`); the filing screen's
+  "close the books too?" box shows it. Closing stays possible (warn only, like the other lines).
+- **Price changes by supplier** (2026-11-08, owner: "같은 재료가 지난달보다 얼마나 올랐는지 한눈에"): `/vendors/prices[?month=]`
+  (`components/vendors/PriceChanges.tsx`, vendors screen) from pure `priceBoard` in `lib/price-watch.ts`: each item bought in
+  the month vs the last purchase before the month (same vendor tax ID + item name, unit unchanged), up / down / same (< 1 % or
+  < ฿0.50), paid more = Σ (price − before) × qty; tiles, filter up / down / all, search, vendor cards, month arrows. Opened
+  from a button on the vendors page and "가격 변화 전체 보기" under the cost card's rises. Automatic deletion of live data is
   off-limits for Claude (auto-mode classifier refused it 2026-11-08) — list the documents and let the owner decide.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out

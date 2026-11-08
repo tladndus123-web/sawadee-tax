@@ -59,6 +59,20 @@ describe("what is still open in the month", () => {
     expect(t.payroll).toEqual({ staff: 2, left: 1 });
     expect(closeTodo({ ...base, entries: [], sales: [] }).payroll).toBeNull();
     expect(openCount(t)).toBe(1);
-    expect(openCount({ docs: 0, missingDays: 0, payroll: null })).toBe(0);
+    expect(openCount({ docs: 0, missingDays: 0, payroll: null, dups: 0 })).toBe(0);
+  });
+});
+
+describe("possible duplicates before closing", () => {
+  const base = { companyTaxId: CO, today: "2026-10-05", sales: [], branches: [], employees: [], payChecked: new Set<string>() };
+  it("counts the groups with a document in the month, drafts left out, and makes it an open item", () => {
+    const a = quiet(entry("a", "2026-09-03"));
+    const twin = { ...quiet(entry("b", "2026-09-03")), doc: { ...a.doc } };
+    const draft = { ...entry("c", "2026-09-03"), doc: { ...a.doc }, status: "draft" };
+    const t = closeTodo({ ...base, month: "2026-09", entries: [a, twin, draft] });
+    expect(t.dups).toBe(1);
+    expect(openCount(t)).toBeGreaterThanOrEqual(1);
+    expect(closeTodo({ ...base, month: "2026-08", entries: [a, twin] }).dups).toBe(0);
+    expect(closeTodo({ ...base, month: "2026-09", entries: [a, draft] }).dups).toBe(0);
   });
 });
