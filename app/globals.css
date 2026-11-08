@@ -782,6 +782,15 @@
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
+  /* Phones: amount boxes keep 16 px (no zoom on tap) but use the narrower sans digits and less padding, so
+     "17,500.00" fits a third of a phone (owner 2026-11-09: "모바일 급여 숫자 깨진다" — the last digit was cut off) */
+  @media (max-width: 767.98px) {
+    input.num {
+      font-family: var(--font-inter), system-ui, sans-serif;
+      font-variant-numeric: tabular-nums;
+      padding-inline: 0.5rem;
+    }
+  }
   /* Field read unclearly by the AI */
   .unsure {
     text-decoration: underline dotted var(--warn);

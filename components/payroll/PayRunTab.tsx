@@ -469,7 +469,7 @@ function PeriodGrid({
     { k: "bonus", label: t("bonus"), kind: "money" },
     { k: "otherDeduction", label: t("otherDeduction"), kind: "money" },
   ];
-  const line = "grid grid-cols-[minmax(0,1fr)_5.5rem_5.5rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem]";
+  const line = "grid grid-cols-[minmax(0,1fr)_6.5rem_6.5rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem]";
   const out = (label: string, a: number | string, b: number | string, strong = false) => (
     <div className={cn(line, "text-sm", strong && "font-semibold")}>
       <span className={cn("truncate", !strong && "text-muted-foreground")}>{label}</span>
@@ -547,8 +547,9 @@ function Allowances({
   return (
     <div className="grid gap-2">
       {rows.map((r, i) => (
-        <div key={i} className={line}>
-          <span className="flex min-w-0 items-center gap-1">
+        // Phones: the allowance's name on its own line above its two amounts (it shrank to its arrow next to them)
+        <div key={i} className={cn(line, "max-sm:grid-cols-2")}>
+          <span className="flex min-w-0 items-center gap-1 max-sm:col-span-2">
             {typing === i || (!r.key && !r.name.trim()) ? (
               <input
                 autoFocus

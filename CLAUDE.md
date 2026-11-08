@@ -280,7 +280,11 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 - **Mobile check fixes** (2026-11-09, owner: "모바일 ux/ui 평가 후 … 고쳐줘"): nothing floats over the page on phones (AI button in
   the top bar); `ui/switch` default 44×26 and `ui/checkbox` 20 px, both with a ::after touch area ≥ 44 px; staff-management
   ticks 20 px; the dashboard hides the upload buttons on phones (the tab bar's + does it) and the quick sign-in offer is one
-  line there (`passkey.offerShort`). Keep new tap targets ≥ 44 px on phones. Automatic deletion of live data is
+  line there (`passkey.offerShort`). Keep new tap targets ≥ 44 px on phones.
+  **Payroll numbers on phones** (same day, owner: "모바일 급여 숫자 깨진다"): amount boxes cut the last digit ("2,500.0",
+  "17,500.0"). On phones `input.num` (every `MoneyInput`) now uses the sans tabular digits with 8 px side padding (globals.css,
+  still 16 px so iOS does not zoom); the pay detail's columns are 6.5rem; an allowance's name sits above its amounts on
+  phones; the social security settings stack. Check with real-size amounts at 360 px. Automatic deletion of live data is
   off-limits for Claude (auto-mode classifier refused it 2026-11-08) — list the documents and let the owner decide.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out

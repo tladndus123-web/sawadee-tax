@@ -50,7 +50,7 @@ export function FilingTab({ month }: { month: string }) {
           <p className="text-xs leading-snug text-muted-foreground">{t(`${key}What`)}</p>
         </div>
       </div>
-      <dl className="grid grid-cols-3 gap-2 text-sm">
+      <dl className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1.3fr)] gap-x-3 gap-y-2 text-sm">
         <div className="grid">
           <dt className="text-xs text-muted-foreground">{t("toPay")}</dt>
           <dd className="font-semibold tabular-nums">{fmt(amount)}</dd>
@@ -163,7 +163,8 @@ function SsSettings() {
     <div className="workspace-panel mt-2 grid gap-3 p-4">
       <p className="text-sm font-semibold">{t("ssSettings")}</p>
       <p className="text-xs leading-snug text-muted-foreground">{t("ssSettingsHint", { max: fmt((s.ssCeiling * s.ssRate) / 100) })}</p>
-      <div className="grid grid-cols-3 gap-2">
+      {/* Phones: one under the other, so 17,500.00 fits */}
+      <div className="grid gap-2 sm:grid-cols-3">
         {field("ssRate", t("ssRate"), "qty")}
         {field("ssFloor", t("ssFloor"), "money")}
         {field("ssCeiling", t("ssCeiling"), "money")}
