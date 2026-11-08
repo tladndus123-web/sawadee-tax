@@ -239,6 +239,12 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   save it as a skill, ③ the memory prompt, ④ a prompt to create the webhook routine and then call the tool
   **set_event_webhook** (15 tools; https only, same URL replaces, ≤ 3, sends the test event; done = a hook exists),
   ⑤ the nightly routine prompt. Every prompt link stays under Grok Bot's 1000-character limit (checked in a test script).
+  **Setup is now 2 steps** (owner: "인증이 너무 오래 걸리고 연결도 힘들다" — the OAuth sign-in never finished on the live
+  site: 3 clients registered, no code issued): ① "연결 코드 만들고 복사" makes a key and copies the connector JSON
+  `{"sawadee-tax": {"type":"http", url, headers: {Authorization: "Bearer <key>"}}}` → paste into Grok Bot's custom
+  connector JSON; the card polls /api/bot-keys every 4 s and ticks itself on the key's first use (`last_used_at`).
+  ② one sentence (`bot.setup.allInOne`, < 1000 chars) makes Grok Bot save the skill, the memory, the webhook routine
+  (set_event_webhook) and the nightly routine; done when a hook exists or "했어요". The OAuth routes stay (advanced).
   Live check 2026-11-08: the dup rule found 9 real duplicate pairs in October (same seller, doc no., date, amount; ≈ ฿10,804
   counted twice) — the owner removes them by hand: the duplicate banner on a saved document (`DocumentReview`, admins)
   now has **"중복으로 처리 (휴지통으로)"** (ask once more → `onDelete` with reason `dupBanner.reason` → trash, restorable;

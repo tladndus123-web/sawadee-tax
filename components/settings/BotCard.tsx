@@ -98,7 +98,7 @@ export function BotCard() {
     await loadHooks();
     toast.success(t("hook.removed"));
   };
-  useFoldStatus(keys === null ? null : keys.length ? tf("linked") : tf("notLinked"), !!keys?.length);
+  useFoldStatus(keys === null ? null : keys.some((k) => !!k.last_used_at) ? tf("linked") : tf("notLinked"), !!keys?.some((k) => !!k.last_used_at));
 
   const load = useCallback(async () => {
     const r = await fetch("/api/bot-keys");
@@ -135,91 +135,121 @@ export function BotCard() {
     await load();
   };
 
-  // The five steps: ① and ④ are known from the database; ②③⑤ the owner ticks "했어요" (kept per person, lib/user-prefs)
-  const prompts = {
-    skill: t("setup.skillPrompt", { url: `${url.replace(/\/api\/mcp$/, "")}/api/bot-skill` }),
-    memory: t("skill.memory"),
-    hook: t("setup.hookPrompt", { text: t("hook.routineText") }),
-    routine: t("rec.items.daily.text"),
+  // Two steps (owner 2026-11-08: "인증이 너무 오래 걸리고 연결도 힘들다"): ① one tap makes a key and copies the whole
+  // connector JSON → paste it into Grok Bot's "MCP server JSON" box (no sign-in window); ticks itself when Grok Bot first
+  // uses the key. ② one sentence that makes Grok Bot save the skill, the memory, the event routine and the nightly routine.
+  const linked = (keys ?? []).some((k) => !!k.last_used_at);
+  const skillUrl = `${url.replace(/\/api\/mcp$/, "")}/api/bot-skill`;
+  const allInOne = t("setup.allInOne", { url: skillUrl });
+  const setupDone = hooks.length > 0 || marked.includes("all");
+  const current = !linked ? 0 : !setupDone ? 1 : -1;
+  const connect = async () => {
+    await make();
   };
-  const promptLink = (text: string) => `grokbot://app/v1/prompt?text=${encodeURIComponent(text)}`;
-  const steps = [
-    { k: "connector", done: (keys?.length ?? 0) > 0, href: "grokbot://app/v1/marketplace?tab=plugins", copy: url, copiedMsg: "setup.copiedUrl" },
-    { k: "skill", done: marked.includes("skill"), tick: true, href: promptLink(prompts.skill), copy: prompts.skill, copiedMsg: "setup.copiedText" },
-    { k: "memory", done: marked.includes("memory"), tick: true, href: promptLink(prompts.memory), copy: prompts.memory, copiedMsg: "setup.copiedText" },
-    { k: "hook", done: hooks.length > 0, href: promptLink(prompts.hook), copy: prompts.hook, copiedMsg: "setup.copiedText" },
-    { k: "routine", done: marked.includes("routine"), tick: true, href: promptLink(prompts.routine), copy: prompts.routine, copiedMsg: "setup.copiedText" },
-  ] as const;
-  const copyStep = (st: (typeof steps)[number]) => void navigator.clipboard.writeText(st.copy).then(() => toast.success(t(st.copiedMsg))).catch(() => undefined);
-  const doneCount = steps.filter((x) => x.done).length;
-  const current = steps.findIndex((x) => !x.done);
+  // While waiting for Grok Bot to use the new key, look every 4 s (at most 5 minutes)
+  useEffect(() => {
+    if (!fresh || linked) return;
+    const started = Date.now();
+    const id = setInterval(() => {
+      if (Date.now() - started > 300_000) return clearInterval(id);
+      void load();
+    }, 4000);
+    return () => clearInterval(id);
+  }, [fresh, linked, load]);
+  useEffect(() => {
+    if (fresh) void navigator.clipboard.writeText(config).then(() => toast.success(t("setup.jsonCopied"))).catch(() => undefined);
+  }, [fresh]); // eslint-disable-line react-hooks/exhaustive-deps -- copy once, when the key is made
 
   return (
     <div className="grid gap-5">
       <p className="text-[14px] leading-relaxed text-muted-foreground">{t("intro")}</p>
 
-      {/* Setup, one step at a time (owner 2026-11-08: "설정이 너무 어렵지 않니") — the rest lives under "자세한 설정" */}
+      {/* Setup in two steps — the rest lives under "자세한 설정" */}
       <section className="grid gap-3 rounded-2xl bg-brand-soft/60 p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <span className="text-[14px] font-semibold">{t("setup.short")}</span>
-          <span className={cn("text-[13px] font-medium tabular-nums", doneCount === steps.length ? "text-ok" : "text-primary")}>{t("setup.progress", { done: doneCount, total: steps.length })}</span>
+          <span className={cn("text-[13px] font-medium tabular-nums", current === -1 ? "text-ok" : "text-primary")}>{t("setup.progress", { done: current === -1 ? 2 : current, total: 2 })}</span>
         </div>
         <ol className="grid gap-1.5">
-          {steps.map((st, i) => {
-            const isNow = i === current;
-            return (
-              <li key={st.k} className={cn("grid gap-2 rounded-2xl px-3.5 py-2.5", isNow ? "bg-card shadow-[0_0_0_1px_var(--border)]" : "")}>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    <span className={cn("grid size-7 flex-none place-items-center rounded-full text-[13px] font-bold", st.done ? "bg-ok text-white" : isNow ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{st.done ? <Check className="size-4" aria-hidden /> : i + 1}</span>
-                    <span className={cn("text-[14px] font-medium", !st.done && !isNow && "text-muted-foreground")}>{t(`setup.${st.k}`)}</span>
-                  </span>
-                  {st.done && (
-                    <a
-                      href={st.href}
-                      onClick={() => copyStep(st)}
-                      className="text-[12px] font-medium text-muted-foreground hover:text-primary hover:underline"
-                    >
-                      {t("setup.again")}
-                    </a>
-                  )}
-                </div>
-                {isNow && (
-                  <div className="grid gap-2.5 pl-[38px]">
-                    <p className="text-[13px] leading-relaxed text-muted-foreground">{t(`setup.${st.k}Sub`)}</p>
-                    <CopyBox text={st.copy} label={t(st.k === "connector" ? "serverUrl" : "setup.textLabel")} mono={st.k === "connector"} />
+          {/* ① connect */}
+          <li className={cn("grid gap-2 rounded-2xl px-3.5 py-2.5", current === 0 ? "bg-card shadow-[0_0_0_1px_var(--border)]" : "")}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="flex items-center gap-2.5">
+                <span className={cn("grid size-7 flex-none place-items-center rounded-full text-[13px] font-bold", linked ? "bg-ok text-white" : "bg-primary text-primary-foreground")}>{linked ? <Check className="size-4" aria-hidden /> : 1}</span>
+                <span className="text-[14px] font-medium">{t("setup.connectTitle")}</span>
+              </span>
+              {linked && <span className="text-[12px] text-ok">{t("setup.connected")}</span>}
+            </div>
+            {current === 0 && (
+              <div className="grid gap-2.5 pl-[38px]">
+                {!fresh ? (
+                  <>
+                    <p className="text-[13px] leading-relaxed text-muted-foreground">{t("setup.connectSub")}</p>
+                    <Button type="button" onClick={() => void connect()} disabled={busy} className="h-10 w-fit rounded-full">
+                      {busy ? <Loader2 className="size-4 animate-spin" /> : <Copy className="size-4" />}
+                      {t("setup.connectButton")}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <ol className="grid list-decimal gap-1 pl-5 text-[13.5px]">
+                      <li>{t("setup.paste1")}</li>
+                      <li>{t("setup.paste2")}</li>
+                      <li>{t("setup.paste3")}</li>
+                    </ol>
                     <div className="flex flex-wrap gap-2">
-                      <a
-                        href={st.href}
-                        onClick={() => copyStep(st)}
-                        className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-[14px] font-medium text-primary-foreground hover:bg-primary/90"
-                      >
+                      <a href="grokbot://app/v1/marketplace?tab=plugins" className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-[14px] font-medium text-primary-foreground hover:bg-primary/90">
                         <ExternalLink className="size-4" aria-hidden />
-                        {t("setup.go")}
+                        {t("setup.openConnectors")}
                       </a>
-                      {"tick" in st && st.tick && (
-                        <button type="button" onClick={() => setMarked([...marked, st.k])} className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-card px-4 text-[14px] font-medium shadow-[0_0_0_1px_var(--border)] hover:bg-muted">
-                          <Check className="size-4 text-ok" aria-hidden />
-                          {t("setup.markDone")}
-                        </button>
-                      )}
                     </div>
-                  </div>
+                    <CopyBox text={config} label={t("setup.jsonLabel")} />
+                    <p className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
+                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                      {t("setup.waiting")}
+                    </p>
+                  </>
                 )}
-              </li>
-            );
-          })}
+              </div>
+            )}
+          </li>
+          {/* ② everything else, one sentence */}
+          <li className={cn("grid gap-2 rounded-2xl px-3.5 py-2.5", current === 1 ? "bg-card shadow-[0_0_0_1px_var(--border)]" : "")}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="flex items-center gap-2.5">
+                <span className={cn("grid size-7 flex-none place-items-center rounded-full text-[13px] font-bold", setupDone ? "bg-ok text-white" : current === 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{setupDone ? <Check className="size-4" aria-hidden /> : 2}</span>
+                <span className={cn("text-[14px] font-medium", current !== 1 && !setupDone && "text-muted-foreground")}>{t("setup.allTitle")}</span>
+              </span>
+              {setupDone && (
+                <a href={`grokbot://app/v1/prompt?text=${encodeURIComponent(allInOne)}`} onClick={() => void navigator.clipboard.writeText(allInOne).catch(() => undefined)} className="text-[12px] font-medium text-muted-foreground hover:text-primary hover:underline">
+                  {t("setup.again")}
+                </a>
+              )}
+            </div>
+            {current === 1 && (
+              <div className="grid gap-2.5 pl-[38px]">
+                <p className="text-[13px] leading-relaxed text-muted-foreground">{t("setup.allSub")}</p>
+                <CopyBox text={allInOne} label={t("setup.textLabel")} mono={false} />
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={`grokbot://app/v1/prompt?text=${encodeURIComponent(allInOne)}`}
+                    onClick={() => void navigator.clipboard.writeText(allInOne).then(() => toast.success(t("setup.copiedText"))).catch(() => undefined)}
+                    className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-[14px] font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    <ExternalLink className="size-4" aria-hidden />
+                    {t("setup.go")}
+                  </a>
+                  <button type="button" onClick={() => setMarked([...marked, "all"])} className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-card px-4 text-[14px] font-medium shadow-[0_0_0_1px_var(--border)] hover:bg-muted">
+                    <Check className="size-4 text-ok" aria-hidden />
+                    {t("setup.markDone")}
+                  </button>
+                </div>
+                <p className="text-[12px] text-muted-foreground">{t("setup.draftNote")}</p>
+              </div>
+            )}
+          </li>
         </ol>
-        {current === -1 ? (
-          <p className="text-[13px] text-ok">{t("setup.allDone")}</p>
-        ) : (
-          <p className="text-[12px] text-muted-foreground">{t("setup.note")} {t("setup.draftNote")}</p>
-        )}
-        {marked.length > 0 && (
-          <button type="button" onClick={() => setMarked([])} className="w-fit text-[12px] text-muted-foreground hover:underline">
-            {t("setup.resetTicks")}
-          </button>
-        )}
+        {current === -1 && <p className="text-[13px] text-ok">{t("setup.allDone")}</p>}
       </section>
 
 
