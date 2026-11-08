@@ -2729,7 +2729,7 @@
     "setup": {
       "title": "Finish the setup from this site (a button opens Grok Bot; it does the rest itself)",
       "connector": "① Connect the connector",
-      "connectorSub": "Grok Bot's connector catalog opens and the server URL is copied. Tap 'Add a custom connector' at the bottom, paste the URL, then tap 'Allow' on the sign-in.",
+      "connectorSub": "Grok Bot's connectors screen opens (close the marketplace window if it shows). Tap 'Add a custom connector' at the bottom, paste the server URL, then tap 'Allow' on the sign-in.",
       "skill": "② Make the skill",
       "skillSub": "Grok Bot reads the skill file from this site and saves it itself. Allow it when it asks to save.",
       "memory": "③ Tell it the memory",
@@ -2738,7 +2738,7 @@
       "hookSub": "Grok Bot makes the webhook routine and registers its URL and key with this site by itself. Nothing to copy.",
       "routine": "⑤ Nightly 10 pm wrap-up routine",
       "routineSub": "The routine that sends the wrap-up to LINE is typed into the chat. Just send.",
-      "go": "Open",
+      "go": "Open Grok Bot",
       "again": "Again",
       "done": "Done",
       "copiedUrl": "Server URL copied. Paste it in Grok Bot.",
@@ -2753,7 +2753,8 @@
       "canTitle": "What Grok Bot can and cannot do",
       "advanced": "Detailed setup (manual entry · other routines · skill file)",
       "copiedText": "Text copied. If it does not appear in Grok Bot by itself, paste it into the chat (Ctrl+V).",
-      "draftNote": "If Grok Bot's chat box still holds an unsent text, the link does not fill it. Send or clear that text and tap again, or paste (Ctrl+V)."
+      "draftNote": "If Grok Bot's chat box still holds an unsent text, the link does not fill it. Send or clear that text and tap again, or paste (Ctrl+V).",
+      "textLabel": "Text for Grok Bot's chat (Open fills it in; if not, copy and paste it)"
     }
   },
   "connect": {

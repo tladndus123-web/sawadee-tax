@@ -187,6 +187,7 @@ export function BotCard() {
                 {isNow && (
                   <div className="grid gap-2.5 pl-[38px]">
                     <p className="text-[13px] leading-relaxed text-muted-foreground">{t(`setup.${st.k}Sub`)}</p>
+                    <CopyBox text={st.copy} label={t(st.k === "connector" ? "serverUrl" : "setup.textLabel")} mono={st.k === "connector"} />
                     <div className="flex flex-wrap gap-2">
                       <a
                         href={st.href}
