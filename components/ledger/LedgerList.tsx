@@ -33,6 +33,7 @@ import { STICKERS, type Sticker } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { BulkCategoryBar } from "./BulkCategoryBar";
 import { BulkPayBar } from "./BulkPayBar";
+import { DupReview } from "./DupReview";
 import { ExportButtons } from "./ExportButtons";
 import { SavedViews } from "./SavedViews";
 import { MonthLockButton } from "./MonthLockButton";
@@ -74,7 +75,7 @@ export function LedgerList() {
   const assetCount = useMemo(() => pick(entries, "ledger").filter((e) => isDepreciated(e.doc)).length, [entries]);
   const [query, setQuery] = useState("");
   // The status chips on top: only the documents that need a look, or the ones that may be in twice
-  const [status, setStatus] = useState<"check" | "dup" | null>(null);
+  const [statusPick, setStatus] = useState<"check" | "dup" | null>(null);
   const company = useCompany();
   // Same rule as the dashboard tile "needs a look", duplicates included
   const check = useMemo(
@@ -89,6 +90,8 @@ export function LedgerList() {
     }),
     [check, entries],
   );
+  // Once the last duplicate has gone to the trash the "중복 의심" chip disappears, so the list falls back to all documents
+  const status = statusPick === "dup" && statusCounts.dup === 0 ? null : statusPick;
   // The box shows every key at once; the list follows a moment later, so typing never waits for it
   // (the list parts below are memoized, so a keystroke itself only redraws the search box)
   const q = useDeferredValue(query);
@@ -332,6 +335,9 @@ export function LedgerList() {
             />
           )}
         </div>
+      ) : view === "ledger" && status === "dup" && isAdmin ? (
+        // "중복 의심": the groups side by side, tick several, one button to the trash (components/ledger/DupReview)
+        <DupReview entries={pick(entries, "ledger")} />
       ) : view === "drafts" ? (
         <ul className="grid gap-3">
           {filtered.map((e) => (

@@ -2793,5 +2793,26 @@
     "refused": "Refused",
     "backToBot": "Go back to Grok Bot. If it does not open by itself, tap below.",
     "openBot": "Open Grok Bot"
+  },
+  "dupReview": {
+    "title": "Possible duplicates: {groups} groups",
+    "intro": "Documents with the same seller and number, side by side. Where the date and amount match too, the later-saved ones are already ticked. Check, then tap the button below. They can be restored from the trash.",
+    "identical": "same date and amount",
+    "differs": "date or amount differs",
+    "differsHint": "The date or amount differs, so nothing is ticked. Open the photos and tick only if it really is the same paper.",
+    "first": "saved first",
+    "saved": "saved {at}",
+    "pick": "Tick to move to the trash",
+    "open": "Open document",
+    "chosen": "{count} ticked",
+    "clear": "Clear",
+    "move": "Move {count} to the trash",
+    "sure": "Move {count} to the trash? They can be restored.",
+    "yes": "Yes, move them",
+    "cancel": "Cancel",
+    "done": "Moved {count} to the trash.",
+    "fail": "Could not move them. Admins only.",
+    "none": "No possible duplicates.",
+    "reason": "Duplicate: a document with the same seller and number was saved first (duplicate review)"
   }
 }

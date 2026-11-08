@@ -366,6 +366,25 @@ export async function setDisposed(id: string, date: string) {
 }
 
 /** Admin only. The database stamps who and when and refuses anyone else. */
+/** Several documents to the trash with one reason (admins; the database refuses others). Returns how many moved. */
+export async function softDeleteMany(ids: string[], reason: string): Promise<number> {
+  if (!isValidReason(reason)) throw new Error("reason required");
+  if (!ids.length) return 0;
+  const supabase = supabaseBrowser();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const { data, error } = await supabase
+    .from("documents")
+    .update({ deleted_at: new Date().toISOString(), deleted_by: session?.user?.id, delete_reason: reason.trim().slice(0, 200) })
+    .in("id", ids)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) throw error;
+  await reload();
+  return data?.length ?? 0;
+}
+
 export async function softDelete(id: string, reason: string) {
   if (!isValidReason(reason)) throw new Error("reason required");
   const supabase = supabaseBrowser();
