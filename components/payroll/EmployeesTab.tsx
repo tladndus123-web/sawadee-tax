@@ -145,7 +145,7 @@ export function EmployeesTab() {
                   <span className="truncate text-xs text-muted-foreground">
                     {[e.position, maskId(e.nationalId), left ? t("left", { date: sd(e.endDate) }) : ""].filter(Boolean).join(" · ")}
                   </span>
-                  <span className="text-[13px] font-semibold tabular-nums sm:hidden">
+                  <span className="text-[13px] font-semibold whitespace-nowrap tabular-nums sm:hidden">
                     {baht(e.rate)} <span className="text-[11px] font-normal text-muted-foreground">{t(e.payType === "monthly" ? "perMonth" : "perDay")}</span>
                   </span>
                 </span>
@@ -153,13 +153,14 @@ export function EmployeesTab() {
                   <span className="text-[15px] font-semibold tabular-nums">{baht(e.rate)}</span>
                   <span className="text-[11px] text-muted-foreground">{t(e.payType === "monthly" ? "perMonth" : "perDay")}</span>
                 </span>
-                {/* Its branch, changed right here */}
+                {/* Its branch, changed right here. Phones: last, on its own line under the name (owner 2026-11-09: beside the
+                    name it squeezed the pay to "฿20, / 000. / 00"); 84 px = tick 20 + avatar 40 + two gaps */}
                 {branches.length > 1 && (
                   <select
                     value={e.branchId}
                     disabled={moving}
                     onChange={(ev) => void move([e], ev.target.value)}
-                    className="h-9 max-w-[9rem] flex-none rounded-full border bg-background px-2.5 text-xs font-medium"
+                    className="h-9 max-w-[9rem] flex-none rounded-full border bg-background px-2.5 text-xs font-medium max-sm:order-last max-sm:ml-[84px] max-sm:h-11 max-sm:w-[calc(100%-84px)] max-sm:max-w-none"
                     aria-label={t("branchOf", { name: e.name })}
                   >
                     {branches.map((b) => (

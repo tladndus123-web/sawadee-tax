@@ -294,7 +294,9 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   **Payroll at 360 px with six-digit pay** (same day, owner: "급여계산 … 직원에서 숫자 짤리는 것"): the pay detail puts each
   label above its two halves on phones (`inputLine`), so 125,000.00 fits; `DateInput` has `contain: inline-size` (a phone's
   date box has a minimum width that pushed side-by-side dates past the card; fixed-width ones are `w-40 shrink-0`); staff
-  list buttons 44 px on touch. Automatic deletion of live data is
+  list buttons 44 px on touch. With several branches (all branches chosen) each staff row also has a tick and a branch box: on phones the
+  branch box goes last, on its own line under the name (`max-sm:order-last`, 84 px indent) — it had squeezed the pay to
+  "฿20, / 000. / 00" (owner's screenshot). Test phone layouts with 2+ branches too. Automatic deletion of live data is
   off-limits for Claude (auto-mode classifier refused it 2026-11-08) — list the documents and let the owner decide.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
