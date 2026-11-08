@@ -2653,8 +2653,6 @@
     "headerValue": "HTTPヘッダーの値",
     "jsonInstead": "JSONで入れる画面なら（MCP server JSON）",
     "netNote": "つながらない場合：Grok Botの設定 → ネットワーク → 許可する接続先（Allowed destinations）でこのサイトが止められていないか確認してください。",
-    "openBot": "Grok Botを開く",
-    "routineButton": "ルーチンを作る（Grok Botで開く）",
     "signIn": {
       "title": "ログインで連携（おすすめ）",
       "1": "Grok Bot → コネクタ → カスタムコネクタを追加 で、下のサーバーURLだけを貼り付けます。ヘッダーは空のままにします。",
@@ -2731,7 +2729,7 @@
     "setup": {
       "title": "ウェブサイトから設定を終える（ボタンでGrok Botが開き、残りはGrok Botが自分でします）",
       "connector": "① コネクタ連携",
-      "connectorSub": "Grok Botのコネクタ画面が開き、サーバーURLがコピーされます。「カスタムコネクタを追加」に貼り付け、ログイン画面で「許可」を押してください。",
+      "connectorSub": "Grok Botのコネクタ一覧が開き、サーバーURLがコピーされます。一覧の下の「カスタムコネクタを追加」を押してURLを貼り付け、ログイン画面で「許可」を押してください。",
       "skill": "② スキルを作る",
       "skillSub": "Grok Botがこのサイトからスキルファイルを読んで自分で保存します。「保存しますか？」が出たら許可してください。",
       "memory": "③ 記憶を伝える",

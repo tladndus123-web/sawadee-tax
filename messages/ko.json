@@ -2653,8 +2653,6 @@
     "headerValue": "HTTP 헤더 값",
     "jsonInstead": "JSON으로 넣는 화면이면 (MCP server JSON)",
     "netNote": "Grok Bot에 연결이 안 되면: Grok Bot 설정 → 네트워크 → 허용 대상(Allowed destinations)에 이 사이트 주소가 막혀 있지 않은지 확인하세요.",
-    "openBot": "Grok Bot 열기",
-    "routineButton": "루틴 만들기 (Grok Bot에서 열기)",
     "signIn": {
       "title": "로그인으로 연결 (추천)",
       "1": "Grok Bot → 커넥터 → 사용자 지정 커넥터 추가에서 아래 서버 URL만 붙여 넣으세요. 헤더는 비워 두세요.",
@@ -2731,7 +2729,7 @@
     "setup": {
       "title": "웹사이트에서 설정 끝내기 (버튼을 누르면 Grok Bot이 열리고 나머지는 Grok Bot이 스스로 해요)",
       "connector": "① 커넥터 연결",
-      "connectorSub": "Grok Bot 커넥터 화면이 열리고 서버 주소가 복사돼요. '사용자 지정 커넥터 추가'에 붙여 넣고, 로그인 창에서 '허용'을 누르세요.",
+      "connectorSub": "Grok Bot의 커넥터 목록이 열리고 서버 주소가 복사돼요. 목록 아래쪽 '사용자 지정 커넥터 추가'를 누르고 주소를 붙여 넣은 뒤, 로그인 창에서 '허용'을 누르세요.",
       "skill": "② 스킬 만들기",
       "skillSub": "Grok Bot이 이 사이트에서 스킬 파일을 읽어 와서 스스로 저장해요. '저장할까요?'가 뜨면 허용하세요.",
       "memory": "③ 기억 말하기",

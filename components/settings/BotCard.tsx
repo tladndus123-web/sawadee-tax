@@ -4,7 +4,7 @@
 // (server URL + Authorization header), ask it for a daily routine. The agent may read summaries and put dates in the tax calendar (lib/bot-server.ts).
 // Owners only; the key is shown once.
 
-import { Ban, CalendarClock, Check, CircleCheck, Copy, Download, ExternalLink, KeyRound, Link2Off, Loader2, Plus } from "lucide-react";
+import { Ban, Check, CircleCheck, Copy, Download, ExternalLink, KeyRound, Link2Off, Loader2, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -144,7 +144,7 @@ export function BotCard() {
   };
   const promptLink = (text: string) => `grokbot://app/v1/prompt?text=${encodeURIComponent(text)}`;
   const steps = [
-    { k: "connector", done: (keys?.length ?? 0) > 0, href: "grokbot://app/v1/settings?id=integrations", copy: url, copiedMsg: "setup.copiedUrl" },
+    { k: "connector", done: (keys?.length ?? 0) > 0, href: "grokbot://app/v1/marketplace?tab=plugins", copy: url, copiedMsg: "setup.copiedUrl" },
     { k: "skill", done: marked.includes("skill"), tick: true, href: promptLink(prompts.skill), copy: prompts.skill, copiedMsg: "setup.copiedText" },
     { k: "memory", done: marked.includes("memory"), tick: true, href: promptLink(prompts.memory), copy: prompts.memory, copiedMsg: "setup.copiedText" },
     { k: "hook", done: hooks.length > 0, href: promptLink(prompts.hook), copy: prompts.hook, copiedMsg: "setup.copiedText" },
@@ -221,20 +221,6 @@ export function BotCard() {
         )}
       </section>
 
-      {/* Grok Bot's own links (grokbot://app/v1/open, /v1/prompt?text=…, checked in Grok Bot 0.79.2) */}
-      <div className="flex flex-wrap gap-2">
-        <a href="grokbot://app/v1/open" className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-          <ExternalLink className="size-4" aria-hidden />
-          {t("openBot")}
-        </a>
-        <a
-          href={`grokbot://app/v1/prompt?text=${encodeURIComponent(t("routine"))}`}
-          className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-secondary px-4 text-sm font-medium hover:bg-muted"
-        >
-          <CalendarClock className="size-4 text-primary" aria-hidden />
-          {t("routineButton")}
-        </a>
-      </div>
 
       <p className="text-[13px] text-muted-foreground">{t("askExamples")}</p>
 

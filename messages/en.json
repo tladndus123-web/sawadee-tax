@@ -2653,8 +2653,6 @@
     "headerValue": "HTTP header value",
     "jsonInstead": "If the screen asks for JSON (MCP server JSON)",
     "netNote": "If it does not connect: in Grok Bot settings → Network → Allowed destinations, check this site is not blocked.",
-    "openBot": "Open Grok Bot",
-    "routineButton": "Make the routine (opens Grok Bot)",
     "signIn": {
       "title": "Connect by signing in (recommended)",
       "1": "In Grok Bot → Connectors → Add a custom connector, paste only the server URL below. Leave the headers empty.",
@@ -2731,7 +2729,7 @@
     "setup": {
       "title": "Finish the setup from this site (a button opens Grok Bot; it does the rest itself)",
       "connector": "① Connect the connector",
-      "connectorSub": "Grok Bot's connectors screen opens and the server URL is copied. Paste it in 'Add a custom connector' and tap 'Allow' on the sign-in.",
+      "connectorSub": "Grok Bot's connector catalog opens and the server URL is copied. Tap 'Add a custom connector' at the bottom, paste the URL, then tap 'Allow' on the sign-in.",
       "skill": "② Make the skill",
       "skillSub": "Grok Bot reads the skill file from this site and saves it itself. Allow it when it asks to save.",
       "memory": "③ Tell it the memory",
