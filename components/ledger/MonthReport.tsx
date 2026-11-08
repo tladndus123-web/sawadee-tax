@@ -21,9 +21,10 @@ import { pick, useLedger } from "@/lib/ledger-store";
 import { fmt, fromSatang, toSatang } from "@/lib/money";
 import { branchLabel, branchNo, digitsOnly, dmy, todayBangkok } from "@/lib/thai-tax";
 import type { LedgerDoc } from "@/lib/types";
-import th from "@/messages/th.json";
+import text from "@/lib/form-text.json";
 import { useMonthLabel } from "./Stickers";
 
+const th = text.th;
 type ReportKey = keyof typeof th.report;
 
 interface Sum {

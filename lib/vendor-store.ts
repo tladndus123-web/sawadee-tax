@@ -4,6 +4,7 @@
 // documents are saved; members can correct names here. See lib/vendors.ts for how readings are tidied.
 
 import { useEffect, useSyncExternalStore } from "react";
+import { shared } from "./shared-load";
 import { supabaseBrowser } from "./supabase/client";
 import type { Tri } from "./types";
 import { applyHistory, applyRule, applyVendor, SUGGEST_AFTER, suggestRule, toVendor, type Vendor, type VendorFix, type VendorHistory, type VendorRow, VENDOR_COLUMNS, vendorKey } from "./vendors";
@@ -11,14 +12,25 @@ import type { LedgerDoc } from "./types";
 
 let vendors: Vendor[] = [];
 let loaded = false;
+let loadedAt = 0;
 const listeners = new Set<() => void>();
+// Parts of one screen opening together share one load; another screen (or a save here) loads it fresh
+const FRESH_MS = 3_000;
 
-async function reload() {
+const reload = shared(reloadNow);
+
+async function reloadNow() {
   const { data, error } = await supabaseBrowser().from("vendors").select(VENDOR_COLUMNS).order("tax_id");
   if (error) throw error;
   vendors = (data as VendorRow[]).map(toVendor);
   loaded = true;
+  loadedAt = Date.now();
   listeners.forEach((l) => l());
+}
+
+/** A document was saved or changed (the database may have added a vendor): the next screen asks again */
+export function vendorsStale() {
+  loadedAt = 0;
 }
 
 export function useVendors(): { vendors: Vendor[]; loaded: boolean } {
@@ -31,7 +43,7 @@ export function useVendors(): { vendors: Vendor[]; loaded: boolean } {
     () => vendors,
   );
   useEffect(() => {
-    void reload();
+    if (Date.now() - loadedAt > FRESH_MS) void reload().catch(() => {});
   }, []);
   return { vendors: snap, loaded };
 }

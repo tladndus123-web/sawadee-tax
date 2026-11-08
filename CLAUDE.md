@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (625) · `npm run db:test` (423 in 9 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (628) · `npm run db:test` (423 in 9 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy (app + DB) | **Push to `main` and let GitHub Actions deploy** (`.github/workflows/deploy.yml`: checks → migrations → pgTAP on the cloud DB → Vercel → live check). Cursor pushes to `main` too, so never deploy from this PC (`vercel deploy`) — a local build can put an older tree live over theirs (happened twice 2026-11-05). Check the run with the GitHub API (token from `git credential fill` for github.com, never printed): `GET https://api.github.com/repos/tladndus123-web/sawadee-tax/actions/runs?per_page=3`. Only if Actions is down: `npx vercel deploy --prod` from an up-to-date `main` |
 | If a deploy is broken | `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>`. A failed Actions run leaves the site as it was |
@@ -267,7 +267,15 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   (`components/vendors/PriceChanges.tsx`, vendors screen) from pure `priceBoard` in `lib/price-watch.ts`: each item bought in
   the month vs the last purchase before the month (same vendor tax ID + item name, unit unchanged), up / down / same (< 1 % or
   < ฿0.50), paid more = Σ (price − before) × qty; tiles, filter up / down / all, search, vendor cards, month arrows. Opened
-  from a button on the vendors page and "가격 변화 전체 보기" under the cost card's rises. Automatic deletion of live data is
+  from a button on the vendors page and "가격 변화 전체 보기" under the cost card's rises.
+- **Speed** (2026-11-09, owner: "사이트가 느리고 무겁다"): **never import `messages/*.json` in browser code** — `lib/form-labels`
+  did, and all four languages (~500 KB) were in every page's JavaScript. Form labels now come from the small generated
+  `lib/form-text.json` (`npx.cmd tsx scripts/form-text.mts` after changing labels / docType / copyKind / report; the test
+  `lib/form-text.test.ts` fails when it is out of date). First load per screen went from 430–506 KB to 279–381 KB.
+  `MAX_PHOTOS` / `MAX_QUEUE` live in `lib/upload-limits` so the upload queue does not pull zod into every photo screen.
+  Stores share a request already on its way (`lib/shared-load` `shared()`): company settings, month locks, vendors
+  (re-asked after 30 s, or at once after any ledger reload via `vendorsStale()`), my blocked branches (`lib/blocked-branches`,
+  used by role-store and branch-store). Message files may still be imported by server code (`*-server.ts`, LINE). Automatic deletion of live data is
   off-limits for Claude (auto-mode classifier refused it 2026-11-08) — list the documents and let the owner decide.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out

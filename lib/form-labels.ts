@@ -1,11 +1,11 @@
 // Form field labels in the *form* languages (th / en / ja), independent of the UI locale.
-// Source of truth: messages/{th,en,ja}.json → labels, docType, copyKind.
+// Source of truth: messages/{th,en,ja}.json → labels, docType, copyKind, copied into the small lib/form-text.json
+// (scripts/form-text.mts) so the browser does not load three whole message files.
 
-import en from "@/messages/en.json";
-import ja from "@/messages/ja.json";
-import th from "@/messages/th.json";
+import text from "./form-text.json";
 import { type CopyKind, type DocType, FORM_LANGS, type FormLang, type Tri } from "./types";
 
+const { th, en, ja } = text;
 const M = { th, en, ja } as const;
 
 /** "all" shows th + en + ja together */

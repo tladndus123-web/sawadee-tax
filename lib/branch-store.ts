@@ -5,6 +5,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { ALL, type Branch, sortBranches } from "./branches";
+import { myBlockedBranches } from "./blocked-branches";
 import { supabaseBrowser } from "./supabase/client";
 
 const KEY = "trl.branch";
@@ -39,7 +40,7 @@ async function reload() {
   const [{ data, error }, targets, blocked] = await Promise.all([
     supabaseBrowser().from("branches").select("id, no, name, sort, color, closed_days, sales_target"),
     supabaseBrowser().from("branch_targets").select("branch_id, month, amount"),
-    supabaseBrowser().rpc("my_blocked_branches"),
+    myBlockedBranches(),
   ]);
   if (error) throw error;
   // Each branch's own month targets (set from the month-end LINE report); none readable = only the standing target

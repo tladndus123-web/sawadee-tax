@@ -9,6 +9,7 @@ import { invoiceMonth } from "./archive";
 import { DOC_LIST_COLUMNS, type DocumentRow, docToRow, type ItemRow, rowToDoc } from "./db-map";
 import { lockedMonths, openClaimMonth } from "./month-lock-store";
 import { supabaseBrowser } from "./supabase/client";
+import { vendorsStale } from "./vendor-store";
 import { cacheClear, cacheGet, cacheSet } from "./idb-cache";
 import { photoHash } from "./photo-hash";
 import { ALL } from "./branches";
@@ -138,6 +139,8 @@ const CACHE = (user: string) => `ledger:v1:${user}`;
 const CHUNK = 150;
 
 async function reload() {
+  // A save may have registered a new vendor (database trigger)
+  vendorsStale();
   const supabase = supabaseBrowser();
   const user = (await supabase.auth.getSession()).data.session?.user.id ?? null;
   if (!user) return;

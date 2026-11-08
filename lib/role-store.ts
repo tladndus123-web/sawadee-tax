@@ -6,6 +6,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { routing } from "@/i18n/routing";
 import { cleanScreens, type Screen } from "./screens";
+import { myBlockedBranches } from "./blocked-branches";
 import { supabaseBrowser } from "./supabase/client";
 
 export type Role = "admin" | "staff";
@@ -46,7 +47,7 @@ async function load() {
   }
   const [{ data }, blocked] = await Promise.all([
     supabase.from("members").select("name, role, email, home_branch, owner, admin_screens, all_branches").eq("user_id", user.id).maybeSingle(),
-    supabase.rpc("my_blocked_branches"),
+    myBlockedBranches(),
   ]);
   // Signed in but not an (active) member any more — e.g. an admin removed their access: sign out and say why
   if (!data && !/\/(login|auth)(\/|$)/.test(window.location.pathname)) {

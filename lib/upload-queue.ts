@@ -6,7 +6,8 @@
 // clears it with the rest of the device cache.
 
 import { useSyncExternalStore } from "react";
-import { type ExtractErrorCode, MAX_PHOTOS, MAX_QUEUE } from "./extract-schema";
+import type { ExtractErrorCode } from "./extract-schema";
+import { MAX_PHOTOS, MAX_QUEUE } from "./upload-limits";
 import { normalize } from "./normalize";
 import { isPdf, pdfToJpeg } from "./pdf-render";
 import { checkPhoto, type PhotoIssue } from "./photo-quality";

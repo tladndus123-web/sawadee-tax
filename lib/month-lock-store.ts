@@ -5,6 +5,7 @@
 // and stickers. This store only shows it and offers the admin buttons.
 
 import { useEffect, useSyncExternalStore } from "react";
+import { shared } from "./shared-load";
 import { supabaseBrowser } from "./supabase/client";
 
 let locked: ReadonlySet<string> = new Set();
@@ -12,7 +13,9 @@ let loadedAt = 0;
 const listeners = new Set<() => void>();
 const FRESH_MS = 30_000;
 
-async function load() {
+const load = shared(loadNow);
+
+async function loadNow() {
   const { data, error } = await supabaseBrowser().from("month_locks").select("month");
   if (error) return;
   locked = new Set((data ?? []).map((r) => r.month as string));

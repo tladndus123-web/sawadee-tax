@@ -4,6 +4,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { type ExcelFormat, readExcelFormat } from "./excel-format";
+import { shared } from "./shared-load";
 import { supabaseBrowser } from "./supabase/client";
 
 export interface CompanySettings {
@@ -30,7 +31,9 @@ let current: CompanySettings = EMPTY;
 let started = false;
 const listeners = new Set<() => void>();
 
-async function load() {
+const load = shared(loadNow);
+
+async function loadNow() {
   const { data } = await supabaseBrowser().from("company_settings").select("tax_id, form_config, sticker_names, app_fees, cost_targets, channel_names, payroll_settings, pos_columns, excel_format").eq("id", 1).maybeSingle();
   current = {
     loaded: true,
