@@ -6,7 +6,10 @@
 import { isUnpaid } from "./archive";
 import { booksContext, calendarContext } from "./assistant-server";
 import { hashKey, keyFromHeader } from "./bot-keys";
+import { findAnomalies } from "./anomalies";
 import { addDocumentFromFile, fromBase64 } from "./bot-docs-server";
+import { priceRises } from "./price-watch";
+import { saleValue } from "./sales";
 import { lineClient } from "./line";
 import { noticeMessage } from "./line-dash";
 import { LANG_SPLIT, lineLang } from "./line-lang";
@@ -236,6 +239,42 @@ export async function lineToOwner(admin: Admin, who: { id: string; createdBy: st
   return { sent: true, to: "the owner's LINE", lines: card.count };
 }
 
+/** Receipts that look wrong among those saved in the last `days` days (lib/anomalies: same twice, far above usual, new supplier) */
+export async function unusualThings(admin: Admin, days: number, appUrl: string, today: string) {
+  const books = await ledger(admin);
+  const from = shiftDay(today, -Math.max(1, Math.min(days, 60)));
+  const odd = findAnomalies(books.saved, from, today);
+  const name = (v: { en: string; th: string; ja: string }) => v.en || v.th || v.ja || "?";
+  return {
+    from,
+    to: today,
+    found: odd.length,
+    items: odd.map((a) =>
+      a.kind === "dup"
+        ? { kind: "same receipt twice", supplier: name(a.vendor), docNo: a.docNo, amount: a.amount, open: `${appUrl}/documents/${a.id}`, earlier: `${appUrl}/documents/${a.otherId}` }
+        : a.kind === "big"
+          ? { kind: "far above the usual", supplier: name(a.vendor), category: a.category, amount: a.amount, usual: a.usual, open: `${appUrl}/documents/${a.id}` }
+          : { kind: "new supplier", supplier: name(a.vendor), taxId: a.taxId, taxIdValid: a.taxIdValid, amount: a.amount, open: `${appUrl}/documents/${a.id}` },
+    ),
+  };
+}
+
+/** Sales by day and channel between two dates (closing reports; several a day are summed) */
+export async function salesDetail(admin: Admin, from: string, to: string) {
+  const rows = await allSales(admin, from, to);
+  const days = new Map<string, { date: string; gross: number; withoutVat: number; bills: number; byChannel: Record<string, number> }>();
+  for (const s of rows) {
+    const d = days.get(s.date) ?? { date: s.date, gross: 0, withoutVat: 0, bills: 0, byChannel: {} };
+    d.gross = r2(d.gross + s.gross);
+    d.withoutVat = r2(d.withoutVat + saleValue(s));
+    d.bills += s.bills;
+    d.byChannel[s.channel] = r2((d.byChannel[s.channel] ?? 0) + s.gross);
+    days.set(s.date, d);
+  }
+  const list = [...days.values()].sort((a, b) => a.date.localeCompare(b.date));
+  return { from, to, days: list.length, totalGross: r2(list.reduce((a, d) => a + d.gross, 0)), totalWithoutVat: r2(list.reduce((a, d) => a + d.withoutVat, 0)), byDay: list.slice(0, 62) };
+}
+
 /** The tools, for one request */
 export function botTools(admin: Admin, appUrl: string, today = todayBangkok(), who: { id: string; createdBy: string | null } = { id: "", createdBy: null }): McpTool[] {
   return [
@@ -365,6 +404,53 @@ export function botTools(admin: Admin, appUrl: string, today = todayBangkok(), w
       },
     },
     {
+      name: "unusual_things",
+      description: "Receipts saved in the last days that look wrong: the same receipt twice, a spend far above the usual of its category (3× and ≥ ฿5,000), a new supplier (with its tax ID check). Use it before the wrap-up or when the owner asks what is odd.",
+      inputSchema: { type: "object", properties: { days: { type: "integer", description: "1–60, default 7" } }, additionalProperties: false },
+      run: (a) => unusualThings(admin, Number(a.days) || 7, appUrl, today),
+    },
+    {
+      name: "price_rises",
+      description: "Items bought dearer in a month than the time before (≥ 5 %), per supplier and item, biggest rise first.",
+      inputSchema: { type: "object", properties: { month: { type: "string", description: "YYYY-MM; default this month" } }, additionalProperties: false },
+      run: async (a) => {
+        const m = typeof a.month === "string" && a.month ? a.month : today.slice(0, 7);
+        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(m)) throw new Error("month must be YYYY-MM");
+        const books = await ledger(admin);
+        const rises = priceRises(books.saved.map((d) => d.doc), m).slice(0, 30);
+        return { month: m, found: rises.length, items: rises.map((r) => ({ supplier: r.vendorName.en || r.vendorName.th || r.vendorName.ja, item: r.item, unit: r.unit, before: r.before / 100, now: r.now / 100, risePct: r.pct, date: r.date, beforeDate: r.beforeDate, open: `${appUrl}/documents/${r.docId}` })) };
+      },
+    },
+    {
+      name: "sales_detail",
+      description: "Sales by day and by channel (store, grab, lineman, foodpanda, shopee, robinhood, other) between two dates, with and without VAT and the number of bills. Up to 62 days.",
+      inputSchema: { type: "object", properties: { from: { type: "string", description: "YYYY-MM-DD" }, to: { type: "string", description: "YYYY-MM-DD; default today" } }, required: ["from"], additionalProperties: false },
+      run: (a) => {
+        const from = dateArg(a.from, "");
+        const to = dateArg(a.to, today);
+        if (to < from) throw new Error("to is before from");
+        return salesDetail(admin, from, to);
+      },
+    },
+    {
+      name: "add_document_note",
+      description: "Add a short note to a saved document (receipt / tax invoice), e.g. 'checked with the supplier' or 'ask the accountant'. The note is marked as yours; nothing else on the document changes. Not possible in a closed tax month.",
+      writes: true,
+      inputSchema: { type: "object", properties: { id: { type: "string", description: "The document id (from find_documents)" }, note: { type: "string", description: "Up to 200 characters" } }, required: ["id", "note"], additionalProperties: false },
+      run: async (a) => {
+        const id = String(a.id);
+        if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("id is not a document id");
+        const note = String(a.note).trim().slice(0, 200);
+        if (!note) throw new Error("note is empty");
+        const { data: d } = await admin.from("documents").select("id, memo, status").eq("id", id).is("deleted_at", null).maybeSingle();
+        if (!d) return { added: false, reason: "No such document." };
+        const memo = [d.memo as string | null, `Grok Bot: ${note}`].filter(Boolean).join("\n").slice(0, 2000);
+        const { error } = await admin.from("documents").update({ memo }).eq("id", id);
+        if (error) return { added: false, reason: /month_locked/.test(error.message) ? "That tax month is closed." : error.message };
+        return { added: true, id, open: `${appUrl}/documents/${id}` };
+      },
+    },
+    {
       name: "remove_calendar_date",
       description: "Take out a date this agent put in the calendar (by its id from add_calendar_date). Dates people added stay.",
       writes: true,
@@ -384,6 +470,6 @@ export const BOT_INFO = {
   name: "sawadee-tax",
   version: "1.0.0",
   instructions:
-    "Sawadee TAX: the books of a restaurant company in Thailand (receipts, sales, tax calendar). You may read summaries, search documents, put dates in the calendar, add receipts as drafts for a person to check, and send short cards to the connecting owner's LINE. You cannot change saved documents, pay, approve or message staff. For the daily wrap-up call day_summary. Amounts are Thai baht. Dates are Bangkok time.",
+    "Sawadee TAX: the books of a restaurant company in Thailand (receipts, sales, tax calendar). You may read summaries, search documents, spot unusual receipts and price rises, see sales by day, put dates in the calendar, add notes to documents, add receipts as drafts for a person to check, and send short cards to the connecting owner's LINE. You cannot change saved documents, pay, approve or message staff. For the daily wrap-up call day_summary. Amounts are Thai baht. Dates are Bangkok time.",
 };
 

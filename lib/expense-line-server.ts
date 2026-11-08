@@ -4,6 +4,7 @@
 // back. "경비" typed to the bot puts a member in expense mode for 10 minutes: their receipt photos become claims.
 // Nothing is sent without a LINE channel or when LINE is turned off for claims (company_settings.expenses.line).
 
+import { claimEvent, sendBotEvent } from "./bot-events-server";
 import crypto from "node:crypto";
 import type { messagingApi } from "@line/bot-sdk";
 import en from "@/messages/en.json";
@@ -47,10 +48,15 @@ async function loadClaim(admin: Admin, id: string) {
 
 /** A new claim → every admin with LINE; returns how many were sent */
 export async function notifyNewClaim(id: string, appUrl: string): Promise<number> {
-  if (!lineReady()) return 0;
   const admin = supabaseAdmin();
   const c = await loadClaim(admin, id);
   if (!c || c.status !== "pending") return 0;
+  // Grok Bot hears about it too (lib/bot-events-server), whether or not LINE is set up
+  void (async () => {
+    const { count } = await admin.from("expense_claims").select("id", { count: "exact", head: true }).eq("status", "pending");
+    await sendBotEvent(admin, claimEvent(c, count ?? 0, appUrl));
+  })().catch((e) => console.error("[bot-event] claim:", e instanceof Error ? e.message : e));
+  if (!lineReady()) return 0;
   const [settings, { data: admins }, all, ledger] = await Promise.all([
     settingsOf(admin),
     admin.from("members").select("user_id, line_user_id, owner, admin_screens").eq("role", "admin").is("disabled_at", null).not("line_user_id", "is", null),

@@ -2688,6 +2688,40 @@
         }
       },
       "show": "See the text · copy"
+    },
+    "hook": {
+      "title": "Instant events: Grok Bot reacts the moment something happens",
+      "intro": "When a staff member claims an expense, the same receipt comes in again, or a saved receipt has a big spend, a new supplier or withholding tax, Grok Bot is told at once. It decides what to tell you.",
+      "s1": "In Grok Bot → Routines → new routine, choose the trigger \"When a webhook is triggered\" and paste the text below as the routine.",
+      "s2": "Copy the Webhook URL and Webhook key shown in the routine's settings.",
+      "s3": "Paste them here, Add, then \"Send a test\".",
+      "routineLabel": "Text for the routine",
+      "routineText": "When an event from sawadee-tax (the Sawadee TAX books) arrives by webhook, read it, check with the sawadee-tax tools if needed, and tell me in 3–5 lines what it is and what I need to decide. For a claim: who claimed how much and why, and whether the same person or place claimed last month. For a receipt: why it needs a look. Do not approve or change anything yourself; ask me.",
+      "url": "Webhook URL",
+      "key": "Webhook key",
+      "add": "Add",
+      "added": "Added. Try \"Send a test\".",
+      "badUrl": "The webhook URL must start with https://",
+      "badKey": "The webhook key is empty or too short.",
+      "tooMany": "Up to 3.",
+      "test": "Send a test",
+      "testOk": "Grok Bot received it. The routine will run and answer.",
+      "testFail": "Sent, but Grok Bot did not accept it (answer {status}). Check the URL and key.",
+      "remove": "Remove",
+      "removed": "Removed.",
+      "last": "last sent {date} · {status}",
+      "okShort": "received",
+      "never": "nothing sent yet",
+      "what": "What is sent: a new expense claim, and a saved receipt worth a look (the same receipt twice, 3× the usual, a new supplier, withholding tax, automatic-check warnings). Ordinary receipts are not sent."
+    },
+    "skill": {
+      "title": "Skill and memory: teach Grok Bot the books",
+      "intro": "Put the skill file into Grok Bot so it knows which tool answers what, what it must not do and how to write, without being told each time. (It is in English; Grok Bot reads it.)",
+      "download": "Download SKILL.md",
+      "saved": "Downloaded. Add it in Grok Bot → Skills → Add.",
+      "show": "See the text · copy",
+      "memoryLabel": "Tell Grok Bot once (memory)",
+      "memory": "Remember: I am the owner of a restaurant in Thailand using Sawadee TAX. Answer questions about the books with the sawadee-tax connector. Sales targets are without VAT. Do not keep the books' numbers in your memory. Never change receipts, approve or pay yourself; ask me. Answer in English."
     }
   },
   "connect": {

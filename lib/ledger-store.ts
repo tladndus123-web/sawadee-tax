@@ -302,6 +302,8 @@ export async function saveEntry(
     p_items: items,
   });
   if (error) throw error;
+  // Grok Bot hears about a saved receipt worth a look (app/api/bot-events; nothing for an ordinary one)
+  if (status === "final") void fetch("/api/bot-events", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) }).catch(() => {});
   knownAt = 0;
   await reload();
   return { id, movedTo };

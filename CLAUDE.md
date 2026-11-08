@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (617) · `npm run db:test` (412 in 8 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (620) · `npm run db:test` (415 in 8 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy (app + DB) | **Push to `main` and let GitHub Actions deploy** (`.github/workflows/deploy.yml`: checks → migrations → pgTAP on the cloud DB → Vercel → live check). Cursor pushes to `main` too, so never deploy from this PC (`vercel deploy`) — a local build can put an older tree live over theirs (happened twice 2026-11-05). Check the run with the GitHub API (token from `git credential fill` for github.com, never printed): `GET https://api.github.com/repos/tladndus123-web/sawadee-tax/actions/runs?per_page=3`. Only if Actions is down: `npx vercel deploy --prod` from an up-to-date `main` |
 | If a deploy is broken | `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>`. A failed Actions run leaves the site as it was |
@@ -224,6 +224,16 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   drafts only, …004200; PDFs: the agent sends each page as a picture). The card lists six ready routines (daily wrap-up to
   LINE, morning to-dos, gap watch, weekly, filing, emailed receipts) as `grokbot://app/v1/prompt` buttons. The site has
   `app/favicon.ico` + `public/icon-512.png` (Grok Bot showed a letter without them) and MCP serverInfo title + icons.
+  **Using more of Grok Bot** (same day, owner: "최대한 활용"): (1) **events the moment they happen** — a Grok Bot routine
+  started "when a webhook is triggered" has a URL + key; owners paste them in the card (`bot_webhooks`, …004300, https only,
+  ≤ 3, `/api/bot-webhooks` GET/POST/PUT=test/DELETE). `lib/bot-events-server`: `claimEvent` (every new claim, from
+  `notifyNewClaim`, app and LINE) and `documentEvent` (a saved receipt only when worth a look: anomalies dup/big/new,
+  withholding, open check warnings) → `sendBotEvent` posts JSON {event, title, lines, text, open, data} with
+  `Authorization: Bearer <key>`, 8 s, best effort. LINE saves call it in `saveReceipt`; app saves call `/api/bot-events`
+  (session, 30/min) from `saveEntry`. (2) Tools **unusual_things**, **price_rises**, **sales_detail**,
+  **add_document_note** (memo only, "Grok Bot: …", refused in a closed month) — 14 tools now. (3) A **SKILL.md**
+  (`lib/bot-skill.ts`, English: which tool for what, the rules) downloaded from the card, and a memory sentence to tell
+  Grok Bot once (`bot.skill.memory`, 4 languages).
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

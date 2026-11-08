@@ -4,16 +4,19 @@
 // (server URL + Authorization header), ask it for a daily routine. The agent may read summaries and put dates in the tax calendar (lib/bot-server.ts).
 // Owners only; the key is shown once.
 
-import { Ban, CalendarClock, Check, CircleCheck, Copy, ExternalLink, KeyRound, Link2Off, Loader2, Plus } from "lucide-react";
+import { Ban, CalendarClock, Check, CircleCheck, Copy, Download, ExternalLink, KeyRound, Link2Off, Loader2, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useScreenDate } from "@/components/ScreenDate";
 import { todayBangkok } from "@/lib/thai-tax";
+import { downloadBlob } from "@/lib/attendance-share";
+import { skillMarkdown } from "@/lib/bot-skill";
 import { useFoldStatus } from "./SettingsFold";
 
 const ROUTINES = ["daily", "morning", "watch", "weekly", "filing", "email"] as const;
+type Hook = { id: string; name: string; host: string; created_at: string; last_sent_at: string | null; last_status: number | null };
 
 type KeyRow = { id: string; name: string; hint: string; created_at: string; last_used_at: string | null };
 
@@ -51,6 +54,47 @@ export function BotCard() {
   const [fresh, setFresh] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [ending, setEnding] = useState<string | null>(null);
+  const [hooks, setHooks] = useState<Hook[]>([]);
+  const [hookUrl, setHookUrl] = useState("");
+  const [hookKey, setHookKey] = useState("");
+  const [hookBusy, setHookBusy] = useState<string | null>(null);
+  const loadHooks = useCallback(async () => {
+    const r = await fetch("/api/bot-webhooks");
+    if (r.ok) setHooks(((await r.json()) as { hooks: Hook[] }).hooks);
+  }, []);
+  useEffect(() => void loadHooks(), [loadHooks]);
+  const addHook = async () => {
+    setHookBusy("add");
+    try {
+      const r = await fetch("/api/bot-webhooks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: hookUrl, key: hookKey, name: "Grok Bot" }) });
+      const j = (await r.json()) as { error?: string };
+      if (!r.ok) throw new Error(j.error);
+      setHookUrl("");
+      setHookKey("");
+      await loadHooks();
+      toast.success(t("hook.added"));
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "";
+      toast.error(m === "url" ? t("hook.badUrl") : m === "key" ? t("hook.badKey") : m === "tooMany" ? t("hook.tooMany") : t("fail"));
+    } finally {
+      setHookBusy(null);
+    }
+  };
+  const testHook = async (id: string) => {
+    setHookBusy(id);
+    const r = await fetch("/api/bot-webhooks", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) });
+    const j = (await r.json().catch(() => ({}))) as { ok?: boolean; status?: number };
+    setHookBusy(null);
+    await loadHooks();
+    if (j.ok) toast.success(t("hook.testOk"));
+    else toast.error(t("hook.testFail", { status: String(j.status ?? "?") }));
+  };
+  const removeHook = async (id: string) => {
+    const r = await fetch("/api/bot-webhooks", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) });
+    if (!r.ok) return void toast.error(t("fail"));
+    await loadHooks();
+    toast.success(t("hook.removed"));
+  };
   useFoldStatus(keys === null ? null : keys.length ? tf("linked") : tf("notLinked"), !!keys?.length);
 
   const load = useCallback(async () => {
@@ -158,6 +202,71 @@ export function BotCard() {
           </li>
         </ol>
       </details>
+
+      {/* Events the moment they happen (owner 2026-11-08): a Grok Bot routine started "when a webhook is triggered" */}
+      <section className="grid gap-3 rounded-2xl p-4 shadow-[0_0_0_1px_var(--border)]">
+        <span className="text-[14px] font-semibold">{t("hook.title")}</span>
+        <p className="text-[13px] text-muted-foreground">{t("hook.intro")}</p>
+        <ol className="grid list-decimal gap-1.5 pl-5 text-[13.5px]">
+          <li>{t("hook.s1")}</li>
+          <li>{t("hook.s2")}</li>
+          <li>{t("hook.s3")}</li>
+        </ol>
+        <CopyBox text={t("hook.routineText")} label={t("hook.routineLabel")} mono={false} />
+        {hooks.length < 3 && (
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto]">
+            <input id="bot-hook-url" value={hookUrl} onChange={(e) => setHookUrl(e.target.value)} placeholder="https://…" aria-label={t("hook.url")} className="h-10 rounded-xl bg-card px-3 text-[14px] shadow-[0_0_0_1px_var(--border)] outline-none focus:shadow-[0_0_0_2px_var(--primary)]" />
+            <input id="bot-hook-key" value={hookKey} onChange={(e) => setHookKey(e.target.value)} placeholder={t("hook.key")} aria-label={t("hook.key")} type="password" autoComplete="off" className="h-10 rounded-xl bg-card px-3 text-[14px] shadow-[0_0_0_1px_var(--border)] outline-none focus:shadow-[0_0_0_2px_var(--primary)]" />
+            <Button type="button" onClick={() => void addHook()} disabled={hookBusy === "add" || !hookUrl || !hookKey} className="h-10 rounded-full">
+              {hookBusy === "add" ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              {t("hook.add")}
+            </Button>
+          </div>
+        )}
+        {hooks.length > 0 && (
+          <ul className="grid gap-2">
+            {hooks.map((h) => (
+              <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-muted/50 px-3.5 py-2.5">
+                <span className="grid gap-0.5">
+                  <span className="text-[14px] font-medium">{h.name} <span className="font-mono text-[12px] text-muted-foreground">{h.host}</span></span>
+                  <span className="text-[12px] text-muted-foreground">
+                    {h.last_sent_at ? t("hook.last", { date: sd(todayBangkok(new Date(h.last_sent_at))), status: h.last_status === null ? "?" : h.last_status >= 200 && h.last_status < 300 ? t("hook.okShort") : String(h.last_status) }) : t("hook.never")}
+                  </span>
+                </span>
+                <span className="flex gap-1.5">
+                  <Button type="button" size="sm" variant="outline" className="rounded-full" disabled={hookBusy === h.id} onClick={() => void testHook(h.id)}>
+                    {hookBusy === h.id ? <Loader2 className="size-4 animate-spin" /> : null}
+                    {t("hook.test")}
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" className="rounded-full text-bad" onClick={() => void removeHook(h.id)}>
+                    {t("hook.remove")}
+                  </Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="text-[12px] text-muted-foreground">{t("hook.what")}</p>
+      </section>
+
+      {/* A skill and a memory sentence for Grok Bot (what the tools are for, the rules) */}
+      <section className="grid gap-3 rounded-2xl p-4 shadow-[0_0_0_1px_var(--border)]">
+        <span className="text-[14px] font-semibold">{t("skill.title")}</span>
+        <p className="text-[13px] text-muted-foreground">{t("skill.intro")}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" className="rounded-full" onClick={() => { downloadBlob(new Blob([skillMarkdown(window.location.origin)], { type: "text/markdown;charset=utf-8" }), "SKILL.md"); toast.success(t("skill.saved")); }}>
+            <Download className="size-4" />
+            {t("skill.download")}
+          </Button>
+        </div>
+        <details className="text-[13px]">
+          <summary className="cursor-pointer font-medium text-primary">{t("skill.show")}</summary>
+          <div className="mt-2">
+            <CopyBox text={skillMarkdown(url.replace(/\/api\/mcp$/, ""))} label="SKILL.md" />
+          </div>
+        </details>
+        <CopyBox text={t("skill.memory")} label={t("skill.memoryLabel")} mono={false} />
+      </section>
 
       {/* Ready-made routines (owner 2026-11-08: "일이나 보고 여러 일정을 줄이는"): each opens Grok Bot with the sentence typed */}
       <section className="grid gap-3">

@@ -15,6 +15,7 @@
 import crypto from "node:crypto";
 import type { messagingApi, webhook } from "@line/bot-sdk";
 import { appUrl } from "./app-url";
+import { documentEvent, sendBotEvent } from "./bot-events-server";
 import { type LedgerRef, runChecks } from "./checks";
 import { docToRow } from "./db-map";
 import { paidAtTill } from "./archive";
@@ -383,6 +384,10 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   const card = receiptCard(doc, checks, `${appUrl()}/documents/${id}`, lang);
   await send(later, lineUser, ask ? [card, { ...text(say.branchAsk), quickReply: branchButtons(id, branches, lang) }] : [card]);
   console.log(`[line] saved ${id}: AI ${(aiMs / 1000).toFixed(1)}s, total ${((Date.now() - started) / 1000).toFixed(1)}s`);
+  // Grok Bot hears about a receipt worth a look (lib/bot-events-server)
+  void documentEvent(admin, id, appUrl())
+    .then((ev) => (ev ? sendBotEvent(admin, ev) : 0))
+    .catch((e) => console.error("[bot-event] receipt:", e instanceof Error ? e.message : e));
 }
 
 /** A receipt photo in expense mode → a claim; the admins are told on LINE */

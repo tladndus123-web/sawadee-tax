@@ -1,7 +1,7 @@
 -- Keys for a connected AI agent (…004000_bot_keys.sql). Run: npm run db:test. Everything rolls back.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(20);
 
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000c4001', 'owner-k@test.local');
 insert into public.members (user_id, email, name, role) values ('00000000-0000-0000-0000-0000000c4001', 'owner-k@test.local', 'Owner', 'admin');
@@ -51,6 +51,15 @@ set local role authenticated;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000c4001');
 select throws_ok($$ select public.bot_save_document('00000000-0000-0000-0000-0000000c4001', gen_random_uuid(), '{"status":"draft"}'::jsonb, '[]'::jsonb) $$, '42501', NULL, 'the browser cannot call it');
 select throws_ok($$ select * from public.bot_line_sends $$, '42501', NULL, 'the LINE log is server only');
+reset role;
+
+-- Where events go to Grok Bot (…004300_bot_webhooks.sql): server only, https only
+insert into public.bot_webhooks (name, url, key) values ('Grok Bot', 'https://example.test/hook', 'k'||repeat('x', 20));
+select throws_ok($$ insert into public.bot_webhooks (name, url, key) values ('x', 'http://example.test/hook', 'k'||repeat('x', 20)) $$, '23514', NULL, 'a webhook must be https');
+set local role authenticated;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000c4001');
+select throws_ok($$ select * from public.bot_webhooks $$, '42501', NULL, 'an owner cannot read the webhooks (and their keys) from the browser');
+select throws_ok($$ insert into public.bot_webhooks (name, url, key) values ('x', 'https://e.test', 'k'||repeat('x', 20)) $$, '42501', NULL, 'nor add one there');
 reset role;
 
 select * from finish();
