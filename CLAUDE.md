@@ -240,7 +240,10 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   **set_event_webhook** (15 tools; https only, same URL replaces, ≤ 3, sends the test event; done = a hook exists),
   ⑤ the nightly routine prompt. Every prompt link stays under Grok Bot's 1000-character limit (checked in a test script).
   Live check 2026-11-08: the dup rule found 9 real duplicate pairs in October (same seller, doc no., date, amount; ≈ ฿10,804
-  counted twice) — the owner decides how to remove them.
+  counted twice) — the owner removes them by hand: the duplicate banner on a saved document (`DocumentReview`, admins)
+  now has **"중복으로 처리 (휴지통으로)"** (ask once more → `onDelete` with reason `dupBanner.reason` → trash, restorable;
+  the earlier document stays). It shows only where the duplicate warning shows. Automatic deletion of live data is
+  off-limits for Claude (auto-mode classifier refused it 2026-11-08) — list the documents and let the owner decide.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

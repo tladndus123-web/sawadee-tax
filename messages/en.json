@@ -386,7 +386,8 @@
     "shredding": "Moving the document to the trash…",
     "done": "Moved to the trash. Admins can restore it.",
     "sampleDone": "This is the sample, so it was not actually deleted.",
-    "unknownUser": "Admin"
+    "unknownUser": "Admin",
+    "failed": "Could not delete. Try again."
   },
   "trash": {
     "ledgerTab": "Ledger",
@@ -2464,7 +2465,11 @@
     "open": "Open the saved one",
     "check": "I checked: this is a different document (e.g. same number from another branch)",
     "needCheck": "Check whether it is a duplicate, then tick the box.",
-    "card": "Possible duplicate · look when you check it"
+    "card": "Possible duplicate · look when you check it",
+    "treat": "Treat as duplicate (to trash)",
+    "treatSure": "Only this document goes to the trash; the one saved first stays. It can be restored.",
+    "treatYes": "Yes, it is a duplicate",
+    "reason": "Duplicate: a document with the same seller and number ({no}) was saved first"
   },
   "feed": {
     "name": "Staff schedule",

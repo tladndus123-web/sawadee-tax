@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, ChevronDown, Download, FileImage, FilePen, FileText, Loader2, Printer, Save, TriangleAlert, X } from "lucide-react";
+import { CalendarDays, ChevronDown, Download, FileImage, FilePen, FileText, Loader2, Printer, Save, Trash2, TriangleAlert, X } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
@@ -126,6 +126,9 @@ export function DocumentReview({
   const dupFound = results.some((c) => c.key === "dup" && !c.ok);
   const dupOf = dupFound ? (others ?? []).find((x) => x.id !== initial.id && x.docNo === doc.docNo && x.sellerTaxId.replace(/\D/g, "") === doc.seller.taxId.replace(/\D/g, "")) : undefined;
   const [dupChecked, setDupChecked] = useState(false);
+  // "중복으로 처리": a saved document that is a twin of an earlier one goes to the trash from the banner itself (owner
+  // 2026-11-08: a person decides, but only where the duplicate warning shows). The earlier document stays.
+  const [dupTreat, setDupTreat] = useState<"ask" | "busy" | null>(null);
   const categoryOptions = useCategoryOptions(doc.category);
 
   const [editing, setEditing] = useState(startEditing);
@@ -293,6 +296,41 @@ export function DocumentReview({
                 </Link>
               )}
             </p>
+            {!isNew && onDelete && me.role === "admin" && (
+              <div className="flex flex-wrap items-center gap-2">
+                {dupTreat === null ? (
+                  <button type="button" onClick={() => setDupTreat("ask")} className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-bad px-4 text-[14px] font-medium text-white hover:bg-bad/90">
+                    <Trash2 className="size-4" aria-hidden />
+                    {t("dupBanner.treat")}
+                  </button>
+                ) : (
+                  <>
+                    <span className="text-[13px] text-foreground/80">{t("dupBanner.treatSure")}</span>
+                    <button
+                      type="button"
+                      disabled={dupTreat === "busy"}
+                      onClick={async () => {
+                        setDupTreat("busy");
+                        try {
+                          await onDelete(t("dupBanner.reason", { no: doc.docNo }));
+                          onDeleted?.();
+                        } catch {
+                          toast.error(t("del.failed"));
+                          setDupTreat(null);
+                        }
+                      }}
+                      className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-bad px-3.5 text-[13px] font-medium text-white hover:bg-bad/90 disabled:opacity-60"
+                    >
+                      {dupTreat === "busy" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Trash2 className="size-4" aria-hidden />}
+                      {t("dupBanner.treatYes")}
+                    </button>
+                    <button type="button" disabled={dupTreat === "busy"} onClick={() => setDupTreat(null)} className="press inline-flex h-9 items-center rounded-full bg-card px-3.5 text-[13px] font-medium hover:bg-muted">
+                      {t("del.cancel")}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
             {isNew && (
               <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl bg-card px-3 font-medium">
                 <input type="checkbox" className="size-5" checked={dupChecked} onChange={(e) => setDupChecked(e.target.checked)} />
