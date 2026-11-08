@@ -14,6 +14,7 @@ import { todayBangkok } from "@/lib/thai-tax";
 import { downloadBlob } from "@/lib/attendance-share";
 import { skillMarkdown } from "@/lib/bot-skill";
 import { cn } from "@/lib/utils";
+import { usePref } from "@/lib/user-prefs";
 import { useFoldStatus } from "./SettingsFold";
 
 const ROUTINES = ["daily", "morning", "watch", "weekly", "filing", "email"] as const;
@@ -55,6 +56,7 @@ export function BotCard() {
   const [fresh, setFresh] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [ending, setEnding] = useState<string | null>(null);
+  const [marked, setMarked] = usePref<string[]>("grokSetup", (v) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []), []);
   const [hooks, setHooks] = useState<Hook[]>([]);
   const [hookUrl, setHookUrl] = useState("");
   const [hookKey, setHookKey] = useState("");
@@ -133,53 +135,86 @@ export function BotCard() {
     await load();
   };
 
+  // The five steps: ① and ④ are known from the database; ②③⑤ the owner ticks "했어요" (kept per person, lib/user-prefs)
+  const steps = [
+    { k: "connector", done: (keys?.length ?? 0) > 0, href: "grokbot://app/v1/settings?id=integrations", copy: url },
+    { k: "skill", done: marked.includes("skill"), tick: true, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("setup.skillPrompt", { url: `${url.replace(/\/api\/mcp$/, "")}/api/bot-skill` }))}` },
+    { k: "memory", done: marked.includes("memory"), tick: true, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("skill.memory"))}` },
+    { k: "hook", done: hooks.length > 0, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("setup.hookPrompt", { text: t("hook.routineText") }))}` },
+    { k: "routine", done: marked.includes("routine"), tick: true, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("rec.items.daily.text"))}` },
+  ] as const;
+  const doneCount = steps.filter((x) => x.done).length;
+  const current = steps.findIndex((x) => !x.done);
+
   return (
     <div className="grid gap-5">
       <p className="text-[14px] leading-relaxed text-muted-foreground">{t("intro")}</p>
-      <ul className="grid gap-1.5 text-[13.5px]">
-        <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.read")}</li>
-        <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.calendar")}</li>
-        <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.draft")}</li>
-        <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.line")}</li>
-        <li className="flex gap-2"><Ban className="mt-0.5 size-4 flex-none text-bad" aria-hidden />{t("can.not")}</li>
-      </ul>
 
-      {/* Finish the setup from here (owner 2026-11-08: "웹사이트에서 모든 설정을 끝낼 수 있게"): each button opens Grok Bot with
-          the sentence typed, or its connectors screen with our address on the clipboard; the agent does the rest itself */}
+      {/* Setup, one step at a time (owner 2026-11-08: "설정이 너무 어렵지 않니") — the rest lives under "자세한 설정" */}
       <section className="grid gap-3 rounded-2xl bg-brand-soft/60 p-4">
-        <span className="text-[14px] font-semibold">{t("setup.title")}</span>
-        <ol className="grid gap-2">
-          {(
-            [
-              { k: "connector", done: (keys?.length ?? 0) > 0, href: "grokbot://app/v1/settings?id=integrations", copy: url },
-              { k: "skill", done: null, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("setup.skillPrompt", { url: `${url.replace(/\/api\/mcp$/, "")}/api/bot-skill` }))}` },
-              { k: "memory", done: null, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("skill.memory"))}` },
-              { k: "hook", done: hooks.length > 0, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("setup.hookPrompt", { text: t("hook.routineText") }))}` },
-              { k: "routine", done: null, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("rec.items.daily.text"))}` },
-            ] as const
-          ).map((s, i) => (
-            <li key={s.k} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-card px-3.5 py-2.5 shadow-[0_0_0_1px_var(--border)]">
-              <span className="flex min-w-0 items-center gap-2.5">
-                <span className={cn("grid size-7 flex-none place-items-center rounded-full text-[13px] font-bold", s.done ? "bg-ok text-white" : "bg-primary/10 text-primary")}>{s.done ? <Check className="size-4" aria-hidden /> : i + 1}</span>
-                <span className="grid min-w-0">
-                  <span className="text-[14px] font-medium">{t(`setup.${s.k}`)}</span>
-                  <span className="text-[12px] text-muted-foreground">{s.done === true ? t("setup.done") : t(`setup.${s.k}Sub`)}</span>
-                </span>
-              </span>
-              <a
-                href={s.href}
-                onClick={() => {
-                  if ("copy" in s && s.copy) void navigator.clipboard.writeText(s.copy).then(() => toast.success(t("setup.copiedUrl"))).catch(() => undefined);
-                }}
-                className={cn("press inline-flex h-9 flex-none items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium", s.done ? "bg-secondary hover:bg-muted" : "bg-primary text-primary-foreground hover:bg-primary/90")}
-              >
-                <ExternalLink className="size-3.5" aria-hidden />
-                {t(s.done ? "setup.again" : "setup.go")}
-              </a>
-            </li>
-          ))}
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <span className="text-[14px] font-semibold">{t("setup.short")}</span>
+          <span className={cn("text-[13px] font-medium tabular-nums", doneCount === steps.length ? "text-ok" : "text-primary")}>{t("setup.progress", { done: doneCount, total: steps.length })}</span>
+        </div>
+        <ol className="grid gap-1.5">
+          {steps.map((st, i) => {
+            const isNow = i === current;
+            return (
+              <li key={st.k} className={cn("grid gap-2 rounded-2xl px-3.5 py-2.5", isNow ? "bg-card shadow-[0_0_0_1px_var(--border)]" : "")}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <span className={cn("grid size-7 flex-none place-items-center rounded-full text-[13px] font-bold", st.done ? "bg-ok text-white" : isNow ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{st.done ? <Check className="size-4" aria-hidden /> : i + 1}</span>
+                    <span className={cn("text-[14px] font-medium", !st.done && !isNow && "text-muted-foreground")}>{t(`setup.${st.k}`)}</span>
+                  </span>
+                  {st.done && (
+                    <a
+                      href={st.href}
+                      onClick={() => {
+                        if ("copy" in st && st.copy) void navigator.clipboard.writeText(st.copy).then(() => toast.success(t("setup.copiedUrl"))).catch(() => undefined);
+                      }}
+                      className="text-[12px] font-medium text-muted-foreground hover:text-primary hover:underline"
+                    >
+                      {t("setup.again")}
+                    </a>
+                  )}
+                </div>
+                {isNow && (
+                  <div className="grid gap-2.5 pl-[38px]">
+                    <p className="text-[13px] leading-relaxed text-muted-foreground">{t(`setup.${st.k}Sub`)}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <a
+                        href={st.href}
+                        onClick={() => {
+                          if ("copy" in st && st.copy) void navigator.clipboard.writeText(st.copy).then(() => toast.success(t("setup.copiedUrl"))).catch(() => undefined);
+                        }}
+                        className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-[14px] font-medium text-primary-foreground hover:bg-primary/90"
+                      >
+                        <ExternalLink className="size-4" aria-hidden />
+                        {t("setup.go")}
+                      </a>
+                      {"tick" in st && st.tick && (
+                        <button type="button" onClick={() => setMarked([...marked, st.k])} className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-card px-4 text-[14px] font-medium shadow-[0_0_0_1px_var(--border)] hover:bg-muted">
+                          <Check className="size-4 text-ok" aria-hidden />
+                          {t("setup.markDone")}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ol>
-        <p className="text-[12px] text-muted-foreground">{t("setup.note")}</p>
+        {current === -1 ? (
+          <p className="text-[13px] text-ok">{t("setup.allDone")}</p>
+        ) : (
+          <p className="text-[12px] text-muted-foreground">{t("setup.note")}</p>
+        )}
+        {marked.length > 0 && (
+          <button type="button" onClick={() => setMarked([])} className="w-fit text-[12px] text-muted-foreground hover:underline">
+            {t("setup.resetTicks")}
+          </button>
+        )}
       </section>
 
       {/* Grok Bot's own links (grokbot://app/v1/open, /v1/prompt?text=…, checked in Grok Bot 0.79.2) */}
@@ -197,6 +232,24 @@ export function BotCard() {
         </a>
       </div>
 
+      <p className="text-[13px] text-muted-foreground">{t("askExamples")}</p>
+
+      <details className="rounded-2xl px-4 py-3 shadow-[0_0_0_1px_var(--border)]">
+        <summary className="cursor-pointer text-[14px] font-medium text-primary">{t("setup.canTitle")}</summary>
+        <div className="mt-3">
+      <ul className="grid gap-1.5 text-[13.5px]">
+        <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.read")}</li>
+        <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.calendar")}</li>
+        <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.draft")}</li>
+        <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.line")}</li>
+        <li className="flex gap-2"><Ban className="mt-0.5 size-4 flex-none text-bad" aria-hidden />{t("can.not")}</li>
+      </ul>
+        </div>
+      </details>
+
+      <details className="rounded-2xl px-4 py-3 shadow-[0_0_0_1px_var(--border)]">
+        <summary className="cursor-pointer text-[14px] font-medium text-primary">{t("setup.advanced")}</summary>
+        <div className="mt-4 grid gap-5">
       <section className="grid gap-3 rounded-2xl bg-brand-soft/60 p-4">
         <span className="text-[14px] font-semibold">{t("signIn.title")}</span>
         <ol className="grid list-decimal gap-1.5 pl-5 text-[13.5px]">
@@ -206,7 +259,6 @@ export function BotCard() {
         </ol>
         <CopyBox text={url} label={t("serverUrl")} />
       </section>
-
       <details className="rounded-2xl px-4 py-3 shadow-[0_0_0_1px_var(--border)]">
         <summary className="cursor-pointer text-[14px] font-medium text-primary">{t("keyWay")}</summary>
         <ol className="mt-3 grid gap-5">
@@ -241,7 +293,6 @@ export function BotCard() {
           </li>
         </ol>
       </details>
-
       {/* Events the moment they happen (owner 2026-11-08): a Grok Bot routine started "when a webhook is triggered" */}
       <section className="grid gap-3 rounded-2xl p-4 shadow-[0_0_0_1px_var(--border)]">
         <span className="text-[14px] font-semibold">{t("hook.title")}</span>
@@ -287,7 +338,6 @@ export function BotCard() {
         )}
         <p className="text-[12px] text-muted-foreground">{t("hook.what")}</p>
       </section>
-
       {/* A skill and a memory sentence for Grok Bot (what the tools are for, the rules) */}
       <section className="grid gap-3 rounded-2xl p-4 shadow-[0_0_0_1px_var(--border)]">
         <span className="text-[14px] font-semibold">{t("skill.title")}</span>
@@ -306,7 +356,6 @@ export function BotCard() {
         </details>
         <CopyBox text={t("skill.memory")} label={t("skill.memoryLabel")} mono={false} />
       </section>
-
       {/* Ready-made routines (owner 2026-11-08: "일이나 보고 여러 일정을 줄이는"): each opens Grok Bot with the sentence typed */}
       <section className="grid gap-3">
         <span className="text-[14px] font-semibold">{t("rec.title")}</span>
@@ -335,6 +384,8 @@ export function BotCard() {
         </ul>
         <p className="text-[13px] text-muted-foreground">{t("askExamples")}</p>
       </section>
+        </div>
+      </details>
 
       {keys && keys.length > 0 && (
         <div className="grid gap-2">
@@ -373,7 +424,6 @@ export function BotCard() {
         </div>
       )}
       <p className="text-[12px] leading-relaxed text-muted-foreground">{t("netNote")}</p>
-      <p className="text-[12px] leading-relaxed text-muted-foreground">{t("privacy")}</p>
-    </div>
+      <p className="text-[12px] leading-relaxed text-muted-foreground">{t("privacy")}</p>    </div>
   );
 }

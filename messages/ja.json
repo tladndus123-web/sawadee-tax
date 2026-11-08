@@ -2741,7 +2741,14 @@
       "copiedUrl": "サーバーURLをコピーしました。Grok Botに貼り付けてください。",
       "note": "①と④は終わるとここが緑のチェックになります。②③⑤はGrok Bot内でのみ確認できます。",
       "skillPrompt": "{url} からSKILL.mdの内容を読み、その内容のまま「sawadee-tax」という名前のスキルとして保存して。保存したらスキル名と説明の1行目を教えて。",
-      "hookPrompt": "「Webhookがトリガーされたとき」に始まるルーチンを作って。名前は「Sawadee TAX 通知」、内容は次のとおり: {text} ルーチンを保存したら、そのルーチンのWebhook URLとWebhookキーを sawadee-tax コネクタの set_event_webhook ツールに渡して登録して。登録結果（testDelivered）を教えて。"
+      "hookPrompt": "「Webhookがトリガーされたとき」に始まるルーチンを作って。名前は「Sawadee TAX 通知」、内容は次のとおり: {text} ルーチンを保存したら、そのルーチンのWebhook URLとWebhookキーを sawadee-tax コネクタの set_event_webhook ツールに渡して登録して。登録結果（testDelivered）を教えて。",
+      "short": "設定（5ステップ）",
+      "progress": "{done}/{total} 完了",
+      "markDone": "やりました",
+      "allDone": "設定はすべて終わりました。Grok Botに質問するか、夜10時のまとめがLINEに届くか見てください。",
+      "resetTicks": "チェックをリセット",
+      "canTitle": "Grok Botができること・できないこと",
+      "advanced": "詳細設定（手動入力・他のルーチン・スキルファイル）"
     }
   },
   "connect": {

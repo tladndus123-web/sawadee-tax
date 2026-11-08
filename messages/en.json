@@ -2741,7 +2741,14 @@
       "copiedUrl": "Server URL copied. Paste it in Grok Bot.",
       "note": "① and ④ turn into a green check here once done. ② ③ ⑤ can only be seen inside Grok Bot.",
       "skillPrompt": "Read the SKILL.md at {url} and save its content as a skill named 'sawadee-tax', unchanged. When saved, tell me the skill's name and the first line of its description.",
-      "hookPrompt": "Create a routine that starts 'when a webhook is triggered', named 'Sawadee TAX events', with this instruction: {text} After saving it, register that routine's webhook URL and webhook key with the set_event_webhook tool of the sawadee-tax connector, and tell me the result (testDelivered)."
+      "hookPrompt": "Create a routine that starts 'when a webhook is triggered', named 'Sawadee TAX events', with this instruction: {text} After saving it, register that routine's webhook URL and webhook key with the set_event_webhook tool of the sawadee-tax connector, and tell me the result (testDelivered).",
+      "short": "Setup (5 steps)",
+      "progress": "{done}/{total} done",
+      "markDone": "Done",
+      "allDone": "Setup is complete. Ask Grok Bot something, or watch for the 10 pm wrap-up on LINE.",
+      "resetTicks": "Reset ticks",
+      "canTitle": "What Grok Bot can and cannot do",
+      "advanced": "Detailed setup (manual entry · other routines · skill file)"
     }
   },
   "connect": {
