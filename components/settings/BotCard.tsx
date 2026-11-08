@@ -136,13 +136,21 @@ export function BotCard() {
   };
 
   // The five steps: ① and ④ are known from the database; ②③⑤ the owner ticks "했어요" (kept per person, lib/user-prefs)
+  const prompts = {
+    skill: t("setup.skillPrompt", { url: `${url.replace(/\/api\/mcp$/, "")}/api/bot-skill` }),
+    memory: t("skill.memory"),
+    hook: t("setup.hookPrompt", { text: t("hook.routineText") }),
+    routine: t("rec.items.daily.text"),
+  };
+  const promptLink = (text: string) => `grokbot://app/v1/prompt?text=${encodeURIComponent(text)}`;
   const steps = [
-    { k: "connector", done: (keys?.length ?? 0) > 0, href: "grokbot://app/v1/settings?id=integrations", copy: url },
-    { k: "skill", done: marked.includes("skill"), tick: true, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("setup.skillPrompt", { url: `${url.replace(/\/api\/mcp$/, "")}/api/bot-skill` }))}` },
-    { k: "memory", done: marked.includes("memory"), tick: true, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("skill.memory"))}` },
-    { k: "hook", done: hooks.length > 0, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("setup.hookPrompt", { text: t("hook.routineText") }))}` },
-    { k: "routine", done: marked.includes("routine"), tick: true, href: `grokbot://app/v1/prompt?text=${encodeURIComponent(t("rec.items.daily.text"))}` },
+    { k: "connector", done: (keys?.length ?? 0) > 0, href: "grokbot://app/v1/settings?id=integrations", copy: url, copiedMsg: "setup.copiedUrl" },
+    { k: "skill", done: marked.includes("skill"), tick: true, href: promptLink(prompts.skill), copy: prompts.skill, copiedMsg: "setup.copiedText" },
+    { k: "memory", done: marked.includes("memory"), tick: true, href: promptLink(prompts.memory), copy: prompts.memory, copiedMsg: "setup.copiedText" },
+    { k: "hook", done: hooks.length > 0, href: promptLink(prompts.hook), copy: prompts.hook, copiedMsg: "setup.copiedText" },
+    { k: "routine", done: marked.includes("routine"), tick: true, href: promptLink(prompts.routine), copy: prompts.routine, copiedMsg: "setup.copiedText" },
   ] as const;
+  const copyStep = (st: (typeof steps)[number]) => void navigator.clipboard.writeText(st.copy).then(() => toast.success(t(st.copiedMsg))).catch(() => undefined);
   const doneCount = steps.filter((x) => x.done).length;
   const current = steps.findIndex((x) => !x.done);
 
@@ -169,9 +177,7 @@ export function BotCard() {
                   {st.done && (
                     <a
                       href={st.href}
-                      onClick={() => {
-                        if ("copy" in st && st.copy) void navigator.clipboard.writeText(st.copy).then(() => toast.success(t("setup.copiedUrl"))).catch(() => undefined);
-                      }}
+                      onClick={() => copyStep(st)}
                       className="text-[12px] font-medium text-muted-foreground hover:text-primary hover:underline"
                     >
                       {t("setup.again")}
@@ -184,9 +190,7 @@ export function BotCard() {
                     <div className="flex flex-wrap gap-2">
                       <a
                         href={st.href}
-                        onClick={() => {
-                          if ("copy" in st && st.copy) void navigator.clipboard.writeText(st.copy).then(() => toast.success(t("setup.copiedUrl"))).catch(() => undefined);
-                        }}
+                        onClick={() => copyStep(st)}
                         className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-[14px] font-medium text-primary-foreground hover:bg-primary/90"
                       >
                         <ExternalLink className="size-4" aria-hidden />
@@ -208,7 +212,7 @@ export function BotCard() {
         {current === -1 ? (
           <p className="text-[13px] text-ok">{t("setup.allDone")}</p>
         ) : (
-          <p className="text-[12px] text-muted-foreground">{t("setup.note")}</p>
+          <p className="text-[12px] text-muted-foreground">{t("setup.note")} {t("setup.draftNote")}</p>
         )}
         {marked.length > 0 && (
           <button type="button" onClick={() => setMarked([])} className="w-fit text-[12px] text-muted-foreground hover:underline">

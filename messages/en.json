@@ -2753,7 +2753,9 @@
       "allDone": "Setup is complete. Ask Grok Bot something, or watch for the 10 pm wrap-up on LINE.",
       "resetTicks": "Reset ticks",
       "canTitle": "What Grok Bot can and cannot do",
-      "advanced": "Detailed setup (manual entry · other routines · skill file)"
+      "advanced": "Detailed setup (manual entry · other routines · skill file)",
+      "copiedText": "Text copied. If it does not appear in Grok Bot by itself, paste it into the chat (Ctrl+V).",
+      "draftNote": "If Grok Bot's chat box still holds an unsent text, the link does not fill it. Send or clear that text and tap again, or paste (Ctrl+V)."
     }
   },
   "connect": {
