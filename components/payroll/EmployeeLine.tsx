@@ -51,7 +51,7 @@ export function EmployeeLineButton({ e }: { e: Employee }) {
         type="button"
         variant="ghost"
         size="icon"
-        className={cn("size-9 flex-none", linked ? "text-[#05a847]" : "text-muted-foreground")}
+        className={cn("size-11 pointer-fine:size-9 flex-none", linked ? "text-[#05a847]" : "text-muted-foreground")}
         aria-label={t(linked ? "linked" : "notLinked")}
         title={t(linked ? "linked" : "notLinked")}
         onClick={() => (setCode(null), setOpen(true))}

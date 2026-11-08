@@ -153,7 +153,7 @@ function AssetCard({ r }: { r: AssetRow }) {
         <div className="grid gap-2 rounded-2xl bg-muted/50 p-3">
           <p className="text-xs leading-relaxed text-muted-foreground">{t("askHint", { value: baht(fromSatang(r.bookValue)) })}</p>
           <div className="flex flex-wrap items-center gap-2">
-            <DateInput value={date} min={d.date || undefined} max={todayBangkok()} onChange={(e) => setDate(e.target.value)} wrapClassName="w-40" className="h-10 bg-background" aria-label={t("date")} />
+            <DateInput value={date} min={d.date || undefined} max={todayBangkok()} onChange={(e) => setDate(e.target.value)} wrapClassName="w-40 shrink-0" className="h-10 bg-background" aria-label={t("date")} />
             <Button type="button" variant="ghost" className="rounded-full" disabled={busy} onClick={() => setAsking(false)}>
               {t("cancel")}
             </Button>

@@ -173,7 +173,7 @@ export function QuickCard({ onJump, manual = false, onMemo }: { onJump: (path: s
             </label>
           )}
         />
-        {paid && <DateInput aria-label={t("app.paidOn")} wrapClassName="w-40 max-w-full" className="h-10" shown={paidDateShown} {...register("paidDate")} />}
+        {paid && <DateInput aria-label={t("app.paidOn")} wrapClassName="w-40 shrink-0 max-w-full" className="h-10" shown={paidDateShown} {...register("paidDate")} />}
       </div>
 
       {/* A typed-in document keeps its one line above; a read one can have its lines changed here */}

@@ -499,7 +499,7 @@ export function DocumentReview({
                 )}
               />
               {paid && (
-                <DateInput aria-label={t("app.paidOn")} wrapClassName="w-40 max-w-full" className="h-10" shown={watched.paidDate ?? ""} {...form.register("paidDate")} />
+                <DateInput aria-label={t("app.paidOn")} wrapClassName="w-40 shrink-0 max-w-full" className="h-10" shown={watched.paidDate ?? ""} {...form.register("paidDate")} />
               )}
             </div>
             <div className="grid min-w-0 gap-2 sm:col-span-2 xl:col-span-3">

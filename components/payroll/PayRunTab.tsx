@@ -470,6 +470,8 @@ function PeriodGrid({
     { k: "otherDeduction", label: t("otherDeduction"), kind: "money" },
   ];
   const line = "grid grid-cols-[minmax(0,1fr)_6.5rem_6.5rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem]";
+  // Phones: the label on its own line, the two halves side by side under it (owner 2026-11-09: 125,000.00 was cut off)
+  const inputLine = cn(line, "max-sm:grid-cols-2 max-sm:gap-y-1");
   const out = (label: string, a: number | string, b: number | string, strong = false) => (
     <div className={cn(line, "text-sm", strong && "font-semibold")}>
       <span className={cn("truncate", !strong && "text-muted-foreground")}>{label}</span>
@@ -479,14 +481,14 @@ function PeriodGrid({
   );
   return (
     <div className="grid gap-2 border-t border-border/60 bg-muted/30 px-4 py-3">
-      <div className={cn(line, "text-[11px] font-medium text-muted-foreground")}>
-        <span />
+      <div className={cn(inputLine, "text-[11px] font-medium text-muted-foreground")}>
+        <span className="max-sm:hidden" />
         <span className="text-right">{t("half1")}</span>
         <span className="text-right">{t("half2")}</span>
       </div>
       {fields.map((f) => (
-        <label key={f.k} className={line}>
-          <span className="text-[13px] leading-tight">{f.label}</span>
+        <label key={f.k} className={inputLine}>
+          <span className="text-[13px] leading-tight max-sm:col-span-2">{f.label}</span>
           {(["first", "second"] as const).map((h) => (
             <MoneyInput key={h} kind={f.kind} disabled={disabled} aria-label={`${f.label} ${t(h === "first" ? "half1" : "half2")}`} className="h-9 bg-background text-right" value={row[h][f.k]} onChange={(v) => onSet(h, f.k, v)} />
           ))}

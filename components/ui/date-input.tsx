@@ -27,7 +27,8 @@ export function DateInput({
   const sd = useScreenDate();
   const v = shown ?? (typeof props.value === "string" ? props.value : "");
   return (
-    <span className={cn("relative block w-full", wrapClassName)}>
+    // contain: inline-size — a phone's date box has a minimum width that pushed side-by-side dates past their card (2026-11-09)
+    <span className={cn("relative block w-full min-w-0 [contain:inline-size]", wrapClassName)}>
       <Input
         type="date"
         {...props}

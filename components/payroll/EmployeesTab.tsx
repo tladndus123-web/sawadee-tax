@@ -109,7 +109,7 @@ export function EmployeesTab() {
                   </option>
                 ))}
               </select>
-              <Button type="button" size="sm" className="h-9 rounded-full" disabled={!moveTo || moving} onClick={() => void move(employees.filter((e) => picked.has(e.id)), moveTo)}>
+              <Button type="button" size="sm" className="h-11 pointer-fine:h-9 rounded-full" disabled={!moveTo || moving} onClick={() => void move(employees.filter((e) => picked.has(e.id)), moveTo)}>
                 {moving && <Loader2 className="size-4 animate-spin" />}
                 {t("moveBtn")}
               </Button>
@@ -170,7 +170,7 @@ export function EmployeesTab() {
                   </select>
                 )}
                 <EmployeeLineButton e={e} />
-                <Button type="button" variant="ghost" size="icon" className="size-9 flex-none" aria-label={t("edit")} onClick={() => setDraft({ ...e })}>
+                <Button type="button" variant="ghost" size="icon" className="size-11 pointer-fine:size-9 flex-none" aria-label={t("edit")} onClick={() => setDraft({ ...e })}>
                   <Pencil className="size-4" />
                 </Button>
               </li>
@@ -272,7 +272,7 @@ function EmployeeForm({ draft, onChange, onDone }: { draft: Employee & { isNew?:
               type="button"
               aria-pressed={draft.payType === p}
               onClick={() => set("payType", p)}
-              className={cn("press h-9 rounded-full px-4 text-[13px] font-medium ring-1 ring-foreground/10", draft.payType === p ? "bg-primary text-primary-foreground ring-primary" : "bg-background")}
+              className={cn("press h-11 pointer-fine:h-9 rounded-full px-4 text-[13px] font-medium ring-1 ring-foreground/10", draft.payType === p ? "bg-primary text-primary-foreground ring-primary" : "bg-background")}
             >
               {t(p)}
             </button>
@@ -284,12 +284,13 @@ function EmployeeForm({ draft, onChange, onDone }: { draft: Employee & { isNew?:
         </label>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <label className="grid gap-1">
+      {/* minmax(0, …): a phone's date box has a minimum width and pushed the end date past the card (2026-11-09) */}
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+        <label className="grid min-w-0 gap-1">
           <span className="text-xs text-muted-foreground">{t("start")}</span>
           <DateInput value={draft.startDate} onChange={(e) => set("startDate", e.target.value)} className="h-10 bg-background" />
         </label>
-        <label className="grid gap-1">
+        <label className="grid min-w-0 gap-1">
           <span className="text-xs text-muted-foreground">{t("end")}</span>
           <DateInput value={draft.endDate} onChange={(e) => set("endDate", e.target.value)} className="h-10 bg-background" />
         </label>
@@ -342,12 +343,12 @@ function EmployeeForm({ draft, onChange, onDone }: { draft: Employee & { isNew?:
           <div key={i} className="grid grid-cols-[minmax(0,1fr)_9.5rem_auto] items-center gap-2">
             <Input value={d.name} maxLength={60} placeholder={t("documentName")} onChange={(e) => set("documents", draft.documents.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} className="h-10 bg-background" />
             <DateInput value={d.expires} onChange={(e) => set("documents", draft.documents.map((x, j) => (j === i ? { ...x, expires: e.target.value } : x)))} className="h-10 bg-background" />
-            <Button type="button" variant="ghost" size="icon" className="size-9" aria-label={t("delete")} onClick={() => set("documents", draft.documents.filter((_, j) => j !== i))}>
+            <Button type="button" variant="ghost" size="icon" className="size-11 pointer-fine:size-9" aria-label={t("delete")} onClick={() => set("documents", draft.documents.filter((_, j) => j !== i))}>
               <X className="size-4" />
             </Button>
           </div>
         ))}
-        <Button type="button" variant="ghost" className="h-9 w-fit rounded-full px-3 text-[13px]" onClick={() => set("documents", [...draft.documents, { name: "", expires: "" }])}>
+        <Button type="button" variant="ghost" className="h-11 pointer-fine:h-9 w-fit rounded-full px-3 text-[13px]" onClick={() => set("documents", [...draft.documents, { name: "", expires: "" }])}>
           <Plus className="size-4" />
           {t("addDocument")}
         </Button>

@@ -103,7 +103,7 @@ export function BulkPayBar({ chosen, onDone }: { chosen: LedgerEntry[]; onDone: 
             </ul>
             <label className="flex items-center justify-between gap-3 text-sm">
               <span className="font-medium">{t("date")}</span>
-              <DateInput value={date} max={todayBangkok()} onChange={(e) => setDate(e.target.value)} wrapClassName="w-40" className="h-10 rounded-xl" />
+              <DateInput value={date} max={todayBangkok()} onChange={(e) => setDate(e.target.value)} wrapClassName="w-40 shrink-0" className="h-10 rounded-xl" />
             </label>
           </div>
           <AlertDialogFooter>
