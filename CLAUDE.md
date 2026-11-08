@@ -284,7 +284,13 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   **Payroll numbers on phones** (same day, owner: "모바일 급여 숫자 깨진다"): amount boxes cut the last digit ("2,500.0",
   "17,500.0"). On phones `input.num` (every `MoneyInput`) now uses the sans tabular digits with 8 px side padding (globals.css,
   still 16 px so iOS does not zoom); the pay detail's columns are 6.5rem; an allowance's name sits above its amounts on
-  phones; the social security settings stack. Check with real-size amounts at 360 px. Automatic deletion of live data is
+  phones; the social security settings stack. Check with real-size amounts at 360 px.
+  **Checklist follow-up** (same day, owner: "알아서 처리"): clickable 32–36 px buttons on the ledger, document, sales,
+  calendar, expenses, vendors, prices, filing and settings screens are 44 px on touch screens and keep their old size with a
+  mouse (`h-11 pointer-fine:h-9` pattern); `<summary>` lines get 44 px too; tab-bar labels 12 px, and on phones every
+  `text-[11px]` shows at 12 px (globals.css); the ledger toolbar shows an icon above a short word on phones
+  (`archive.bar.viewsShort / exportShort / bulkShort`); the sales screen on phones: photo button full width, result as
+  compact rows, the cost card folded (`fold`). Automatic deletion of live data is
   off-limits for Claude (auto-mode classifier refused it 2026-11-08) — list the documents and let the owner decide.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out

@@ -249,7 +249,7 @@ export function CompanyCalendar() {
             type="button"
             aria-pressed={show[g]}
             onClick={() => setShow((s) => ({ ...s, [g]: !s[g] }))}
-            className={cn("flex min-h-9 items-center gap-2 rounded-full border px-3.5 text-[13px] font-medium transition-colors", show[g] ? "border-transparent " + TONE[g].chip : "border-border text-muted-foreground")}
+            className={cn("flex min-h-11 pointer-fine:min-h-9 items-center gap-2 rounded-full border px-3.5 text-[13px] font-medium transition-colors", show[g] ? "border-transparent " + TONE[g].chip : "border-border text-muted-foreground")}
           >
             <span className={cn("size-2 rounded-full", show[g] ? TONE[g].dot : "bg-muted-foreground/40")} aria-hidden />
             {t(`group.${g}`)}
@@ -340,12 +340,12 @@ export function CompanyCalendar() {
               {!day && !all && hidden > 0 && <span className="ml-2 text-[13px] font-medium text-muted-foreground">{t("twoWeeks")}</span>}
             </h2>
             {day ? (
-              <Button type="button" variant="ghost" className="h-9 rounded-full text-primary" onClick={() => setDay(null)}>
+              <Button type="button" variant="ghost" className="h-11 pointer-fine:h-9 rounded-full text-primary" onClick={() => setDay(null)}>
                 {t("showUpcoming")}
               </Button>
             ) : (
               all && (
-                <Button type="button" variant="ghost" className="h-9 rounded-full text-primary" onClick={() => setAll(false)}>
+                <Button type="button" variant="ghost" className="h-11 pointer-fine:h-9 rounded-full text-primary" onClick={() => setAll(false)}>
                   {t("less")}
                 </Button>
               )
@@ -375,7 +375,7 @@ export function CompanyCalendar() {
                         aria-pressed={i.done}
                         aria-label={i.done ? t("undo") : t("markDone")}
                         title={i.done ? t("undo") : t("markDone")}
-                        className="grid size-9 flex-none place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="grid size-11 flex-none place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-fine:size-9"
                       >
                         {i.done ? <CircleCheck className="size-6 text-ok" aria-hidden /> : <Circle className="size-6 text-muted-foreground/50" aria-hidden />}
                       </button>
@@ -401,11 +401,11 @@ export function CompanyCalendar() {
                       </p>
                     </div>
                     {isAdmin && ev ? (
-                      <Button type="button" variant="ghost" size="icon" className="size-9 flex-none rounded-full text-muted-foreground" aria-label={t("edit")} onClick={() => setEditing({ ...ev, open: true })}>
+                      <Button type="button" variant="ghost" size="icon" className="size-11 pointer-fine:size-9 flex-none rounded-full text-muted-foreground" aria-label={t("edit")} onClick={() => setEditing({ ...ev, open: true })}>
                         <Pencil className="size-4" />
                       </Button>
                     ) : href ? (
-                      <Button asChild variant="ghost" size="icon" className="size-9 flex-none rounded-full text-muted-foreground">
+                      <Button asChild variant="ghost" size="icon" className="size-11 pointer-fine:size-9 flex-none rounded-full text-muted-foreground">
                         <Link href={href} aria-label={t("open")}>
                           <ChevronRight className="size-5" />
                         </Link>
@@ -525,7 +525,7 @@ export function EventDialog({ initial, onClose }: { initial: Partial<CalEvent>; 
                           {t("docAdded")}
                         </span>
                       ) : (
-                        <Button type="button" className="h-8 rounded-full px-3 text-[13px]" onClick={() => void addFound(d, i)}>
+                        <Button type="button" className="h-11 pointer-fine:h-8 rounded-full px-3 text-[13px]" onClick={() => void addFound(d, i)}>
                           {t("docAdd")}
                         </Button>
                       )}
@@ -533,7 +533,7 @@ export function EventDialog({ initial, onClose }: { initial: Partial<CalEvent>; 
                   ))}
                 </ul>
                 {added.size > 0 && (
-                  <Button type="button" variant="ghost" className="h-9 rounded-full" onClick={onClose}>
+                  <Button type="button" variant="ghost" className="h-11 pointer-fine:h-9 rounded-full" onClick={onClose}>
                     {t("docDone")}
                   </Button>
                 )}
@@ -646,11 +646,11 @@ function RecurringCard({ items }: { items: Recurring[] }) {
               <b className="truncate text-[14px]">{r.title}</b>
               <span className="text-[12px] text-muted-foreground">{t("recLine", { day: day(r.day), n: r.months, amount: baht(fromSatang(r.amount)) })}</span>
             </span>
-            <Button type="button" className="h-9 rounded-full px-4" disabled={busy === r.key} onClick={() => void add(r)}>
+            <Button type="button" className="h-11 pointer-fine:h-9 rounded-full px-4" disabled={busy === r.key} onClick={() => void add(r)}>
               <CalendarPlus className="size-4" />
               {t("recAdd")}
             </Button>
-            <Button type="button" variant="ghost" size="icon" className="size-9 rounded-full text-muted-foreground" aria-label={t("recNo")} onClick={() => void dismissRecurring(r.key)}>
+            <Button type="button" variant="ghost" size="icon" className="size-11 pointer-fine:size-9 rounded-full text-muted-foreground" aria-label={t("recNo")} onClick={() => void dismissRecurring(r.key)}>
               <X className="size-4" />
             </Button>
           </li>

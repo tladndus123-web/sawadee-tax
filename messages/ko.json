@@ -465,7 +465,10 @@
       "views": "저장된 보기",
       "exportThis": "이번 달 엑셀",
       "bulk": "한 번에 처리",
-      "more": "더보기"
+      "more": "더보기",
+      "viewsShort": "보기",
+      "exportShort": "엑셀",
+      "bulkShort": "한 번에"
     },
     "days": {
       "today": "오늘",

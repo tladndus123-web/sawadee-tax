@@ -181,7 +181,7 @@ export function BatchUpload() {
             {room > 0 ? t("batch.room", { count: room }) : t("batch.full", { max: MAX_QUEUE })}
           </p>
         </div>
-        <Link href="/documents/new" className="press inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-primary hover:bg-primary/10 active:scale-[0.97]">
+        <Link href="/documents/new" className="press inline-flex h-11 pointer-fine:h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-primary hover:bg-primary/10 active:scale-[0.97]">
           <Keyboard className="size-4" aria-hidden />
           {t("manual.start")}
         </Link>

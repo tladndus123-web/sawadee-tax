@@ -93,11 +93,11 @@ export function CostCard({ month, salesValue, purchases, fixed, fold }: { month:
             <ChefHat className="size-4 flex-none text-brand" aria-hidden />
             <span className="truncate">{t("title")}</span>
           </h2>
-          <Button type="button" variant="ghost" size="icon" className="size-9 flex-none rounded-full" aria-label={t("about")} aria-expanded={about} onClick={() => setAbout((v) => !v)}>
+          <Button type="button" variant="ghost" size="icon" className="size-11 pointer-fine:size-9 flex-none rounded-full" aria-label={t("about")} aria-expanded={about} onClick={() => setAbout((v) => !v)}>
             <Info className={cn("size-4", about ? "text-primary" : "text-muted-foreground")} />
           </Button>
           {isAdmin && (
-            <Button type="button" variant="ghost" size="icon" className="size-9 flex-none rounded-full" aria-label={t("targets")} onClick={() => setTargetsOpen(true)}>
+            <Button type="button" variant="ghost" size="icon" className="size-11 pointer-fine:size-9 flex-none rounded-full" aria-label={t("targets")} onClick={() => setTargetsOpen(true)}>
               <Pencil className="size-4 text-muted-foreground" />
             </Button>
           )}
@@ -110,15 +110,15 @@ export function CostCard({ month, salesValue, purchases, fixed, fold }: { month:
         )}
         {isAdmin && (
           <div className="flex flex-wrap gap-1.5">
-            <Button type="button" variant="outline" className="h-9 rounded-full px-3 text-[13px]" onClick={() => setLaborOpen(true)}>
+            <Button type="button" variant="outline" className="h-11 pointer-fine:h-9 rounded-full px-3 text-[13px]" onClick={() => setLaborOpen(true)}>
               <Users className="size-4" />
               {t("enterLabor")}
             </Button>
-            <Button type="button" variant="outline" className="h-9 rounded-full px-3 text-[13px]" onClick={() => setStockOpen(true)}>
+            <Button type="button" variant="outline" className="h-11 pointer-fine:h-9 rounded-full px-3 text-[13px]" onClick={() => setStockOpen(true)}>
               <Package className="size-4" />
               {t("stockBtn")}
             </Button>
-            <Button asChild variant="outline" className="h-9 rounded-full px-3 text-[13px]">
+            <Button asChild variant="outline" className="h-11 pointer-fine:h-9 rounded-full px-3 text-[13px]">
               <Link href="/settings#fixed-title">
                 <CalendarClock className="size-4" />
                 {t("fixed")}

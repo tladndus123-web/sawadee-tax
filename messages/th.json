@@ -465,7 +465,10 @@
       "views": "มุมมองที่บันทึก",
       "exportThis": "Excel เดือนนี้",
       "bulk": "ทำทีเดียวหลายรายการ",
-      "more": "เพิ่มเติม"
+      "more": "เพิ่มเติม",
+      "viewsShort": "มุมมอง",
+      "exportShort": "Excel",
+      "bulkShort": "ทีละหลาย"
     },
     "days": {
       "today": "วันนี้",

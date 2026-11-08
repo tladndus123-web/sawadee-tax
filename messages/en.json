@@ -465,7 +465,10 @@
       "views": "Saved views",
       "exportThis": "This month’s Excel",
       "bulk": "Several at once",
-      "more": "More"
+      "more": "More",
+      "viewsShort": "Views",
+      "exportShort": "Excel",
+      "bulkShort": "Bulk"
     },
     "days": {
       "today": "Today",

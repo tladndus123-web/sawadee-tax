@@ -144,7 +144,7 @@ export function VendorList() {
                 type="button"
                 aria-pressed={view === v}
                 onClick={() => pickView(v)}
-                className={cn("flex h-9 items-center gap-1.5 rounded-full px-3 text-sm", view === v ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
+                className={cn("flex h-11 pointer-fine:h-9 items-center gap-1.5 rounded-full px-3 text-sm", view === v ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
               >
                 <Icon className="size-4" aria-hidden />
                 {t(v === "folders" ? "viewFolders" : "viewList")}
@@ -346,7 +346,7 @@ function VendorRow({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-8 rounded-full px-3"
+                  className="h-11 pointer-fine:h-8 rounded-full px-3"
                   onClick={() => setEditing(true)}
                 >
                   <Pencil className="size-3.5" />
@@ -358,7 +358,7 @@ function VendorRow({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-8 rounded-full px-3 text-muted-foreground hover:text-bad"
+                  className="h-11 pointer-fine:h-8 rounded-full px-3 text-muted-foreground hover:text-bad"
                   onClick={() => setAsking(true)}
                 >
                   <Trash2 className="size-3.5" />

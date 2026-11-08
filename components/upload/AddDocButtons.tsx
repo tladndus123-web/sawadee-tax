@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 export function AddDocButtons({ className, size = "md" }: { className?: string; size?: "sm" | "md" }) {
   const t = useTranslations();
-  const h = size === "sm" ? "min-h-9 px-3.5 text-sm" : "min-h-11 px-5 text-[15px]";
+  const h = size === "sm" ? "min-h-11 pointer-fine:min-h-9 px-3.5 text-sm" : "min-h-11 px-5 text-[15px]";
   // Only the ways in an owner let this admin open (lib/screens): typing one in is part of the ledger
   const me = useMe();
   const photo = canOpen(me, "upload");

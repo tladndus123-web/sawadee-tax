@@ -166,7 +166,7 @@ export function FilingHelper({ month }: { month: string }) {
       onClick={() => void copy(n)}
       aria-label={label}
       title={label}
-      className="press grid size-9 flex-none place-items-center rounded-xl text-muted-foreground shadow-[0_0_0_1px_var(--border)] hover:bg-muted hover:text-primary"
+      className="press grid size-11 pointer-fine:size-9 flex-none place-items-center rounded-xl text-muted-foreground shadow-[0_0_0_1px_var(--border)] hover:bg-muted hover:text-primary"
     >
       <Copy className="size-4" aria-hidden />
     </button>
@@ -226,11 +226,11 @@ export function FilingHelper({ month }: { month: string }) {
           <p className="max-w-2xl text-[15px] text-muted-foreground">{branchName ? t("subBranch", { branch: branchName }) : t("sub")}</p>
         </div>
         <div className="flex items-center gap-1 rounded-full bg-card p-1 shadow-[0_0_0_1px_var(--border)]" aria-label={t("month")}>
-          <Link href={`/ledger/filing/${prevMonth(month)}`} aria-label={t("prev")} className="press grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground">
+          <Link href={`/ledger/filing/${prevMonth(month)}`} aria-label={t("prev")} className="press grid size-11 pointer-fine:size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground">
             <ChevronLeft className="size-4" aria-hidden />
           </Link>
           <span className="px-2 text-[15px] font-semibold tabular-nums">{monthLabel(month)}</span>
-          <Link href={`/ledger/filing/${nextMonth(month)}`} aria-label={t("next")} className="press grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground">
+          <Link href={`/ledger/filing/${nextMonth(month)}`} aria-label={t("next")} className="press grid size-11 pointer-fine:size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground">
             <ChevronRight className="size-4" aria-hidden />
           </Link>
         </div>
@@ -344,7 +344,7 @@ export function FilingHelper({ month }: { month: string }) {
                 </p>
               )}
               <details className="group rounded-2xl bg-muted/50 px-4 py-3 text-[13px]">
-                <summary className="cursor-pointer font-medium text-primary">{t("from.title")}</summary>
+                <summary className="-my-1 cursor-pointer py-3 pointer-fine:my-0 pointer-fine:py-0 font-medium text-primary">{t("from.title")}</summary>
                 <ul className="mt-2 grid list-disc gap-1 pl-5 text-muted-foreground">
                   <li>{t("from.sales", { days: from.saleDays, slips: from.saleSlips })}</li>
                   <li>{t("from.claim", { count: from.claimDocs })}</li>
@@ -382,7 +382,7 @@ export function FilingHelper({ month }: { month: string }) {
                 </div>
                 {(tab === "53" ? wht.pnd53 : wht.pnd3).some((r) => wht.badIds.includes(r.id)) && <p className="text-[13px] font-medium text-bad">{t("file.badIds")}</p>}
                 <details className="text-[13px]">
-                  <summary className="cursor-pointer font-medium text-primary">{t("file.how")}</summary>
+                  <summary className="-my-1 cursor-pointer py-3 pointer-fine:my-0 pointer-fine:py-0 font-medium text-primary">{t("file.how")}</summary>
                   <ol className="mt-2 grid list-decimal gap-1 pl-5 text-muted-foreground">
                     {(["1", "2", "3", "4", "5"] as const).map((k) => (
                       <li key={k}>{t(`file.steps.${k}`)}</li>

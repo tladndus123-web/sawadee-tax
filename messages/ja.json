@@ -465,7 +465,10 @@
       "views": "保存したビュー",
       "exportThis": "今月のExcel",
       "bulk": "まとめて処理",
-      "more": "その他"
+      "more": "その他",
+      "viewsShort": "ビュー",
+      "exportShort": "Excel",
+      "bulkShort": "一括"
     },
     "days": {
       "today": "今日",

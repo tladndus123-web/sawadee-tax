@@ -165,7 +165,7 @@ export function ExpensesPage() {
             type="button"
             aria-pressed={tab === s}
             onClick={() => setTab(s)}
-            className={cn("h-9 rounded-full border px-3.5 text-[13px] font-medium", tab === s ? "border-transparent bg-primary text-primary-foreground" : "border-border text-muted-foreground")}
+            className={cn("h-11 pointer-fine:h-9 rounded-full border px-3.5 text-[13px] font-medium", tab === s ? "border-transparent bg-primary text-primary-foreground" : "border-border text-muted-foreground")}
           >
             {t(`tab.${s}`)}
             <span className="ml-1.5 tabular-nums opacity-70">{count(s)}</span>
@@ -317,24 +317,24 @@ function ClaimRow({
       <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
         {isAdmin && c.status === "pending" && (
           <>
-            <Button type="button" className="h-9 rounded-full px-4" disabled={busy} onClick={onApprove}>
+            <Button type="button" className="h-11 pointer-fine:h-9 rounded-full px-4" disabled={busy} onClick={onApprove}>
               <Check className="size-4" />
               {t("approve")}
             </Button>
-            <Button type="button" variant="outline" className="h-9 rounded-full px-4 text-bad" disabled={busy} onClick={onReject}>
+            <Button type="button" variant="outline" className="h-11 pointer-fine:h-9 rounded-full px-4 text-bad" disabled={busy} onClick={onReject}>
               <X className="size-4" />
               {t("reject")}
             </Button>
           </>
         )}
         {isAdmin && c.status === "approved" && (
-          <Button type="button" variant="outline" className="h-9 rounded-full px-4" disabled={busy} onClick={onPay}>
+          <Button type="button" variant="outline" className="h-11 pointer-fine:h-9 rounded-full px-4" disabled={busy} onClick={onPay}>
             <HandCoins className="size-4" />
             {t("paidBack")}
           </Button>
         )}
         {c.documentId && isAdmin && (
-          <Button asChild variant="ghost" className="h-9 rounded-full px-3 text-primary">
+          <Button asChild variant="ghost" className="h-11 pointer-fine:h-9 rounded-full px-3 text-primary">
             <Link href={`/documents/${c.documentId}`}>
               <CircleCheck className="size-4" />
               {t("inLedger")}
@@ -344,14 +344,14 @@ function ClaimRow({
         )}
         {c.status === "pending" && (mine || isAdmin) && (
           <>
-            <Button type="button" variant="ghost" size="icon" className="size-9 rounded-full" aria-label={t("edit")} onClick={onEdit}>
+            <Button type="button" variant="ghost" size="icon" className="size-11 pointer-fine:size-9 rounded-full" aria-label={t("edit")} onClick={onEdit}>
               <Pencil className="size-4" />
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="size-9 rounded-full text-bad"
+              className="size-11 pointer-fine:size-9 rounded-full text-bad"
               aria-label={t("remove")}
               onClick={() => {
                 if (window.confirm(t("removeAsk"))) void removeClaim(c.id).catch(() => toast.error(t("fail")));

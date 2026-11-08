@@ -100,7 +100,7 @@ export function SaleCalendar({
                       onClick={() => onDay(b.id, d)}
                       aria-label={label}
                       title={label}
-                      className={cn("press grid h-9 place-items-center rounded-lg text-[13px] tabular-nums hover:ring-1 hover:ring-foreground/20", TONE[d.state])}
+                      className={cn("press grid h-11 pointer-fine:h-9 place-items-center rounded-lg text-[13px] tabular-nums hover:ring-1 hover:ring-foreground/20", TONE[d.state])}
                     >
                       {Number(d.date.slice(8))}
                     </button>

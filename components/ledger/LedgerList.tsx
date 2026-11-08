@@ -198,14 +198,14 @@ export function LedgerList() {
               />
             </label>
             {view === "ledger" && !selecting && (
-              // Phones: one row of icons (the words stay for screen readers); wider screens: icons with words
+              // Phones: one row, each an icon above a short word (2026-11-09 mobile check); wider screens: icons with words
               <div className="flex items-center gap-1.5 max-sm:w-full max-sm:justify-between">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button type="button" variant={filterCount ? "default" : "secondary"} className="h-11 rounded-full px-4">
+                    <Button type="button" variant={filterCount ? "default" : "secondary"} className="relative h-11 rounded-full px-4 max-sm:h-auto max-sm:min-h-14 max-sm:flex-1 max-sm:flex-col max-sm:gap-0.5 max-sm:rounded-2xl max-sm:px-1 max-sm:py-1.5">
                       <SlidersHorizontal className="size-4" />
-                      {t("archive.bar.filter")}
-                      {filterCount > 0 && <span className="grid size-5 place-items-center rounded-full bg-background/25 text-[11px] font-bold">{filterCount}</span>}
+                      <span className="max-sm:text-[12px] max-sm:leading-tight">{t("archive.bar.filter")}</span>
+                      {filterCount > 0 && <span className="grid size-5 place-items-center rounded-full bg-background/25 text-[11px] font-bold max-sm:absolute max-sm:top-1 max-sm:right-2">{filterCount}</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-[min(92vw,26rem)] rounded-2xl p-3">
@@ -219,9 +219,10 @@ export function LedgerList() {
                 </Popover>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button type="button" variant="secondary" className="h-11 rounded-full px-4 max-sm:px-3.5" title={t("archive.bar.views")}>
+                    <Button type="button" variant="secondary" className="h-11 rounded-full px-4 max-sm:h-auto max-sm:min-h-14 max-sm:flex-1 max-sm:flex-col max-sm:gap-0.5 max-sm:rounded-2xl max-sm:px-1 max-sm:py-1.5" title={t("archive.bar.views")}>
                       <Bookmark className="size-4" />
-                      <span className="max-sm:sr-only">{t("archive.bar.views")}</span>
+                      <span className="max-sm:hidden">{t("archive.bar.views")}</span>
+                      <span className="text-[12px] leading-tight sm:hidden">{t("archive.bar.viewsShort")}</span>
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-[min(92vw,24rem)] rounded-2xl p-3">
@@ -229,12 +230,13 @@ export function LedgerList() {
                     <SavedViews filter={filter} query={query} onPick={(f, s) => (setStatus(null), setFilter(f), setQuery(s))} inMenu />
                   </PopoverContent>
                 </Popover>
-                <ExportButtons month={thisMonth} entries={thisMonthEntries} label={t("archive.bar.exportThis")} />
+                <ExportButtons month={thisMonth} entries={thisMonthEntries} label={t("archive.bar.exportThis")} short={t("archive.bar.exportShort")} />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button type="button" variant="secondary" className="h-11 rounded-full px-4 max-sm:px-3.5" title={t("archive.bar.bulk")}>
+                    <Button type="button" variant="secondary" className="h-11 rounded-full px-4 max-sm:h-auto max-sm:min-h-14 max-sm:flex-1 max-sm:flex-col max-sm:gap-0.5 max-sm:rounded-2xl max-sm:px-1 max-sm:py-1.5" title={t("archive.bar.bulk")}>
                       <ListChecks className="size-4" />
-                      <span className="max-sm:sr-only">{t("archive.bar.bulk")}</span>
+                      <span className="max-sm:hidden">{t("archive.bar.bulk")}</span>
+                      <span className="text-[12px] leading-tight sm:hidden">{t("archive.bar.bulkShort")}</span>
                       <ChevronDown className="size-3.5 text-muted-foreground max-sm:hidden" aria-hidden />
                     </Button>
                   </DropdownMenuTrigger>

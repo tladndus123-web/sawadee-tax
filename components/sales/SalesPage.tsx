@@ -221,8 +221,9 @@ export function SalesPage() {
           </h1>
           {about && <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">{t("sales.intro")}</p>}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" className="h-11 rounded-full px-5 text-[15px]" disabled={reading} onClick={() => fileRef.current?.click()}>
+        {/* Phones: the photo button full width, POS file and typing side by side (2026-11-09 mobile check) */}
+        <div className="flex flex-wrap items-center gap-2 max-sm:grid max-sm:w-full max-sm:grid-cols-2">
+          <Button type="button" className="h-11 rounded-full px-5 text-[15px] max-sm:col-span-2" disabled={reading} onClick={() => fileRef.current?.click()}>
             {reading ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
             {reading ? t("sales.reading") : t("sales.addPhoto")}
           </Button>
@@ -296,12 +297,12 @@ export function SalesPage() {
             <TrendingUp className="size-4 text-brand" aria-hidden />
             {t("sales.result")}
           </p>
-          <button type="button" onClick={() => setResultAbout((v) => !v)} aria-expanded={resultAbout} aria-label={t("cost.about")} className="press grid size-9 place-items-center rounded-full hover:bg-muted">
+          <button type="button" onClick={() => setResultAbout((v) => !v)} aria-expanded={resultAbout} aria-label={t("cost.about")} className="press grid size-11 pointer-fine:size-9 place-items-center rounded-full hover:bg-muted">
             <Info className={cn("size-4", resultAbout ? "text-primary" : "text-muted-foreground")} />
           </button>
         </div>
         {resultAbout && <p className="rounded-xl bg-muted/50 px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">{t("sales.resultNote")}</p>}
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
           <Fact label={t("sales.salesValue")} value={bahtWhole(r.salesValue)} sub={t("sales.salesSub", { gross: bahtWhole(r.salesGross), days: r.days })} />
           <Fact label={t("sales.cost")} value={bahtWhole(r.purchasesCost)} sub={[r.depreciation ? t("sales.costSubDep", { gross: baht(r.purchasesGross), dep: baht(r.depreciation) }) : t("sales.costSub", { gross: baht(r.purchasesGross) }), r.labor ? t("cost.laborIn", { labor: baht(r.labor) }) : ""].filter(Boolean).join(" · ")} />
           <Fact label={t("sales.profit")} value={bahtWhole(r.profit)} sub={r.salesValue ? t("sales.margin", { pct: pct.format(r.margin) }) : "—"} tone={r.profit < 0 ? "bad" : "brand"} />
@@ -334,7 +335,7 @@ export function SalesPage() {
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-2">
       <div className="flex min-w-0 flex-col gap-6 xl:[&>*:last-child]:flex-1">
       {/* Food cost, labour and rent against sales */}
-      <CostCard month={month} salesValue={r.salesValue} purchases={purchases} fixed={fixed} />
+      <CostCard month={month} salesValue={r.salesValue} purchases={purchases} fixed={fixed} fold />
       {/* Which weekdays sell (one branch: under the costs, the calendar takes the right) */}
       {!many && weekday}
       </div>
@@ -513,12 +514,13 @@ export function SalesPage() {
   );
 }
 
+/** Phones: one compact row (label and note left, amount right); wider screens: a tile */
 function Fact({ label, value, sub, tone }: { label: string; value: string; sub: string; tone?: "brand" | "bad" }) {
   return (
-    <div className="grid gap-0.5 rounded-2xl bg-muted/60 px-4 py-3">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5 rounded-2xl bg-muted/60 px-4 py-2.5 sm:grid-cols-1 sm:py-3">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={cn("text-[22px] font-semibold tracking-tight tabular-nums", tone === "brand" && "text-brand", tone === "bad" && "text-bad")}>{value}</span>
-      <span className="text-xs text-muted-foreground">{sub}</span>
+      <span className={cn("row-span-2 self-center text-right text-[20px] font-semibold tracking-tight tabular-nums sm:row-span-1 sm:text-left sm:text-[22px]", tone === "brand" && "text-brand", tone === "bad" && "text-bad")}>{value}</span>
+      <span className="min-w-0 text-xs text-muted-foreground">{sub}</span>
     </div>
   );
 }

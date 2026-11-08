@@ -237,7 +237,7 @@ function Chips({ label, value, options, onPick }: { label: string; value: string
             aria-pressed={value === k}
             onClick={() => onPick(k)}
             className={cn(
-              "press h-9 rounded-full px-3.5 text-[13px] font-medium ring-1 ring-foreground/10",
+              "press h-11 pointer-fine:h-9 rounded-full px-3.5 text-[13px] font-medium ring-1 ring-foreground/10",
               value === k ? "bg-primary text-primary-foreground ring-primary" : "bg-background hover:bg-muted",
             )}
           >

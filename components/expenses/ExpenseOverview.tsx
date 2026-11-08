@@ -105,11 +105,11 @@ export function ExpenseOverview({
         </div>
         {status && (
           <div className="flex flex-wrap gap-2" role="group" aria-label={ts("summary")}>
-            <button type="button" onClick={status.onPending} className={cn("press inline-flex h-9 items-center gap-1.5 rounded-full pr-2.5 pl-3 text-[13px] font-semibold", status.pending > 0 ? "bg-warn-soft text-warn" : "bg-muted text-muted-foreground")}>
+            <button type="button" onClick={status.onPending} className={cn("press inline-flex h-11 pointer-fine:h-9 items-center gap-1.5 rounded-full pr-2.5 pl-3 text-[13px] font-semibold", status.pending > 0 ? "bg-warn-soft text-warn" : "bg-muted text-muted-foreground")}>
               {ts("sumPending")} {ts("countN", { n: status.pending })}
               <ChevronRight className="size-3.5 opacity-70" aria-hidden />
             </button>
-            <button type="button" onClick={status.onOwed} className={cn("press inline-flex h-9 items-center gap-1.5 rounded-full pr-2.5 pl-3 text-[13px] font-semibold tabular-nums", status.owed > 0 ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+            <button type="button" onClick={status.onOwed} className={cn("press inline-flex h-11 pointer-fine:h-9 items-center gap-1.5 rounded-full pr-2.5 pl-3 text-[13px] font-semibold tabular-nums", status.owed > 0 ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
               {ts("sumOwed")} {bahtWhole(fromSatang(status.owed))}
               <ChevronRight className="size-3.5 opacity-70" aria-hidden />
             </button>

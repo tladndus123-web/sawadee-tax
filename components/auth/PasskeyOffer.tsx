@@ -71,11 +71,11 @@ export function PasskeyOffer() {
         </h2>
         <p className="truncate text-[12px] text-muted-foreground max-sm:hidden">{t("offerBody")}</p>
       </div>
-      <Button type="button" className="h-9 flex-none rounded-full px-3.5 sm:px-4" disabled={busy} onClick={() => void register()}>
+      <Button type="button" className="h-11 pointer-fine:h-9 flex-none rounded-full px-3.5 sm:px-4" disabled={busy} onClick={() => void register()}>
         {busy ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
         {t("register")}
       </Button>
-      <button type="button" onClick={later} aria-label={t("later")} title={t("later")} className="press absolute top-1/2 right-2 grid size-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted">
+      <button type="button" onClick={later} aria-label={t("later")} title={t("later")} className="press absolute top-1/2 right-2 grid size-11 pointer-fine:size-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted">
         <X className="size-4" />
       </button>
     </section>

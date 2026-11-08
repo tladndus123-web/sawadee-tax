@@ -38,7 +38,7 @@ function CopyBox({ text, label, mono = true }: { text: string; label: string; mo
     <div className="grid gap-1.5">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[13px] font-medium">{label}</span>
-        <button type="button" onClick={() => void copy()} className="press inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-primary hover:bg-primary/10">
+        <button type="button" onClick={() => void copy()} className="press inline-flex h-11 pointer-fine:h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-primary hover:bg-primary/10">
           {done ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
           {done ? t("copied") : t("copy")}
         </button>
@@ -223,7 +223,7 @@ export function BotCard() {
                 <span className={cn("text-[14px] font-medium", current !== 1 && !setupDone && "text-muted-foreground")}>{t("setup.allTitle")}</span>
               </span>
               {setupDone && (
-                <a href={`grokbot://app/v1/prompt?text=${encodeURIComponent(allInOne)}`} onClick={() => void navigator.clipboard.writeText(allInOne).catch(() => undefined)} className="text-[12px] font-medium text-muted-foreground hover:text-primary hover:underline">
+                <a href={`grokbot://app/v1/prompt?text=${encodeURIComponent(allInOne)}`} onClick={() => void navigator.clipboard.writeText(allInOne).catch(() => undefined)} className="-my-3 inline-flex min-h-11 min-w-11 items-center justify-center px-2 text-[12px] font-medium text-muted-foreground hover:text-primary hover:underline pointer-fine:my-0 pointer-fine:min-h-0 pointer-fine:min-w-0 pointer-fine:px-0">
                   {t("setup.again")}
                 </a>
               )}
@@ -292,7 +292,7 @@ export function BotCard() {
       <p className="text-[13px] text-muted-foreground">{t("askExamples")}</p>
 
       <details className="rounded-2xl px-4 py-3 shadow-[0_0_0_1px_var(--border)]">
-        <summary className="cursor-pointer text-[14px] font-medium text-primary">{t("setup.canTitle")}</summary>
+        <summary className="-my-1 cursor-pointer py-3 pointer-fine:my-0 pointer-fine:py-0 text-[14px] font-medium text-primary">{t("setup.canTitle")}</summary>
         <div className="mt-3">
       <ul className="grid gap-1.5 text-[13.5px]">
         <li className="flex gap-2"><CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />{t("can.read")}</li>
@@ -305,7 +305,7 @@ export function BotCard() {
       </details>
 
       <details className="rounded-2xl px-4 py-3 shadow-[0_0_0_1px_var(--border)]">
-        <summary className="cursor-pointer text-[14px] font-medium text-primary">{t("setup.advanced")}</summary>
+        <summary className="-my-1 cursor-pointer py-3 pointer-fine:my-0 pointer-fine:py-0 text-[14px] font-medium text-primary">{t("setup.advanced")}</summary>
         <div className="mt-4 grid gap-5">
       <section className="grid gap-3 rounded-2xl bg-brand-soft/60 p-4">
         <span className="text-[14px] font-semibold">{t("signIn.title")}</span>
@@ -317,7 +317,7 @@ export function BotCard() {
         <CopyBox text={url} label={t("serverUrl")} />
       </section>
       <details className="rounded-2xl px-4 py-3 shadow-[0_0_0_1px_var(--border)]">
-        <summary className="cursor-pointer text-[14px] font-medium text-primary">{t("keyWay")}</summary>
+        <summary className="-my-1 cursor-pointer py-3 pointer-fine:my-0 pointer-fine:py-0 text-[14px] font-medium text-primary">{t("keyWay")}</summary>
         <ol className="mt-3 grid gap-5">
           <li className="grid gap-2">
             <span className="text-[14px] font-semibold">1. {t("step1")}</span>
@@ -342,7 +342,7 @@ export function BotCard() {
               <CopyBox text={`Bearer ${key}`} label={t("headerValue")} />
             </div>
             <details className="text-[13px]">
-              <summary className="cursor-pointer font-medium text-primary">{t("jsonInstead")}</summary>
+              <summary className="-my-1 cursor-pointer py-3 pointer-fine:my-0 pointer-fine:py-0 font-medium text-primary">{t("jsonInstead")}</summary>
               <div className="mt-2">
                 <CopyBox text={config} label={t("config")} />
               </div>
@@ -406,7 +406,7 @@ export function BotCard() {
           </Button>
         </div>
         <details className="text-[13px]">
-          <summary className="cursor-pointer font-medium text-primary">{t("skill.show")}</summary>
+          <summary className="-my-1 cursor-pointer py-3 pointer-fine:my-0 pointer-fine:py-0 font-medium text-primary">{t("skill.show")}</summary>
           <div className="mt-2">
             <CopyBox text={skillMarkdown(url.replace(/\/api\/mcp$/, ""))} label="SKILL.md" />
           </div>
@@ -423,14 +423,14 @@ export function BotCard() {
                 <span className="text-[14px] font-medium">{t(`rec.items.${k}.when`)}</span>
                 <a
                   href={`grokbot://app/v1/prompt?text=${encodeURIComponent(t(`rec.items.${k}.text`))}`}
-                  className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-primary px-3.5 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
+                  className="press inline-flex h-11 pointer-fine:h-9 items-center gap-1.5 rounded-full bg-primary px-3.5 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
                 >
                   <ExternalLink className="size-3.5" aria-hidden />
                   {t("rec.make")}
                 </a>
               </div>
               <details className="text-[13px]">
-                <summary className="cursor-pointer text-muted-foreground">{t("rec.show")}</summary>
+                <summary className="-my-1 cursor-pointer py-3 pointer-fine:my-0 pointer-fine:py-0 text-muted-foreground">{t("rec.show")}</summary>
                 <div className="mt-2">
                   <CopyBox text={t(`rec.items.${k}.text`)} label={t("routineLabel")} mono={false} />
                 </div>

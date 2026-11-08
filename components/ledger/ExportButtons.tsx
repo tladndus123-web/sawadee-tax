@@ -34,7 +34,8 @@ export const EXPORT_COLS = [
 ] as const;
 
 /** Excel download + printable PDF report for one month of the ledger (always the whole month, not the filter) */
-export function ExportButtons({ month, entries, label }: { month: string; entries: LedgerEntry[]; label?: string }) {
+/** `short`: the word under the icon on phones (the ledger toolbar) */
+export function ExportButtons({ month, entries, label, short }: { month: string; entries: LedgerEntry[]; label?: string; short?: string }) {
   const t = useTranslations();
   const locale = useLocale();
   const company = useCompany();
@@ -174,9 +175,16 @@ export function ExportButtons({ month, entries, label }: { month: string; entrie
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="secondary" className={cn("rounded-full px-4", label ? "h-11 max-sm:px-3.5" : "h-10 pointer-fine:h-9")} disabled={working} title={label}>
+        <Button type="button" variant="secondary" className={cn("rounded-full px-4", label ? "h-11 max-sm:px-3.5" : "h-10 pointer-fine:h-9", short && "max-sm:h-auto max-sm:min-h-14 max-sm:flex-1 max-sm:flex-col max-sm:gap-0.5 max-sm:rounded-2xl max-sm:px-1 max-sm:py-1.5")} disabled={working} title={label}>
           {working ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
-          {packing ? t("export.packing", { done: packing.done, total: packing.total }) : busy ? t("export.exporting") : label ? <span className="max-sm:sr-only">{label}</span> : t("export.menu")}
+          {packing ? t("export.packing", { done: packing.done, total: packing.total }) : busy ? t("export.exporting") : label ? (
+            <>
+              <span className={short ? "max-sm:hidden" : "max-sm:sr-only"}>{label}</span>
+              {short && <span className="text-[12px] leading-tight sm:hidden">{short}</span>}
+            </>
+          ) : (
+            t("export.menu")
+          )}
           {!working && <ChevronDown className={cn("size-3.5 text-muted-foreground", label && "max-sm:hidden")} aria-hidden />}
         </Button>
       </DropdownMenuTrigger>

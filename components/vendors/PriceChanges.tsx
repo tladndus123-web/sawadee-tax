@@ -62,7 +62,7 @@ export function PriceChanges() {
   return (
     <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-5">
       <header className="grid gap-2">
-        <Link href="/vendors" className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/vendors" className="inline-flex min-h-11 w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground pointer-fine:min-h-6">
           <ArrowLeft className="size-4" aria-hidden />
           {t("back")}
         </Link>
@@ -102,7 +102,7 @@ export function PriceChanges() {
                   type="button"
                   aria-pressed={show === s}
                   onClick={() => setShow(s)}
-                  className={cn("flex h-9 items-center gap-1 rounded-full px-3.5 text-sm", show === s ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
+                  className={cn("flex h-11 pointer-fine:h-9 items-center gap-1 rounded-full px-3.5 text-sm", show === s ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}
                 >
                   {t(`f.${s}`, { count: s === "up" ? board.up : s === "down" ? board.down : board.up + board.down + board.same })}
                 </button>

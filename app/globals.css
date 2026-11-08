@@ -335,7 +335,7 @@
   align-content: center;
   gap: 0.2rem;
   min-height: 3.5rem;
-  font-size: 0.6875rem;
+  font-size: 0.75rem; /* 12 px (2026-11-09 mobile check: 11 px was small) */
   font-weight: 500;
   color: var(--muted-foreground);
   transition: color 0.2s ease;
@@ -372,7 +372,7 @@
   align-content: center;
   gap: 0.2rem;
   min-height: 3.5rem;
-  font-size: 0.6875rem;
+  font-size: 0.75rem; /* 12 px (2026-11-09 mobile check: 11 px was small) */
   font-weight: 500;
   color: var(--muted-foreground);
 }
@@ -784,6 +784,12 @@
   }
   /* Phones: amount boxes keep 16 px (no zoom on tap) but use the narrower sans digits and less padding, so
      "17,500.00" fits a third of a phone (owner 2026-11-09: "모바일 급여 숫자 깨진다" — the last digit was cut off) */
+  /* Phones: the 11 px hint / label text becomes 12 px (2026-11-09 mobile check) */
+  @media (max-width: 767.98px) {
+    html .text-\[11px\] {
+      font-size: 12px;
+    }
+  }
   @media (max-width: 767.98px) {
     input.num {
       font-family: var(--font-inter), system-ui, sans-serif;
