@@ -2060,7 +2060,8 @@
     "removeAsk": "Remove “{name}”? That device can no longer use quick sign-in (email still works).",
     "removed": "Removed.",
     "unsupported": "This device (browser) can't use quick sign-in.",
-    "count": "{count} devices"
+    "count": "{count} devices",
+    "offerShort": "Quick sign-in next time"
   },
   "share": {
     "title": "Books for {month} (for the accountant)",

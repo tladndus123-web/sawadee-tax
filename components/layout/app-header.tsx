@@ -114,7 +114,10 @@ export function AppHeader() {
             <AssistantButton />
             <BranchSwitcher />
             <LocaleSwitcher />
-            <ThemeToggle />
+            {/* Phones: light / dark is in the account menu, so the top bar has room for the AI button */}
+            <span className="max-md:hidden">
+              <ThemeToggle />
+            </span>
             <UserMenu />
           </div>
         </div>

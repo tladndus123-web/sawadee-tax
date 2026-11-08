@@ -47,7 +47,7 @@ export function AiMark({ className }: { className?: string }) {
   return <img src="/ai-mark.svg" alt="" aria-hidden="true" draggable={false} className={className} />;
 }
 
-/** Top bar button (PC); phones get the round button at the bottom right */
+/** Top bar button, PC and phones (2026-11-09 mobile check: the floating phone button covered save bars and rows) */
 export function AssistantButton() {
   const t = useTranslations("aiPanel");
   // It reads the whole books: not for an admin an owner limited (lib/screens fullAdmin)
@@ -58,7 +58,7 @@ export function AssistantButton() {
     <button
       type="button"
       onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}
-      className="press hidden size-9 flex-none place-items-center rounded-[10px] transition-transform hover:scale-105 active:scale-[0.95] md:grid"
+      className="press relative grid size-9 flex-none place-items-center rounded-[10px] transition-transform after:absolute after:-inset-1 hover:scale-105 active:scale-[0.95]"
       aria-label={t("open")}
       title={`${t("title")} (Ctrl+K)`}
     >
@@ -211,18 +211,7 @@ export function AssistantPanel() {
 
   return (
     <>
-      {/* Phones: just the mark, small, above the tab bar (owner 2026-10-27: the pill with its name covered too much) */}
-      {!open && (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label={t("open")}
-          className="press fixed right-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-40 grid size-11 place-items-center rounded-[13px] shadow-[0_6px_16px_rgb(10_60_200/0.35)] active:scale-[0.94] md:hidden"
-        >
-          <AiMark className="size-11 rounded-[13px]" />
-        </button>
-      )}
-
+      {/* Phones open it from the top bar like PC (AssistantButton); nothing floats over the page any more */}
       {open && <div className="fixed inset-0 z-50 bg-black/35 md:hidden" onClick={() => setOpen(false)} aria-hidden />}
       <aside
         role="dialog"

@@ -105,7 +105,8 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   downloaded (`documents_stamp` sets updated_at on every change); gone ones drop out; cleared on sign-out. Sign-in
   checks in the browser use `getSession()` (no server trip; the database checks the token).
 - **Phones** (2026-10-27): tab bar = dashboard · ledger · [+ upload, raised blue circle `.tab-plus`] · sales · more
-  (`.tab-more` opens a sheet with the rest of the menu; app-header.tsx). The AI button on phones is the mark only (44 px).
+  (`.tab-more` opens a sheet with the rest of the menu; app-header.tsx). The AI button on phones sits in the top bar like on PC
+  (2026-11-09 mobile check: the floating one covered save bars and rows); on phones light / dark moved into the account menu.
   Every screen's outer grid is `grid-cols-[minmax(0,1fr)]` so a long number can never push a page wider than the phone.
   "얼굴 인증" is now **간편 로그인** (かんたんログイン / เข้าสู่ระบบด่วน / Quick sign-in) with `public/quick-signin.svg`
   (blue tile, white key) and the KeyRound icon.
@@ -275,7 +276,11 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   `MAX_PHOTOS` / `MAX_QUEUE` live in `lib/upload-limits` so the upload queue does not pull zod into every photo screen.
   Stores share a request already on its way (`lib/shared-load` `shared()`): company settings, month locks, vendors
   (re-asked after 30 s, or at once after any ledger reload via `vendorsStale()`), my blocked branches (`lib/blocked-branches`,
-  used by role-store and branch-store). Message files may still be imported by server code (`*-server.ts`, LINE). Automatic deletion of live data is
+  used by role-store and branch-store). Message files may still be imported by server code (`*-server.ts`, LINE).
+- **Mobile check fixes** (2026-11-09, owner: "모바일 ux/ui 평가 후 … 고쳐줘"): nothing floats over the page on phones (AI button in
+  the top bar); `ui/switch` default 44×26 and `ui/checkbox` 20 px, both with a ::after touch area ≥ 44 px; staff-management
+  ticks 20 px; the dashboard hides the upload buttons on phones (the tab bar's + does it) and the quick sign-in offer is one
+  line there (`passkey.offerShort`). Keep new tap targets ≥ 44 px on phones. Automatic deletion of live data is
   off-limits for Claude (auto-mode classifier refused it 2026-11-08) — list the documents and let the owner decide.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out

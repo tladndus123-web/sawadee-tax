@@ -463,7 +463,7 @@ function BlockDialog({ member, branches, kept, onClose, onSaved }: { member: Mem
           {member.role === "admin" && (
             <li>
               <label className={cn("flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3", noAll ? "bg-bad-soft text-bad" : "bg-muted/60")}>
-                <input type="checkbox" className="size-4" checked={noAll} onChange={(e) => setNoAll(e.target.checked)} />
+                <input type="checkbox" className="size-5 flex-none accent-primary" checked={noAll} onChange={(e) => setNoAll(e.target.checked)} />
                 <span className="grid flex-1">
                   <span className="text-sm font-medium">{t("members.noAll")}</span>
                   <span className="text-[11px] opacity-80">{t("members.noAllHint")}</span>
@@ -474,7 +474,7 @@ function BlockDialog({ member, branches, kept, onClose, onSaved }: { member: Mem
           {branches.map((b) => (
             <li key={b.id}>
               <label className={cn("flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3", on.has(b.id) ? "bg-bad-soft text-bad" : "bg-muted/60")}>
-                <input type="checkbox" className="size-4" checked={on.has(b.id)} onChange={(e) => toggle(b.id, e.target.checked)} />
+                <input type="checkbox" className="size-5 flex-none accent-primary" checked={on.has(b.id)} onChange={(e) => toggle(b.id, e.target.checked)} />
                 <span className="flex-1 text-sm font-medium">{b.label}</span>
                 {on.has(b.id) && <span className="text-xs font-semibold">{t("members.blockOn")}</span>}
               </label>
@@ -533,7 +533,7 @@ function ScreensDialog({ member, onClose, onSaved }: { member: Member; onClose: 
           {SCREENS.map((s) => (
             <li key={s}>
               <label className={cn("flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3", on.has(s) ? "bg-brand-soft text-brand" : "bg-muted/60 text-muted-foreground")}>
-                <input type="checkbox" className="size-4" checked={on.has(s)} onChange={(e) => toggle(s, e.target.checked)} />
+                <input type="checkbox" className="size-5 flex-none accent-primary" checked={on.has(s)} onChange={(e) => toggle(s, e.target.checked)} />
                 <span className="text-sm font-medium">{t(`nav.${s}`)}</span>
               </label>
             </li>

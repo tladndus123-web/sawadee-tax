@@ -2060,7 +2060,8 @@
     "removeAsk": "“{name}”을(를) 삭제할까요? 그 기기에서는 간편 로그인을 할 수 없게 돼요 (메일로는 로그인할 수 있어요).",
     "removed": "삭제했어요.",
     "unsupported": "이 기기(브라우저)는 간편 로그인을 지원하지 않아요.",
-    "count": "{count}대"
+    "count": "{count}대",
+    "offerShort": "다음부터 간편 로그인"
   },
   "share": {
     "title": "{month} 장부 (회계사용)",

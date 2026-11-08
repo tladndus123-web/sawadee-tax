@@ -213,8 +213,8 @@ function FixedForm({ draft, onChange, onDone, onAmount }: { draft: Draft; onChan
           {draft.id ? <span className="flex h-10 items-center text-sm tabular-nums">{draft.fromMonth}</span> : <MonthInput value={draft.fromMonth} onChange={(v) => set("fromMonth", v)} />}
         </label>
         <div className="grid gap-1">
-          <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <input type="checkbox" checked={ends} onChange={(e) => setEnds(e.target.checked)} className="size-4 accent-primary" />
+          <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[12px] text-muted-foreground">
+            <input type="checkbox" checked={ends} onChange={(e) => setEnds(e.target.checked)} className="size-5 accent-primary" />
             {t("ends")}
           </label>
           {ends && <MonthInput value={draft.toMonth ?? draft.fromMonth} min={draft.fromMonth} onChange={(v) => set("toMonth", v)} />}

@@ -59,17 +59,19 @@ export function PasskeyOffer() {
   return (
     // One strip (owner, 2026-11-06: the banner took half a phone screen): mark, title (the reason on wider screens),
     // the register button; "later" is the × and hides it for two weeks as before
-    <section aria-labelledby="passkey-offer" className="workspace-panel relative mx-auto mb-5 flex w-full max-w-6xl items-center gap-3 py-2.5 pr-11 pl-3 sm:pl-4">
+    <section aria-labelledby="passkey-offer" className="workspace-panel relative mx-auto mb-4 flex w-full max-w-6xl items-center gap-2.5 py-2 pr-11 pl-3 sm:mb-5 sm:gap-3 sm:py-2.5 sm:pl-4">
       {/* 간편 로그인 mark (public/quick-signin.svg), the app icon's family */}
       {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG */}
-      <img src="/quick-signin.svg" alt="" aria-hidden="true" className="size-8 flex-none rounded-[9px] shadow-[0_3px_8px_rgb(10_92_230/0.3)]" />
+      <img src="/quick-signin.svg" alt="" aria-hidden="true" className="size-7 flex-none rounded-[8px] shadow-[0_3px_8px_rgb(10_92_230/0.3)] sm:size-8 sm:rounded-[9px]" />
       <div className="grid min-w-0 flex-1 gap-0">
-        <h2 id="passkey-offer" className="line-clamp-2 text-[14px] leading-snug font-semibold sm:truncate">
-          {t("offerTitle")}
+        <h2 id="passkey-offer" className="truncate text-[14px] leading-snug font-semibold">
+          {/* Phones: a short line, so the strip stays one line */}
+          <span className="sm:hidden">{t("offerShort")}</span>
+          <span className="max-sm:hidden">{t("offerTitle")}</span>
         </h2>
         <p className="truncate text-[12px] text-muted-foreground max-sm:hidden">{t("offerBody")}</p>
       </div>
-      <Button type="button" className="h-9 flex-none rounded-full px-4" disabled={busy} onClick={() => void register()}>
+      <Button type="button" className="h-9 flex-none rounded-full px-3.5 sm:px-4" disabled={busy} onClick={() => void register()}>
         {busy ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
         {t("register")}
       </Button>

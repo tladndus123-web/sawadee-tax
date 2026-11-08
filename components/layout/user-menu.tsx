@@ -1,13 +1,16 @@
 "use client";
 
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Monitor, Moon, Settings, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -19,6 +22,7 @@ import { canOpen } from "@/lib/screens";
 export function UserMenu() {
   const t = useTranslations();
   const me = useMe();
+  const { theme, setTheme } = useTheme();
   if (!me.userId) return null;
   const label = me.name || me.email;
   return (
@@ -43,6 +47,23 @@ export function UserMenu() {
             </Link>
           </DropdownMenuItem>
         )}
+        {/* Phones only: the theme button left the top bar (app-header) */}
+        <div className="md:hidden">
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{t("nav.theme")}</DropdownMenuLabel>
+          <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+            <DropdownMenuRadioItem value="light">
+              <Sun className="size-4" /> {t("nav.light")}
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="dark">
+              <Moon className="size-4" /> {t("nav.dark")}
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="system">
+              <Monitor className="size-4" /> {t("nav.system")}
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+          <DropdownMenuSeparator />
+        </div>
         <DropdownMenuItem onSelect={() => void signOut()}>
           <LogOut className="size-4" />
           {t("nav.signOut")}
