@@ -2,6 +2,7 @@
 // row: listed in settings and disconnected there. Connecting again from the same agent replaces its old key.
 import { hashKey, keyHint, makeKey } from "@/lib/bot-keys";
 import { agentName, pkceOk, sha256hex } from "@/lib/oauth";
+import { guessingTooMuch, wrongGuess } from "@/lib/ip-limit";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -21,6 +22,8 @@ export async function POST(req: Request) {
   const f = await form(req);
   if (f.grant_type !== "authorization_code") return fail("unsupported_grant_type");
   if (!f.code || !f.code_verifier || !f.client_id || !f.redirect_uri) return fail("invalid_request");
+  // 20 wrong codes a minute from one address, then refused before the lookup (lib/ip-limit)
+  if (guessingTooMuch(req, "oauth-token", 20)) return fail("slow_down", 429);
   const admin = supabaseAdmin();
   // Take the code once: only an unused, unexpired one is marked used
   const { data: code } = await admin
@@ -31,7 +34,10 @@ export async function POST(req: Request) {
     .gt("expires_at", new Date().toISOString())
     .select("client_id, redirect_uri, code_challenge, user_id")
     .maybeSingle();
-  if (!code || code.client_id !== f.client_id || code.redirect_uri !== f.redirect_uri || !pkceOk(f.code_verifier, code.code_challenge as string)) return fail("invalid_grant");
+  if (!code || code.client_id !== f.client_id || code.redirect_uri !== f.redirect_uri || !pkceOk(f.code_verifier, code.code_challenge as string)) {
+    wrongGuess(req, "oauth-token");
+    return fail("invalid_grant");
+  }
   const { data: client } = await admin.from("oauth_clients").select("name").eq("client_id", f.client_id).maybeSingle();
   await admin.from("bot_keys").update({ revoked_at: new Date().toISOString() }).eq("client_id", f.client_id).is("revoked_at", null);
   const key = makeKey();

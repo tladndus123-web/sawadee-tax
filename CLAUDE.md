@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (628) · `npm run db:test` (423 in 9 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (630) · `npm run db:test` (423 in 9 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy (app + DB) | **Push to `main` and let GitHub Actions deploy** (`.github/workflows/deploy.yml`: checks → migrations → pgTAP on the cloud DB → Vercel → live check). Cursor pushes to `main` too, so never deploy from this PC (`vercel deploy`) — a local build can put an older tree live over theirs (happened twice 2026-11-05). Check the run with the GitHub API (token from `git credential fill` for github.com, never printed): `GET https://api.github.com/repos/tladndus123-web/sawadee-tax/actions/runs?per_page=3`. Only if Actions is down: `npx vercel deploy --prod` from an up-to-date `main` |
 | If a deploy is broken | `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>`. A failed Actions run leaves the site as it was |
@@ -301,7 +301,15 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   ฿1.2M documents) at 360 / 393 px, all branches. Fixed: a document's item row on phones = narrow quantity + price, the
   amount on its own line (was "1,234"); the calendar list's meta line wraps instead of hiding the VAT estimate; a few
   small links / ✕ / editor arrows 44 px on touch. Note for tests: Playwright's mouse clicks can switch the page to
-  `pointer: fine`, so sizes measured after a click may show the mouse size. Automatic deletion of live data is
+  `pointer: fine`, so sizes measured after a click may show the mouse size.
+- **Full re-check** (2026-11-09, owner: "다시 테스트 … 최적화 보안"): npm audit 0; minor dependency updates (supabase-js 2.119,
+  radix-ui 1.8, lucide 1.70, next-intl 4.14.9, pdfjs-dist 6.5 — **after a pdfjs-dist update copy
+  `node_modules/pdfjs-dist/build/pdf.worker.min.mjs` to `public/pdfjs/`**, `lib/pdf-render.test.ts` fails otherwise); live
+  probe: every API refuses without a session (the share page answers 200 with "링크 만료" text and no data, by design);
+  **token-guessing brake** `lib/ip-limit.ts` on the routes that take a token without a sign-in — /api/oauth/token (20 wrong
+  codes a minute per address), /api/share/* (30 wrong links), /api/calendar/feed (30) — only wrong tries count, so a
+  valid accountant page loading many photos is never slowed; the limiters are per server instance (best effort), the
+  tokens' length is the real protection. PC width (1280) checked with the QA seed: no real issues. Automatic deletion of live data is
   off-limits for Claude (auto-mode classifier refused it 2026-11-08) — list the documents and let the owner decide.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out

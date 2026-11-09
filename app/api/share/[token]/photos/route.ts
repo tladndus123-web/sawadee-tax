@@ -10,6 +10,7 @@ import { ledger } from "@/lib/line-ask-server";
 import { shareMonth } from "@/lib/month-end-server";
 import { packFileName } from "@/lib/month-pack";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { guessingTooMuch, TOO_MANY, wrongGuess } from "@/lib/ip-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -17,11 +18,16 @@ export const maxDuration = 300;
 /** At most this much in one ZIP (the bucket's limit is 50 MB) */
 const MAX_BYTES = 48 * 1024 * 1024;
 
-export async function GET(_req: Request, { params }: { params: Promise<{ token: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+  // 30 wrong links a minute from one address, then refused before the lookup (lib/ip-limit)
+  if (guessingTooMuch(req, "share", 30)) return TOO_MANY();
   const admin = supabaseAdmin();
   const share = await shareMonth(admin, token);
-  if (!share) return new Response("This link has expired or is not valid.", { status: 404 });
+  if (!share) {
+    wrongGuess(req, "share");
+    return new Response("This link has expired or is not valid.", { status: 404 });
+  }
 
   const { saved } = await ledger(admin);
   const docs = saved.filter((d) => monthKey(d.doc) === share.month).sort((a, b) => exportOrder(a.doc, b.doc));

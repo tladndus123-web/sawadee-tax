@@ -5,6 +5,7 @@
 
 import { feedIcs, feedStaffIds, feedTokenOk, staffFeedIcs } from "@/lib/calendar-feed-server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { guessingTooMuch, TOO_MANY, wrongGuess } from "@/lib/ip-limit";
 import { todayBangkok } from "@/lib/thai-tax";
 
 export const runtime = "nodejs";
@@ -14,7 +15,11 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const admin = supabaseAdmin();
   const staff = url.searchParams.get("who") === "staff";
-  if (!(await feedTokenOk(admin, url.searchParams.get("t") ?? "", staff ? 2 : 1))) return new Response("not found", { status: 404 });
+  if (guessingTooMuch(req, "feed", 30)) return TOO_MANY();
+  if (!(await feedTokenOk(admin, url.searchParams.get("t") ?? "", staff ? 2 : 1))) {
+    wrongGuess(req, "feed");
+    return new Response("not found", { status: 404 });
+  }
   const lang = url.searchParams.get("lang") ?? "ja";
   try {
     let ics: string;
