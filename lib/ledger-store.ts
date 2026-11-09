@@ -15,6 +15,7 @@ import { photoHash } from "./photo-hash";
 import { ALL } from "./branches";
 import { branchNow, subscribeBranch } from "./branch-store";
 import type { LedgerDoc, Sticker } from "./types";
+import { allRows, PAGE } from "./fetch-all";
 
 /** "draft" = saved to finish later (not in monthly totals); "final" = in the ledger (db status "reviewed") */
 export type EntryStatus = "draft" | "final";
@@ -86,7 +87,7 @@ let known: KnownPhoto[] = [];
 let knownAt = 0;
 export async function knownPhotos(): Promise<KnownPhoto[]> {
   if (Date.now() - knownAt < 30_000) return known;
-  const { data, error } = await supabaseBrowser().from("documents").select("id, photo_hash, doc_no, status").not("photo_hash", "is", null).is("deleted_at", null);
+  const { data, error } = await allRows<{ id: string; photo_hash: string; doc_no: string | null; status: string }>(() => supabaseBrowser().from("documents").select("id, photo_hash, doc_no, status").not("photo_hash", "is", null).is("deleted_at", null));
   if (error) return known;
   known = (data ?? []).map((r) => ({ id: r.id as string, hash: r.photo_hash as string, docNo: (r.doc_no as string) ?? "", status: r.status === "draft" ? "draft" : "final" }));
   knownAt = Date.now();
@@ -137,6 +138,8 @@ let rowsFor: string | null = null;
 // v1: the columns of DOC_LIST_COLUMNS; a new version starts the copy afresh
 const CACHE = (user: string) => `ledger:v1:${user}`;
 const CHUNK = 150;
+// Pages / chunks asked at the same time (the browser allows 6 connections per site)
+const PARALLEL = 4;
 
 async function reload() {
   // A save may have registered a new vendor (database trigger)
@@ -157,23 +160,51 @@ async function reload() {
     }
   }
   const [index, { data: members }] = await Promise.all([
-    rows.length ? supabase.from("documents").select("id, updated_at").order("created_at", { ascending: false }) : null,
+    // Page by page: past 1000 documents one request would silently stop (lib/fetch-all)
+    rows.length ? allRows<{ id: string; updated_at: string }>(() => supabase.from("documents").select("id, updated_at").order("created_at", { ascending: false })) : null,
     supabase.rpc("member_names"),
   ]);
   let fresh: Row[];
   if (!index) {
-    // Nothing kept yet: everything, once
-    const { data, error } = await supabase.from("documents").select(DOC_LIST_COLUMNS).order("created_at", { ascending: false });
-    if (error) throw error;
-    fresh = (data ?? []) as unknown as Row[];
+    // Nothing kept yet: everything, once. A document is ~4 KB, so 1,500 are ~6 MB (2026-11-09 check: ~10 s in one
+    // line of pages). The newest page comes first with the total and is shown at once; the older pages follow,
+    // PARALLEL at a time. Rows saved meanwhile may shift a page: duplicates are dropped by id, and anything missed is
+    // picked up by the next reload (which compares every id).
+    const page = () => supabase.from("documents").select(DOC_LIST_COLUMNS, { count: "exact" }).order("created_at", { ascending: false }).order("id");
+    const first = await page().range(0, PAGE - 1);
+    if (first.error) throw first.error;
+    const firstRows = (first.data ?? []) as unknown as Row[];
+    if (!loaded && firstRows.length) {
+      rows = firstRows;
+      entries = toEntries(rows, names);
+      loaded = true;
+      listeners.forEach((l) => l());
+    }
+    const starts: number[] = [];
+    for (let at = PAGE; at < (first.count ?? 0); at += PAGE) starts.push(at);
+    const older: Row[] = [];
+    for (let i = 0; i < starts.length; i += PARALLEL) {
+      const pages = await Promise.all(starts.slice(i, i + PARALLEL).map((at) => page().range(at, at + PAGE - 1)));
+      for (const r of pages) {
+        if (r.error) throw r.error;
+        older.push(...((r.data ?? []) as unknown as Row[]));
+      }
+    }
+    const seen = new Set<string>();
+    fresh = [...firstRows, ...older].filter((r) => !seen.has(r.id) && !!seen.add(r.id));
   } else {
     if (index.error) throw index.error;
     const have = new Map(rows.map((r) => [r.id, r]));
     const need = (index.data ?? []).filter((x) => have.get(x.id as string)?.updated_at !== x.updated_at).map((x) => x.id as string);
-    for (let i = 0; i < need.length; i += CHUNK) {
-      const { data, error } = await supabase.from("documents").select(DOC_LIST_COLUMNS).in("id", need.slice(i, i + CHUNK));
-      if (error) throw error;
-      for (const r of (data ?? []) as unknown as Row[]) have.set(r.id, r);
+    // New / changed ones in chunks of ids, PARALLEL chunks at a time (a cleared copy means all of them)
+    const chunks: string[][] = [];
+    for (let i = 0; i < need.length; i += CHUNK) chunks.push(need.slice(i, i + CHUNK));
+    for (let i = 0; i < chunks.length; i += PARALLEL) {
+      const got = await Promise.all(chunks.slice(i, i + PARALLEL).map((ids) => supabase.from("documents").select(DOC_LIST_COLUMNS).in("id", ids)));
+      for (const r of got) {
+        if (r.error) throw r.error;
+        for (const row of (r.data ?? []) as unknown as Row[]) have.set(row.id, row);
+      }
     }
     // In the server's order; anything no longer there (removed for good, or out of reach) drops out
     fresh = (index.data ?? []).map((x) => have.get(x.id as string)).filter((r): r is Row => !!r);

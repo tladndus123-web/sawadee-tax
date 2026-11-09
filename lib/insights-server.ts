@@ -20,6 +20,7 @@ import en from "@/messages/en.json";
 import ja from "@/messages/ja.json";
 import ko from "@/messages/ko.json";
 import th from "@/messages/th.json";
+import { allRows } from "./fetch-all";
 
 const MESSAGES = { en, ja, ko, th } as const;
 
@@ -112,8 +113,8 @@ export function claimLines(all: Claim[], month: string, flags: (c: Claim) => Fla
 
 export async function expenseReport(admin: Admin, month: string, lang: string, canMake?: CanMake): Promise<{ body: ExpenseReport; madeAt: string } | null> {
   const [{ data: rows }, { data: photos }, cats] = await Promise.all([
-    admin.from("expense_claims").select("*"),
-    admin.from("documents").select("id, photo_hash").is("deleted_at", null).not("photo_hash", "is", null),
+    allRows<Record<string, unknown>>(() => admin.from("expense_claims").select("*")),
+    allRows<{ id: string; photo_hash: string }>(() => admin.from("documents").select("id, photo_hash").is("deleted_at", null).not("photo_hash", "is", null)),
     serverCategories(),
   ]);
   // Categories as the reader's words (the company's own name, else the built-in one), never the key

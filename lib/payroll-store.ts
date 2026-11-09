@@ -11,6 +11,7 @@ import { allowanceTotal, type AllowanceRow, customNames, parseAllowances, type S
 import { parseDocuments } from "./attendance";
 import { type Employee, EMPTY_PERIOD, LEGAL_OT, type LineRates, lineRates, monthPay, type PayrollSettings, type PeriodInput } from "./payroll";
 import { supabaseBrowser } from "./supabase/client";
+import { allRows } from "./fetch-all";
 
 type EmpRow = {
   id: string;
@@ -162,11 +163,15 @@ export interface PayrollLineRow extends PeriodInput {
 
 /** Pay lines of a month or year; `branch` = only that branch's lines ("all" or none = every branch) */
 export async function loadPayroll(opts: { month?: string; year?: string; branch?: string } = {}): Promise<PayrollLineRow[]> {
-  let q = supabaseBrowser().from("payroll_lines").select("*");
-  if (opts.branch && opts.branch !== ALL) q = q.eq("branch_id", opts.branch);
-  if (opts.month) q = q.eq("month", opts.month);
-  if (opts.year) q = q.like("month", `${opts.year}-%`);
-  const { data, error } = await q;
+  const make = () => {
+    let q = supabaseBrowser().from("payroll_lines").select("*");
+    if (opts.branch && opts.branch !== ALL) q = q.eq("branch_id", opts.branch);
+    if (opts.month) q = q.eq("month", opts.month);
+    if (opts.year) q = q.like("month", `${opts.year}-%`);
+    return q;
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped rows, as before (the mapping below checks each field)
+  const { data, error } = await allRows<any>(make);
   if (error) throw error;
   return (data ?? []).map((r) => {
     const payType = r.pay_type === "daily" ? "daily" : "monthly";

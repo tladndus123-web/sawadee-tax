@@ -11,6 +11,7 @@ import { CHANNELS, type Channel, type Sale } from "./sales";
 import { supabaseBrowser } from "./supabase/client";
 import { ALL } from "./branches";
 import { subscribeBranch, branchNow } from "./branch-store";
+import { allRows } from "./fetch-all";
 
 interface SaleRow {
   id: string;
@@ -52,7 +53,7 @@ const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
 async function reload() {
-  const { data, error } = await supabaseBrowser().from("sales").select("*").order("sale_date", { ascending: false });
+  const { data, error } = await allRows<SaleRow>(() => supabaseBrowser().from("sales").select("*").order("sale_date", { ascending: false }));
   if (error) throw error;
   sales = (data as SaleRow[]).map(toSale);
   loaded = true;

@@ -41,6 +41,7 @@ import { photoHashServer } from "./photo-hash-server";
 import { supabaseAdmin } from "./supabase/admin";
 import { digitsOnly } from "./thai-tax";
 import { applyHistory, applyRule, applyVendor, toVendor, type VendorHistory, type VendorRow, VENDOR_COLUMNS, vendorKey } from "./vendors";
+import { allRows } from "./fetch-all";
 
 // In-memory limits (one server). Photos: 10 a minute per member, like the upload screen.
 const hits = new Map<string, number[]>();
@@ -313,7 +314,7 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   // The same photo again? Point to the saved one instead of reading (and paying for) it twice
   const hash = await photoHashServer(photo);
   if (hash) {
-    const { data: seen } = await admin.from("documents").select("id, photo_hash").not("photo_hash", "is", null).is("deleted_at", null);
+    const { data: seen } = await allRows<{ id: string; photo_hash: string }>(() => admin.from("documents").select("id, photo_hash").not("photo_hash", "is", null).is("deleted_at", null));
     const dup = findDuplicate(hash, (seen ?? []).map((d) => ({ id: d.id as string, hash: d.photo_hash as string })));
     if (dup) return send(later, lineUser, [text(say.duplicate(`${appUrl()}/documents/${dup.id}`))]);
   }

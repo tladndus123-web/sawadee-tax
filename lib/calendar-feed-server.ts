@@ -13,6 +13,7 @@ import { type CalEvent, type CalItem, calendarItems, TAX_KINDS } from "./company
 import { buildIcs, type IcsEvent } from "./ics";
 import { ledger, type Admin } from "./line-ask-server";
 import { THAI_HOLIDAYS } from "./thai-holidays";
+import { allRows } from "./fetch-all";
 
 const MESSAGES = { en, ja, ko, th } as const;
 type Lang = keyof typeof MESSAGES;
@@ -91,7 +92,7 @@ export async function staffFeedIcs(admin: Admin, langIn: string, today: string, 
   const people = (staff ?? []).filter((e) => !e.end_date || (e.end_date as string) >= add(today, -14));
   const ids = people.map((e) => e.id as string);
   const { data: rows } = ids.length
-    ? await admin.from("attendance").select("employee_id, day, kind, ot_hours").in("employee_id", ids).gte("day", add(today, -14)).lte("day", add(today, 120))
+    ? await allRows<Record<string, unknown>>(() => admin.from("attendance").select("id, employee_id, day, kind, ot_hours").in("employee_id", ids).gte("day", add(today, -14)).lte("day", add(today, 120)))
     : { data: [] };
   const nameOf = new Map(people.map((e) => [e.id as string, ((e.nickname as string) || (e.name as string) || "").trim()]));
   const out: IcsEvent[] = [];

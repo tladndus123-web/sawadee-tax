@@ -11,6 +11,7 @@ import { useFixedCosts } from "./fixed-store";
 import { type CashKind, type CashMove, cashCostLines } from "./petty-cash";
 import { supabaseBrowser } from "./supabase/client";
 import { type Category, isCategoryKey } from "./types";
+import { allRows } from "./fetch-all";
 
 type Raw = { id: string; branch_id: string; day: string; kind: string; amount: number | string; category: string | null; receipt: boolean; memo: string; created_by: string | null; created_at: string };
 
@@ -21,7 +22,7 @@ const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
 async function reload() {
-  const { data, error } = await supabaseBrowser().from("cash_moves").select("id, branch_id, day, kind, amount, category, receipt, memo, created_by, created_at").order("day");
+  const { data, error } = await allRows<Raw>(() => supabaseBrowser().from("cash_moves").select("id, branch_id, day, kind, amount, category, receipt, memo, created_by, created_at").order("day"));
   if (error) throw error;
   moves = ((data ?? []) as Raw[]).map((r) => ({
     id: r.id,

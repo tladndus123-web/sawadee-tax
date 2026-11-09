@@ -9,6 +9,7 @@ import { supabaseBrowser } from "./supabase/client";
 import type { Tri } from "./types";
 import { applyHistory, applyRule, applyVendor, SUGGEST_AFTER, suggestRule, toVendor, type Vendor, type VendorFix, type VendorHistory, type VendorRow, VENDOR_COLUMNS, vendorKey } from "./vendors";
 import type { LedgerDoc } from "./types";
+import { allRows } from "./fetch-all";
 
 let vendors: Vendor[] = [];
 let loaded = false;
@@ -20,7 +21,7 @@ const FRESH_MS = 3_000;
 const reload = shared(reloadNow);
 
 async function reloadNow() {
-  const { data, error } = await supabaseBrowser().from("vendors").select(VENDOR_COLUMNS).order("tax_id");
+  const { data, error } = await allRows<VendorRow>(() => supabaseBrowser().from("vendors").select(VENDOR_COLUMNS).order("tax_id"));
   if (error) throw error;
   vendors = (data as VendorRow[]).map(toVendor);
   loaded = true;

@@ -5,19 +5,24 @@
 
 import { type AttendanceKind, type AttendanceRow } from "./attendance";
 import { supabaseBrowser } from "./supabase/client";
+import { allRows } from "./fetch-all";
 
 type Raw = { employee_id: string; day: string; kind: AttendanceKind; ot_hours: number | string; note: string };
 
 const toRow = (r: Raw): AttendanceRow => ({ employeeId: r.employee_id, day: r.day, kind: r.kind, otHours: Number(r.ot_hours) || 0, note: r.note ?? "" });
 
 export async function loadAttendance(opts: { month?: string; year?: number }): Promise<AttendanceRow[]> {
-  let q = supabaseBrowser().from("attendance").select("employee_id, day, kind, ot_hours, note");
-  if (opts.month) {
-    const next = new Date(Date.UTC(Number(opts.month.slice(0, 4)), Number(opts.month.slice(5, 7)), 1)).toISOString().slice(0, 10);
-    q = q.gte("day", `${opts.month}-01`).lt("day", next);
-  }
-  if (opts.year) q = q.gte("day", `${opts.year}-01-01`).lte("day", `${opts.year}-12-31`);
-  const { data, error } = await q;
+  // A year of a big team is thousands of days: page by page (lib/fetch-all)
+  const make = () => {
+    let q = supabaseBrowser().from("attendance").select("employee_id, day, kind, ot_hours, note");
+    if (opts.month) {
+      const next = new Date(Date.UTC(Number(opts.month.slice(0, 4)), Number(opts.month.slice(5, 7)), 1)).toISOString().slice(0, 10);
+      q = q.gte("day", `${opts.month}-01`).lt("day", next);
+    }
+    if (opts.year) q = q.gte("day", `${opts.year}-01-01`).lte("day", `${opts.year}-12-31`);
+    return q;
+  };
+  const { data, error } = await allRows<Raw>(make);
   if (error) throw error;
   return ((data ?? []) as Raw[]).map(toRow);
 }

@@ -25,6 +25,7 @@ import { monthEndMessage } from "./line-dash";
 import { bahtWhole as baht } from "./money";
 import { priceRises } from "./price-watch";
 import { nextWorkingDay } from "./thai-holidays";
+import { allRows } from "./fetch-all";
 
 const CATEGORY = { ja: ja.category, th: th.category, en: en.category, ko: ko.category } as const;
 
@@ -213,7 +214,7 @@ export async function sendMonthEnd(admin: Admin, appUrl: string, today: string, 
   const b = await monthBooks(admin, month);
   if (!b.documents && !b.hasSales) return 0;
   const r = b.result;
-  const [claims, cats] = await Promise.all([admin.from("expense_claims").select("*"), admin.from("categories").select("key, name")]);
+  const [claims, cats] = await Promise.all([allRows<Record<string, unknown>>(() => admin.from("expense_claims").select("*")), admin.from("categories").select("key, name")]);
   const ex = monthExpenses((claims.data ?? []).map((c) => rowToClaim(c as Record<string, unknown>)), month);
   const catName = (key: string, lang: LineLang) =>
     ((cats.data ?? []).find((c) => c.key === key)?.name as Record<string, string> | undefined)?.[lang]?.trim() || (CATEGORY[lang] as Record<string, string>)[key] || key;

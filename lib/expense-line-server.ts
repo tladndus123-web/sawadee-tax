@@ -23,6 +23,7 @@ import { findDuplicate } from "./photo-hash";
 import { supabaseAdmin } from "./supabase/admin";
 import { todayBangkok } from "./thai-tax";
 import type { LedgerDoc } from "./types";
+import { allRows } from "./fetch-all";
 
 type Admin = ReturnType<typeof supabaseAdmin>;
 type Send = (messages: messagingApi.Message[]) => Promise<void>;
@@ -60,8 +61,8 @@ export async function notifyNewClaim(id: string, appUrl: string): Promise<number
   const [settings, { data: admins }, all, ledger] = await Promise.all([
     settingsOf(admin),
     admin.from("members").select("user_id, line_user_id, owner, admin_screens").eq("role", "admin").is("disabled_at", null).not("line_user_id", "is", null),
-    admin.from("expense_claims").select("*"),
-    admin.from("documents").select("id, photo_hash").is("deleted_at", null).not("photo_hash", "is", null),
+    allRows<Record<string, unknown>>(() => admin.from("expense_claims").select("*")),
+    allRows<{ id: string; photo_hash: string }>(() => admin.from("documents").select("id, photo_hash").is("deleted_at", null).not("photo_hash", "is", null)),
   ]);
   if (!settings.line || !admins?.length) return 0;
   // Not to an admin an owner kept out of the claim's branch (supabase …003200_owners.sql)
@@ -183,8 +184,8 @@ export async function claimFromLine(lineUser: string, photo: Buffer, type: strin
   const admin = supabaseAdmin();
   if (hash) {
     const [claims, docs] = await Promise.all([
-      admin.from("expense_claims").select("id, photo_hash").neq("status", "rejected").not("photo_hash", "is", null),
-      admin.from("documents").select("id, photo_hash").is("deleted_at", null).not("photo_hash", "is", null),
+      allRows<{ id: string; photo_hash: string }>(() => admin.from("expense_claims").select("id, photo_hash").neq("status", "rejected").not("photo_hash", "is", null)),
+      allRows<{ id: string; photo_hash: string }>(() => admin.from("documents").select("id, photo_hash").is("deleted_at", null).not("photo_hash", "is", null)),
     ]);
     const known = [...(claims.data ?? []), ...(docs.data ?? [])].map((r) => ({ id: r.id as string, hash: r.photo_hash as string }));
     if (findDuplicate(hash, known)) return { ok: false, text: w.dup };

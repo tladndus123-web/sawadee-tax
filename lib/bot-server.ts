@@ -21,6 +21,7 @@ import { ledger, salesTarget, shiftDay, type Admin } from "./line-ask-server";
 import type { McpTool } from "./mcp";
 import { CHANNELS, type Channel, type Sale } from "./sales";
 import { isIsoDate, todayBangkok } from "./thai-tax";
+import { allRows } from "./fetch-all";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -37,10 +38,13 @@ export async function keyOwner(admin: Admin, header: string | null): Promise<{ i
 }
 
 async function allSales(admin: Admin, from?: string, to?: string): Promise<Sale[]> {
-  let q = admin.from("sales").select("id, branch_id, sale_date, channel, doc_from, doc_to, bills, gross, vat, exempt, note, source, part");
-  if (from) q = q.gte("sale_date", from);
-  if (to) q = q.lte("sale_date", to);
-  const { data, error } = await q;
+  const make = () => {
+    let q = admin.from("sales").select("id, branch_id, sale_date, channel, doc_from, doc_to, bills, gross, vat, exempt, note, source, part");
+    if (from) q = q.gte("sale_date", from);
+    if (to) q = q.lte("sale_date", to);
+    return q;
+  };
+  const { data, error } = await allRows<Record<string, unknown>>(make);
   if (error) throw error;
   return (data ?? []).map((r) => ({
     id: r.id as string,
@@ -83,7 +87,7 @@ export async function daySummary(admin: Admin, date: string, today = todayBangko
     allSales(admin, `${month}-01`, date),
     ledger(admin),
     salesTarget(admin, month),
-    admin.from("expense_claims").select("*"),
+    allRows<Record<string, unknown>>(() => admin.from("expense_claims").select("*")),
   ]);
   const weekAgo = shiftDay(date, -7);
   const prev = await allSales(admin, weekAgo, weekAgo);

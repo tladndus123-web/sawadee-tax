@@ -33,6 +33,7 @@ import { costInputs } from "./month-end-server";
 import { cashCostLines } from "./petty-cash";
 import { fixedForMonth } from "./fixed-costs";
 import { todayBangkok } from "./thai-tax";
+import { allRows } from "./fetch-all";
 
 const r0 = (n: number) => Math.round(n);
 
@@ -46,7 +47,7 @@ export async function booksContext(admin: Admin, today: string, deep: boolean, a
     salesOf(admin, first, today),
     admin.from("branches").select("id, no, name, sales_target").order("sort"),
     serverCategories(),
-    admin.from("payroll_lines").select("month, gross, net, wht, ss_employee, ss_employer").in("month", months),
+    allRows<Record<string, unknown>>(() => admin.from("payroll_lines").select("id, month, gross, net, wht, ss_employee, ss_employer").in("month", months)),
     admin.from("branch_targets").select("branch_id, amount").eq("month", month),
     // Labour typed in, fixed costs without an invoice, petty cash, stock: the same as the dashboard and the P&L
     costInputs(admin),
@@ -269,7 +270,7 @@ export async function calendarContext(admin: Admin, today: string): Promise<stri
     admin.from("calendar_events").select("id, title, date, repeat, remind_days, note, amount"),
     admin.from("calendar_done").select("key"),
     admin.from("employees").select("id, name, end_date, documents"),
-    admin.from("expense_claims").select("*"),
+    allRows<Record<string, unknown>>(() => admin.from("expense_claims").select("*")),
     salesOf(admin, `${today.slice(0, 7)}-01`, today),
   ]);
   const events: CalEvent[] = (ev.data ?? []).map((r) => ({ id: r.id as string, title: r.title as string, date: r.date as string, repeat: r.repeat as CalEvent["repeat"], remindDays: Number(r.remind_days) || 0, note: (r.note as string) ?? "", amount: r.amount === null ? null : Number(r.amount) }));

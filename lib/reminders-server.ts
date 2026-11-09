@@ -21,6 +21,7 @@ import { payrollFiling } from "./payroll";
 import { calendarItems, type CalEvent } from "./company-calendar";
 import { dueToday, reminderMessage } from "./calendar-remind";
 import type { supabaseAdmin } from "./supabase/admin";
+import { allRows } from "./fetch-all";
 
 type Admin = ReturnType<typeof supabaseAdmin>;
 type Row = DocumentRow & { document_items: ItemRow[]; ack_flags?: string[] | null };
@@ -30,7 +31,7 @@ export async function reminderTexts(admin: Admin, today: string, opts: { test?: 
   // Which categories' VAT is not claimable (settings) — the claimable VAT in the message depends on it
   await serverCategories();
   const [docs, lock, settings] = await Promise.all([
-    admin.from("documents").select(DOC_LIST_COLUMNS).is("deleted_at", null),
+    allRows<Row>(() => admin.from("documents").select(DOC_LIST_COLUMNS).is("deleted_at", null)),
     admin.from("month_locks").select("month").eq("month", f.month).maybeSingle(),
     admin.from("company_settings").select("tax_id").eq("id", 1).maybeSingle(),
   ]);

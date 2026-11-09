@@ -14,6 +14,7 @@ import type { Admin } from "./line-ask-server";
 import { findDuplicate } from "./photo-hash";
 import { photoHashServer } from "./photo-hash-server";
 import { applyHistory, applyRule, applyVendor, toVendor, type VendorHistory, type VendorRow, VENDOR_COLUMNS, vendorKey } from "./vendors";
+import { allRows } from "./fetch-all";
 
 export type AddResult =
   | { added: true; id: string; supplier: string; date: string; total: number; warnings: string[]; open: string; status: "draft" }
@@ -38,7 +39,7 @@ export async function addDocumentFromFile(admin: Admin, ownerId: string, file: B
 
   const hash = await photoHashServer(file);
   if (hash) {
-    const { data: seen } = await admin.from("documents").select("id, photo_hash").not("photo_hash", "is", null).is("deleted_at", null);
+    const { data: seen } = await allRows<{ id: string; photo_hash: string }>(() => admin.from("documents").select("id, photo_hash").not("photo_hash", "is", null).is("deleted_at", null));
     const dup = findDuplicate(hash, (seen ?? []).map((d) => ({ id: d.id as string, hash: d.photo_hash as string })));
     if (dup) return { added: false, reason: "This receipt is already in the ledger.", open: `${appUrl}/documents/${dup.id}` };
   }

@@ -5,6 +5,7 @@
 import { normalize } from "./normalize";
 import { type OurCompany, ourCompanyFrom } from "./our-company";
 import { supabaseAdmin } from "./supabase/admin";
+import { allRows } from "./fetch-all";
 
 const TTL = 10 * 60_000;
 const MAX_VENDORS = 120;
@@ -28,8 +29,8 @@ export function vendorHintText(rows: { tax_id: string | null; name: { th?: strin
 async function load() {
   const db = supabaseAdmin();
   const [vendors, docs, company] = await Promise.all([
-    db.from("vendors").select("id, tax_id, name"),
-    db.from("documents").select("vendor_id, customer").is("deleted_at", null).eq("status", "reviewed"),
+    allRows<{ id: string; tax_id: string; name: unknown }>(() => db.from("vendors").select("id, tax_id, name")),
+    allRows<{ vendor_id: string | null; customer: unknown }>(() => db.from("documents").select("id, vendor_id, customer").is("deleted_at", null).eq("status", "reviewed")),
     db.from("company_settings").select("tax_id").eq("id", 1).maybeSingle(),
   ]);
   const uses = new Map<string, number>();

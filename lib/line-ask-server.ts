@@ -21,6 +21,7 @@ import type { LineLang } from "./line-lang";
 import type { supabaseAdmin } from "./supabase/admin";
 import { todayBangkok } from "./thai-tax";
 import type { LedgerDoc } from "./types";
+import { allRows } from "./fetch-all";
 
 export type Admin = ReturnType<typeof supabaseAdmin>;
 type Row = DocumentRow & { document_items: ItemRow[]; ack_flags?: string[] | null };
@@ -37,7 +38,7 @@ export async function ledger(admin: Admin) {
   // Which categories' VAT is not claimable (settings) — claimable VAT depends on it
   await serverCategories();
   const [docs, settings] = await Promise.all([
-    admin.from("documents").select(DOC_LIST_COLUMNS).is("deleted_at", null),
+    allRows<Row>(() => admin.from("documents").select(DOC_LIST_COLUMNS).is("deleted_at", null)),
     admin.from("company_settings").select("tax_id, name, excel_format").eq("id", 1).maybeSingle(),
   ]);
   if (docs.error || settings.error) throw docs.error ?? settings.error;
@@ -57,7 +58,7 @@ export async function ledger(admin: Admin) {
 }
 
 export async function salesOf(admin: Admin, from: string, to: string) {
-  const { data, error } = await admin.from("sales").select("branch_id, sale_date, channel, gross, vat, bills").gte("sale_date", from).lte("sale_date", to);
+  const { data, error } = await allRows<{ branch_id: string; sale_date: string; channel: string; gross: number; vat: number; bills: number }>(() => admin.from("sales").select("id, branch_id, sale_date, channel, gross, vat, bills").gte("sale_date", from).lte("sale_date", to));
   if (error) throw error;
   return data ?? [];
 }

@@ -13,6 +13,7 @@ import { ALL } from "./branches";
 import { branchNow } from "./branch-store";
 import { supabaseBrowser } from "./supabase/client";
 import type { Category, LedgerDoc } from "./types";
+import { allRows } from "./fetch-all";
 
 type Snap = { claims: Claim[]; settings: ExpenseSettings; loaded: boolean };
 let snap: Snap = { claims: [], settings: readExpenseSettings(null), loaded: false };
@@ -23,7 +24,7 @@ const toClaim = rowToClaim;
 
 export async function reloadClaims() {
   const sb = supabaseBrowser();
-  const [c, s] = await Promise.all([sb.from("expense_claims").select("*").order("created_at", { ascending: false }).limit(3000), sb.from("company_settings").select("expenses").eq("id", 1).maybeSingle()]);
+  const [c, s] = await Promise.all([allRows<Record<string, unknown>>(() => sb.from("expense_claims").select("*").order("created_at", { ascending: false })), sb.from("company_settings").select("expenses").eq("id", 1).maybeSingle()]);
   if (c.error) throw c.error;
   snap = { claims: (c.data ?? []).map(toClaim), settings: readExpenseSettings(s.data?.expenses), loaded: true };
   listeners.forEach((f) => f());
