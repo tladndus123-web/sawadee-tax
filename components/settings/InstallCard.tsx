@@ -68,13 +68,13 @@ export function InstallCard({ compact }: { compact?: boolean }) {
   if (compact) {
     // A short strip (owner, 2026-11-06): the tip and the steps side by side, × hides it
     return (
-      <section className="workspace-panel relative flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 pr-11 pl-4 md:hidden" aria-label={t("title")}>
+      <section className="workspace-panel relative flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 pr-12 pl-4 md:hidden" aria-label={t("title")}>
         <p className="flex items-center gap-2 text-[13px] font-semibold">
           <Smartphone className="size-4 text-brand" aria-hidden />
           {t("tip")}
         </p>
         {steps}
-        <button type="button" onClick={hide} aria-label={t("hide")} className="absolute top-1/2 right-2 grid size-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted">
+        <button type="button" onClick={hide} aria-label={t("hide")} className="absolute top-1/2 right-1 grid size-11 -translate-y-1/2 pointer-fine:right-2 pointer-fine:size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted">
           <X className="size-4" />
         </button>
       </section>

@@ -50,7 +50,7 @@ export function UpcomingCard({ today }: { today: string }) {
 
   return (
     <section className="workspace-panel grid gap-3 p-5 sm:p-6" aria-labelledby="upcoming-title">
-      <Link href="/calendar" className="press flex items-start justify-between gap-3 rounded-lg">
+      <Link href="/calendar" className="press -my-2 flex min-h-11 items-start justify-between gap-3 rounded-lg py-2 pointer-fine:my-0 pointer-fine:min-h-0 pointer-fine:py-0">
         <span className="flex items-center gap-2">
           <CalendarDays className="size-5 text-[#7c5cff]" aria-hidden />
           <h2 id="upcoming-title" className="text-lg font-semibold tracking-tight">

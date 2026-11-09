@@ -409,7 +409,7 @@ export function FilingHelper({ month }: { month: string }) {
                     <span className="font-medium">{c.title}</span>
                     {c.sub && <span className="text-[13px] text-muted-foreground">{c.sub}</span>}
                     {c.href && (
-                      <Link href={c.href} className="w-fit text-[13px] font-medium text-primary hover:underline">
+                      <Link href={c.href} className="-my-2.5 inline-flex min-h-11 w-fit items-center text-[13px] font-medium text-primary hover:underline pointer-fine:my-0 pointer-fine:min-h-0">
                         {c.cta} →
                       </Link>
                     )}

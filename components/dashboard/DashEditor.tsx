@@ -32,13 +32,13 @@ export function DashEditor({ layout, onChange, isAdmin, notMine = [] }: { layout
               return (
                 <li key={c} className={cn("flex items-center gap-2 rounded-2xl bg-muted/60 py-1.5 pr-1.5 pl-4", hidden && "opacity-55")}>
                   <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{t(c)}</span>
-                  <Button type="button" variant="ghost" size="icon" className="size-9 rounded-full" disabled={i === 0} aria-label={t("up")} onClick={() => onChange(moveCard(layout, c, -1))}>
+                  <Button type="button" variant="ghost" size="icon" className="size-11 pointer-fine:size-9 rounded-full" disabled={i === 0} aria-label={t("up")} onClick={() => onChange(moveCard(layout, c, -1))}>
                     <ArrowUp className="size-4" />
                   </Button>
-                  <Button type="button" variant="ghost" size="icon" className="size-9 rounded-full" disabled={i === order.length - 1} aria-label={t("down")} onClick={() => onChange(moveCard(layout, c, 1))}>
+                  <Button type="button" variant="ghost" size="icon" className="size-11 pointer-fine:size-9 rounded-full" disabled={i === order.length - 1} aria-label={t("down")} onClick={() => onChange(moveCard(layout, c, 1))}>
                     <ArrowDown className="size-4" />
                   </Button>
-                  <Button type="button" variant="ghost" size="icon" className="size-9 rounded-full" aria-pressed={!hidden} aria-label={hidden ? t("show") : t("hide")} onClick={() => onChange(toggleCard(layout, c))}>
+                  <Button type="button" variant="ghost" size="icon" className="size-11 pointer-fine:size-9 rounded-full" aria-pressed={!hidden} aria-label={hidden ? t("show") : t("hide")} onClick={() => onChange(toggleCard(layout, c))}>
                     {hidden ? <EyeOff className="size-4" /> : <Eye className="size-4 text-primary" />}
                   </Button>
                 </li>

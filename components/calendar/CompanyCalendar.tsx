@@ -389,15 +389,16 @@ export function CompanyCalendar() {
                         <span className={cn("size-2 flex-none -translate-y-px rounded-full", TONE[g].dot)} aria-hidden />
                         <span className="line-clamp-2 [overflow-wrap:anywhere]">{title(i)}</span>
                       </p>
-                      <p className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
+                      {/* Wraps instead of cutting: the amount is the point (2026-11-09 QA: "예상 …" hid ฿147,059) */}
+                      <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12.5px] text-muted-foreground">
                         {!i.done && (
                           <span className={cn("flex-none rounded-full px-1.5 py-px text-[11px] font-bold tabular-nums", left < 0 ? "bg-bad-soft text-bad" : left <= 3 ? "bg-warn-soft text-warn" : "bg-muted")}>
                             {left === 0 ? t("today") : left < 0 ? t("late", { n: -left }) : t("dDay", { n: left })}
                           </span>
                         )}
                         <span className="flex-none">{dateText(i.date)}</span>
-                        {i.amount !== undefined && <span className="truncate font-semibold text-foreground tabular-nums">· {bahtWhole(i.amount)}</span>}
-                        {vat !== null && <span className="truncate font-semibold text-foreground tabular-nums">· {vat < 0 ? t("vatCredit", { amount: bahtWhole(-vat) }) : t("vatPay", { amount: bahtWhole(vat) })}</span>}
+                        {i.amount !== undefined && <span className="font-semibold whitespace-nowrap text-foreground tabular-nums">· {bahtWhole(i.amount)}</span>}
+                        {vat !== null && <span className="font-semibold whitespace-nowrap text-foreground tabular-nums">· {vat < 0 ? t("vatCredit", { amount: bahtWhole(-vat) }) : t("vatPay", { amount: bahtWhole(vat) })}</span>}
                       </p>
                     </div>
                     {isAdmin && ev ? (

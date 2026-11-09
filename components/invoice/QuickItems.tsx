@@ -63,7 +63,8 @@ export function QuickItems() {
                 <Trash2 className="size-4" />
               </Button>
             </div>
-            <div className="grid grid-cols-3 gap-2 pl-7">
+            {/* Phones: a narrow quantity beside the price, the amount on its own line (2026-11-09 QA: 1,234,567.89 showed "1,234") */}
+            <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2 pl-7 sm:grid-cols-3">
               <label className="grid gap-1">
                 <span className="text-[11px] text-muted-foreground">{t("labels.qty")}</span>
                 <Controller
@@ -90,7 +91,7 @@ export function QuickItems() {
                   )}
                 />
               </label>
-              <label className="grid gap-1">
+              <label className="grid gap-1 max-sm:col-span-2">
                 <span className="text-[11px] text-muted-foreground">{t("labels.amount")}</span>
                 <Controller
                   control={control}
@@ -105,7 +106,7 @@ export function QuickItems() {
                 control={control}
                 name={`items.${i}.category`}
                 render={({ field }) => (
-                  <select value={field.value || ""} onChange={(e) => field.onChange(e.target.value)} className="h-9 min-w-0 flex-1 rounded-lg border bg-background px-2 text-xs">
+                  <select value={field.value || ""} onChange={(e) => field.onChange(e.target.value)} className="h-11 min-w-0 flex-1 rounded-lg border bg-background px-2 text-xs pointer-fine:h-9">
                     <option value="">{t("app.sameAsDoc")}</option>
                     {options.map((o) => (
                       <option key={o.key} value={o.key}>
