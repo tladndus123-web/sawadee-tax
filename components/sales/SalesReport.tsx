@@ -104,6 +104,8 @@ export function SalesReport({ month }: { month: string }) {
           <dd>{us?.branchNo ? branchLabel(us.branchNo, "th") : "สำนักงานใหญ่"}</dd>
         </dl>
 
+        {/* Phones: the A4 table is wider than the screen (2026-11-09) */}
+        <p className="mb-1 text-right text-[12px] text-neutral-500 sm:hidden print:hidden">{t("report.swipe")} →</p>
         <div className="overflow-x-auto print:overflow-visible">
         <table className="w-full min-w-[900px] border-collapse print:min-w-0">
           <thead>

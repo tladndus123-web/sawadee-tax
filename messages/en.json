@@ -850,7 +850,8 @@
     "approvedBy": "Approved by",
     "signDate": "Date",
     "note": "Prepared from the documents recorded in the ledger. Check against the original documents before filing.",
-    "companyMissing": "Enter our company tax ID in Settings to show the taxpayer details and claimable input tax."
+    "companyMissing": "Enter our company tax ID in Settings to show the taxpayer details and claimable input tax.",
+    "swipe": "Swipe sideways to see more"
   },
   "lock": {
     "badge": "Closed",

@@ -13,7 +13,7 @@ import { APP_MARK_GLOW, AppMark } from "./app-mark";
 import { LocaleSwitcher } from "./locale-switcher";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
-import { AssistantButton } from "@/components/assistant/AssistantPanel";
+import { AssistantButton } from "@/components/assistant/AssistantButton";
 
 const NAV = [
   { href: "/", key: "dashboard", icon: LayoutGrid },

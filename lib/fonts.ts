@@ -9,10 +9,13 @@ export const inter = Inter({
   display: "swap",
 });
 
+// Not preloaded (speed, 2026-11-09): 48 KB on every page before anything else; the browser fetches it as soon as
+// Thai text is on screen
 export const notoThai = Noto_Sans_Thai({
   subsets: ["thai"],
   variable: "--font-noto-thai",
   display: "swap",
+  preload: false,
 });
 
 export const notoJp = Noto_Sans_JP({
@@ -35,6 +38,7 @@ export const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   variable: "--font-plex-mono",
   display: "swap",
+  preload: false,
 });
 
 export const fontVariables = [inter, notoThai, notoJp, plexKr, plexMono].map((f) => f.variable).join(" ");

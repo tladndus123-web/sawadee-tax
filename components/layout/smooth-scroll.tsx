@@ -1,6 +1,5 @@
 "use client";
 
-import Lenis from "lenis";
 import "lenis/dist/lenis.css";
 import { useEffect } from "react";
 
@@ -15,14 +14,23 @@ import { useEffect } from "react";
 export function SmoothScroll() {
   useEffect(() => {
     if (!matchMedia("(pointer: fine)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const lenis = new Lenis({
+    // Loaded only here, so phones never download it (speed, 2026-11-09)
+    let lenis: { destroy: () => void } | null = null;
+    let gone = false;
+    void import("lenis").then(({ default: Lenis }) => {
+      if (gone) return;
+      lenis = new Lenis({
       autoRaf: true,
       lerp: 0.12,
       prevent: (node) =>
         document.body.hasAttribute("data-scroll-locked") ||
         !!node.closest("[data-lenis-prevent], [role='dialog'], [role='alertdialog'], [role='listbox'], [role='menu'], [data-radix-popper-content-wrapper]"),
+      });
     });
-    return () => lenis.destroy();
+    return () => {
+      gone = true;
+      lenis?.destroy();
+    };
   }, []);
   return null;
 }

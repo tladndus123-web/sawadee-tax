@@ -309,7 +309,14 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   **token-guessing brake** `lib/ip-limit.ts` on the routes that take a token without a sign-in — /api/oauth/token (20 wrong
   codes a minute per address), /api/share/* (30 wrong links), /api/calendar/feed (30) — only wrong tries count, so a
   valid accountant page loading many photos is never slowed; the limiters are per server instance (best effort), the
-  tokens' length is the real protection. PC width (1280) checked with the QA seed: no real issues. Automatic deletion of live data is
+  tokens' length is the real protection. PC width (1280) checked with the QA seed: no real issues.
+- **Last speed pass** (2026-11-09, owner: "속도 올릴 방법, 휴대폰 화면만 수정하고 마무리"): Lenis (smooth scroll) is imported
+  inside its effect, only with a mouse — phones never download it; only Inter is preloaded (`lib/fonts.ts`: Noto Sans Thai
+  and IBM Plex Mono `preload: false`, ~78 KB less at page start); the AI panel loads after the page
+  (`AssistantPanelLazy`, next/dynamic) and the header imports only `components/assistant/AssistantButton.tsx` (button,
+  `AiMark`, `OPEN_EVENT`; a tap before the panel is there sets `OPEN_WANTED` and the panel opens on mount). Payroll tabs
+  44 px on touch; the sales tax report shows "옆으로 밀어서 보기" on phones (`report.swipe` — also in lib/form-text.json,
+  regenerate with scripts/form-text.mts when report texts change). Automatic deletion of live data is
   off-limits for Claude (auto-mode classifier refused it 2026-11-08) — list the documents and let the owner decide.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out

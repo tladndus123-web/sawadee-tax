@@ -5,7 +5,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { BranchGate } from "@/components/auth/BranchGate";
 import { ScreenGuard } from "@/components/auth/ScreenGuard";
 import { PasskeyOffer } from "@/components/auth/PasskeyOffer";
-import { AssistantPanel } from "@/components/assistant/AssistantPanel";
+import { AssistantPanelLazy } from "@/components/assistant/AssistantPanelLazy";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslations("app");
@@ -25,7 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </BranchGate>
       </main>
       {/* The AI assistant (admins): a sheet on phones, a panel on the right on PC */}
-      <AssistantPanel />
+      <AssistantPanelLazy />
       {/* Bottom padding clears the mobile tab bar */}
       <footer className="mx-auto w-full max-w-[1440px] px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] text-center text-[11px] leading-relaxed text-muted-foreground sm:px-6 md:pb-10 lg:px-8">{t("foot")}</footer>
     </div>
