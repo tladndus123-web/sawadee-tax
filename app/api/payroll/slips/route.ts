@@ -3,6 +3,7 @@
 // without a link, or with nothing paid that month, are named in the answer so the admin can hand them a PDF instead.
 
 import { endIfExpired } from "@/lib/auth/session-guard";
+import { hiddenBranches, scopedAdmin } from "@/lib/branch-scope-server";
 import { lineClient } from "@/lib/line";
 import { profileLang } from "@/lib/line-menu";
 import { payrollRefunds, rowToClaim } from "@/lib/expenses";
@@ -43,7 +44,9 @@ export async function POST(req: Request) {
   const ids = Array.isArray(body.employeeIds) ? body.employeeIds.filter((x) => typeof x === "string").slice(0, 200) : null;
 
   const nextMonth = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 1)).toISOString().slice(0, 10);
-  const admin = supabaseAdmin();
+  // Read as this admin: employees, pay and claims of a branch an owner kept them out of stay out (as in the app)
+  const service = supabaseAdmin();
+  const admin = scopedAdmin(service, await hiddenBranches(service, user.id));
   let q = admin.from("employees").select("id, name, line_user_id");
   if (ids) q = q.in("id", ids);
   const [{ data: employees, error: e1 }, { data: lines, error: e2 }, { data: company }, { data: claims, error: e3 }] = await Promise.all([
@@ -90,6 +93,6 @@ export async function POST(req: Request) {
     }
   }
   // The payroll steps (components/payroll/PayrollSteps) read this mark: "payslips sent" for the month
-  if (sent.length) await admin.from("calendar_done").upsert({ key: `slips:${month}`, done_by: user.id }, { onConflict: "key" });
+  if (sent.length) await service.from("calendar_done").upsert({ key: `slips:${month}`, done_by: user.id }, { onConflict: "key" });
   return Response.json({ sent, notLinked, noPay, failed });
 }

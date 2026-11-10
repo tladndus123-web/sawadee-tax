@@ -2,6 +2,7 @@
 // its days — to the devices of the admin who pressed the button, nobody else.
 
 import { endIfExpired } from "@/lib/auth/session-guard";
+import { isFullAdmin } from "@/lib/full-admin-server";
 import { appUrl } from "@/lib/line-bot";
 import { pushConfigured, sendPush, toPush } from "@/lib/push-server";
 import { reminderTexts } from "@/lib/reminders-server";
@@ -31,7 +32,8 @@ export async function POST() {
   hits.set(user.id, [...recent, now]);
 
   const admin = supabaseAdmin();
-  const texts = await reminderTexts(admin, todayBangkok(), { test: true });
+  // The reminders carry whole-company numbers: a limited admin's test is a plain notification without them
+  const texts = (await isFullAdmin(admin, user.id)) ? await reminderTexts(admin, todayBangkok(), { test: true }) : ["Sawadee TAX"];
   const messages = texts.map((t) => toPush(t, `${appUrl()}/`));
   if (messages[0]) messages[0] = { ...messages[0], title: `🧪 ${messages[0].title}` };
   const devices = await sendPush(admin, [user.id], messages);

@@ -2,6 +2,7 @@
 // reminder even when today is not one of its days — pushed only to the admin who pressed the button.
 
 import { endIfExpired } from "@/lib/auth/session-guard";
+import { isFullAdmin } from "@/lib/full-admin-server";
 import { lineClient, lineConfig } from "@/lib/line";
 import { noticeMessage } from "@/lib/line-dash";
 import { profileLang } from "@/lib/line-menu";
@@ -34,7 +35,9 @@ export async function POST() {
   if (recent.length >= LIMIT) return Response.json({ error: "rate" }, { status: 429 });
   hits.set(user.id, [...recent, now]);
 
-  const texts = await reminderTexts(supabaseAdmin(), todayBangkok(), { test: true });
+  // The reminders carry whole-company numbers: like the daily ones, only for admins an owner did not limit
+  const admin = supabaseAdmin();
+  const texts = (await isFullAdmin(admin, user.id)) ? await reminderTexts(admin, todayBangkok(), { test: true }) : [];
   if (!texts.length) return Response.json({ sent: 0 });
   await lineClient().pushMessage({
     to: member.line_user_id as string,
