@@ -322,7 +322,7 @@ export async function setPayrollCheck(employeeId: string, month: string, on: boo
 
 /** Allowance names typed on earlier pay runs, offered in the list next to the built-in ones */
 export async function loadAllowanceNames(): Promise<string[]> {
-  const { data, error } = await supabaseBrowser().from("payroll_lines").select("allowances").neq("allowances", "[]");
+  const { data, error } = await allRows<{ allowances: unknown }>(() => supabaseBrowser().from("payroll_lines").select("id, allowances").neq("allowances", "[]"));
   if (error) throw error;
   return customNames((data ?? []).flatMap((r) => parseAllowances(r.allowances)));
 }

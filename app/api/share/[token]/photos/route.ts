@@ -6,6 +6,7 @@
 import { zipSync } from "fflate";
 import { monthKey } from "@/lib/archive";
 import { exportOrder } from "@/lib/export";
+import { inChunks } from "@/lib/fetch-all";
 import { ledger } from "@/lib/line-ask-server";
 import { shareMonth } from "@/lib/month-end-server";
 import { packFileName } from "@/lib/month-pack";
@@ -31,8 +32,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
 
   const { saved } = await ledger(admin);
   const docs = saved.filter((d) => monthKey(d.doc) === share.month).sort((a, b) => exportOrder(a.doc, b.doc));
-  const { data: rows } = await admin.from("documents").select("id, photo_path").in("id", docs.length ? docs.map((d) => d.id) : ["00000000-0000-0000-0000-000000000000"]);
-  const pathOf = new Map((rows ?? []).map((r) => [r.id as string, r.photo_path as string | null]));
+  // In parts: a busy month's ids do not fit one request's address, and one answer stops at 1000 rows
+  let rows: { id: string; photo_path: string | null }[];
+  try {
+    rows = await inChunks<{ id: string; photo_path: string | null }>(docs.map((d) => d.id), (part) => admin.from("documents").select("id, photo_path").in("id", part));
+  } catch {
+    return new Response("Could not read the photos. Please try again.", { status: 500 });
+  }
+  const pathOf = new Map(rows.map((r) => [r.id, r.photo_path]));
 
   const files: Record<string, [Uint8Array, { level: 0 }]> = {};
   let bytes = 0;

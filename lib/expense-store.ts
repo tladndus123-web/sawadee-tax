@@ -13,7 +13,7 @@ import { ALL } from "./branches";
 import { branchNow } from "./branch-store";
 import { supabaseBrowser } from "./supabase/client";
 import type { Category, LedgerDoc } from "./types";
-import { allRows } from "./fetch-all";
+import { allRows, inChunks } from "./fetch-all";
 
 type Snap = { claims: Claim[]; settings: ExpenseSettings; loaded: boolean };
 let snap: Snap = { claims: [], settings: readExpenseSettings(null), loaded: false };
@@ -114,8 +114,7 @@ export async function moveToClaim(documentId: string, doc: LedgerDoc, photoPath:
 
 /** Approve, reject (with a reason) or send back to waiting */
 export async function decideClaims(ids: string[], status: "approved" | "rejected" | "pending", reason = "") {
-  const { error } = await supabaseBrowser().from("expense_claims").update({ status, reason: status === "rejected" ? reason.trim().slice(0, 300) : "" }).in("id", ids);
-  if (error) throw error;
+  await inChunks(ids, (part) => supabaseBrowser().from("expense_claims").update({ status, reason: status === "rejected" ? reason.trim().slice(0, 300) : "" }).in("id", part));
   if (status !== "pending") ids.forEach(notifyClaim);
   await reloadClaims();
 }

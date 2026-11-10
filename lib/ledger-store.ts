@@ -15,7 +15,7 @@ import { photoHash } from "./photo-hash";
 import { ALL } from "./branches";
 import { branchNow, subscribeBranch } from "./branch-store";
 import type { LedgerDoc, Sticker } from "./types";
-import { allRows, PAGE } from "./fetch-all";
+import { allRows, inChunks, PAGE } from "./fetch-all";
 
 /** "draft" = saved to finish later (not in monthly totals); "final" = in the ledger (db status "reviewed") */
 export type EntryStatus = "draft" | "final";
@@ -273,11 +273,8 @@ export function useLedger(opts: { all?: boolean } = {}): { entries: LedgerEntry[
 /** The office checked these documents (admins only; the database refuses anyone else). `on: false` undoes it. */
 export async function setChecked(ids: string[], on: boolean, meName: string) {
   if (!ids.length) return;
-  const { error } = await supabaseBrowser()
-    .from("documents")
-    .update({ checked_at: on ? new Date().toISOString() : null })
-    .in("id", ids);
-  if (error) throw error;
+  const checked_at = on ? new Date().toISOString() : null;
+  await inChunks(ids, (part) => supabaseBrowser().from("documents").update({ checked_at }).in("id", part));
   patchEntries(ids, (e) => ({ ...e, checkedAt: on ? Date.now() : null, checkedBy: on ? meName : null }));
 }
 
@@ -369,19 +366,14 @@ export async function setQuick(id: string, change: { paid?: boolean; paidDate?: 
 /** Mark several documents paid (or unpaid) at once, e.g. after a payment run; one request */
 export async function setPaidMany(ids: string[], paid: boolean, paidDate: string) {
   if (!ids.length) return;
-  const { error } = await supabaseBrowser()
-    .from("documents")
-    .update({ paid, paid_date: paid ? paidDate || null : null })
-    .in("id", ids);
-  if (error) throw error;
+  await inChunks(ids, (part) => supabaseBrowser().from("documents").update({ paid, paid_date: paid ? paidDate || null : null }).in("id", part));
   patchEntries(ids, (e) => ({ ...e, doc: { ...e.doc, paid, paidDate: paid ? paidDate : "" }, updatedAt: Date.now() }));
 }
 
 /** One category for several documents at once (their lines keep their own); closed months are refused by the database */
 export async function setCategoryMany(ids: string[], category: LedgerDoc["category"]) {
   if (!ids.length) return;
-  const { error } = await supabaseBrowser().from("documents").update({ category }).in("id", ids);
-  if (error) throw error;
+  await inChunks(ids, (part) => supabaseBrowser().from("documents").update({ category }).in("id", part));
   patchEntries(ids, (e) => ({ ...e, doc: { ...e.doc, category }, updatedAt: Date.now() }));
 }
 
@@ -408,15 +400,14 @@ export async function softDeleteMany(ids: string[], reason: string): Promise<num
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  const { data, error } = await supabase
-    .from("documents")
-    .update({ deleted_at: new Date().toISOString(), deleted_by: session?.user?.id, delete_reason: reason.trim().slice(0, 200) })
-    .in("id", ids)
-    .is("deleted_at", null)
-    .select("id");
-  if (error) throw error;
-  await reload();
-  return data?.length ?? 0;
+  const change = { deleted_at: new Date().toISOString(), deleted_by: session?.user?.id, delete_reason: reason.trim().slice(0, 200) };
+  let moved: { id: string }[] = [];
+  try {
+    moved = await inChunks<{ id: string }>(ids, (part) => supabase.from("documents").update(change).in("id", part).is("deleted_at", null).select("id"));
+  } finally {
+    await reload(); // also after an error half-way: show what did move
+  }
+  return moved.length;
 }
 
 export async function softDelete(id: string, reason: string) {
@@ -439,14 +430,13 @@ export async function softDelete(id: string, reason: string) {
 /** Admin only: bring several documents back from the trash at once */
 export async function restoreMany(ids: string[]): Promise<number> {
   if (!ids.length) return 0;
-  const { data, error } = await supabaseBrowser()
-    .from("documents")
-    .update({ deleted_at: null, deleted_by: null, delete_reason: null })
-    .in("id", ids)
-    .select("id");
-  if (error) throw error;
-  await reload();
-  return data?.length ?? 0;
+  let back: { id: string }[] = [];
+  try {
+    back = await inChunks<{ id: string }>(ids, (part) => supabaseBrowser().from("documents").update({ deleted_at: null, deleted_by: null, delete_reason: null }).in("id", part).select("id"));
+  } finally {
+    await reload();
+  }
+  return back.length;
 }
 
 /** Admin only. */
