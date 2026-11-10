@@ -1,7 +1,7 @@
 // Every row, not just the first 1000 (owner 2026-11-09: "서류가 1000장 넘어도 문제가 없는지"). The database answers at most
 // `max_rows` (1000) rows per request and silently drops the rest, so a list read in one go — the ledger, sales, claims —
 // would lose its oldest rows once there are more. This asks page by page (500 a time, safely under the cap) until a page
-// comes back short. Works for the browser and the server client alike.
+// comes back short (the first page alone, then three pages at a time). Works for the browser and the server client alike.
 //
 // `make` must build a fresh query each time (a query can only be sent once) and the rows need a stable order: pass
 // `key`, a unique column (default "id"), and it is added as the last sort so pages never overlap or skip.
@@ -17,16 +17,22 @@ interface Ranged<T> extends PromiseLike<Page<T>> {
   order(column: string, opts?: { ascending?: boolean }): Ranged<T>;
 }
 
+/** After the first page the next ones are asked this many at a time (2,000 sales rows: 2 round trips, not 4) */
+export const WAVE = 3;
+
 export async function fetchAll<T>(make: () => unknown, key: string | null = "id"): Promise<T[]> {
   const out: T[] = [];
   // A row saved by someone else while we page shifts the rest by one, so a page can repeat a row: keep the first only
   const seen = new Set<unknown>();
-  for (let from = 0; ; from += PAGE) {
+  const pageAt = async (from: number): Promise<T[]> => {
     let q = make() as Ranged<T>;
     if (key) q = q.order(key, { ascending: true });
     const { data, error } = await q.range(from, from + PAGE - 1);
     if (error) throw error;
-    const rows = data ?? [];
+    return data ?? [];
+  };
+  /** Adds a page; true when it was the last one (short) */
+  const add = (rows: T[]): boolean => {
     for (const row of rows) {
       const k = key ? (row as Record<string, unknown> | null)?.[key] : undefined;
       if (k === undefined || k === null) out.push(row);
@@ -35,7 +41,13 @@ export async function fetchAll<T>(make: () => unknown, key: string | null = "id"
         out.push(row);
       }
     }
-    if (rows.length < PAGE) return out;
+    return rows.length < PAGE;
+  };
+  // Most lists fit one page: ask that alone. Only a full first page starts the waves.
+  if (add(await pageAt(0))) return out;
+  for (let from = PAGE; ; from += PAGE * WAVE) {
+    const pages = await Promise.all(Array.from({ length: WAVE }, (_, i) => pageAt(from + i * PAGE)));
+    for (const rows of pages) if (add(rows)) return out;
   }
 }
 

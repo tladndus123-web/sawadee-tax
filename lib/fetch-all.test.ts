@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allRows, fetchAll, ID_CHUNK, inChunks, PAGE } from "./fetch-all";
+import { allRows, fetchAll, ID_CHUNK, inChunks, PAGE, WAVE } from "./fetch-all";
 
 // A fake query over `n` rows that, like the database, never answers more than `cap` rows
 function fake(n: number, cap = 1000, fail = false) {
@@ -47,6 +47,35 @@ describe("fetchAll (every row, past the 1000-row cap)", () => {
     const r = await allRows(fake(3, 1000, true).make);
     expect(r.data).toBeNull();
     expect(r.error).toBeTruthy();
+  });
+});
+
+describe("fetchAll speed", () => {
+  it("after a full first page the next pages are asked together, and the rows keep their order", async () => {
+    const rows = Array.from({ length: 1988 }, (_, i) => ({ id: i }));
+    let flying = 0;
+    let most = 0;
+    const make = () => {
+      const q = {
+        order: () => q,
+        range: async (from: number, to: number) => {
+          most = Math.max(most, ++flying);
+          await new Promise((r) => setTimeout(r, 5 - (from / PAGE))); // later pages answer first
+          flying--;
+          return { data: rows.slice(from, to + 1), error: null };
+        },
+        then: undefined,
+      };
+      return q;
+    };
+    const got = await fetchAll<{ id: number }>(make);
+    expect(most).toBe(WAVE);
+    expect(got.map((r) => r.id)).toEqual(rows.map((r) => r.id));
+  });
+  it("a short list is still one request", async () => {
+    const f = fake(499);
+    await fetchAll(f.make);
+    expect(f.calls).toEqual([[0, 499]]);
   });
 });
 
