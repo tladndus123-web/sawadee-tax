@@ -2804,7 +2804,9 @@
     "connected": "Connected",
     "refused": "Refused",
     "backToBot": "Go back to Grok Bot. If it does not open by itself, tap below.",
-    "openBot": "Open Grok Bot"
+    "openBot": "Open Grok Bot",
+    "sendsTo": "If you allow, the connection code is sent to {host}.",
+    "sendsToWeb": "This is a website address. Refuse if you did not start this connection yourself or do not know the address."
   },
   "dupReview": {
     "title": "Possible duplicates: {groups} groups",

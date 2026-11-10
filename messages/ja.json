@@ -2804,7 +2804,9 @@
     "connected": "連携しました",
     "refused": "拒否しました",
     "backToBot": "Grok Botに戻ってください。自動で開かない場合は下を押してください。",
-    "openBot": "Grok Botを開く"
+    "openBot": "Grok Botを開く",
+    "sendsTo": "許可すると、接続コードは {host} に送られます。",
+    "sendsToWeb": "ウェブサイトのアドレスです。自分で接続を始めていない場合や、知らないアドレスの場合は拒否してください。"
   },
   "dupReview": {
     "title": "重複の疑い {groups}組",

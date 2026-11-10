@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { redirectLabel, staysOnDevice } from "@/lib/redirect-label";
 import { useMe } from "@/lib/role-store";
 
 export function ConnectConsent() {
@@ -64,6 +65,11 @@ export function ConnectConsent() {
         <h1 className="text-[22px] leading-tight font-semibold tracking-tight">{name ? t("title", { name }) : "…"}</h1>
         <p className="text-[14px] text-muted-foreground">{t("sub")}</p>
       </div>
+      {/* The name above is whatever the agent calls itself: the address the code goes to is what can be trusted */}
+      <p className={`rounded-2xl p-4 text-[14px] ${staysOnDevice(req.redirect_uri) ? "bg-muted/50 text-muted-foreground" : "bg-warn-soft text-foreground"}`}>
+        <span className="font-medium break-all">{t("sendsTo", { host: redirectLabel(req.redirect_uri) })}</span>
+        {!staysOnDevice(req.redirect_uri) && <span className="mt-1 block">{t("sendsToWeb")}</span>}
+      </p>
       <ul className="grid gap-2 rounded-2xl bg-muted/50 p-4 text-[14px]">
         <li className="flex gap-2">
           <CircleCheck className="mt-0.5 size-4 flex-none text-ok" aria-hidden />
