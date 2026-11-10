@@ -27,7 +27,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 |---|---|
 | Local DB (Docker) | `npm run db:start` · reset `npx supabase db reset` then `npm run db:bootstrap -- suhojayu4@gmail.com "pppyu" --sample` |
 | Dev server | `npx next dev --turbopack -p 3130` → http://localhost:3130/ja · login mail at http://127.0.0.1:54324 |
-| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (633) · `npm run db:test` (423 in 9 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
+| Checks | `npx tsc --noEmit` · `npx eslint .` · `npx vitest run` (666) · `npm run db:test` (423 in 9 files) · LINE claims without LINE: `npx.cmd tsx scripts/line-expense-check.mts` (local only) |
 | Build (must pass before deploy) | `npx next build` (stop the dev server first, it shares `.next`) |
 | Deploy (app + DB) | **Push to `main` and let GitHub Actions deploy** (`.github/workflows/deploy.yml`: checks → migrations → pgTAP on the cloud DB → Vercel → live check). Cursor pushes to `main` too, so never deploy from this PC (`vercel deploy`) — a local build can put an older tree live over theirs (happened twice 2026-11-05). Check the run with the GitHub API (token from `git credential fill` for github.com, never printed): `GET https://api.github.com/repos/tladndus123-web/sawadee-tax/actions/runs?per_page=3`. Only if Actions is down: `npx vercel deploy --prod` from an up-to-date `main` |
 | If a deploy is broken | `npx vercel rollback <previous url>`; after a rollback new deploys are not live until `npx vercel promote <url>`. A failed Actions run leaves the site as it was |
@@ -330,6 +330,21 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   search, sales months back to the first. Check script: `npx.cmd tsx --env-file=.env.local --conditions=react-server
   scripts/bulk-check.mts` (local only). Reading live counts from this PC was refused by the auto-mode classifier. Automatic deletion of live data is
   off-limits for Claude (auto-mode classifier refused it 2026-11-08) — list the documents and let the owner decide.
+- **Final check** (2026-11-10, owner: "최종 검수 · 최적화 · 마지막 수정"; local only, 1,612 documents / 1,988 sales / 1,280 attendance
+  days seeded and removed): (1) `/api/payroll/slips` reads through `scopedAdmin` (an admin kept out of a branch could send
+  that branch's payslips) and the two "send a test" routes send the company-wide reminder numbers only to `isFullAdmin`
+  — `lib/api-scope.test.ts` fails when a new service-role route has no such guard (or no entry in its list with a reason).
+  (2) **Long id lists**: the gateway refuses an address with 400+ uuids (HTTP 414, measured locally: 200 ok, 400 refused),
+  so "check all", bulk paid / category, trash, restore, claim decisions and the accountant's photo ZIP send
+  `inChunks` (lib/fetch-all, 100 ids a request). **Any new `.in("id", manyIds)` must use `inChunks`.** (3) `fetchAll`
+  asks the first page alone, then three pages at a time (`WAVE`), and keeps a row once when someone saves while it pages;
+  allowance names page too. (4) The agent sign-in page (`ConnectConsent`) shows where the code goes
+  (`lib/redirect-label`: host of the redirect, a warning box when it is a website) — the client's name is self-declared.
+  (5) Phones: every 40 px button / link / tab (`h-10`, `min-h-10`, `size-10`) gets an invisible 44 px tap area from
+  one rule in globals.css (base layer, `pointer: coarse`), the top bar's logo / branch / language / account too.
+  (6) `.claude/launch.json` and the bootstrap hint use port 3130 like the docs. Left for later (reported to the owner):
+  78 unused message keys, `lib/team-summary` (tests only), `aria-label="Loading"` in English (22 places), the Grok Bot
+  `set_event_webhook` tool outliving a revoked key, Next.js 16.
 - Admin: suhojayu4@gmail.com (pppyu).
 - UI defaults (owner's choice, 2026-09-26): Japanese first (ja · th · en · ko), light theme; a sign-in stays until signing out
   (owner 2026-10-26 — the 12-hour limit is off; `NEXT_PUBLIC_SESSION_HOURS` would bring a limit back). Sign-in links work in any browser (implicit flow).

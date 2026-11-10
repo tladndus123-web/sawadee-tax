@@ -77,7 +77,7 @@ export function BranchSwitcher() {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-label={`${t("switch")}: ${current.label}`}
-        className="press flex h-9 max-w-[11rem] min-w-0 items-center gap-1.5 rounded-full border bg-card py-1 pr-2 pl-1 text-[13px] font-semibold shadow-sm sm:max-w-[15rem]"
+        className="press relative flex h-9 max-w-[11rem] after:absolute after:inset-x-0 after:-inset-y-1.5 min-w-0 items-center gap-1.5 rounded-full border bg-card py-1 pr-2 pl-1 text-[13px] font-semibold shadow-sm sm:max-w-[15rem]"
         style={current.color ? { borderColor: current.color[0] } : undefined}
       >
         <BranchAvatar branch={current.branch} branches={branches} size="size-7" className="text-xs" />

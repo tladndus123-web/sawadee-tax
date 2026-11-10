@@ -1,36 +1,31 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sawadee TAX (thai-receipt-ledger)
 
-## Getting Started
+Bookkeeping for one company's restaurants in Thailand: a photo of a Thai tax invoice or receipt is read by AI, checked,
+and kept in the company ledger — with sales, payroll, attendance, cash box, expense claims, the tax calendar and a LINE bot.
+Screens in Japanese, Thai, English and Korean. Live at https://thai-receipt-ledger.vercel.app (invite only).
 
-First, run the development server:
+- **Start here:** [`CLAUDE.md`](CLAUDE.md) (how the project is run, commands, what was built and why) and
+  [`AGENTS.md`](AGENTS.md) (the same rules for other coding agents). Full handoff in Korean: [`docs/HANDOFF.md`](docs/HANDOFF.md).
+- **Stack:** Next.js 15 (App Router), TypeScript, Tailwind 4 + shadcn/ui, next-intl, Supabase (Postgres + RLS), Vercel.
+
+## Run it locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci
+npm run db:start                                   # local Supabase in Docker (API on 54321)
+npm run db:bootstrap -- you@company.com "Name" --sample
+npx next dev --turbopack -p 3130                   # http://localhost:3130/ja — sign-in mail at http://127.0.0.1:54324
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Keys go into `.env.local` (see `.env.example`); they are never committed.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npx tsc --noEmit && npx eslint . && npx vitest run && npm run db:test && npx next build
+```
 
-## Learn More
+## Deploy
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+A push to `main` deploys through GitHub Actions (`.github/workflows/deploy.yml`: checks → database migrations →
+database rule tests → Vercel). Do not deploy from a PC.

@@ -34,7 +34,7 @@ export function LocaleSwitcher() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-10 gap-1.5 rounded-full px-3 text-[13px] text-muted-foreground" aria-label={t("language")} disabled={pending}>
+        <Button variant="ghost" className="relative h-10 gap-1.5 rounded-full px-3 text-[13px] text-muted-foreground after:absolute after:inset-x-0 after:-inset-y-1" aria-label={t("language")} disabled={pending}>
           <Globe className="size-4" aria-hidden />
           <span className="font-semibold">{short}</span>
         </Button>

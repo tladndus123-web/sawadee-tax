@@ -59,7 +59,7 @@ async function main() {
     if (itemErr) throw itemErr;
     console.log(`Added the sample document (${doc.docNo})`);
   }
-  console.log("Done. Sign in at http://localhost:3100/ko/login — local mail: http://127.0.0.1:54324");
+  console.log("Done. Sign in at http://localhost:3130/ko/login — local mail: http://127.0.0.1:54324");
 }
 
 main().catch((e) => {

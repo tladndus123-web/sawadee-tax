@@ -94,7 +94,7 @@ export function AppHeader() {
         </a>
         <div className="mx-auto grid h-14 max-w-[1440px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 md:grid-cols-[1fr_auto_1fr] px-4 sm:px-6 md:h-16 lg:px-8">
           <div className="flex min-w-0 items-center gap-2.5">
-            <Link href="/" className="press flex min-w-0 items-center gap-2.5 text-[15px] font-semibold tracking-tight active:scale-[0.97]">
+            <Link href="/" className="press relative flex min-w-0 items-center gap-2.5 text-[15px] font-semibold tracking-tight after:absolute after:-inset-2 active:scale-[0.97]">
               <AppMark className={`size-8 flex-none rounded-[9px] ${APP_MARK_GLOW}`} />
               <span className={cn("truncate", manyBranches && "max-sm:hidden", (locale === "en" || locale === "th") && "md:max-2xl:hidden")}>{t("app.appName")}</span>
             </Link>

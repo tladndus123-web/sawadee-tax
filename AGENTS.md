@@ -36,13 +36,13 @@ the prompts, caching and accuracy tests are built around Claude models).
 | Install | `npm ci` |
 | Types | `npx tsc --noEmit` |
 | Lint | `npx eslint .` |
-| Unit tests | `npx vitest run` (422 tests) |
+| Unit tests | `npx vitest run` (666 tests) |
 | Build | `npx next build` |
-| Database rules | `npm run db:test` (pgTAP 231 + STOCK 61) — needs Docker + `npx supabase start`; if Docker is not available, say so: the deploy workflow runs them on the cloud before going live |
+| Database rules | `npm run db:test` (pgTAP 423 in 9 files, STOCK's 61 included) — needs Docker + `npx supabase start`; if Docker is not available, say so: the deploy workflow runs them on the cloud before going live |
 
 ## Rules that protect the books (see HANDOFF §7)
 - **Migrations:** before adding one, pull and take the next free number in `supabase/migrations`
-  (`20260929001900_…` is the latest at the time of writing; a test fails on duplicate numbers). Every new database rule
+  (`20260929004400_…` is the latest at the time of writing, 2026-11-10; a test fails on duplicate numbers). Every new database rule
   gets a test in `supabase/tests/rls.test.sql` (bump `select plan(N)`). Tests write only to rows they create or to the
   year 2001, never to real months — the cloud database holds real data.
 - Money is computed in satang integers (`lib/money.ts`). Don't change a `lib/` result without updating its test first;
@@ -69,5 +69,5 @@ the prompts, caching and accuracy tests are built around Claude models).
 
 ## Production facts
 - Site https://thai-receipt-ledger.vercel.app · Supabase project INC (Singapore) · LINE bot `@136udmem`
-  (replies in Thai + Japanese) · daily cron 02:00 UTC.
+  (every message in the reader's LINE language: ko / ja / th / en) · daily cron 02:00 UTC.
 - Sign-up is closed (invite only); sign-in by email link or 6-digit code; a sign-in stays until signing out (no time limit since 2026-10-26).

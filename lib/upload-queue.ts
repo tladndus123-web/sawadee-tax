@@ -96,7 +96,10 @@ function restore() {
   void cacheGet<Kept[]>(KEPT).then((kept) => {
     if (!kept?.length || items.length) return;
     const asFile = (b: Blob, name: string) => (b instanceof File ? b : new File([b], name, { type: b.type || "image/jpeg" }));
-    items = kept.map(({ photo, pdf, cutOut, together: n, ...it }) => {
+    items = kept.map(({ photo: keptPhoto, pdf: keptPdf, cutOut, together: n, ...it }) => {
+      // Only real files: a copy that came back as something else (seen in a restored browser profile) would throw below
+      const photo = keptPhoto instanceof Blob ? keptPhoto : null;
+      const pdf = keptPdf instanceof Blob ? keptPdf : null;
       if (photo) photos.set(it.id, asFile(photo, "photo.jpg"));
       if (pdf) pdfs.set(it.id, asFile(pdf, it.name || "document.pdf"));
       if (cutOut) cutOuts.add(it.id);
