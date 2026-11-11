@@ -43,10 +43,18 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   poweredByHeader: false,
   // The AI reading (app upload and LINE bot) reads the prototype prompt from disk at runtime, and cuts long
-  // slips with sharp, whose Linux binaries the file tracer misses on its own (Vercel: "Could not load sharp")
+  // slips with sharp, whose Linux binaries the file tracer misses on its own (Vercel: "Could not load sharp").
+  // Every route that reaches lib/extract-server (loadSharp) needs them — lib/sharp-trace.test.ts checks the list.
   outputFileTracingIncludes: {
     "/api/extract": ["./docs/reference/extract-prompt.txt", ...SHARP_LINUX],
     "/api/line/webhook": ["./docs/reference/extract-prompt.txt", ...SHARP_LINUX],
+    // 2026-11-11: receipt splitting fell back to the whole photo in production ("sharp unavailable")
+    "/api/split": SHARP_LINUX,
+    "/api/extract-sales": SHARP_LINUX,
+    "/api/calendar/read": SHARP_LINUX,
+    "/api/payroll/schedule-read": SHARP_LINUX,
+    // Grok Bot's add_receipt reads the photo like the LINE bot (prompt + sharp)
+    "/api/mcp": ["./docs/reference/extract-prompt.txt", ...SHARP_LINUX],
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
