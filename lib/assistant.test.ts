@@ -66,7 +66,7 @@ describe("the assistant's answer as a dashboard card", async () => {
     const flex = JSON.stringify(aiCard(c));
     expect(flex).toContain("9월 매출");
     expect(flex).toContain("฿1,284,500");
-    expect(flex).toContain("#0d121c");
+    expect(flex).toContain("#0a5ce6");
     expect(flex).toContain("https://app.example/sales/report/2026-09");
     expect(flex).not.toContain("evil");
     expect(cardText(c)).toContain("2일 (화): ฿39,500");

@@ -122,12 +122,12 @@ describe("dashboard cards", () => {
 });
 
 describe("the admins' LINE menu", () => {
-  it("6 taps that cover the whole 2500 × 1686 picture without overlap", () => {
+  it("6 taps that cover the whole menu picture without overlap", () => {
     const areas = menuDefinition("ko").areas ?? [];
     expect(areas).toHaveLength(6);
     const area = areas.reduce((a, x) => a + x.bounds!.width! * x.bounds!.height!, 0);
     expect(area).toBe(MENU_SIZE.width * MENU_SIZE.height);
-    for (const row of [0, 843]) {
+    for (const row of [0, MENU_SIZE.height / 2]) {
       const inRow = areas.filter((a) => a.bounds!.y === row);
       expect(inRow.reduce((a, x) => a + x.bounds!.width!, 0)).toBe(MENU_SIZE.width);
     }
@@ -136,7 +136,7 @@ describe("the admins' LINE menu", () => {
     const areas = menuDefinition("ja").areas ?? [];
     expect(areas.map((a) => (a.action as { data: string }).data)).toEqual(["ask=summary", "ask=due", "ask=vat", "ask=sales", "ask=excel", UPLOAD_DATA]);
     expect(areas[0].bounds).toMatchObject({ x: 0, y: 0, width: 1250 });
-    expect(areas[5].bounds).toMatchObject({ x: 1250, y: 843, width: 1250 });
+    expect(areas[5].bounds).toMatchObject({ x: 1250, y: 625, width: 1250 });
     expect(areas[0].action).toMatchObject({ displayText: "📊 今月のまとめ" });
   });
   it("speaks the phone's LINE language, English otherwise", () => {

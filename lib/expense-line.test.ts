@@ -14,7 +14,7 @@ describe("expense claims on LINE", () => {
     expect(json).toContain("฿1,240");
     expect(json).toContain("expense=approve&id=00000000-0000-0000-0000-00000000c001");
     expect(json).toContain("expense=reject&id=");
-    expect(json).toContain("#0d121c");
+    expect(json).toContain("#0a5ce6");
     expect(json).not.toContain('"hero":{"type":"image"');
     expect(JSON.stringify(claimCard({ ...card, photoUrl: "https://x.test/p.jpg" }, "th"))).toContain('"hero":{"type":"image"');
   });

@@ -3,7 +3,7 @@
 //
 //   npx.cmd tsx scripts/line-menu.ts
 //
-// Pictures: 2500 × 1686 PNG or JPEG under 1 MB, cards where lib/line-menu.ts expects them (the owner's design).
+// Pictures: MENU_SIZE (2500 × 1250) PNG or JPEG under 1 MB, cards where lib/line-menu.ts expects them (drawn by scripts/line-menu-art.mjs).
 // Reads LINE_CHANNEL_ACCESS_TOKEN from .env.local and the admins from the database in .env.deploy (production).
 // Prints no keys. Safe to run again: old menus are deleted after the new ones are live.
 
@@ -24,7 +24,7 @@ async function main() {
   for (const lang of MENU_LANGS) {
     const data = readFileSync(`docs/line-menu/${lang}.png`);
     const meta = await sharp(data).metadata();
-    if (meta.width !== MENU_SIZE.width || meta.height !== MENU_SIZE.height) throw new Error(`${lang}.png is ${meta.width} × ${meta.height}, not 2500 × 1686`);
+    if (meta.width !== MENU_SIZE.width || meta.height !== MENU_SIZE.height) throw new Error(`${lang}.png is ${meta.width} × ${meta.height}, not ${MENU_SIZE.width} × ${MENU_SIZE.height}`);
     if (data.length > 1024 * 1024) throw new Error(`${lang}.png is over 1 MB`);
     pictures.set(lang, { data, type: meta.format === "png" ? "image/png" : "image/jpeg" });
   }

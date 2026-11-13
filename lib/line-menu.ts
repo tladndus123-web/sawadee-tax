@@ -1,4 +1,5 @@
-// The admins' LINE menu (rich menu, owner 2026-10-26): the owner's pictures in docs/line-menu/{ko,ja,th,en}.png.
+// The admins' LINE menu (rich menu, owner 2026-10-26; redrawn 2026-11-14 in the app icon's style and a lower height,
+// scripts/line-menu-art.mjs): the pictures in docs/line-menu/{ko,ja,th,en}.png.
 // Only admins get it (linked per person; staff and employees keep the plain chat), in the language their phone's
 // LINE is set to (LINE profile "language"), English for any other. scripts/line-menu.ts uploads the four menus.
 //
@@ -15,7 +16,7 @@ import { LINE_LANGS, lineLang, type LineLang } from "./line-lang";
 
 export const MENU_LANGS = LINE_LANGS;
 export type MenuLang = LineLang;
-export const MENU_SIZE = { width: 2500, height: 1686 } as const;
+export const MENU_SIZE = { width: 2500, height: 1250 } as const;
 export const menuAlias = (lang: MenuLang) => `sawadee-admin-${lang}`;
 
 /** LINE profile language → the menu's language (English for any other) */
@@ -26,14 +27,14 @@ export const UPLOAD_DATA = "do=upload";
 
 type Button = Ask | "upload";
 
-/** Where each card is on the picture (pixels of the 2500 × 1686 original), in the order of the drawing above */
+/** Where each card is on the picture (pixels of the 2500 × 1250 picture), in the order of the drawing above */
 const CELLS: { button: Button; x: number; y: number; width: number; height: number }[] = [
-  { button: "summary", x: 0, y: 0, width: 1250, height: 843 },
-  { button: "due", x: 1250, y: 0, width: 612, height: 843 },
-  { button: "vat", x: 1862, y: 0, width: 638, height: 843 },
-  { button: "sales", x: 0, y: 843, width: 637, height: 843 },
-  { button: "excel", x: 637, y: 843, width: 613, height: 843 },
-  { button: "upload", x: 1250, y: 843, width: 1250, height: 843 },
+  { button: "summary", x: 0, y: 0, width: 1250, height: 625 },
+  { button: "due", x: 1250, y: 0, width: 625, height: 625 },
+  { button: "vat", x: 1875, y: 0, width: 625, height: 625 },
+  { button: "sales", x: 0, y: 625, width: 625, height: 625 },
+  { button: "excel", x: 625, y: 625, width: 625, height: 625 },
+  { button: "upload", x: 1250, y: 625, width: 1250, height: 625 },
 ];
 
 /** What the chat shows for a tap (the words on the picture) */

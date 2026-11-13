@@ -39,10 +39,10 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
 - Supabase project **INC** (Singapore). Sign-up disabled (invite only), Gmail SMTP, 4-language auth emails.
 - LINE bot **TDB** (`@136udmem`), webhook `/api/line/webhook`. **Every message is in the reader's phone LINE language**
   (profile language → ko / ja / th / en, else English; `lib/line-lang.ts`; texts carry 4 parts th · ja · ko · en, the
-  sender keeps one). Admins get a 6-button menu in that language (owner's pictures `docs/line-menu/{ko,ja,th,en}.png`,
+  sender keeps one). Admins get a 6-button menu in that language (`docs/line-menu/{ko,ja,th,en}.png`, 2500 × 1250, drawn in the app icon's style by `node scripts/line-menu-art.mjs` — 2026-11-14,
   aliases `sawadee-admin-<lang>`, layout `lib/line-menu.ts`; remake: `npx.cmd tsx scripts/line-menu.ts`): month summary ·
   bills due in 7 days · VAT return / yesterday's sales · Excel (1-hour signed link, private bucket `line-exports`) ·
-  upload (camera buttons). Answers are dashboard cards (`lib/line-dash.ts`, navy / blue / lime like the menu). Short words
+  upload (camera buttons). Answers are dashboard cards (`lib/line-dash.ts`; since 2026-11-14 white with the icon's blue gradient hero, the app icon beside the eyebrow, one size smaller). Short words
   ("요약", "売上" …) work too (`lib/line-ask.ts`). On the 5th / 10th / 15th / 20th / 25th the daily cron also pushes the **5-day report** (`lib/report-server.ts`,
   four cards to swipe: last 5 days · month so far + forecast TIP · ✨ 3 Claude suggestions · 🔍 anything unusual from
   `lib/anomalies.ts` — receipt twice, ≥3× the usual of its category (≥ ฿5,000), new supplier + tax ID check).

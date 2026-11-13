@@ -1,5 +1,6 @@
 // The bot's dashboard cards (owner, 2026-10-26): the answers to the menu buttons and the weekly AI report, as LINE
-// Flex bubbles in the colours of the owner's menu pictures (deep navy, blue, lime), in the reader's language.
+// Flex bubbles in the app icon's colours (white paper, the icon's blue, the S mark on top; 2026-11-14 owner: "아이콘과 잘
+// 어울리고 적당한 크기"), in the reader's language.
 // Pure: the numbers come from lib/line-ask-server.ts and lib/weekly-report-server.ts.
 
 import type { messagingApi } from "@line/bot-sdk";
@@ -9,6 +10,7 @@ import ko from "@/messages/ko.json";
 import th from "@/messages/th.json";
 import type { AiCard, Tone } from "./assistant";
 import type { CheckResult } from "./checks";
+import { appUrl } from "./app-url";
 import { inLang } from "./line-lang";
 import type { LineLang } from "./line-lang";
 import type { CardExtra, CardTip } from "./line-tips";
@@ -21,9 +23,34 @@ import type { LedgerDoc, Tri } from "./types";
 type Box = messagingApi.FlexBox;
 type Comp = messagingApi.FlexComponent;
 
-const C = { bg: "#0d121c", card: "#1a2030", line: "#262e40", blue: "#3d6bff", lime: "#d4ff3f", orange: "#ff8a3d", muted: "#8f9bb3", soft: "#b9c2d6", onBlue: "#c9d6ff", barBack: "#7d9bff", white: "#ffffff", warnBg: "#3a2414" };
+// The icon (public/app-mark.svg): a white receipt with a blue S on a #3b8bff → #0a5ce6 tile
+const C = {
+  bg: "#ffffff",
+  card: "#f4f7fc",
+  line: "#e3e9f2",
+  blue: "#1f72ff",
+  blueTop: "#3b8bff",
+  blueDeep: "#0a5ce6",
+  accent: "#0a5ce6",
+  orange: "#e0580c",
+  muted: "#8590a3",
+  soft: "#4d5869",
+  ink: "#15203a",
+  onBlue: "#dce8ff",
+  barBack: "#ffffff47",
+  white: "#ffffff",
+  warnBg: "#fff3ea",
+  tipBg: "#f2f7ff",
+  tipLine: "#d5e3ff",
+};
 
-const txt = (text: string, o: Partial<messagingApi.FlexText> = {}): messagingApi.FlexText => ({ type: "text", text: text || " ", wrap: true, color: C.white, size: "sm", ...o });
+const txt = (text: string, o: Partial<messagingApi.FlexText> = {}): messagingApi.FlexText => ({ type: "text", text: text || " ", wrap: true, color: C.ink, size: "sm", ...o });
+
+/** The app icon beside each card's eyebrow (LINE needs https, so local runs leave it out) */
+const markUrl = () => {
+  const base = appUrl();
+  return base.startsWith("https://") ? `${base}/icon-512.png` : null;
+};
 
 // ── Words ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -105,40 +132,53 @@ export const nameIn = (t: Tri, lang: LineLang) =>
 
 // ── Building blocks ───────────────────────────────────────────────────────────────────────────────────────────────
 
-const head = (eyebrow: string, title: string, sub?: string): Box => ({
-  type: "box",
-  layout: "vertical",
-  paddingAll: "20px",
-  paddingBottom: "14px",
-  contents: [
-    txt(eyebrow, { size: "xxs", weight: "bold", color: C.muted }),
-    txt(title, { size: "xl", weight: "bold", margin: "sm" }),
-    ...(sub ? [txt(sub, { size: "xs", color: C.muted, margin: "sm" })] : []),
-  ],
-});
+const head = (eyebrow: string, title: string, sub?: string): Box => {
+  const mark = markUrl();
+  return {
+    type: "box",
+    layout: "vertical",
+    paddingAll: "18px",
+    paddingBottom: "12px",
+    contents: [
+      {
+        type: "box",
+        layout: "horizontal",
+        spacing: "sm",
+        alignItems: "center",
+        contents: [
+          ...(mark ? [{ type: "image", url: mark, size: "20px", aspectRatio: "1:1", flex: 0 } satisfies messagingApi.FlexImage] : []),
+          txt(eyebrow, { size: "xxs", weight: "bold", color: C.accent, flex: 1 }),
+        ],
+      },
+      txt(title, { size: "lg", weight: "bold", margin: "md" }),
+      ...(sub ? [txt(sub, { size: "xs", color: C.muted, margin: "xs" })] : []),
+    ],
+  };
+};
 
 /** The blue card: a big amount and an optional lime progress bar */
 const hero = (eyebrow: string, amount: string, bar: number | null, left: string, right: string): Box => ({
   type: "box",
   layout: "vertical",
   backgroundColor: C.blue,
-  cornerRadius: "18px",
-  paddingAll: "18px",
+  background: { type: "linearGradient", angle: "135deg", startColor: C.blueTop, endColor: C.blueDeep },
+  cornerRadius: "16px",
+  paddingAll: "16px",
   margin: "none",
   contents: [
     txt(eyebrow, { size: "xxs", weight: "bold", color: C.onBlue }),
-    txt(amount, { size: "3xl", weight: "bold", margin: "sm" }),
+    txt(amount, { size: "xxl", weight: "bold", margin: "sm", color: C.white }),
     ...(bar === null
       ? []
       : [
           {
             type: "box",
             layout: "vertical",
-            height: "10px",
+            height: "8px",
             margin: "md",
             backgroundColor: C.barBack,
             cornerRadius: "99px",
-            contents: [{ type: "box", layout: "vertical", height: "10px", width: `${Math.max(2, Math.min(100, Math.round(bar * 100)))}%`, backgroundColor: C.lime, cornerRadius: "99px", contents: [] }],
+            contents: [{ type: "box", layout: "vertical", height: "8px", width: `${Math.max(2, Math.min(100, Math.round(bar * 100)))}%`, backgroundColor: C.white, cornerRadius: "99px", contents: [] }],
           } satisfies Box,
         ]),
     {
@@ -159,12 +199,12 @@ const tile = (label: string, value: string, note: string, noteColor: string = C.
   borderWidth: "1px",
   cornerRadius: "16px",
   paddingAll: "12px",
-  contents: [txt(label, { size: "xxs", color: C.muted, weight: "bold" }), txt(value, { size: "lg", weight: "bold", margin: "sm" }), txt(note, { size: "xxs", color: noteColor, margin: "xs" })],
+  contents: [txt(label, { size: "xxs", color: C.muted, weight: "bold" }), txt(value, { size: "md", weight: "bold", margin: "sm" }), txt(note, { size: "xxs", color: noteColor, margin: "xs" })],
 });
 
 const pair = (a: Box, b: Box): Box => ({ type: "box", layout: "horizontal", spacing: "sm", margin: "sm", contents: [a, b] });
 
-const row = (label: string, value: string, color: string = C.white): Box => ({
+const row = (label: string, value: string, color: string = C.ink): Box => ({
   type: "box",
   layout: "horizontal",
   paddingTop: "8px",
@@ -176,16 +216,17 @@ const rows = (list: Box[]): Box => ({ type: "box", layout: "vertical", margin: "
 
 const warn = (text: string): Box => ({ type: "box", layout: "vertical", backgroundColor: C.warnBg, cornerRadius: "12px", paddingAll: "12px", margin: "md", contents: [txt(text, { size: "xs", weight: "bold", color: C.orange })] });
 
-/** A button as a box (LINE buttons cannot have dark text on lime): a link, or a postback such as "ask=excel" */
+/** A button as a box (rounded, in the icon's blue): a link, or a postback such as "ask=excel" */
 const button = (label: string, to: string | { data: string }, primary = true): Box => ({
   type: "box",
   layout: "vertical",
   flex: 1,
-  backgroundColor: primary ? C.lime : C.line,
-  cornerRadius: "14px",
-  paddingAll: "13px",
+  backgroundColor: primary ? C.blue : C.bg,
+  ...(primary ? {} : { borderColor: C.line, borderWidth: "1px" }),
+  cornerRadius: "12px",
+  paddingAll: "12px",
   action: typeof to === "string" ? { type: "uri", label: label.slice(0, 20), uri: to } : { type: "postback", label: label.slice(0, 20), data: to.data, displayText: label },
-  contents: [txt(label, { size: "sm", weight: "bold", align: "center", color: primary ? C.bg : C.white })],
+  contents: [txt(label, { size: "sm", weight: "bold", align: "center", color: primary ? C.white : C.blueDeep })],
 });
 
 /** 💡 TIP: one line of advice for the situation, and a smaller line under it */
@@ -193,14 +234,14 @@ const tipBox = (t: CardTip): Box => ({
   type: "box",
   layout: "vertical",
   margin: "md",
-  backgroundColor: C.card,
-  borderColor: "#5a6b2a",
+  backgroundColor: C.tipBg,
+  borderColor: C.tipLine,
   borderWidth: "1px",
   cornerRadius: "16px",
   paddingAll: "14px",
   spacing: "sm",
   contents: [
-    txt(`💡 TIP · ${t.title}`, { size: "xs", weight: "bold", color: C.lime }),
+    txt(`💡 TIP · ${t.title}`, { size: "xs", weight: "bold", color: C.accent }),
     txt(t.main, { size: "sm" }),
     ...(t.note ? [txt(t.note, { size: "xs", color: C.soft })] : []),
   ],
@@ -281,7 +322,7 @@ export function summaryCard(d: SummaryData, lang: LineLang, url: string, extra: 
     ...(d.sales !== null && b ? [hero(w.sales, baht(d.sales), b.bar, b.left, b.right)] : []),
     rows([
       row(w.purchases(d.count), baht(d.purchases)),
-      row(w.claimable, baht(d.claimableVat), C.lime),
+      row(w.claimable, baht(d.claimableVat), C.accent),
       ...(d.unpaidCount ? [row(`${w.unpaid(d.unpaidCount)}${d.overdueCount ? ` · ${w.overdue(d.overdueCount)}` : ""}`, baht(d.unpaid), C.orange)] : []),
     ]),
     ...(d.toCheck ? [warn(w.toCheck(d.toCheck))] : []),
@@ -312,7 +353,7 @@ export function dueCard(bills: DueBill[], lang: LineLang, url: string, extra: Ca
     paddingBottom: "8px",
     contents: [
       { type: "box", layout: "vertical", flex: 3, contents: [txt(nameIn(b.vendor, lang), { size: "sm", weight: "bold" }), txt(`${dmy(b.due)} · ${when(b.days)}`, { size: "xxs", color: b.days < 0 ? C.orange : C.muted })] },
-      txt(baht(b.amount), { size: "sm", weight: "bold", align: "end", flex: 2, gravity: "center", color: b.days < 0 ? C.orange : C.white }),
+      txt(baht(b.amount), { size: "sm", weight: "bold", align: "end", flex: 2, gravity: "center", color: b.days < 0 ? C.orange : C.ink }),
     ],
   }));
   const more = bills.length - shown.length;
@@ -344,8 +385,8 @@ export function vatCard(v: VatData, lang: LineLang, url: string, extra: CardExtr
     hero(`${w.deadline}${v.onlineOnly ? ` · ${w.online}` : ""}`, dmy(v.due), null, w.daysLeft(v.daysLeft), ""),
     rows([
       ...(v.salesVat !== null ? [row(w.salesVat, baht(v.salesVat))] : []),
-      row(w.claimable, baht(v.claimableVat), C.lime),
-      ...(net !== null ? [row(net >= 0 ? w.toPay : w.refund, baht(Math.abs(net)), net >= 0 ? C.orange : C.lime)] : []),
+      row(w.claimable, baht(v.claimableVat), C.accent),
+      ...(net !== null ? [row(net >= 0 ? w.toPay : w.refund, baht(Math.abs(net)), net >= 0 ? C.orange : C.accent)] : []),
     ]),
     ...(v.toCheck ? [warn(w.toCheck(v.toCheck))] : []),
     ...(v.drafts ? [txt(w.drafts(v.drafts), { size: "xs", color: C.muted, margin: "sm" })] : []),
@@ -474,7 +515,7 @@ export function fiveDayMessage(d: FiveDayData, tips: Tip[], odd: AnomalyLine[], 
       d.hasSales ? hero(f.sales, baht(d.sales), null, ch === null ? "" : `${sign(ch)} ${pct(ch)} ${f.before}`, "") : hero(f.purchases, baht(d.purchases), null, "", ""),
       pair(
         tile(f.receipts, String(d.receipts), d.hasSales ? `${f.purchases} ${baht(d.purchases)}` : " "),
-        d.bestDay ? tile(f.best, baht(d.bestDay.gross), dmy(d.bestDay.date), C.lime) : tile(w.monthPurchases, baht(d.monthPurchases), " "),
+        d.bestDay ? tile(f.best, baht(d.bestDay.gross), dmy(d.bestDay.date), C.accent) : tile(w.monthPurchases, baht(d.monthPurchases), " "),
       ),
     ],
     [button(w.openDash, `${appUrl}/`)],
@@ -511,7 +552,7 @@ export function fiveDayMessage(d: FiveDayData, tips: Tip[], odd: AnomalyLine[], 
             cornerRadius: "16px",
             paddingAll: "14px",
             contents: [
-              { type: "box", layout: "vertical", width: "24px", height: "24px", backgroundColor: C.line, cornerRadius: "8px", justifyContent: "center", contents: [txt(String(i + 1), { size: "xs", weight: "bold", color: C.lime, align: "center" })] },
+              { type: "box", layout: "vertical", width: "24px", height: "24px", backgroundColor: C.line, cornerRadius: "8px", justifyContent: "center", contents: [txt(String(i + 1), { size: "xs", weight: "bold", color: C.accent, align: "center" })] },
               { type: "box", layout: "vertical", flex: 1, contents: [txt(t.title, { size: "sm", weight: "bold" }), txt(t.body, { size: "xs", color: C.soft, margin: "xs" })] },
             ],
           }),
@@ -540,11 +581,11 @@ export function fiveDayMessage(d: FiveDayData, tips: Tip[], odd: AnomalyLine[], 
             contents: [
               txt(LEVEL[a.level], { size: "sm", flex: 0, gravity: "top" }),
               { type: "box", layout: "vertical", flex: 1, contents: [txt(a.title, { size: "sm", weight: "bold" }), txt(a.detail, { size: "xxs", color: C.soft, margin: "xs" })] },
-              txt(`${f.check} ›`, { size: "xxs", color: C.lime, flex: 0, gravity: "center" }),
+              txt(`${f.check} ›`, { size: "xxs", color: C.accent, flex: 0, gravity: "center" }),
             ],
           }),
         )
-      : [{ type: "box", layout: "vertical", backgroundColor: C.card, cornerRadius: "16px", paddingAll: "16px", contents: [txt(f.none, { size: "md", weight: "bold", color: C.lime })] } satisfies Box],
+      : [{ type: "box", layout: "vertical", backgroundColor: C.card, cornerRadius: "16px", paddingAll: "16px", contents: [txt(f.none, { size: "md", weight: "bold", color: C.accent })] } satisfies Box],
     [],
   ).contents as messagingApi.FlexBubble;
 
@@ -560,8 +601,8 @@ const change = (now: number, before: number) => (before > 0 ? ((now - before) / 
 
 // ── The AI assistant's answers ────────────────────────────────────────────────────────────────────────────────────
 
-const TONE: Record<Tone, string> = { up: C.lime, down: C.orange, warn: C.orange, neutral: C.white };
-const TILE_NOTE: Record<Tone, string> = { up: C.lime, down: C.orange, warn: C.orange, neutral: C.muted };
+const TONE: Record<Tone, string> = { up: C.accent, down: C.orange, warn: C.orange, neutral: C.ink };
+const TILE_NOTE: Record<Tone, string> = { up: C.accent, down: C.orange, warn: C.orange, neutral: C.muted };
 
 /** A card the AI filled (lib/assistant.ts parseCard), drawn like the menu's cards */
 export function aiCard(c: AiCard): messagingApi.FlexMessage {
@@ -584,7 +625,7 @@ export function aiCard(c: AiCard): messagingApi.FlexMessage {
         paddingAll: "14px",
         spacing: "sm",
         contents: [
-          ...(s.title ? [txt(s.title, { size: "sm", weight: "bold", color: C.lime })] : []),
+          ...(s.title ? [txt(s.title, { size: "sm", weight: "bold", color: C.accent })] : []),
           ...s.items.map((i) => txt(`• ${i}`, { size: "xs", color: C.soft })),
         ],
       }),
@@ -630,7 +671,7 @@ export function receiptCard(doc: LedgerDoc, checks: CheckResult[], url: string, 
           ...problems.slice(0, 3).map((c) => txt(`• ${CHECK_NAMES[lang][c.key] ?? c.key}`, { size: "xxs", color: C.orange })),
         ],
       }
-    : { type: "box", layout: "vertical", backgroundColor: C.card, cornerRadius: "12px", paddingAll: "12px", margin: "md", contents: [txt(`✓ ${L.ok}`, { size: "xs", weight: "bold", color: C.lime })] };
+    : { type: "box", layout: "vertical", backgroundColor: C.card, cornerRadius: "12px", paddingAll: "12px", margin: "md", contents: [txt(`✓ ${L.ok}`, { size: "xs", weight: "bold", color: C.accent })] };
   return bubble(
     `${L.alt} ${net} ${seller}`,
     head("RECEIPT", seller, `${L.saved} · ${meta}`),
@@ -674,7 +715,7 @@ export function noticeBubble(text: string, eyebrow: string, lang: LineLang): mes
       cornerRadius: "16px",
       paddingAll: "14px",
       spacing: "sm",
-      contents: items.map((i) => txt(i, { size: "xs", color: i.startsWith("✓") ? C.lime : C.soft })),
+      contents: items.map((i) => txt(i, { size: "xs", color: i.startsWith("✓") ? C.accent : C.soft })),
     });
   return bubble(title, head(eyebrow, title, second || undefined), body, url ? [button(OPEN[lang], url)] : []).contents as messagingApi.FlexBubble;
 }
@@ -744,7 +785,7 @@ export function monthEndMessage(d: MonthEndData, lang: LineLang, appUrl: string,
         ...(d.hasSales ? [row(t.sales, baht(d.salesValue))] : []),
         row(t.costs, baht(d.costs)),
         ...(d.labor ? [row(t.labor, baht(d.labor))] : []),
-        row(t.vat, baht(Math.max(0, d.vatPayable)), d.vatPayable > 0 ? C.orange : C.white),
+        row(t.vat, baht(Math.max(0, d.vatPayable)), d.vatPayable > 0 ? C.orange : C.ink),
         ...(d.wht ? [row(t.wht, baht(d.wht), C.orange)] : []),
         ...(d.socialSecurity ? [row(t.ss, baht(d.socialSecurity))] : []),
       ]),
