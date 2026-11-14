@@ -221,10 +221,11 @@ export function lineCardText(title: unknown, lines: unknown, appUrl: string): { 
   const clean = (v: unknown, n: number) => String(v ?? "").split(LANG_SPLIT).join("").replace(/\r/g, "").trim().slice(0, n);
   const list = (Array.isArray(lines) ? lines : String(lines ?? "").split("\n")).map((l) => clean(l, 120)).filter((l) => l && !/^https?:\/\//.test(l)).slice(0, 12);
   if (!list.length) return null;
-  return { text: [clean(title, 40) || "Grok Bot", "", ...list, `${appUrl}/`].join("\n"), count: list.length };
+  return { text: [clean(title, 40) || "Sawadee TAX", "", ...list, `${appUrl}/`].join("\n"), count: list.length };
 }
 
-/** A short card to the LINE of the owner who connected the agent, at most 10 a day */
+/** A short card to the LINE of the owner who connected the agent, at most 10 a day. Headed "AI REPORT" like the other
+ * cards (owner 2026-11-15: "대시보드에 왜 grok이 있는지" — the agent's name is not shown on the card) */
 export async function lineToOwner(admin: Admin, who: { id: string; createdBy: string | null }, a: Record<string, unknown>, appUrl: string) {
   if (!who.createdBy) return { sent: false, reason: "This connection has no owner." };
   const { data: m } = await admin.from("members").select("line_user_id, owner, disabled_at").eq("user_id", who.createdBy).maybeSingle();
@@ -239,7 +240,7 @@ export async function lineToOwner(admin: Admin, who: { id: string; createdBy: st
     .getProfile(m.line_user_id as string)
     .then((p) => lineLang(p.language))
     .catch(() => "ko" as const);
-  await lineClient().pushMessage({ to: m.line_user_id as string, messages: [noticeMessage([card.text], "Grok Bot", lang)] });
+  await lineClient().pushMessage({ to: m.line_user_id as string, messages: [noticeMessage([card.text], "AI REPORT", lang)] });
   await admin.from("bot_line_sends").insert({ key_id: who.id });
   return { sent: true, to: "the owner's LINE", lines: card.count };
 }
