@@ -1,4 +1,4 @@
-import { Bell, Bot, CalendarClock, FileSpreadsheet, FileText, KeyRound, MessageCircle, Shapes, Smartphone, Store, Tag, UserPlus } from "lucide-react";
+import { Bell, Bot, CalendarClock, ChefHat, FileSpreadsheet, FileText, KeyRound, MessageCircle, Shapes, Smartphone, Store, Tag, UserPlus } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FormSettings } from "@/components/settings/FormSettings";
 import { ExcelFormatCard } from "@/components/settings/ExcelFormatCard";
@@ -11,6 +11,7 @@ import { BranchCard } from "@/components/settings/BranchCard";
 import { BotCard } from "@/components/settings/BotCard";
 import { CategoryCard } from "@/components/settings/CategoryCard";
 import { FixedCostCard } from "@/components/settings/FixedCostCard";
+import { FoodFeaturesCard } from "@/components/settings/FoodFeaturesCard";
 import { InstallCard } from "@/components/settings/InstallCard";
 import { PasskeyCard } from "@/components/settings/PasskeyCard";
 import { PushCard } from "@/components/settings/PushCard";
@@ -51,6 +52,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
           </SettingsFold>
           <SettingsFold icon={<FileSpreadsheet className="text-brand" />} title={t("excelFmt.title")}>
             <ExcelFormatCard />
+          </SettingsFold>
+          {/* Restaurant extras, off until switched on (owner 2026-11-18) */}
+          <SettingsFold icon={<ChefHat className="text-brand" />} title={t("food.title")}>
+            <FoodFeaturesCard />
           </SettingsFold>
         </SettingsGroup>
         <OwnerOnly>

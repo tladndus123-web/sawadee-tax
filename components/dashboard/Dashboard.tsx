@@ -41,6 +41,8 @@ import { useDashLayout } from "@/lib/dash-layout-store";
 import { GoalBars } from "./GoalBars";
 import { RecentSalesCard } from "./RecentSalesCard";
 import { WeekdayCard } from "@/components/sales/WeekdayCard";
+import { PrepCard } from "./PrepCard";
+import { useFoodFeatures } from "@/lib/food-features-store";
 import { FoldAllButton, SettingsFold } from "@/components/settings/SettingsFold";
 import { useMonthLocks } from "@/lib/month-lock-store";
 import { useDocName } from "@/components/ledger/doc-name";
@@ -80,6 +82,7 @@ export function Dashboard() {
   const s = useMemo(() => summarize(docs, month, company.taxId, today), [docs, month, company.taxId, today]);
   const due = useMemo(() => upcoming(docs, today), [docs, today]);
   const { sales } = useSales();
+  const food = useFoodFeatures();
   const { lines: labor } = useLabor();
   const { lines: fixed } = useCostLines();
   const me = useMe();
@@ -231,6 +234,8 @@ export function Dashboard() {
     recent: <RecentSalesCard today={today} />,
     // Sales by weekday (the sales screen's card): staffing and ordering at a glance
     weekday: <WeekdayCard sales={sales} today={today} />,
+    // Restaurant extra: tomorrow's sales and prep (Settings → 음식점 기능)
+    prep: food.prep ? <PrepCard sales={sales} purchases={purchases} today={today} /> : null,
     // In more detail: food, labour and rent against sales (FL / FLR)
     cost: <CostCard month={month} salesValue={result.salesValue} purchases={purchases} fixed={fixed} fold />,
     // Admins: the next two weeks from the tax calendar, and staff expense claims

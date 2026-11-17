@@ -53,6 +53,8 @@ const nextConfig: NextConfig = {
     "/api/extract-sales": SHARP_LINUX,
     "/api/calendar/read": SHARP_LINUX,
     "/api/payroll/schedule-read": SHARP_LINUX,
+    // Delivery-app settlements (imports lib/extract-server for the reading model)
+    "/api/sales/settlement": SHARP_LINUX,
     // Grok Bot's add_receipt reads the photo like the LINE bot (prompt + sharp)
     "/api/mcp": ["./docs/reference/extract-prompt.txt", ...SHARP_LINUX],
   },

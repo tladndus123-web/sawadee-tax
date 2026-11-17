@@ -3,7 +3,7 @@
 // Sales: the month's result (sales − purchases), the days of sales by channel, and the two ways to add a day —
 // a photo / PDF of the POS closing report (the AI reads it) or typing it in. The sales tax report opens from here.
 
-import { Camera, ChevronDown, FileSpreadsheet, FileText, Info, Keyboard, Loader2, Table2, TrendingUp } from "lucide-react";
+import { Camera, ChevronDown, FileSpreadsheet, FileText, Info, Keyboard, Loader2, Table2, TrendingUp, Truck } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -30,6 +30,8 @@ import { cn } from "@/lib/utils";
 import { monthFees } from "@/lib/app-fees";
 import { AppFeesCard } from "./AppFeesCard";
 import { PosImport } from "./PosImport";
+import { SettlementImport } from "./SettlementImport";
+import { useFoodFeatures } from "@/lib/food-features-store";
 import { type SaleDraft, SaleSheet } from "./SaleSheet";
 import { groupSlips, type SlipGroup } from "@/lib/sales-slips";
 import { type ReadPhoto, SalesReview } from "./SalesReview";
@@ -85,6 +87,8 @@ export function SalesPage() {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [review, setReview] = useState<ReadPhoto[] | null>(null);
   const [importing, setImporting] = useState(false);
+  const [settling, setSettling] = useState(false);
+  const food = useFoodFeatures();
   // How the page and the result are worked out: one tap away, not always on screen
   const [about, setAbout] = useState(false);
   const [resultAbout, setResultAbout] = useState(false);
@@ -231,6 +235,13 @@ export function SalesPage() {
             <FileSpreadsheet className="size-4" />
             {t("pos.button")}
           </Button>
+          {/* Restaurant extra (Settings → 음식점 기능): the delivery apps' statements read by AI */}
+          {food.delivery && me.role === "admin" && (
+            <Button type="button" variant="secondary" className="h-11 rounded-full px-4 max-sm:col-span-2" onClick={() => setSettling(true)}>
+              <Truck className="size-4" />
+              {t("settle.button")}
+            </Button>
+          )}
           <Button type="button" variant="secondary" className="h-11 rounded-full px-4" onClick={() => setOpen({ draft: blank(today, branchId) })}>
             <Keyboard className="size-4" />
             {t("sales.addManual")}
@@ -485,6 +496,7 @@ export function SalesPage() {
       </section>
 
       {importing && <PosImport existing={sales} onClose={() => setImporting(false)} />}
+      {settling && <SettlementImport branchId={branchId} onClose={() => setSettling(false)} />}
       {review && (
         <SalesReview
           photos={review}

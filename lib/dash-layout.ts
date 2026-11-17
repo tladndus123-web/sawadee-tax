@@ -5,7 +5,8 @@
 
 // (owner 2026-10-27: the staff card left the dashboard; the next two weeks and the expense claims joined)
 // (2026-11-18, owner "판매용 음식점 대시보드": sales by weekday joined, after the last 7 days)
-export const DASH_CARDS = ["profit", "tiles", "todo", "upcoming", "recent", "weekday", "cost", "claims"] as const;
+// "prep" shows only while the restaurant extra is on (Settings → 음식점 기능)
+export const DASH_CARDS = ["profit", "tiles", "todo", "upcoming", "recent", "weekday", "prep", "cost", "claims"] as const;
 export type DashCard = (typeof DASH_CARDS)[number];
 export const WIDE: ReadonlySet<DashCard> = new Set(["profit", "tiles"]);
 /** The screen each card shows (an admin an owner limited sees only the cards of their screens) — lib/screens */
@@ -13,6 +14,7 @@ export const CARD_SCREEN: Partial<Record<DashCard, "sales" | "calendar" | "expen
   profit: "sales",
   recent: "sales",
   weekday: "sales",
+  prep: "sales",
   cost: "sales",
   upcoming: "calendar",
   claims: "expenses",
