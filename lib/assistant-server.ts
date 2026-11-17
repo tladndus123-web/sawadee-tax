@@ -34,6 +34,10 @@ import { cashCostLines } from "./petty-cash";
 import { fixedForMonth } from "./fixed-costs";
 import { todayBangkok } from "./thai-tax";
 import { allRows } from "./fetch-all";
+import { extrasLines } from "./assistant-extras";
+import { rowToContract } from "./contracts";
+import { readFoodFeatures } from "./food-features";
+import { rowToWaste } from "./waste";
 
 const r0 = (n: number) => Math.round(n);
 
@@ -159,6 +163,9 @@ export async function booksContext(admin: Admin, today: string, deep: boolean, a
     `VAT return ภ.พ.30 for ${f.month}: due ${f.onlineOnly ? f.dueOnline : f.due} (${f.daysLeft} days), output VAT ${r0(sumOf(fSales, "vat"))}, claimable input VAT ${r0(fs.claimableVat)}, documents with warnings ${fs.toCheck}.`,
     `Payroll / withholding returns (ภ.ง.ด.1, ภ.ง.ด.3/53, สปส.1-10) for last month are due on the 7th (paper) / 15th (online).`,
   );
+  // The screens added 2026-11-18: bills to pay by due date, the tax month's returns, contracts, and the restaurant
+  // extras while they are on (lib/assistant-extras)
+  lines.push(...(await extrasFor(admin, today, appUrl, saved, sales, payroll.data ?? [])));
   if (appUrl) {
     const last = shiftMonth(month, -1);
     lines.push(
@@ -171,6 +178,47 @@ export async function booksContext(admin: Admin, today: string, deep: boolean, a
     );
   }
   return lines.join("\n");
+}
+
+/** The data the added screens need, read with the same (scoped) client as the books */
+async function extrasFor(
+  admin: Admin,
+  today: string,
+  appUrl: string,
+  saved: { id: string; doc: import("./types").LedgerDoc }[],
+  sales: { branch_id: string; sale_date: string; gross: number; vat: number }[],
+  payroll: Record<string, unknown>[],
+): Promise<string[]> {
+  try {
+    const month = today.slice(0, 7);
+    const [settings, done, contracts, waste, cats, branches] = await Promise.all([
+      admin.from("company_settings").select("extras").eq("id", 1).maybeSingle(),
+      admin.from("calendar_done").select("key"),
+      admin.from("contracts").select("*"),
+      admin.from("waste_logs").select("*").gte("day", `${shiftMonth(month, -1)}-01`),
+      admin.from("categories").select("key, food_cost"),
+      admin.from("branches").select("closed_days"),
+    ]);
+    const closedLists = (branches.data ?? []).map((b) => ((b.closed_days as number[] | null) ?? []).map(Number));
+    return extrasLines({
+      today,
+      appUrl,
+      saved,
+      sales: sales.map((s) => ({ branchId: s.branch_id, date: s.sale_date, gross: Number(s.gross) || 0, vat: Number(s.vat) || 0 })),
+      payroll: payroll.map((p) => ({ month: String(p.month), wht: Number(p.wht) || 0, ssEmployee: Number(p.ss_employee) || 0, ssEmployer: Number(p.ss_employer) || 0 })),
+      done: new Set((done.data ?? []).map((r) => r.key as string)),
+      contracts: (contracts.data ?? []).map((r) => rowToContract(r as Record<string, unknown>)),
+      waste: (waste.data ?? []).map((r) => rowToWaste(r as Record<string, unknown>)),
+      features: readFoodFeatures(settings.data?.extras),
+      // Built-in food cost keys when the table says nothing (food, supplies), as the cost card does
+      foodKeys: new Set((cats.data ?? []).length ? (cats.data ?? []).filter((c) => c.food_cost).map((c) => c.key as string) : ["food", "supplies"]),
+      closedDays: [0, 1, 2, 3, 4, 5, 6].filter((d) => closedLists.length > 0 && closedLists.every((c) => c.includes(d))),
+    });
+  } catch (e) {
+    // The books answer without these rather than not at all
+    console.error("[assistant] extras", e instanceof Error ? e.message : e);
+    return [];
+  }
 }
 
 let client: Anthropic | null = null;
