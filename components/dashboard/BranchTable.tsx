@@ -14,7 +14,8 @@ import { BRANCH_COLORS, branchLabel, branchSummaries, colorOf, targetFor } from 
 import { setBranch, useBranches } from "@/lib/branch-store";
 import { useCategories } from "@/lib/category-store";
 import { useCompany } from "@/lib/company-store";
-import { type CostControl, costControl, targetsOf } from "@/lib/cost-control";
+import { type CostControl, costControl, monthShare, targetsOf } from "@/lib/cost-control";
+import { todayBangkok } from "@/lib/thai-tax";
 import { monthCosts } from "@/lib/cost-split";
 import { pick, useLedger } from "@/lib/ledger-store";
 import { bahtWhole } from "@/lib/money";
@@ -43,7 +44,9 @@ export function BranchTable({ month, companyTaxId }: { month: string; companyTax
     const s = branchSummaries(branches, purchases, sales, month, companyTaxId, labor, fixed, stock);
     const food = new Set(categories.filter((c) => c.foodCost).map((c) => c.key as string));
     const targets = targetsOf(company.costTargets);
-    const cc = (salesValue: number, costs: Parameters<typeof costControl>[1], lab: number) => costControl(Math.round(salesValue * 100), costs, food, lab, targets);
+    // FL / FLR: labour and rent only for the part of this month gone by (lib/cost-control monthShare)
+    const share = monthShare(month, todayBangkok());
+    const cc = (salesValue: number, costs: Parameters<typeof costControl>[1], lab: number) => costControl(Math.round(salesValue * 100), costs, food, lab, targets, share);
     return {
       rows: s.rows.map((r) => ({ ...r, cost: cc(r.result.salesValue, r.costs, r.labor) })),
       total: s.total,

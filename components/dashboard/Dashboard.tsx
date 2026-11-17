@@ -40,6 +40,7 @@ import { UpcomingCard } from "./UpcomingCard";
 import { useDashLayout } from "@/lib/dash-layout-store";
 import { GoalBars } from "./GoalBars";
 import { RecentSalesCard } from "./RecentSalesCard";
+import { WeekdayCard } from "@/components/sales/WeekdayCard";
 import { FoldAllButton, SettingsFold } from "@/components/settings/SettingsFold";
 import { useMonthLocks } from "@/lib/month-lock-store";
 import { useDocName } from "@/components/ledger/doc-name";
@@ -228,6 +229,8 @@ export function Dashboard() {
     ),
     // The last week of sales, ending yesterday
     recent: <RecentSalesCard today={today} />,
+    // Sales by weekday (the sales screen's card): staffing and ordering at a glance
+    weekday: <WeekdayCard sales={sales} today={today} />,
     // In more detail: food, labour and rent against sales (FL / FLR)
     cost: <CostCard month={month} salesValue={result.salesValue} purchases={purchases} fixed={fixed} fold />,
     // Admins: the next two weeks from the tax calendar, and staff expense claims

@@ -797,7 +797,8 @@
       "reset": "Back to usual",
       "done": "Done",
       "upcoming": "Coming up (2 weeks)",
-      "claims": "Expense claims"
+      "claims": "Expense claims",
+      "weekday": "Sales by weekday"
     },
     "upcoming2": {
       "title": "Coming up",

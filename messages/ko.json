@@ -797,7 +797,8 @@
       "reset": "기본으로",
       "done": "완료",
       "upcoming": "다가오는 일정 (2주)",
-      "claims": "경비 청구"
+      "claims": "경비 청구",
+      "weekday": "요일별 매출"
     },
     "upcoming2": {
       "title": "다가오는 일정",

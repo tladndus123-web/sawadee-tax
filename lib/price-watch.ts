@@ -25,6 +25,8 @@ export interface PriceRise {
   pct: number;
   /** When it was last bought at the old price */
   beforeDate: string;
+  /** The branch of the dearer purchase (owner 2026-11-18: price rises shown per branch) */
+  branchId: string | null;
 }
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
@@ -39,7 +41,7 @@ function unitPrice(i: LedgerDoc["items"][number]): number | null {
 /** Rises in `month` (YYYY-MM), biggest first; one line per vendor and item (its latest purchase) */
 export function priceRises(docs: readonly LedgerDoc[], month: string, minPct = RISE_MIN_PCT): PriceRise[] {
   // Every priced item, in date order, per vendor + item name
-  type Seen = { docId: string; date: string; docNo: string; price: number; unit: string; name: LedgerDoc["seller"]["name"]; item: string };
+  type Seen = { docId: string; date: string; docNo: string; price: number; unit: string; name: LedgerDoc["seller"]["name"]; item: string; branchId: string | null };
   const byKey = new Map<string, Seen[]>();
   for (const d of docs) {
     const vendor = digitsOnly(d.seller.taxId);
@@ -49,7 +51,7 @@ export function priceRises(docs: readonly LedgerDoc[], month: string, minPct = R
       const price = unitPrice(i);
       if (!item || price === null) continue;
       const k = `${vendor}|${item}`;
-      byKey.set(k, [...(byKey.get(k) ?? []), { docId: d.id ?? "", date: d.date, docNo: d.docNo, price, unit: norm(i.unit.th || i.unit.en || ""), name: d.seller.name, item: (i.desc.th || i.desc.en || i.desc.ja).trim() }]);
+      byKey.set(k, [...(byKey.get(k) ?? []), { docId: d.id ?? "", date: d.date, docNo: d.docNo, price, unit: norm(i.unit.th || i.unit.en || ""), name: d.seller.name, item: (i.desc.th || i.desc.en || i.desc.ja).trim(), branchId: d.branchId ?? null }]);
     }
   }
   const out: PriceRise[] = [];
@@ -66,7 +68,7 @@ export function priceRises(docs: readonly LedgerDoc[], month: string, minPct = R
     const pct = Math.round((diff / before.price) * 100);
     if (pct < minPct) continue;
     const vendorTaxId = k.split("|")[0];
-    out.push({ docId: now.docId, date: now.date, vendorTaxId, vendorName: now.name, item: now.item, unit: now.unit, before: before.price, now: now.price, pct, beforeDate: before.date });
+    out.push({ docId: now.docId, date: now.date, vendorTaxId, vendorName: now.name, item: now.item, unit: now.unit, before: before.price, now: now.price, pct, beforeDate: before.date, branchId: now.branchId });
   }
   return out.sort((a, b) => b.pct - a.pct || a.item.localeCompare(b.item));
 }

@@ -44,3 +44,24 @@ describe("food cost, labour and rent against sales", () => {
     expect(targetsOf(null)).toEqual(DEFAULT_TARGETS);
   });
 });
+
+describe("month to date (FL / FLR)", () => {
+  it("counts only the part of this month gone by", async () => {
+    const { monthShare } = await import("./cost-control");
+    expect(monthShare("2026-11", "2026-11-15")).toBeCloseTo(0.5);
+    expect(monthShare("2026-10", "2026-11-15")).toBe(1);
+    expect(monthShare("2026-12", "2026-11-15")).toBe(0);
+    expect(monthShare("2026-02", "2026-02-28")).toBe(1);
+  });
+  it("scales labour and rent, not food", async () => {
+    const { costControl, DEFAULT_TARGETS } = await import("./cost-control");
+    const costs = { byCategory: new Map([["food", 30_000_00], ["rent", 20_000_00]]) };
+    const full = costControl(100_000_00, costs, new Set(["food"]), 30_000_00, DEFAULT_TARGETS);
+    const half = costControl(100_000_00, costs, new Set(["food"]), 30_000_00, DEFAULT_TARGETS, 0.5);
+    expect(full.flr.pct).toBe(80);
+    expect(half.food.amount).toBe(30_000_00);
+    expect(half.labor.amount).toBe(15_000_00);
+    expect(half.rent.amount).toBe(10_000_00);
+    expect(half.flr.pct).toBe(55);
+  });
+});

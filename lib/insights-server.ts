@@ -261,8 +261,8 @@ const SALES_SCHEMA = {
 
 /** The sales screen's AI: how the month is going and what to do about it (owner, 2026-11-06, Sonnet) */
 export async function salesReport(admin: Admin, month: string, today: string, lang: string, canMake?: CanMake): Promise<{ body: SalesReport; madeAt: string } | null> {
-  const [{ data: branches }, inputs, books] = await Promise.all([admin.from("branches").select("id, name").order("sort"), costInputs(admin), monthBooks(admin, month)]);
-  const facts = salesFacts(inputs.sales, (branches ?? []).map((b) => ({ id: b.id as string, name: (b.name as string) ?? "" })), month, today);
+  const [{ data: branches }, inputs, books] = await Promise.all([admin.from("branches").select("id, name, closed_days").order("sort"), costInputs(admin), monthBooks(admin, month)]);
+  const facts = salesFacts(inputs.sales, (branches ?? []).map((b) => ({ id: b.id as string, name: (b.name as string) ?? "", closedDays: ((b.closed_days as number[] | null) ?? []).map(Number) })), month, today);
   if (!facts.lines.length) return null;
   const r = books.result;
   const pct = (v: number) => (r.salesValue ? `${Math.round((v / r.salesValue) * 100)}%` : "—");

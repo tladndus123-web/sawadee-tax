@@ -23,7 +23,7 @@ export interface SalesFacts {
  * yesterday — today too once something is entered for it — (or the month's end for a past month); last month is
  * compared over the same number of days.
  */
-export function salesFacts(sales: Sale[], branches: { id: string; name: string }[], month: string, today: string): SalesFacts {
+export function salesFacts(sales: Sale[], branches: { id: string; name: string; closedDays?: number[] }[], month: string, today: string): SalesFacts {
   const first = `${month}-01`;
   const monthEnd = add(`${shiftMonth(month, 1)}-01`, -1);
   // Today counts once something is entered for it (the day closes in the evening); until then the month runs to yesterday
@@ -34,6 +34,8 @@ export function salesFacts(sales: Sale[], branches: { id: string; name: string }
   const prevLast = `${prev}-${String(Math.min(elapsed, Number(add(`${month}-01`, -1).slice(8)))).padStart(2, "0")}`;
   const lines: string[] = [];
   const name = new Map(branches.map((b) => [b.id, b.name || "?"]));
+  // A branch's closing weekdays are not missing sales (owner 2026-11-18: "휴무일을 매출 누락으로 보지 않기")
+  const closedOf = new Map(branches.map((b) => [b.id, new Set(b.closedDays ?? [])]));
   const ids = branches.map((b) => b.id).filter((id) => sales.some((s) => s.branchId === id));
   if (sales.some((s) => !name.has(s.branchId))) ids.push("");
   const sum = (xs: Sale[]) => xs.reduce((a, s) => a + saleValue(s), 0);
@@ -46,12 +48,14 @@ export function salesFacts(sales: Sale[], branches: { id: string; name: string }
     const days = new Set(now.map((s) => s.date));
     const bills = now.reduce((a, s) => a + s.bills, 0);
     const missing: string[] = [];
-    for (let d = first; d <= last; d = add(d, 1)) if (!days.has(d)) missing.push(d.slice(8));
+    const shut = closedOf.get(id) ?? new Set<number>();
+    for (let d = first; d <= last; d = add(d, 1)) if (!days.has(d) && !shut.has(new Date(`${d}T00:00:00Z`).getUTCDay())) missing.push(d.slice(8));
     const change = was ? `${total >= was ? "+" : ""}${Math.round(((total - was) / was) * 100)}% vs same days last month (${r0(was)})` : "no sales last month on the same days";
     lines.push(
       `[${id ? name.get(id) : "no branch"}] ${month} 1–${elapsed}: ${r0(total)} THB, ${change}; ${days.size} days entered, avg ${r0(days.size ? total / days.size : 0)}/day` +
         (bills ? `; ${bills} bills, avg bill ${r0(total / bills)}` : "") +
-        (missing.length ? `; NO SALES ENTERED on day ${missing.join(", ")}` : ""),
+        (missing.length ? `; NO SALES ENTERED on day ${missing.join(", ")}` : "") +
+        (shut.size ? `; closed every ${[...shut].sort().map((w) => WEEKDAY[w]).join(", ")} (not missing)` : ""),
     );
     // Weekday pattern over the last 8 weeks (average day per weekday)
     const from = add(last, -55);

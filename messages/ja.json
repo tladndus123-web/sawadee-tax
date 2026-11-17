@@ -797,7 +797,8 @@
       "reset": "元に戻す",
       "done": "完了",
       "upcoming": "今後の予定（2週間）",
-      "claims": "経費申請"
+      "claims": "経費申請",
+      "weekday": "曜日別の売上"
     },
     "upcoming2": {
       "title": "今後の予定",

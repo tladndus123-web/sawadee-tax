@@ -59,11 +59,28 @@ export interface CostControl {
   flr: CostLine;
 }
 
-export function costControl(salesValue: number, costs: { byCategory: ReadonlyMap<string, number>; stock?: number }, foodKeys: ReadonlySet<string>, labor: number, targets: CostTargets): CostControl {
+/**
+ * How much of the month has gone by (owner 2026-11-18, from the for-sale version: "FL·FLR은 이번 달 날짜까지만"): this
+ * month = days up to today ÷ days in the month, a past month 1, a month still to come 0. Labour and rent are paid for the
+ * whole month, but the sales so far cover only part of it — counting them in full made the shares look far too high
+ * early in the month.
+ */
+export function monthShare(month: string, today: string): number {
+  const now = today.slice(0, 7);
+  if (month < now) return 1;
+  if (month > now) return 0;
+  const [y, m] = month.split("-").map(Number);
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return Math.min(1, Number(today.slice(8, 10)) / days);
+}
+
+export function costControl(salesValue: number, costs: { byCategory: ReadonlyMap<string, number>; stock?: number }, foodKeys: ReadonlySet<string>, labor: number, targets: CostTargets, share = 1): CostControl {
   // Food used = food bought + the month-end stock change (lib/stock)
   let food = costs.stock ?? 0;
   for (const [k, v] of costs.byCategory) if (foodKeys.has(k)) food += v;
-  const rent = costs.byCategory.get("rent") ?? 0;
+  // Labour and rent are for the whole month: only the part of the month gone by counts against the sales so far
+  labor = Math.round(labor * share);
+  const rent = Math.round((costs.byCategory.get("rent") ?? 0) * share);
   const pct = (v: number) => (salesValue > 0 ? Math.round((v / salesValue) * 1000) / 10 : null);
   const line = (amount: number, target: number): CostLine => ({ amount, pct: pct(amount), target, level: levelOf(pct(amount), target) });
   return {

@@ -42,3 +42,18 @@ describe("salesFacts", () => {
     expect(lines.join("\n")).toContain("10-31 Sat 20,000");
   });
 });
+
+describe("closed weekdays", () => {
+  it("are not counted as days without sales", async () => {
+    const { salesFacts } = await import("./sales-insight");
+    // 2026-11-02 is a Monday; sales every day but Mondays
+    const sales = Array.from({ length: 9 }, (_, i) => `2026-11-0${i + 1}`)
+      .filter((d) => new Date(`${d}T00:00:00Z`).getUTCDay() !== 1)
+      .map((date) => ({ id: date, branchId: "b", date, channel: "store", gross: 1070, vat: 70, exempt: 0, bills: 10, part: 1 }));
+    const open = salesFacts(sales as never, [{ id: "b", name: "A" }], "2026-11", "2026-11-10").lines[0];
+    const shut = salesFacts(sales as never, [{ id: "b", name: "A", closedDays: [1] }], "2026-11", "2026-11-10").lines[0];
+    expect(open).toContain("NO SALES ENTERED on day 02");
+    expect(shut).not.toContain("NO SALES ENTERED");
+    expect(shut).toContain("closed every Mon");
+  });
+});

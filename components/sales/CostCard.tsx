@@ -18,7 +18,7 @@ import { ALL, branchLabel, headOf } from "@/lib/branches";
 import { useBranch, useBranches } from "@/lib/branch-store";
 import { useCategories } from "@/lib/category-store";
 import { saveCompany, useCompany } from "@/lib/company-store";
-import { type CostLine, costControl, type LaborLine, monthLabor, targetsOf } from "@/lib/cost-control";
+import { type CostLine, costControl, type LaborLine, monthLabor, monthShare, targetsOf } from "@/lib/cost-control";
 import { monthCosts } from "@/lib/cost-split";
 import { type FixedLine, fixedForMonth } from "@/lib/fixed-costs";
 import { useLabor, saveLabor } from "@/lib/labor-store";
@@ -61,7 +61,8 @@ export function CostCard({ month, salesValue, purchases, fixed, fold }: { month:
   const targets = targetsOf(company.costTargets);
   const foodKeys = useMemo(() => new Set(categories.filter((c) => c.foodCost).map((c) => c.key as string)), [categories]);
   const c = useMemo(
-    () => costControl(Math.round(salesValue * 100), monthCosts(purchases, month, company.taxId, fixedForMonth(fixed, month), stock.change), foodKeys, monthLabor(lines, month), targets),
+    // Labour and rent only for the part of this month gone by (lib/cost-control monthShare)
+    () => costControl(Math.round(salesValue * 100), monthCosts(purchases, month, company.taxId, fixedForMonth(fixed, month), stock.change), foodKeys, monthLabor(lines, month), targets, monthShare(month, todayBangkok())),
     [salesValue, purchases, month, company.taxId, foodKeys, lines, targets, fixed, stock.change],
   );
 
@@ -186,6 +187,14 @@ function Rises({ rises, month }: { rises: PriceRise[]; month: string }) {
   const t = useTranslations("cost.rises");
   const locale = useLocale();
   const vendor = (n: PriceRise["vendorName"]) => (locale === "ja" && n.ja) || n.th || n.en || n.ja;
+  // All branches together (owner 2026-11-18, "매입 단가 인상 알림 — 지점별"): each rise says which branch bought it
+  const { branches } = useBranches();
+  const names = useBranchName();
+  const together = useBranch() === ALL && branches.length > 1;
+  const branchOf = (id: string | null) => {
+    const b = id ? branches.find((x) => x.id === id) : undefined;
+    return b ? branchLabel(b, names) : null;
+  };
   return (
     <div className="grid gap-2 rounded-2xl bg-warn-soft/60 p-3.5">
       <p className="text-xs font-semibold text-warn">{t("title", { count: rises.length })}</p>
@@ -195,6 +204,7 @@ function Rises({ rises, month }: { rises: PriceRise[]; month: string }) {
             <span className="mt-1.5 size-1.5 flex-none rounded-full bg-risk-near" aria-hidden />
             <span className="min-w-0 flex-1">
               <b className="font-semibold">{r.item}</b> <span className="text-muted-foreground">· {vendor(r.vendorName)}</span>
+              {together && branchOf(r.branchId) && <span className="ml-1.5 rounded-full bg-card px-1.5 py-px text-[11.5px] font-medium text-muted-foreground ring-1 ring-border">{branchOf(r.branchId)}</span>}
               <br />
               <span className="tabular-nums">
                 {baht(fromSatang(r.before))} → <b className="font-semibold text-warn">{baht(fromSatang(r.now))}</b> (+{r.pct}%)

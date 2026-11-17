@@ -265,13 +265,14 @@ export async function answer(admin: Admin, userId: string, question: string, onD
 export async function calendarContext(admin: Admin, today: string): Promise<string> {
   const to = new Date(Date.parse(`${today}T00:00:00Z`) + 45 * 86_400_000).toISOString().slice(0, 10);
   const from = new Date(Date.parse(`${today}T00:00:00Z`) - 30 * 86_400_000).toISOString().slice(0, 10);
-  const [{ saved, drafts }, ev, dn, staff, claims, sales] = await Promise.all([
+  const [{ saved, drafts }, ev, dn, staff, claims, sales, shops] = await Promise.all([
     ledger(admin),
     admin.from("calendar_events").select("id, title, date, repeat, remind_days, note, amount"),
     admin.from("calendar_done").select("key"),
     admin.from("employees").select("id, name, end_date, documents"),
     allRows<Record<string, unknown>>(() => admin.from("expense_claims").select("*")),
     salesOf(admin, `${today.slice(0, 7)}-01`, today),
+    admin.from("branches").select("closed_days"),
   ]);
   const events: CalEvent[] = (ev.data ?? []).map((r) => ({ id: r.id as string, title: r.title as string, date: r.date as string, repeat: r.repeat as CalEvent["repeat"], remindDays: Number(r.remind_days) || 0, note: (r.note as string) ?? "", amount: r.amount === null ? null : Number(r.amount) }));
   const items = calendarItems({
@@ -302,7 +303,10 @@ export async function calendarContext(admin: Admin, today: string): Promise<stri
   );
   const days = new Set(sales.map((r) => r.sale_date as string));
   const missing: string[] = [];
-  for (let d = `${today.slice(0, 7)}-01`; d < today; d = new Date(Date.parse(`${d}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)) if (!days.has(d)) missing.push(d.slice(5));
+  // A weekday every branch is closed on is not a missing day (owner 2026-11-18: "휴무일을 매출 누락으로 보지 않기")
+  const closedLists = (shops.data ?? []).map((b) => ((b.closed_days as number[] | null) ?? []).map(Number));
+  const allClosed = (d: string) => closedLists.length > 0 && closedLists.every((c) => c.includes(new Date(`${d}T00:00:00Z`).getUTCDay()));
+  for (let d = `${today.slice(0, 7)}-01`; d < today; d = new Date(Date.parse(`${d}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)) if (!days.has(d) && !allClosed(d)) missing.push(d.slice(5));
   lines.push("", "## To tidy up", `Draft documents not saved yet: ${drafts.length}`, `Days this month without sales entered (before today): ${missing.length ? missing.join(", ") : "none"}`);
   return lines.join("\n");
 }
