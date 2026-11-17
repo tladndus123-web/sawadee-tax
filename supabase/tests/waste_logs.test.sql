@@ -1,7 +1,7 @@
 -- Waste log (…004600_waste_logs.sql). Run: npm run db:test. Everything rolls back.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(10);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000c4001', 'w-boss@test.local'),
@@ -45,6 +45,10 @@ select is((select qty from public.waste_logs where id = '00000000-0000-0000-0000
 select pg_temp.act_as('00000000-0000-0000-0000-0000000c4001');
 delete from public.waste_logs where id = '00000000-0000-0000-0000-0000000ce401';
 select is((select count(*)::int from public.waste_logs where id = '00000000-0000-0000-0000-0000000ce401'), 0, 'an admin of the branch removes it');
+
+-- LINE waste mode (…004800): the mode and a waiting photo are accepted, other photo paths are not
+reset role;
+select lives_ok($$ insert into public.line_modes (line_user_id, mode, until, photo_path) values ('Utestwaste01', 'waste', now() + interval '10 minutes', 'waste/x/line.jpg') $$, 'line_modes takes waste mode with a waiting photo');
 
 select * from finish();
 rollback;

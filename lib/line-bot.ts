@@ -6,6 +6,10 @@
 //   sticker …                 → no reply
 //   "경비" / "เบิก" / "経費" / "expense" → members: expense mode for 10 minutes (lib/expense-line-server.ts)
 //   image in expense mode → a claim of the sender (not a ledger document); admins get the approve / reject card
+//   "계약서" / "契約書" / "สัญญา" / "contract" → admins: contract mode for 10 minutes (lib/contract-line-server.ts)
+//   image / PDF file in contract mode → read by the contract reader, saved in the contract box (/contracts) + a card
+//   "폐기" / "廃棄" / "ทิ้ง" / "waste" → members, restaurant extra on: waste mode for 10 minutes (lib/waste-line-server.ts);
+//   a photo is kept, a line like "우유 2L 상함 ฿90" becomes a waste record (/waste)
 //   image             → linked members only: AI reading → vendor dictionary → saved to the ledger
 //                       (status "reviewed", as that member) → receipt card with the automatic checks
 //   file .xlsx / .csv → linked members only: a POS sales export, read with the columns the app remembered from an
@@ -22,6 +26,10 @@ import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES, readingFor } from "./extract-server";
 import { assistantSay } from "./assistant";
 import { isExpenseWord } from "./expense-line";
+import { isContractFileName, isContractWord } from "./contract-line";
+import { contractFromLine, inContractMode, startContractMode } from "./contract-line-server";
+import { isWasteWord } from "./waste-line";
+import { inWasteMode, keepWastePhoto, startWasteMode, wasteFromLine } from "./waste-line-server";
 import { claimFromLine, expenseButton, inExpenseMode, notifyNewClaim, startExpenseMode } from "./expense-line-server";
 import { answer } from "./assistant-server";
 import { aiCard, goalCard, goalSetText, noticeMessage, shareCard } from "./line-dash";
@@ -124,13 +132,18 @@ export async function handleLineEvent(event: webhook.Event): Promise<void> {
 
   // A 6-digit code, also as "123 456" or "123-456"
   if (message.type === "text" && /^\s*\d{3}[\s-]?\d{3}\s*$/.test(message.text ?? "")) return linkAccount(event, lineUser, digitsOnly(message.text));
+  if (message.type === "text" && isContractWord(message.text ?? "")) return startContractMode(lineUser, (m) => send(event, lineUser, m));
   if (message.type === "text" && isExpenseWord(message.text ?? "")) return startExpenseMode(lineUser, (m) => send(event, lineUser, m));
+  if (message.type === "text" && isWasteWord(message.text ?? "")) return startWasteMode(lineUser, (m) => send(event, lineUser, m));
+  // Waste mode: the line is what was thrown away (lib/waste-line readWasteLine)
+  if (message.type === "text" && (await inWasteMode(lineUser))) return void (await wasteFromLine(lineUser, message.text ?? "", (m) => send(event, lineUser, m)));
   if (message.type === "text") {
     const ask = askFromText(message.text ?? "");
     if (ask) return answerAsk(event, lineUser, ask, false);
     return chat(event, lineUser, message.text ?? "");
   }
   if (message.type === "image") return saveReceipt(event, lineUser, message.id);
+  if (message.type === "file" && isContractFileName(message.fileName ?? "") && (await inContractMode(lineUser))) return contractFile(event, lineUser, message.id);
   if (message.type === "file" && isPosFileName(message.fileName ?? "")) return salesFile(event, lineUser, message.id, message.fileName ?? "");
   // Anything else (ordinary chat, stickers …): no automatic reply
 }
@@ -286,6 +299,13 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   }
   // Only the branches this member may use (staff: open one in the app with its PIN first) — before any AI cost
   const branches = await usableBranches(member.user_id);
+  // Contract mode (admins, "계약서"): the photo is a contract for the contract box, not a receipt
+  if (!member.disabled_at && (await inContractMode(lineUser))) return contractFile(event, lineUser, messageId, true);
+  // Waste mode (restaurant extra, "폐기"): the photo waits for the next line, which becomes the waste record
+  if (!member.disabled_at && (await inWasteMode(lineUser))) {
+    const buf = await readStream(await lineBlobClient().getMessageContent(messageId));
+    return keepWastePhoto(lineUser, buf, "image/jpeg", (m) => send(event, lineUser, m));
+  }
   // Expense mode: the photo is the member's own claim (their branch, else the database's head branch)
   if (!member.disabled_at && (await inExpenseMode(lineUser))) return expensePhoto(event, lineUser, member.user_id, messageId, branches[0]?.id ?? null);
   if (!branches.length) return send(event, lineUser, [text(say.noBranch)]);
@@ -408,6 +428,26 @@ async function expensePhoto(event: webhook.MessageEvent, lineUser: string, userI
   });
   await send(event, lineUser, [text(r.text)]);
   if (r.ok && r.pending) await notifyNewClaim(r.id, appUrl()).catch((e) => console.error("[line] expense notify", e instanceof Error ? e.message : e));
+}
+
+/** A photo or PDF in contract mode → the contract box (lib/contract-line-server); `claimed` = its LINE event was already marked as seen */
+async function contractFile(event: webhook.MessageEvent, lineUser: string, messageId: string, claimed = false) {
+  const member = await memberFor(lineUser);
+  if (!member) return send(event, lineUser, [text(say.welcome)]);
+  if (!claimed) {
+    // LINE can deliver an event twice; only the first delivery is processed
+    const claim = await supabaseAdmin().from("line_messages").insert({ message_id: `${messageId}:ct`, user_id: member.user_id });
+    if (claim.error) {
+      if (claim.error.code === "23505") return;
+      throw claim.error;
+    }
+  }
+  if (limited(`contract:${member.user_id}`, 5, 60_000)) return send(event, lineUser, [text(say.rate)]);
+  await lineClient()
+    .showLoadingAnimation({ chatId: lineUser, loadingSeconds: 60 })
+    .catch(() => undefined);
+  const buf = await readStream(await lineBlobClient().getMessageContent(messageId));
+  await send(event, lineUser, await contractFromLine(lineUser, buf, appUrl(), await langOf(lineUser)));
 }
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
