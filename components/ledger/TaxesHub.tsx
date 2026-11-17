@@ -27,6 +27,11 @@ import { daysLeft, hubMonth, monthDeadlines, monthlyDoneKey, payrollTaxes, type 
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { useMonthLabel } from "./Stickers";
+import { TaxAiCheck } from "./TaxAiCheck";
+import type { TaxSheet } from "@/lib/tax-check";
+import { summarize } from "@/lib/dashboard";
+import { dupGroupsIn } from "@/lib/dup-groups";
+import { monthKey } from "@/lib/archive";
 
 const shift = (ym: string, n: number) => new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)) - 1 + n, 1)).toISOString().slice(0, 7);
 const ICON = { pp30: Landmark, pnd53: ReceiptText, pnd3: ReceiptText, pnd1: WalletCards } as const;
@@ -66,6 +71,30 @@ export function TaxesHub() {
   const vatNet = toSatang(pp30.toPay) - toSatang(pp30.overpaid) - carry;
   const due = monthDeadlines(month);
   const payOk = pay?.month === month;
+
+  // The facts the AI check words (lib/tax-check): the month against the three before it, what is wrong, what is filed
+  const aiSheet = useMemo<TaxSheet>(() => {
+    const docsOnly = ledger.map((e) => e.doc);
+    const vatOf = (m: string) => {
+      const p = buildPp30(sales, docsOnly, m, company.taxId).pp30;
+      return fromSatang(toSatang(p.toPay) - toSatang(p.overpaid));
+    };
+    return {
+      month,
+      today,
+      vat: { output: pp30.outputVat, input: pp30.inputVat, toPay: fromSatang(Math.max(vatNet, 0)), credit: fromSatang(Math.max(-vatNet, 0)), carriedIn: fromSatang(carry) },
+      vatBefore: [1, 2, 3].map((n) => ({ month: shift(month, -n), toPay: vatOf(shift(month, -n)) })),
+      wht: { pnd53Count: wht.pnd53.length, pnd53Tax: wht.totals.pnd53.tax, pnd3Count: wht.pnd3.length, pnd3Tax: wht.totals.pnd3.tax, badTaxIds: wht.badIds.length, notMarkedPaid: wht.unpaid },
+      payroll: payOk ? { lines: pay.people, tax: fromSatang(pay.pnd1), socialSecurity: fromSatang(pay.sso) } : { lines: 0, tax: 0, socialSecurity: 0 },
+      documentsToCheck: summarize(docs, month, company.taxId, today).toCheck,
+      drafts: pick(entries, "drafts").filter((e) => monthKey(e.doc) === month).length,
+      possibleDuplicates: dupGroupsIn(ledger, month),
+      deadlines: { vat: due.pp30.online, vatDaysLeft: daysLeft(today, due.pp30.online), withholding: due.pnd53.online, withholdingDaysLeft: daysLeft(today, due.pnd53.online) },
+      filed: { vat: cal.done.has(vatDoneKey(month)), monthly: cal.done.has(monthlyDoneKey(month)) },
+    };
+    // due is derived from month
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ledger, sales, month, company.taxId, pp30, vatNet, carry, wht, payOk, pay, docs, entries, today, cal.done]);
 
   if (me.loaded && (me.role !== "admin" || !canOpen(me, "sales") || !canOpen(me, "ledger"))) return <p className="text-sm text-muted-foreground">{t("adminOnly")}</p>;
   if (!loaded || !salesLoaded || !cal.loaded) return <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" aria-label={t("loading")} />;
@@ -141,6 +170,9 @@ export function TaxesHub() {
         <p className="text-[34px] leading-tight font-bold tracking-tight tabular-nums">{baht(fromSatang(total))}</p>
         <p className="text-xs text-muted-foreground">{t("totalNote")}</p>
       </section>
+
+      {/* AI 신고 전 점검 (lib/tax-check) */}
+      <TaxAiCheck sheet={aiSheet} />
 
       <ul className="grid gap-3 md:grid-cols-2">
         {rows.map((r) => {

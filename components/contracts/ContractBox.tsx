@@ -5,6 +5,7 @@
 // drop or pick a photo / PDF → "AI가 읽기" fills the form → the person checks → save. `?new=1` (top bar "+ New") opens
 // the add form at once. Pure rules: lib/contracts, lib/contract-read; storage and saving: lib/contract-store.
 
+import { ContractAi } from "./ContractAi";
 import { fullAdmin } from "@/lib/screens";
 import {
   Briefcase,
@@ -96,6 +97,7 @@ export function ContractBox() {
   const [filter, setFilter] = useState<ContractFilter>("all");
   const [kind, setKind] = useState<ContractKind | "all">("all");
   const [editing, setEditing] = useState<Contract | "new" | null>(null);
+  const [aiOf, setAiOf] = useState<Contract | null>(null);
   const askedNew = useRef(false);
 
   const reload = useCallback(async () => {
@@ -215,7 +217,7 @@ export function ContractBox() {
         <ul className="grid gap-3 md:grid-cols-2">
           {shown.map((c) => (
             <li key={c.id}>
-              <ContractCard c={c} today={today} onOpen={() => setEditing(c)} />
+              <ContractCard c={c} today={today} onOpen={() => setEditing(c)} onAi={() => setAiOf(c)} />
             </li>
           ))}
         </ul>
@@ -229,6 +231,7 @@ export function ContractBox() {
           onDeleted={(id) => setList((l) => (l ?? []).filter((x) => x.id !== id))}
         />
       )}
+      {aiOf && <ContractAi c={aiOf} onClose={() => setAiOf(null)} onSummary={(s) => setList((l) => (l ?? []).map((x) => (x.id === aiOf.id ? { ...x, aiSummary: s } : x)))} />}
     </div>
   );
 }
@@ -255,7 +258,7 @@ async function openFile(path: string, failText: string) {
   }
 }
 
-function ContractCard({ c, today, onOpen }: { c: Contract; today: string; onOpen: () => void }) {
+function ContractCard({ c, today, onOpen, onAi }: { c: Contract; today: string; onOpen: () => void; onAi: () => void }) {
   const t = useTranslations("contracts");
   const day = useDay();
   const Icon = KIND_ICON[c.kind];
@@ -299,8 +302,15 @@ function ContractCard({ c, today, onOpen }: { c: Contract; today: string; onOpen
           </Badge>
         )}
         {c.note && <span className="min-w-0 flex-1 truncate text-[12px] text-muted-foreground">{c.note}</span>}
+        {/* AI summary + questions on the file (lib/contract-ai) */}
         {c.filePath && (
-          <Button variant="outline" className="ml-auto h-11 rounded-full px-3.5 text-[13px] pointer-fine:h-8" onClick={() => void openFile(c.filePath!, t("fileFail"))}>
+          <Button variant="secondary" className="ml-auto h-11 rounded-full bg-brand-soft px-3.5 text-[13px] text-brand hover:bg-brand-soft/80 pointer-fine:h-8" onClick={onAi}>
+            <Sparkles className="size-3.5" aria-hidden />
+            {c.aiSummary ? t("ai.open") : t("ai.button")}
+          </Button>
+        )}
+        {c.filePath && (
+          <Button variant="outline" className="h-11 rounded-full px-3.5 text-[13px] pointer-fine:h-8" onClick={() => void openFile(c.filePath!, t("fileFail"))}>
             <Paperclip className="size-3.5" aria-hidden />
             {t("openFile")}
           </Button>

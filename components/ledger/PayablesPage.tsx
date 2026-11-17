@@ -18,6 +18,7 @@ import { useMe } from "@/lib/role-store";
 import { canOpen } from "@/lib/screens";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
+import { PayAi } from "./PayAi";
 
 const TONE: Record<Bucket, string> = { late: "text-bad", week: "text-warn", month: "text-foreground", later: "text-foreground", none: "text-muted-foreground" };
 
@@ -87,6 +88,18 @@ export function PayablesPage() {
           ))}
         </div>
       </section>
+
+      {/* AI 지급 순서 추천 (lib/pay-advice): which bills first, and pick them in one tap */}
+      {bills.length > 0 && (
+        <PayAi
+          sheet={{
+            today,
+            totals: { late: fromSatang(totals.late.amount), week: fromSatang(totals.week.amount), month: fromSatang(totals.month.amount), later: fromSatang(totals.later.amount), none: fromSatang(totals.none.amount) },
+            bills: bills.slice(0, 40).map((b, i) => ({ n: i + 1, supplier: name(b.doc.seller.name), amount: fromSatang(b.amount), days: b.days, date: b.doc.date })),
+          }}
+          onPick={(ns) => setPicked(new Set(ns.map((n) => bills[n - 1]?.id).filter((x): x is string => !!x)))}
+        />
+      )}
 
       {groups.length === 0 ? (
         <p className="workspace-panel p-6 text-center text-sm text-muted-foreground">{t("none")}</p>

@@ -5,7 +5,7 @@
 // each, newest documents first. The queries use the person's own session, so the database's rules (branches kept out,
 // staff limits) decide what comes back. Pure parts: lib/top-search.
 
-import { Building2, CornerDownLeft, FileText, Loader2, Search } from "lucide-react";
+import { Building2, CornerDownLeft, FileText, Loader2, Search, Sparkles } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -19,6 +19,7 @@ import { NAV_ICON } from "./nav-icons";
 type Kind = "menu" | "docs" | "vendors";
 type Hit = { href: string; title: string; sub: string; kind: Kind; icon?: (typeof NAV_ICON)[keyof typeof NAV_ICON] };
 const KIND_ICON = { docs: FileText, vendors: Building2 } as const;
+type AiResult = { q: string; explain: string; count: number; shownTotal: number; docs: { id: string; docNo: string; date: string | null; seller: Record<string, string>; net: number; paid: boolean }[] };
 
 export function GlobalSearch({ items }: { items: NavItem[] }) {
   const t = useTranslations();
@@ -29,6 +30,30 @@ export function GlobalSearch({ items }: { items: NavItem[] }) {
   const [found, setFound] = useState<Hit[]>([]);
   const [busy, setBusy] = useState(false);
   const seq = useRef(0);
+  // AI search ("말로 찾기", lib/ai-search): a sentence → a ledger filter → documents (the caller's own rules)
+  const [ai, setAi] = useState<AiResult | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiFail, setAiFail] = useState("");
+  const askAi = async () => {
+    const text = q.trim();
+    if (text.length < 2 || aiBusy) return;
+    setAiBusy(true);
+    setAiFail("");
+    try {
+      const res = await fetch("/api/search/ai", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q: text, lang: locale }) });
+      const body = (await res.json().catch(() => ({}))) as { filter?: { explain: string }; docs?: AiResult["docs"]; count?: number; shownTotal?: number; error?: string };
+      if (!res.ok || !body.docs) {
+        setAi(null);
+        setAiFail(body.error === "none" ? t("topSearch.aiNone") : body.error === "rate" ? t("topSearch.aiRate") : t("topSearch.aiFail"));
+        return;
+      }
+      setAi({ q: text, explain: body.filter?.explain ?? "", count: body.count ?? body.docs.length, shownTotal: body.shownTotal ?? 0, docs: body.docs });
+    } catch {
+      setAiFail(t("topSearch.aiFail"));
+    } finally {
+      setAiBusy(false);
+    }
+  };
   const has = (href: string) => items.some((i) => i.href === href);
 
   useEffect(() => {
@@ -101,10 +126,15 @@ export function GlobalSearch({ items }: { items: NavItem[] }) {
   const close = () => {
     setOpen(false);
     setQ("");
+    setAi(null);
+    setAiFail("");
   };
 
   return (
     <>
+      <button type="button" onClick={() => setOpen(true)} aria-label={t("topSearch.open")} className="press relative grid size-10 place-items-center rounded-full after:absolute after:-inset-1 md:hidden">
+        <Search className="size-5" aria-hidden />
+      </button>
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -141,8 +171,45 @@ export function GlobalSearch({ items }: { items: NavItem[] }) {
             <kbd className="flex-none rounded-md border border-border bg-muted px-1.5 font-sans text-[11px] leading-5 text-muted-foreground">Esc</kbd>
           </form>
           <div className="max-h-[min(60vh,520px)] overflow-y-auto p-2" aria-live="polite">
+            {q.trim().length >= 2 && (
+              <button
+                type="button"
+                disabled={aiBusy}
+                onClick={() => void askAi()}
+                className="mb-1 flex w-full items-center gap-3 rounded-xl bg-brand-soft/60 px-3 py-2.5 text-left outline-none hover:bg-brand-soft focus-visible:bg-brand-soft"
+              >
+                <span className="grid size-9 flex-none place-items-center rounded-xl bg-brand text-white">
+                  {aiBusy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Sparkles className="size-4" aria-hidden />}
+                </span>
+                <span className="grid min-w-0 flex-1">
+                  <span className="truncate text-[14px] font-semibold text-brand">{t("topSearch.ai", { q: q.trim() })}</span>
+                  <span className="truncate text-[12px] text-muted-foreground">{t("topSearch.aiHint")}</span>
+                </span>
+              </button>
+            )}
+            {aiFail && <p className="px-3 py-2 text-[13px] text-bad">{aiFail}</p>}
+            {ai && ai.q === q.trim() && (
+              <section className="grid gap-0.5 py-1">
+                <h3 className="px-3 pt-1 pb-1 text-[12px] font-semibold text-brand">
+                  {ai.explain || t("topSearch.aiTitle")} · {t("topSearch.aiCount", { count: ai.count, total: `฿${ai.shownTotal.toLocaleString("en-US", { maximumFractionDigits: 2 })}` })}
+                </h3>
+                {ai.docs.length === 0 && <p className="px-3 py-3 text-[13px] text-muted-foreground">{t("topSearch.none")}</p>}
+                {ai.docs.map((d) => (
+                  <Link key={d.id} href={`/documents/${d.id}`} onClick={close} className="flex items-center gap-3 rounded-xl px-3 py-2 outline-none hover:bg-muted focus-visible:bg-muted">
+                    <span className="grid size-9 flex-none place-items-center rounded-xl bg-primary/10 text-primary">
+                      <FileText className="size-4" aria-hidden />
+                    </span>
+                    <span className="grid min-w-0 flex-1">
+                      <span className="truncate text-[14px] font-medium">{nameOf(d.seller, locale) || d.docNo}</span>
+                      <span className="truncate text-[12px] text-muted-foreground tabular-nums">{[d.docNo, d.date, d.paid ? "" : t("topSearch.unpaid")].filter(Boolean).join(" · ")}</span>
+                    </span>
+                    <span className="flex-none text-[13.5px] font-semibold tabular-nums">฿{d.net.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
+                  </Link>
+                ))}
+              </section>
+            )}
             {!q.trim() && <p className="px-3 py-6 text-center text-[13.5px] text-muted-foreground">{t("topSearch.hint")}</p>}
-            {q.trim() && !groups.length && <p className="px-3 py-6 text-center text-[13.5px] text-muted-foreground">{busy ? t("topSearch.searching") : t("topSearch.none")}</p>}
+            {q.trim() && !groups.length && !(ai && ai.q === q.trim()) && <p className="px-3 py-6 text-center text-[13.5px] text-muted-foreground">{busy ? t("topSearch.searching") : t("topSearch.none")}</p>}
             {groups.map(({ k, list }) => (
               <section key={k} className="grid gap-0.5 py-1">
                 <h3 className="px-3 pt-1 pb-1 text-[12px] font-semibold text-muted-foreground">{t(`topSearch.${k}`)}</h3>

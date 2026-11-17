@@ -2,6 +2,8 @@
 // is, the list's order, filters and search, and which file may be attached. Ported from the for-sale version (one
 // company here: no company folder). The browser side is lib/contract-store.ts; the AI reading lib/contract-read.ts.
 
+import { type ContractAi, readContractAi } from "./contract-ai";
+
 export const CONTRACT_KINDS = ["lease", "supply", "service", "employment", "loan", "insurance", "partnership", "other"] as const;
 export type ContractKind = (typeof CONTRACT_KINDS)[number];
 export const isContractKind = (v: unknown): v is ContractKind => (CONTRACT_KINDS as readonly unknown[]).includes(v);
@@ -24,6 +26,8 @@ export interface Contract {
   fileType: string | null;
   branchId: string | null;
   createdAt: string;
+  /** The AI summary kept with it (lib/contract-ai), null = not made yet */
+  aiSummary?: ContractAi | null;
 }
 
 /** "Ends soon" when no notice period is set */
@@ -50,6 +54,7 @@ export function rowToContract(r: Record<string, unknown>): Contract {
     fileType: str(r.file_type) || null,
     branchId: str(r.branch_id) || null,
     createdAt: str(r.created_at),
+    aiSummary: readContractAi(r.ai_summary),
   };
 }
 

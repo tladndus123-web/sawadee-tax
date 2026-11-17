@@ -2889,7 +2889,15 @@
     "none": "Nothing found.",
     "menu": "Menu",
     "docs": "Ledger documents",
-    "vendors": "Suppliers"
+    "vendors": "Suppliers",
+    "ai": "Find with AI: “{q}”",
+    "aiHint": "e.g. pork from Makro last month, unpaid bills over 5,000 in October",
+    "aiTitle": "AI search",
+    "aiCount": "{count} found (shown total {total})",
+    "aiNone": "Couldn't tell what to look for. Try a period, a seller or an item.",
+    "aiRate": "Please try again in a moment.",
+    "aiFail": "AI search failed.",
+    "unpaid": "unpaid"
   },
   "quickNew": {
     "open": "New",
@@ -2937,6 +2945,23 @@
       "none": "Nothing to file",
       "late": "{days} days late",
       "today": "Due today"
+    },
+    "ai": {
+      "title": "AI check before filing",
+      "sub": "AI points out what is missing, wrong or unusual before you file.",
+      "run": "Check",
+      "again": "Check again",
+      "retry": "Try again",
+      "failed": "Couldn't check. Please try again in a moment.",
+      "note": "AI only looks at the books' numbers. Confirm the final word with your accountant.",
+      "link": {
+        "filing": "Filing numbers",
+        "ledger": "Ledger",
+        "dups": "Duplicates",
+        "payroll": "Payroll",
+        "calendar": "Calendar",
+        "none": ""
+      }
     }
   },
   "payables": {
@@ -2966,7 +2991,16 @@
     "markPaid": "Paid today",
     "paidDone": "Marked {count} as paid.",
     "undo": "Undo",
-    "failed": "Couldn't save. Please try again."
+    "failed": "Couldn't save. Please try again.",
+    "ai": {
+      "title": "AI payment order",
+      "sub": "Which bills to pay first: late ones, this week's, and suppliers with several bills.",
+      "run": "Suggest",
+      "again": "Suggest again",
+      "retry": "Try again",
+      "failed": "Couldn't make a suggestion. Please try again.",
+      "pick": "Pick the {count} suggested"
+    }
   },
   "food": {
     "title": "Restaurant features",
@@ -3172,6 +3206,19 @@
       "insurance": "Insurance",
       "partnership": "Partnership",
       "other": "Other"
+    },
+    "ai": {
+      "button": "AI summary",
+      "open": "AI summary",
+      "sub": "AI reads the contract file and sums up the key terms, the dates that matter and what to watch out for. You can ask it questions too.",
+      "make": "Summarize with AI",
+      "reading": "Reading the contract… (up to a minute)",
+      "remake": "Summarize again",
+      "askTitle": "Ask this contract",
+      "askHint": "e.g. how much notice to end it?",
+      "ask": "Ask",
+      "failed": "AI couldn't answer. Please try again.",
+      "note": "Answers come from the contract file only. For legal decisions, ask a lawyer."
     }
   },
   "prep": {

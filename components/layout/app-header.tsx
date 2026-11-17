@@ -60,7 +60,8 @@ export function AppHeader() {
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-card focus:p-3 focus:text-sm">
           {t("ui.skipToContent")}
         </a>
-        <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-3 px-4 sm:px-6 md:h-16 lg:px-8">
+        {/* Full width beside the sidebar (a centred 1440px box left the trail floating on wide screens — owner 2026-11-18) */}
+        <div className="flex h-14 w-full items-center gap-3 px-4 sm:px-6 md:h-16 lg:px-8">
           {/* Phones: the app */}
           <Link href="/" className="press relative flex min-w-0 items-center gap-2.5 text-[15px] font-semibold tracking-tight after:absolute after:-inset-2 active:scale-[0.97] md:hidden">
             <AppMark className={`size-8 flex-none rounded-[9px] ${APP_MARK_GLOW}`} />
@@ -92,11 +93,12 @@ export function AppHeader() {
             )}
           </nav>
 
-          <div className="hidden min-w-0 flex-1 justify-center md:flex">
+          {/* One search: a field on PC, an icon on phones (it opens the same window) */}
+          <div className="ml-auto flex min-w-0 justify-center md:ml-0 md:flex-1">
             <GlobalSearch items={items} />
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center justify-end gap-1 md:ml-0">
+          <div className="flex shrink-0 items-center justify-end gap-1">
             <span className="mr-1 max-md:hidden">
               <QuickCreate items={items} canUpload={canUpload} />
             </span>

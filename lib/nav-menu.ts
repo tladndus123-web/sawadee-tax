@@ -51,8 +51,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/ledger/taxes", key: "taxes", group: "home", admin: true, also: ["/ledger/filing"], screens: ["sales"] },
   { href: "/ledger/payables", key: "payables", group: "home", admin: true },
   { href: "/ledger", key: "ledger", group: "books", also: ["/documents", "/upload"] },
-  { href: "/ledger/cash", key: "cash", group: "books", sideOnly: true },
-  { href: "/ledger/assets", key: "assets", group: "books", sideOnly: true },
   { href: "/sales", key: "sales", group: "trade" },
   { href: "/sales/pl", key: "pl", group: "trade", sideOnly: true },
   { href: "/vendors", key: "vendors", group: "trade" },
@@ -62,6 +60,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/payroll", key: "payroll", group: "people", admin: true },
   { href: "/expenses", key: "expenses", group: "people" },
   { href: "/calendar", key: "calendar", group: "people", admin: true },
+  // Cash box and assets sit low, with settings (owner 2026-11-18: "현금 자산 밑으로")
+  { href: "/ledger/cash", key: "cash", group: "settings", sideOnly: true },
+  { href: "/ledger/assets", key: "assets", group: "settings", sideOnly: true },
   { href: "/settings", key: "settings", group: "settings" },
 ];
 
