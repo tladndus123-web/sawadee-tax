@@ -26,10 +26,10 @@ import { paidAtTill } from "./archive";
 import { extractDocument, MAX_IMAGE_BYTES, readingFor } from "./extract-server";
 import { assistantSay } from "./assistant";
 import { isExpenseWord } from "./expense-line";
-import { isContractFileName, isContractWord } from "./contract-line";
+import { contractWords, isContractFileName, isContractWord } from "./contract-line";
 import { contractFromLine, inContractMode, startContractMode } from "./contract-line-server";
-import { isWasteWord } from "./waste-line";
-import { inWasteMode, keepWastePhoto, startWasteMode, wasteFromLine } from "./waste-line-server";
+import { isWasteExit, isWasteWord, readWasteLine } from "./waste-line";
+import { endWasteMode, inWasteMode, keepWastePhoto, startWasteMode, wasteFromLine } from "./waste-line-server";
 import { claimFromLine, expenseButton, inExpenseMode, notifyNewClaim, startExpenseMode } from "./expense-line-server";
 import { answer } from "./assistant-server";
 import { aiCard, goalCard, goalSetText, noticeMessage, shareCard } from "./line-dash";
@@ -135,8 +135,11 @@ export async function handleLineEvent(event: webhook.Event): Promise<void> {
   if (message.type === "text" && isContractWord(message.text ?? "")) return startContractMode(lineUser, (m) => send(event, lineUser, m));
   if (message.type === "text" && isExpenseWord(message.text ?? "")) return startExpenseMode(lineUser, (m) => send(event, lineUser, m));
   if (message.type === "text" && isWasteWord(message.text ?? "")) return startWasteMode(lineUser, (m) => send(event, lineUser, m));
-  // Waste mode: the line is what was thrown away (lib/waste-line readWasteLine)
-  if (message.type === "text" && (await inWasteMode(lineUser))) return void (await wasteFromLine(lineUser, message.text ?? "", (m) => send(event, lineUser, m)));
+  // Waste mode: a line that reads as waste becomes the record, "끝" leaves; anything else goes on to the usual chat
+  if (message.type === "text" && (await inWasteMode(lineUser))) {
+    if (isWasteExit(message.text ?? "")) return endWasteMode(lineUser, (m) => send(event, lineUser, m));
+    if (readWasteLine(message.text ?? "")) return wasteText(event, lineUser, message.id, message.text ?? "");
+  }
   if (message.type === "text") {
     const ask = askFromText(message.text ?? "");
     if (ask) return answerAsk(event, lineUser, ask, false);
@@ -300,7 +303,11 @@ async function saveReceipt(event: webhook.MessageEvent, lineUser: string, messag
   // Only the branches this member may use (staff: open one in the app with its PIN first) — before any AI cost
   const branches = await usableBranches(member.user_id);
   // Contract mode (admins, "계약서"): the photo is a contract for the contract box, not a receipt
-  if (!member.disabled_at && (await inContractMode(lineUser))) return contractFile(event, lineUser, messageId, true);
+  if (!member.disabled_at && (await inContractMode(lineUser))) {
+    // A contract is one file: a set of photos would become one contract + receipts (review 2026-11-18) — ask for a PDF
+    if (setSize(event) > 1) return send(event, lineUser, [text(contractWords(await langOf(lineUser)).oneFile)]);
+    return contractFile(event, lineUser, messageId, true);
+  }
   // Waste mode (restaurant extra, "폐기"): the photo waits for the next line, which becomes the waste record
   if (!member.disabled_at && (await inWasteMode(lineUser))) {
     const buf = await readStream(await lineBlobClient().getMessageContent(messageId));
@@ -428,6 +435,19 @@ async function expensePhoto(event: webhook.MessageEvent, lineUser: string, userI
   });
   await send(event, lineUser, [text(r.text)]);
   if (r.ok && r.pending) await notifyNewClaim(r.id, appUrl()).catch((e) => console.error("[line] expense notify", e instanceof Error ? e.message : e));
+}
+
+/** A line in waste mode → a waste record in the first branch this member may use (the receipts' rule), once per LINE event */
+async function wasteText(event: webhook.MessageEvent, lineUser: string, messageId: string, line: string) {
+  const member = await memberFor(lineUser);
+  if (!member || member.disabled_at) return send(event, lineUser, [text(say.welcome)]);
+  const claim = await supabaseAdmin().from("line_messages").insert({ message_id: `${messageId}:waste`, user_id: member.user_id });
+  if (claim.error) {
+    if (claim.error.code === "23505") return;
+    throw claim.error;
+  }
+  const branches = await usableBranches(member.user_id);
+  await wasteFromLine(lineUser, line, member.user_id, branches[0]?.id ?? null, (m) => send(event, lineUser, m));
 }
 
 /** A photo or PDF in contract mode → the contract box (lib/contract-line-server); `claimed` = its LINE event was already marked as seen */

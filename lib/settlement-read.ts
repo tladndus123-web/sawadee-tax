@@ -141,6 +141,9 @@ export function settlementCheck(s: Settlement): { expected: number; gap: number;
   return { expected, gap, ok: Math.abs(gap) <= Math.max(1, Math.abs(s.payout) * 0.01) };
 }
 
+/** A statement over two months would put one month's sales in the other: such a file is refused (upload one month at a time) */
+export const crossesMonths = (s: Pick<Settlement, "periodFrom" | "periodTo">) => s.periodFrom.slice(0, 7) !== s.periodTo.slice(0, 7);
+
 /** The app's channel on the sales screen (ShopeeFood → "shopee") */
 export const channelOf = (p: Platform): Channel => (p === "shopeefood" ? "shopee" : p);
 

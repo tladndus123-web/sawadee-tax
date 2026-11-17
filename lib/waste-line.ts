@@ -10,6 +10,10 @@ const TRIGGERS = ["폐기", "廃棄", "ทิ้ง", "ของเสีย", "
 /** The words that start waste mode (alone, any case, surrounding spaces ignored) */
 export const isWasteWord = (text: string) => TRIGGERS.includes(text.trim().toLowerCase());
 
+const EXITS = ["끝", "종료", "그만", "終了", "終わり", "จบ", "เสร็จ", "end", "done", "stop"];
+/** The words that leave waste mode before its time */
+export const isWasteExit = (text: string) => EXITS.includes(text.trim().toLowerCase());
+
 const REASON_WORDS: Record<WasteReason, string[]> = {
   spoiled: ["상함", "상했", "썩", "傷み", "傷んだ", "腐", "เสีย", "บูด", "เน่า", "spoiled", "spoilt", "bad", "rotten"],
   expired: ["유통기한", "기한", "期限", "หมดอายุ", "expired", "expiry"],
@@ -33,7 +37,8 @@ export interface WasteLine {
 /**
  * "우유 2L 상함 ฿90" → { item: 우유, qty: 2, unit: L, reason: spoiled, amount: 90 }. The value is the number with ฿ / 바트 /
  * บาท / baht / バーツ; the first other number is the quantity (1 when none), its unit glued or next to it; the reason from
- * its words (else "other"); the rest is the item. Null when no item is left.
+ * its words (else "other"); the rest is the item. Null when no item is left, or when the line has none of a quantity,
+ * a value or a reason word (so "ok" or a question is never taken for waste), or a figure is out of range.
  */
 export function readWasteLine(text: string): WasteLine | null {
   let s = ` ${text.replace(/\s+/g, " ").trim()} `;
@@ -55,24 +60,30 @@ export function readWasteLine(text: string): WasteLine | null {
       }
     }
   }
+  const saidReason = reason !== "other" || /기타|その他|อื่น|other/i.test(text);
   let qty = 1;
   let unit = "";
+  let saidQty = false;
   const unitRe = UNITS.map((u) => u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).sort((a, b) => b.length - a.length).join("|");
   const q = new RegExp(`(\\d+(?:\\.\\d+)?)\\s*(${unitRe})?(?=\\s|$)`, "i").exec(s);
   if (q) {
     qty = Number(q[1]);
     unit = q[2] ?? "";
+    saidQty = true;
     s = s.replace(q[0], " ");
   }
   const item = s.replace(/\s+/g, " ").trim().slice(0, 80);
-  if (!item || !(qty > 0)) return null;
+  if (!item || !(qty > 0) || qty >= 1_000_000) return null;
+  if (!saidQty && amount === null && !saidReason) return null;
+  if (amount !== null && !(amount >= 0 && amount < 100_000_000)) amount = null;
   return { item, qty, unit, reason, amount: amount !== null && Number.isFinite(amount) ? amount : null };
 }
 
-export const WASTE_LINE_TEXT: Record<WasteLang, { modeOn: string; off: string; notMember: string; photoKept: string; saved: (o: { item: string; qty: number; unit: string; amount: string }) => string; unclear: string; open: string; title: string }> = {
+export const WASTE_LINE_TEXT: Record<WasteLang, { ended: string; modeOn: string; off: string; notMember: string; photoKept: string; saved: (o: { item: string; qty: number; unit: string; amount: string }) => string; unclear: string; open: string; title: string }> = {
   ko: {
     title: "폐기 기록",
-    modeOn: "폐기 기록 모드예요 (10분). 사진을 보내고 \"우유 2L 상함 ฿90\"처럼 재료·수량·이유·금액을 보내 주세요.",
+    ended: "폐기 기록 모드를 끝냈어요.",
+    modeOn: "폐기 기록 모드예요 (10분). 사진을 보내고 \"우유 2L 상함 ฿90\"처럼 재료·수량·이유·금액을 보내 주세요. 그만하려면 \"끝\".",
     off: "폐기 기록이 꺼져 있어요. 관리자가 앱 설정 → 음식점 기능에서 켤 수 있어요.",
     notMember: "앱 계정과 LINE이 연결된 직원만 기록할 수 있어요.",
     photoKept: "사진을 받았어요. 이제 \"우유 2L 상함 ฿90\"처럼 보내 주세요.",
@@ -82,6 +93,7 @@ export const WASTE_LINE_TEXT: Record<WasteLang, { modeOn: string; off: string; n
   },
   ja: {
     title: "廃棄記録",
+    ended: "廃棄記録モードを終えました。",
     modeOn: "廃棄記録モードです（10分）。写真を送り、「牛乳 2L 傷み ฿90」のように食材・数量・理由・金額を送ってください。",
     off: "廃棄記録はオフです。管理者がアプリの設定 → 飲食店の機能でオンにできます。",
     notMember: "アプリのアカウントとLINEを連携したスタッフだけが記録できます。",
@@ -92,6 +104,7 @@ export const WASTE_LINE_TEXT: Record<WasteLang, { modeOn: string; off: string; n
   },
   th: {
     title: "บันทึกของเสีย",
+    ended: "ออกจากโหมดบันทึกของเสียแล้ว",
     modeOn: "โหมดบันทึกของเสีย (10 นาที) ส่งรูป แล้วพิมพ์เช่น \"นม 2L เสีย ฿90\" (วัตถุดิบ จำนวน สาเหตุ มูลค่า)",
     off: "บันทึกของเสียปิดอยู่ ผู้ดูแลเปิดได้ที่ ตั้งค่า → ฟังก์ชันร้านอาหาร ในแอป",
     notMember: "เฉพาะพนักงานที่เชื่อมบัญชีแอปกับ LINE แล้วเท่านั้น",
@@ -102,6 +115,7 @@ export const WASTE_LINE_TEXT: Record<WasteLang, { modeOn: string; off: string; n
   },
   en: {
     title: "Waste log",
+    ended: "Waste mode ended.",
     modeOn: "Waste mode (10 minutes). Send a photo, then a line like \"milk 2L spoiled ฿90\" — item, quantity, reason, value.",
     off: "The waste log is off. An admin can switch it on in the app: Settings → Restaurant features.",
     notMember: "Only staff whose app account is linked to LINE can record waste.",

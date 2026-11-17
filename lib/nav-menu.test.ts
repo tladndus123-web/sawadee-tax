@@ -19,7 +19,12 @@ describe("the menu", () => {
   it("follows an owner's screen list for an admin", () => {
     const limited = visibleItems({ ...admin, screens: ["ledger"] }).map((i) => i.key);
     expect(limited).toContain("ledger");
-    expect(limited).toContain("taxes"); // under /ledger
+    expect(limited).toContain("payables"); // under /ledger
+    expect(limited).not.toContain("taxes"); // the tax hub reads sales too
+    expect(limited).not.toContain("contracts"); // owners and unlimited admins only
+    expect(visibleItems(admin).map((i) => i.key)).toContain("contracts");
+    expect(visibleItems({ ...admin, kept: 1 }).map((i) => i.key)).not.toContain("contracts");
+    expect(visibleItems({ ...admin, owner: true, screens: ["ledger"] }).map((i) => i.key)).toContain("contracts");
     expect(limited).not.toContain("sales");
     expect(limited).not.toContain("payroll");
   });

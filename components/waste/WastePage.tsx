@@ -6,6 +6,7 @@
 // LINE: "폐기" → waste mode (lib/waste-line). Pure parts: lib/waste.
 
 import { Camera, ChevronLeft, ChevronRight, ImageIcon, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -48,9 +49,15 @@ export function WastePage() {
     return [...by].sort((a, b) => b[0].localeCompare(a[0]));
   }, [logs, month]);
   // "+ 새로 만들기" or the LINE card can open the form at once
+  const wantsNew = useSearchParams().get("new") === "1";
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("new") === "1") setEditing("new");
-  }, []);
+    if (!wantsNew) return;
+    setEditing("new");
+    // Take ?new=1 off the address so a reload does not open the form again (and "+ 새로 만들기" works on this page too)
+    const url = new URL(window.location.href);
+    url.searchParams.delete("new");
+    window.history.replaceState(window.history.state, "", url);
+  }, [wantsNew]);
 
   if (food.loaded && !food.waste)
     return (

@@ -12,7 +12,8 @@ export const runtime = "nodejs";
 export const maxDuration = 180;
 
 const PICTURES = ["image/jpeg", "image/png", "image/webp", "application/pdf"] as const;
-const MAX = 15 * 1024 * 1024;
+// Vercel takes request bodies up to about 4.5 MB (the screen shrinks photos first)
+const MAX = 4 * 1024 * 1024;
 
 export async function POST(req: Request) {
   const who = await adminCaller({ full: false, perTenMinutes: 20, later: true });

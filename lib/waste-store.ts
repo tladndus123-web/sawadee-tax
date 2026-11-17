@@ -69,6 +69,8 @@ export async function saveWaste(w: WasteInput) {
   const sb = supabaseBrowser();
   const id = w.id ?? crypto.randomUUID();
   let photoPath = w.photoPath ?? null;
+  // A new photo replaces the old one: the old file goes while its line still points at it (storage rule)
+  if (w.photo && w.id && w.photoPath) await sb.storage.from(BUCKET).remove([w.photoPath]).catch(() => undefined);
   if (w.photo) {
     photoPath = `waste/${id}/${Date.now()}.jpg`;
     const { error } = await sb.storage.from(BUCKET).upload(photoPath, w.photo, { contentType: w.photo.type || "image/jpeg" });
@@ -93,9 +95,10 @@ export async function saveWaste(w: WasteInput) {
 
 export async function removeWaste(w: WasteLog) {
   const sb = supabaseBrowser();
+  // The photo first: the storage rule lets its line's owner remove it only while the line exists
+  if (w.photoPath) await sb.storage.from(BUCKET).remove([w.photoPath]).catch(() => undefined);
   const { error } = await sb.from("waste_logs").delete().eq("id", w.id);
   if (error) throw error;
-  if (w.photoPath) await sb.storage.from(BUCKET).remove([w.photoPath]).catch(() => undefined);
   await reloadWaste();
 }
 

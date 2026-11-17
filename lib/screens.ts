@@ -9,6 +9,8 @@ export type Screen = (typeof SCREENS)[number];
 export function screenOf(path: string): Screen | null {
   const p = path.replace(/^\/(ko|ja|th|en)(?=\/|$)/, "") || "/";
   if (p.startsWith("/documents") || p.startsWith("/ledger")) return "ledger";
+  // The waste log (restaurant extra) goes with the sales screen
+  if (p === "/waste" || p.startsWith("/waste/")) return "sales";
   for (const s of SCREENS) if (p === `/${s}` || p.startsWith(`/${s}/`)) return s;
   return null;
 }

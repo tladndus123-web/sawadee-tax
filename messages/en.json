@@ -3075,13 +3075,15 @@
     "saved": "Saved.",
     "err": {
       "none": "That did not read as a delivery-app statement.",
-      "file": "PDF, photo, CSV or Excel only (up to 15 MB).",
+      "file": "PDF, photo, CSV or Excel only (up to 4 MB).",
       "noKey": "AI is not set up.",
       "rate": "Please try again in a moment.",
       "off": "Switch it on in Settings → Restaurant features.",
       "failed": "Couldn't read it. Please try again.",
       "save": "Couldn't save."
-    }
+    },
+    "twoMonths": "This statement runs over two months. Upload one month at a time so a month's sales don't land in the other.",
+    "withheldNote": "The ฿{amount} the app withheld is noted on the fee document. Get the app's withholding certificate (50 Tawi)."
   },
   "contracts": {
     "title": "Contract box",

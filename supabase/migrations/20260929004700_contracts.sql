@@ -32,7 +32,10 @@ create table public.contracts (
 create index contracts_end on public.contracts (end_on);
 
 alter table public.contracts enable row level security;
-create policy "contracts admins" on public.contracts for all using (public.is_admin()) with check (public.is_admin());
+-- A contract of one branch follows that branch's admin rule (admin_for, …003200_owners); company-wide ones any admin
+create policy "contracts admins" on public.contracts for all
+  using (case when branch_id is null then public.is_admin() else public.admin_for(branch_id) end)
+  with check (case when branch_id is null then public.is_admin() else public.admin_for(branch_id) end);
 revoke all on public.contracts from anon;
 grant select, insert, update, delete on public.contracts to authenticated;
 

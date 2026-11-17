@@ -5,6 +5,7 @@
 // drop or pick a photo / PDF → "AI가 읽기" fills the form → the person checks → save. `?new=1` (top bar "+ New") opens
 // the add form at once. Pure rules: lib/contracts, lib/contract-read; storage and saving: lib/contract-store.
 
+import { fullAdmin } from "@/lib/screens";
 import {
   Briefcase,
   Building2,
@@ -85,7 +86,8 @@ function useDay() {
 export function ContractBox() {
   const t = useTranslations("contracts");
   const me = useMe();
-  const isAdmin = me.role === "admin";
+  // Owners and admins an owner did not limit (lib/screens fullAdmin): contracts hold rents and staff terms
+  const isAdmin = fullAdmin(me);
   const today = todayBangkok();
   const params = useSearchParams();
   const [list, setList] = useState<Contract[] | null>(null);

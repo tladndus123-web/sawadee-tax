@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import { TaxesHub } from "@/components/ledger/TaxesHub";
 import type { Locale } from "@/i18n/routing";
@@ -6,5 +7,10 @@ import type { Locale } from "@/i18n/routing";
 export default async function TaxesPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale as Locale);
-  return <TaxesHub />;
+  // useSearchParams (?month=) needs a Suspense boundary on a prerendered route
+  return (
+    <Suspense>
+      <TaxesHub />
+    </Suspense>
+  );
 }

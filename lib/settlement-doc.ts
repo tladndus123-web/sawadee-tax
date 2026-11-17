@@ -40,7 +40,8 @@ export function feeLedgerDoc(s: Settlement, branchId: string): LedgerDoc {
     category: "fees",
     paid: true,
     paidDate: fee.date,
-    note: { th: "", en: `Settlement ${s.periodFrom} – ${s.periodTo} · sales ${s.sales.toFixed(2)}`, ja: "" },
+    // The statement's sales, and any tax the app withheld (the restaurant's credit — keep the app's 50 Tawi)
+    note: { th: "", en: `Settlement ${s.periodFrom} – ${s.periodTo} · sales ${s.sales.toFixed(2)}${s.withheld > 0 ? ` · withheld by the app ${s.withheld.toFixed(2)}` : ""}`, ja: "" },
     branchId,
   };
 }

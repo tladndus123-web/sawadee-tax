@@ -18,3 +18,16 @@ describe("waste on LINE", () => {
     expect(readWasteLine("   ")).toBeNull();
   });
 });
+
+describe("waste mode stays out of ordinary talk", () => {
+  it("does not take a plain message or a question for waste", async () => {
+    const { readWasteLine, isWasteExit } = await import("./waste-line");
+    expect(readWasteLine("ok")).toBeNull();
+    expect(readWasteLine("오늘 매출 얼마야?")).toBeNull();
+    expect(readWasteLine("ありがとう")).toBeNull();
+    expect(readWasteLine("우유 상함")).toMatchObject({ item: "우유", reason: "spoiled" });
+    expect(readWasteLine("빵 9999999개")).toBeNull();
+    expect(isWasteExit(" 끝 ")).toBe(true);
+    expect(isWasteExit("End")).toBe(true);
+  });
+});

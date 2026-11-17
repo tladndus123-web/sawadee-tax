@@ -4,6 +4,7 @@
 // (lib/contract-read-server), a row in public.contracts as that admin → a card with what was saved. When the AI cannot
 // read it the file is still saved (fill in the app); when it is plainly not a contract nothing is kept.
 
+import { isFullAdmin } from "./full-admin-server";
 import type { messagingApi } from "@line/bot-sdk";
 import { readContract } from "./contract-read-server";
 import { CONTRACT_MODE_MINUTES, contractFileType, contractWords, savedCardText } from "./contract-line";
@@ -28,7 +29,7 @@ export async function startContractMode(lineUser: string, send: Send): Promise<v
   const w = contractWords(lang);
   const m = await lineAdmin(lineUser);
   if (!m || m.disabled_at) return send([text(w.notMember)]);
-  if (m.role !== "admin") return send([text(w.adminOnly)]);
+  if (m.role !== "admin" || !(await isFullAdmin(supabaseAdmin(), m.user_id))) return send([text(w.adminOnly)]);
   const until = new Date(Date.now() + CONTRACT_MODE_MINUTES * 60_000).toISOString();
   const { error } = await supabaseAdmin().from("line_modes").upsert({ line_user_id: lineUser, mode: "contract", until });
   if (error) throw error;
@@ -53,7 +54,7 @@ export async function contractFromLine(lineUser: string, buf: Buffer, appUrl: st
   const w = contractWords(lang);
   const m = await lineAdmin(lineUser);
   if (!m || m.disabled_at) return [text(w.notMember)];
-  if (m.role !== "admin") return [text(w.adminOnly)];
+  if (m.role !== "admin" || !(await isFullAdmin(supabaseAdmin(), m.user_id))) return [text(w.adminOnly)];
   const kind = contractFileType(buf);
   if (!kind) return [text(w.notFile)];
   if (buf.length > MAX_FILE_BYTES) return [text(w.tooBig)];

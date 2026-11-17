@@ -3,7 +3,7 @@
 // lights up, the top bar's "where am I" trail and the sidebar's width choice. Who sees what (admin, an owner's screen
 // list, the restaurant switches) is decided here from plain inputs; the components only draw it. Pure.
 
-import { canOpen, screenOf } from "./screens";
+import { canOpen, fullAdmin, type Screen, screenOf } from "./screens";
 
 export type NavKey =
   | "dashboard"
@@ -40,11 +40,15 @@ export type NavItem = {
   feature?: NavFeature;
   /** Other paths that light this item up */
   also?: readonly string[];
+  /** Only owners and admins an owner did not limit (lib/screens fullAdmin) — contracts hold rents and staff terms */
+  full?: boolean;
+  /** Screens it also needs besides its path's (the tax hub reads sales too) */
+  screens?: readonly Screen[];
 };
 
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", key: "dashboard", group: "home" },
-  { href: "/ledger/taxes", key: "taxes", group: "home", admin: true, also: ["/ledger/filing"] },
+  { href: "/ledger/taxes", key: "taxes", group: "home", admin: true, also: ["/ledger/filing"], screens: ["sales"] },
   { href: "/ledger/payables", key: "payables", group: "home", admin: true },
   { href: "/ledger", key: "ledger", group: "books", also: ["/documents", "/upload"] },
   { href: "/ledger/cash", key: "cash", group: "books", sideOnly: true },
@@ -53,7 +57,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/sales/pl", key: "pl", group: "trade", sideOnly: true },
   { href: "/vendors", key: "vendors", group: "trade" },
   { href: "/vendors/prices", key: "prices", group: "trade", sideOnly: true },
-  { href: "/contracts", key: "contracts", group: "trade", admin: true },
+  { href: "/contracts", key: "contracts", group: "trade", admin: true, full: true },
   { href: "/waste", key: "waste", group: "trade", feature: "waste" },
   { href: "/payroll", key: "payroll", group: "people", admin: true },
   { href: "/expenses", key: "expenses", group: "people" },
@@ -63,13 +67,20 @@ export const NAV_ITEMS: readonly NavItem[] = [
 
 export const GROUPS: readonly NavGroup[] = ["home", "books", "trade", "people", "settings"];
 
-type Me = { role: string; owner: boolean; screens: readonly string[] | null; loaded: boolean };
+type Me = { role: string; owner: boolean; screens: readonly string[] | null; loaded: boolean; kept?: number };
 
 /** The items this person may open: admin-only ones for admins, an owner's screen list, the switched-on extras */
 export function visibleItems(me: Me, features: readonly NavFeature[] = []): NavItem[] {
   // Until we know who this is, only the dashboard (no menu that flashes and goes)
   if (!me.loaded) return NAV_ITEMS.filter((n) => n.href === "/");
-  return NAV_ITEMS.filter((n) => (!n.admin || me.role === "admin") && (!n.feature || features.includes(n.feature)) && canOpen(me, screenOf(n.href)));
+  return NAV_ITEMS.filter(
+    (n) =>
+      (!n.admin || me.role === "admin") &&
+      (!n.full || fullAdmin(me)) &&
+      (!n.feature || features.includes(n.feature)) &&
+      canOpen(me, screenOf(n.href)) &&
+      (n.screens ?? []).every((s) => canOpen(me, s)),
+  );
 }
 
 /** The items in their sidebar groups (empty groups left out) */

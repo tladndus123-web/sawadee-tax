@@ -47,3 +47,8 @@ create policy "waste photos read" on storage.objects for select using (
   bucket_id = 'documents' and objects.name like 'waste/%' and public.is_member()
   and exists (select 1 from public.waste_logs w where w.photo_path = objects.name and public.can_see_branch(w.branch_id))
 );
+-- …and removed by whoever may change its line (the photo goes first, then the line; admins remove any photo already)
+create policy "waste photos remove" on storage.objects for delete using (
+  bucket_id = 'documents' and objects.name like 'waste/%' and public.is_member()
+  and exists (select 1 from public.waste_logs w where w.photo_path = objects.name and public.can_see_branch(w.branch_id) and (w.created_by = auth.uid() or public.admin_for(w.branch_id)))
+);

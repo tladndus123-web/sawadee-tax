@@ -6,6 +6,7 @@
 // needed, LINE). lib/expenses has the rules, lib/expense-store the data.
 
 import { Check, ChevronRight, CircleCheck, HandCoins, Image as ImageIcon, Layers, Loader2, Pencil, Plus, Receipt, Settings2, Sparkles, Trash2, TriangleAlert, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -49,9 +50,15 @@ export function ExpensesPage() {
   const [tab, setTab] = useState<Tab>("pending");
   const [editing, setEditing] = useState<Claim | null | "new">(null);
   // "+ 새로 만들기 → 경비 청구" (components/layout/QuickCreate) opens the form at once
+  const wantsNew = useSearchParams().get("new") === "1";
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("new") === "1") setEditing("new");
-  }, []);
+    if (!wantsNew) return;
+    setEditing("new");
+    // Take ?new=1 off the address so a reload does not open the form again (and "+ 새로 만들기" works on this page too)
+    const url = new URL(window.location.href);
+    url.searchParams.delete("new");
+    window.history.replaceState(window.history.state, "", url);
+  }, [wantsNew]);
   const [paying, setPaying] = useState<Claim[] | null>(null);
   const [rejecting, setRejecting] = useState<Claim | null>(null);
   const [showSettings, setShowSettings] = useState(false);

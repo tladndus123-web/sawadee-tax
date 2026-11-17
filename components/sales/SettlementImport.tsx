@@ -18,7 +18,8 @@ import { saveEntry } from "@/lib/ledger-store";
 import { fmt } from "@/lib/money";
 import { saveSale, useSales } from "@/lib/sales-store";
 import { feeLedgerDoc } from "@/lib/settlement-doc";
-import { channelOf, feesOf, PLATFORM_LABEL, PLATFORMS, type Platform, recordedSales, saleOf, type Settlement, settlementCheck } from "@/lib/settlement-read";
+import { preparePhoto } from "@/lib/upload-queue";
+import { channelOf, crossesMonths, feesOf, PLATFORM_LABEL, PLATFORMS, type Platform, recordedSales, saleOf, type Settlement, settlementCheck } from "@/lib/settlement-read";
 import { useChannelLabel } from "./channel-name";
 
 const MONEY: (keyof Settlement)[] = ["sales", "commission", "transactionFee", "serviceFee", "shippingFee", "adsFee", "otherFees", "feeVat", "withheld", "payout"];
@@ -34,10 +35,17 @@ export function SettlementImport({ branchId, onClose }: { branchId: string; onCl
   const [fileName, setFileName] = useState("");
   const [addSales, setAddSales] = useState(false);
 
-  const read = async (file: File) => {
-    setFileName(file.name);
+  const read = async (picked: File) => {
+    setFileName(picked.name);
     setState("reading");
     try {
+      // Photos are shrunk like receipts; anything still over 4 MB is too big for the server
+      const file = picked.type.startsWith("image/") ? await preparePhoto(picked) : picked;
+      if (file.size > 4 * 1024 * 1024) {
+        toast.error(t("err.file"));
+        setState("pick");
+        return;
+      }
       const form = new FormData();
       form.append("file", file);
       const res = await fetch("/api/sales/settlement", { method: "POST", body: form });
@@ -72,6 +80,7 @@ export function SettlementImport({ branchId, onClose }: { branchId: string; onCl
   };
   const set = (k: keyof Settlement, v: string | number) => setS((x) => (x ? { ...x, [k]: v } : x));
   const check = s ? settlementCheck(s) : null;
+  const twoMonths = !!s && crossesMonths(s);
 
   return (
     <Dialog open onOpenChange={(o) => !o && state !== "saving" && onClose()}>
@@ -160,6 +169,8 @@ export function SettlementImport({ branchId, onClose }: { branchId: string; onCl
                 </label>
               </div>
             )}
+            {twoMonths && <p className="rounded-xl bg-warn-soft px-3 py-2.5 text-[13px] text-warn">{t("twoMonths")}</p>}
+            {s.withheld > 0 && <p className="text-[12.5px] text-muted-foreground">{t("withheldNote", { amount: fmt(s.withheld) })}</p>}
             <p className="text-[12.5px] leading-relaxed text-muted-foreground">
               {recorded > 0 && !addSales ? t("willSaveFees", { fees: fmt(feesOf(s)) }) : t("willSave", { sales: fmt(s.sales), channel: chName(channelOf(s.platform)), fees: fmt(feesOf(s)) })}
             </p>
@@ -167,7 +178,7 @@ export function SettlementImport({ branchId, onClose }: { branchId: string; onCl
               <Button variant="ghost" className="h-11 rounded-full" disabled={state === "saving"} onClick={() => (setS(null), setState("pick"))}>
                 {t("again")}
               </Button>
-              <Button className="h-11 rounded-full px-6" disabled={state === "saving"} onClick={() => void save()}>
+              <Button className="h-11 rounded-full px-6" disabled={state === "saving" || twoMonths} onClick={() => void save()}>
                 {state === "saving" && <Loader2 className="size-4 animate-spin" />}
                 {t("save")}
               </Button>

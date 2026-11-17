@@ -40,3 +40,11 @@ describe("delivery-app settlements", () => {
     expect(recordedSales(sales, s, "b1")).toBe(4000);
   });
 });
+
+describe("statements over two months", () => {
+  it("are refused", async () => {
+    const { crossesMonths } = await import("./settlement-read");
+    expect(crossesMonths({ periodFrom: "2026-10-25", periodTo: "2026-11-07" })).toBe(true);
+    expect(crossesMonths({ periodFrom: "2026-11-01", periodTo: "2026-11-07" })).toBe(false);
+  });
+});

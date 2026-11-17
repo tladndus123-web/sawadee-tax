@@ -67,7 +67,7 @@ export function TaxesHub() {
   const due = monthDeadlines(month);
   const payOk = pay?.month === month;
 
-  if (me.loaded && (me.role !== "admin" || !canOpen(me, "sales"))) return <p className="text-sm text-muted-foreground">{t("adminOnly")}</p>;
+  if (me.loaded && (me.role !== "admin" || !canOpen(me, "sales") || !canOpen(me, "ledger"))) return <p className="text-sm text-muted-foreground">{t("adminOnly")}</p>;
   if (!loaded || !salesLoaded || !cal.loaded) return <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" aria-label={t("loading")} />;
 
   type Row = { kind: ReturnKind; amount: number | null; note: string; key: string; nothing: boolean; href: string };

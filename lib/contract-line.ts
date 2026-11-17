@@ -33,6 +33,7 @@ export function contractFileType(buf: Uint8Array): { type: "image/jpeg" | "image
 interface Words {
   modeOn: string;
   adminOnly: string;
+  oneFile: string;
   notMember: string;
   saved: string;
   savedSub: string;
@@ -56,6 +57,7 @@ const W: Record<LineLang, Words> = {
   ko: {
     modeOn: "📄 계약서 모드예요. 10분 안에 계약서 사진이나 PDF를 한 장 보내 주세요. AI가 읽어서 계약서함에 넣어 드릴게요.",
     adminOnly: "계약서함은 관리자만 쓸 수 있어요.",
+    oneFile: "계약서는 한 파일로 보내 주세요. 여러 장이면 PDF로 만들어 보내거나 한 장씩 \"계약서\"부터 다시 보내 주세요.",
     notMember: "계약서는 앱 계정이 있는 관리자만 보낼 수 있어요. 앱의 설정에서 LINE을 연결해 주세요.",
     saved: "✓ 계약서함에 저장했어요",
     savedSub: "앱에서 내용을 확인해 주세요",
@@ -77,6 +79,7 @@ const W: Record<LineLang, Words> = {
   ja: {
     modeOn: "📄 契約書モードです。10分以内に契約書の写真か PDF を1つ送ってください。AI が読んで契約書ボックスに入れます。",
     adminOnly: "契約書ボックスは管理者だけが使えます。",
+    oneFile: "契約書は1つのファイルで送ってください。複数ページならPDFにするか、1枚ずつ「契約書」から送り直してください。",
     notMember: "契約書を送れるのはアプリのアカウントがある管理者だけです。アプリの設定で LINE を連携してください。",
     saved: "✓ 契約書ボックスに保存しました",
     savedSub: "アプリで内容を確認してください",
@@ -98,6 +101,7 @@ const W: Record<LineLang, Words> = {
   th: {
     modeOn: "📄 โหมดสัญญา ส่งรูปหรือ PDF ของสัญญา 1 ไฟล์ภายใน 10 นาที AI จะอ่านและเก็บไว้ในกล่องสัญญา",
     adminOnly: "กล่องสัญญาใช้ได้เฉพาะผู้ดูแลเท่านั้น",
+    oneFile: "กรุณาส่งสัญญาเป็นไฟล์เดียว ถ้ามีหลายหน้าให้รวมเป็น PDF หรือส่งทีละรูปโดยพิมพ์ \"สัญญา\" ก่อนทุกครั้ง",
     notMember: "ส่งสัญญาได้เฉพาะผู้ดูแลที่มีบัญชีในแอป กรุณาเชื่อม LINE ในหน้าตั้งค่าของแอป",
     saved: "✓ เก็บไว้ในกล่องสัญญาแล้ว",
     savedSub: "กรุณาตรวจรายละเอียดในแอป",
@@ -119,6 +123,7 @@ const W: Record<LineLang, Words> = {
   en: {
     modeOn: "📄 Contract mode. Send one photo or PDF of the contract within 10 minutes. The AI reads it and puts it in the contract box.",
     adminOnly: "Only admins can use the contract box.",
+    oneFile: "Please send a contract as one file. For several pages, make a PDF, or send one photo at a time starting with \"contract\".",
     notMember: "Only admins with an app account can send contracts. Link LINE in the app's settings.",
     saved: "✓ Saved in the contract box",
     savedSub: "Please check it in the app",
