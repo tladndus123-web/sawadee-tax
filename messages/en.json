@@ -2898,5 +2898,73 @@
     "claim": "Expense claim",
     "event": "Add a date",
     "contract": "Store a contract"
+  },
+  "taxes": {
+    "title": "Tax returns",
+    "sub": "One month's returns on one screen. Amounts are estimates from the books, sales and payroll.",
+    "adminOnly": "Admins only.",
+    "loading": "Loading…",
+    "prev": "Previous month",
+    "next": "Next month",
+    "total": "Tax to pay now (not filed yet)",
+    "totalNote": "Returns marked filed are left out. Check the final amounts with your accountant.",
+    "vatNote": "Output VAT {sales} − input VAT {buy}",
+    "vatCredit": "Nothing to pay · carry {amount}",
+    "whtNote": "{count} withholdings",
+    "payNote": "Tax on pay {tax} + social security {sso} · {people} lines",
+    "deadline": "e-Filing by {online} (paper {paper})",
+    "openNumbers": "See the numbers",
+    "openPayroll": "Open payroll",
+    "markFiled": "Mark as filed",
+    "filedUndo": "Undo filed",
+    "saveFailed": "Couldn't save. Please try again.",
+    "sharedTick": "Withholding and payroll share the tax calendar's \"monthly filing\" tick.",
+    "kind": {
+      "pp30": "VAT (ภ.พ.30)",
+      "pnd53": "Withholding, companies (ภ.ง.ด.53)",
+      "pnd3": "Withholding, people (ภ.ง.ด.3)",
+      "pnd1": "Tax on pay + social security (ภ.ง.ด.1 · สปส.)"
+    },
+    "kindSub": {
+      "pp30": "Output VAT less input VAT",
+      "pnd53": "Tax withheld when paying companies",
+      "pnd3": "Tax withheld when paying people",
+      "pnd1": "Tax and social security taken from staff pay"
+    },
+    "status": {
+      "filed": "Filed",
+      "none": "Nothing to file",
+      "late": "{days} days late",
+      "today": "Due today"
+    }
+  },
+  "payables": {
+    "title": "To pay",
+    "sub": "Every unpaid bill by due date and supplier. Amounts are what you pay: after withholding tax.",
+    "adminOnly": "Admins only.",
+    "loading": "Loading…",
+    "total": "Total to pay",
+    "count": "{count} bills",
+    "filter": "Filter by due date",
+    "bucket": {
+      "late": "Late",
+      "week": "Within 7 days",
+      "month": "Within 30 days",
+      "later": "Later",
+      "none": "No due date"
+    },
+    "none": "No bills to pay.",
+    "lateAmount": "Late {amount}",
+    "pick": "Pick",
+    "due": "Due {date}",
+    "noDue": "No due date",
+    "late": "{days} days late",
+    "today": "Today",
+    "picked": "{count} · {amount}",
+    "clear": "Clear",
+    "markPaid": "Paid today",
+    "paidDone": "Marked {count} as paid.",
+    "undo": "Undo",
+    "failed": "Couldn't save. Please try again."
   }
 }
