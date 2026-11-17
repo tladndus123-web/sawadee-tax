@@ -1232,7 +1232,31 @@
     "view_amount": "Amount",
     "view_share": "%",
     "shareSheet": "% of sales",
-    "stock": "Change in stock"
+    "stock": "Change in stock",
+    "glance": {
+      "ok": "Within target",
+      "near": "Near target",
+      "over": "Over target",
+      "targets": "Targets: food {food}% · labour {labor}% · rent {rent}%",
+      "arrows": "▲▼ = share change vs last month (points)",
+      "hideEmpty": "Hide {count} empty months",
+      "running": "In progress",
+      "notIn": "Costs not in",
+      "why": {
+        "running": "This month is not over yet",
+        "labor": "No labour cost yet",
+        "purchases": "Purchases far lower than other months"
+      },
+      "cellTitle": "{pct} of sales · target {target}%",
+      "unsure": "Not all costs are in, so the profit may look higher than it is"
+    },
+    "ai": {
+      "title": "AI one-line conclusion",
+      "hint": "AI sums up this table in one line, with the reasons.",
+      "failed": "Could not make a conclusion right now. Please try again shortly.",
+      "run": "See AI conclusion",
+      "again": "Sum up again"
+    }
   },
   "install": {
     "title": "Install on your phone",
@@ -1390,6 +1414,18 @@
       "active": "Depreciating",
       "done": "Fully written off",
       "disposed": "Disposed"
+    },
+    "unset": {
+      "title": "{count} pieces of equipment without a depreciation period",
+      "hint": "Without a period the whole cost lands in the month bought, so that month looks worse. Spread it over the suggested period.",
+      "show": "Show list",
+      "hide": "Hide",
+      "apply": "Set suggested periods",
+      "years": "Depreciation period",
+      "yearsN": "{count} years",
+      "saved": "Set {count}",
+      "locked": "{count} in closed months could not be changed",
+      "fail": "Could not save. Please try again."
     }
   },
   "memo": {
@@ -2434,7 +2470,23 @@
       "rejected": "Rejected"
     },
     "payrollWho": "With whose pay?",
-    "payrollPick": "Pick an employee"
+    "payrollPick": "Pick an employee",
+    "ai": {
+      "title": "AI approval helper",
+      "hint": "AI looks at the {n} waiting claims and says approve, check first or better reject, with the reason.",
+      "failed": "Could not review right now. Please try again shortly.",
+      "run": "Review with AI",
+      "again": "Review again",
+      "cleanHint": "{n} claims look fine to the AI and have no automatic warning.",
+      "sure": "Approve {n} claims? Tap once more to approve.",
+      "cancel": "Cancel",
+      "approveClean": "Approve {n} clean claims",
+      "v": {
+        "ok": "AI: approve",
+        "check": "AI: check first",
+        "reject": "AI: better reject"
+      }
+    }
   },
   "aiPanel": {
     "title": "AI assistant",

@@ -23,6 +23,21 @@ export const docCost = (doc: LedgerDoc, companyTaxId: string) => toSatang(doc.to
 /** Equipment written off over years rather than expensed when bought */
 export const isDepreciated = (doc: Pick<LedgerDoc, "category" | "depYears">) => doc.category === "asset" && doc.depYears > 0;
 
+/** Equipment saved without a depreciation period: still counted all at once in the month bought (owner 2026-11-18, banner on the assets page) */
+export const needsDepYears = (doc: Pick<LedgerDoc, "category" | "depYears">) => doc.category === "asset" && !(doc.depYears > 0);
+
+// Computers, phones and software wear out fast (3 years); vehicles 5; buildings and fit-out 20; everything else 5
+const SHORT = /computer|laptop|notebook|ipad|tablet|phone|printer|software|monitor|pos|คอมพิวเตอร์|โน้ตบุ๊ก|โทรศัพท์|เครื่องพิมพ์|แท็บเล็ต|パソコン|プリンタ|タブレット|컴퓨터|노트북|프린터|태블릿/i;
+const LONG = /building|renovat|construction|fit[- ]?out|อาคาร|ก่อสร้าง|ตกแต่ง|รีโนเวท|建物|内装|工事|건물|인테리어|공사/i;
+
+/** The usual period for a piece of equipment, guessed from what was bought (one of DEP_CHOICES) */
+export function suggestDepYears(doc: Pick<LedgerDoc, "items" | "seller">): (typeof DEP_CHOICES)[number] {
+  const text = [...doc.items.flatMap((i) => [i.desc.th, i.desc.en, i.desc.ja]), doc.seller.name.th, doc.seller.name.en].filter(Boolean).join(" ");
+  if (LONG.test(text)) return 20;
+  if (SHORT.test(text)) return 3;
+  return 5;
+}
+
 /** Lines that name a category other than the document's */
 export const isMixed = (doc: Pick<LedgerDoc, "category" | "items">) => doc.items.some((i) => i.category && i.category !== doc.category);
 

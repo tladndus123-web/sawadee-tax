@@ -29,6 +29,8 @@ import { isExpenseWord } from "./expense-line";
 import { contractWords, isContractFileName, isContractWord } from "./contract-line";
 import { contractFromLine, inContractMode, startContractMode } from "./contract-line-server";
 import { isWasteExit, isWasteWord, readWasteLine } from "./waste-line";
+import { cashSavedText, readCashLine } from "./cash-line";
+import { cashBook, type CashMove } from "./petty-cash";
 import { endWasteMode, inWasteMode, keepWastePhoto, startWasteMode, wasteFromLine } from "./waste-line-server";
 import { claimFromLine, expenseButton, inExpenseMode, notifyNewClaim, startExpenseMode } from "./expense-line-server";
 import { answer } from "./assistant-server";
@@ -47,7 +49,7 @@ import { assignBranch, type Branch, branchFromPhoto, sortBranches } from "./bran
 import { findDuplicate } from "./photo-hash";
 import { photoHashServer } from "./photo-hash-server";
 import { supabaseAdmin } from "./supabase/admin";
-import { digitsOnly } from "./thai-tax";
+import { digitsOnly, todayBangkok } from "./thai-tax";
 import { applyHistory, applyRule, applyVendor, toVendor, type VendorHistory, type VendorRow, VENDOR_COLUMNS, vendorKey } from "./vendors";
 import { allRows } from "./fetch-all";
 
@@ -140,6 +142,8 @@ export async function handleLineEvent(event: webhook.Event): Promise<void> {
     if (isWasteExit(message.text ?? "")) return endWasteMode(lineUser, (m) => send(event, lineUser, m));
     if (readWasteLine(message.text ?? "")) return wasteText(event, lineUser, message.id, message.text ?? "");
   }
+  // The cash box: "현금 5200" (counted) / "현금 넣음 3000" / "현금 씀 500 얼음" (lib/cash-line)
+  if (message.type === "text" && readCashLine(message.text ?? "")) return cashText(event, lineUser, message.id, message.text ?? "");
   if (message.type === "text") {
     const ask = askFromText(message.text ?? "");
     if (ask) return answerAsk(event, lineUser, ask, false);
@@ -435,6 +439,52 @@ async function expensePhoto(event: webhook.MessageEvent, lineUser: string, userI
   });
   await send(event, lineUser, [text(r.text)]);
   if (r.ok && r.pending) await notifyNewClaim(r.id, appUrl()).catch((e) => console.error("[line] expense notify", e instanceof Error ? e.message : e));
+}
+
+/** A cash box line from LINE, in the first branch this member may use (the receipts' rule), once per LINE event */
+async function cashText(event: webhook.MessageEvent, lineUser: string, messageId: string, line: string) {
+  const member = await memberFor(lineUser);
+  if (!member || member.disabled_at) return send(event, lineUser, [text(say.welcome)]);
+  const cash = readCashLine(line);
+  if (!cash) return;
+  const admin = supabaseAdmin();
+  const claim = await admin.from("line_messages").insert({ message_id: `${messageId}:cash`, user_id: member.user_id });
+  if (claim.error) {
+    if (claim.error.code === "23505") return;
+    throw claim.error;
+  }
+  const branch = (await usableBranches(member.user_id))[0]?.id;
+  if (!branch) return send(event, lineUser, [text(say.noBranch)]);
+  const { error } = await admin.from("cash_moves").insert({
+    branch_id: branch,
+    day: todayBangkok(),
+    kind: cash.kind,
+    amount: cash.amount,
+    category: cash.kind === "out" ? "other" : null,
+    memo: cash.memo ? `LINE: ${cash.memo}`.slice(0, 200) : "LINE",
+    created_by: member.user_id,
+  });
+  if (error) {
+    console.error("[line] cash refused", error.message);
+    return send(event, lineUser, [text(say.failed)]);
+  }
+  // The balance of that branch's box now, and how far a count was from the book
+  const { data } = await allRows<Record<string, unknown>>(() => admin.from("cash_moves").select("id, branch_id, day, kind, amount, category, receipt, memo, created_by, created_at").eq("branch_id", branch));
+  const moves: CashMove[] = (data ?? []).map((r) => ({
+    id: r.id as string,
+    branchId: r.branch_id as string,
+    day: r.day as string,
+    kind: r.kind as CashMove["kind"],
+    amount: Number(r.amount),
+    category: (r.category as CashMove["category"]) ?? null,
+    receipt: !!r.receipt,
+    memo: (r.memo as string) ?? "",
+    createdBy: (r.created_by as string | null) ?? null,
+    createdAt: r.created_at as string,
+  }));
+  const book = cashBook(moves);
+  const last = book.rows[book.rows.length - 1];
+  await send(event, lineUser, [text(cashSavedText(cash, book.balance / 100, cash.kind === "count" && last?.diff ? last.diff / 100 : null, `${appUrl()}/ledger/cash`))]);
 }
 
 /** A line in waste mode → a waste record in the first branch this member may use (the receipts' rule), once per LINE event */

@@ -9,6 +9,7 @@
 // - the tax calendar (2026-10-27): the company's own dates and the yearly filings only (lib/calendar-remind) — the
 //   monthly ones above are never repeated.
 
+import { countOverdue, countReminder } from "./cash-line";
 import { monthKey } from "./archive";
 import { DOC_LIST_COLUMNS, type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
 import { summarize, vatFiling } from "./dashboard";
@@ -101,5 +102,11 @@ export async function reminderTexts(admin: Admin, today: string, opts: { test?: 
     const items = calendarItems({ from: today, to, vatRegistered: null, payroll: (staff ?? []).length > 0, events, done: new Set((dn.data ?? []).map((r) => r.key as string)) });
     cal = reminderMessage(dueToday(items, today), today, appUrl());
   }
-  return [vat, pay, wht, docTexts, cal].filter((x): x is string => !!x);
+  // The cash box in use but not counted for 3+ days (lib/cash-line): count it, or send "현금 5200" on LINE
+  let cashCount: string | null = null;
+  const since = new Date(Date.parse(`${today}T00:00:00Z`) - 60 * 86_400_000).toISOString().slice(0, 10);
+  const { data: cash } = await allRows<{ day: string; kind: string }>(() => admin.from("cash_moves").select("id, day, kind").gte("day", since));
+  const overdue = countOverdue((cash ?? []) as { day: string; kind: string }[], today);
+  if (overdue !== null) cashCount = countReminder(overdue, `${url}ledger/cash`);
+  return [vat, pay, wht, docTexts, cal, cashCount].filter((x): x is string => !!x);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { costByCategory, depreciationFor, isMixed, monthCosts } from "./cost-split";
+import { costByCategory, depreciationFor, isMixed, monthCosts, needsDepYears, suggestDepYears } from "./cost-split";
 import { sampleDoc } from "./sample";
 import type { Category, LedgerDoc } from "./types";
 
@@ -93,5 +93,19 @@ describe("equipment sold or thrown away", async () => {
     expect(assetRegister([oven("2026-12-01")], "2026-12", CO)[0]).toMatchObject({ state: "disposed", bookValue: 0 });
     expect(assetRegister([oven()], "2031-08", CO)[0]).toMatchObject({ state: "done", bookValue: 0 });
     expect(assetRegister([oven()], "2026-08", CO)).toHaveLength(0);
+  });
+});
+
+describe("equipment saved without a period: a suggestion", () => {
+  const withItem = (en: string): LedgerDoc => ({ ...sampleDoc(), category: "asset", depYears: 0, items: [{ ...sampleDoc().items[0], desc: { th: "", en, ja: "" } }], seller: { ...sampleDoc().seller, name: { th: "", en: "", ja: "" } } });
+  it("finds the ones without a period", () => {
+    expect(needsDepYears(withItem("Fridge"))).toBe(true);
+    expect(needsDepYears({ ...withItem("Fridge"), depYears: 5 })).toBe(false);
+    expect(needsDepYears({ ...withItem("Fridge"), category: "other" as Category })).toBe(false);
+  });
+  it("computers 3, fit-out 20, the rest 5", () => {
+    expect(suggestDepYears(withItem("Notebook computer"))).toBe(3);
+    expect(suggestDepYears(withItem("Shop renovation"))).toBe(20);
+    expect(suggestDepYears(withItem("Fridge 2 doors"))).toBe(5);
   });
 });

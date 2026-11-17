@@ -24,6 +24,10 @@ import { useChannelLabel } from "./channel-name";
 import { useLabor } from "@/lib/labor-store";
 import { useStock } from "@/lib/stock-store";
 import { useCostLines } from "@/lib/cash-store";
+import { useCategories } from "@/lib/category-store";
+import { type Level, targetsOf } from "@/lib/cost-control";
+import { cellLevel, emptyMonths, incompleteMonths, plSheet, shareChanges, targetOf } from "@/lib/pl-insight";
+import { PlAi } from "./PlAi";
 
 const SPANS = [3, 6, 12] as const;
 const VIEWS = ["both", "amount", "share"] as const;
@@ -66,11 +70,20 @@ export function PlReport() {
   const { lines: fixed } = useCostLines();
   const { counts: stock } = useStock();
   const table = useMemo(() => plTable(sales, purchases, end, span, company.taxId, labor, fixed, stock), [sales, purchases, end, span, company.taxId, labor, fixed, stock]);
+  // At a glance (lib/pl-insight): cost cells against their targets, change vs the month before, months not all in, empty months
+  const { rows: categories } = useCategories();
+  const foodKeys = useMemo(() => new Set(categories.filter((c) => c.foodCost).map((c) => c.key as string)), [categories]);
+  const targets = targetsOf(company.costTargets);
+  const incomplete = useMemo(() => incompleteMonths(table, today.slice(0, 7), foodKeys), [table, today, foodKeys]);
+  const empty = useMemo(() => emptyMonths(table), [table]);
+  const [hideEmpty, setHideEmpty] = useState(true);
+  const shown = table.months.map((m, i) => ({ m, i })).filter(({ m }) => !(hideEmpty && empty.has(m))).map(({ i }) => i);
+  const costName = (k: (typeof table.costs)[number]["key"]) => (k === "depreciation" || k === "disposal" || k === "labor" || k === "stock" ? t(`pl.${k}`) : catLabel(k));
 
   const short = new Intl.DateTimeFormat(locale, { year: "2-digit", month: "short", timeZone: "UTC" });
   const long = new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", timeZone: "UTC" });
   const monthShort = (m: string) => short.format(monthDate(m));
-  const cols = table.months.length + 2;
+  const cols = shown.length + 2;
   // Phones show only a few columns: start at the right end, where the latest months and the totals are
   const scroller = useRef<HTMLDivElement>(null);
   const ready = loaded && salesLoaded;
@@ -160,6 +173,33 @@ export function PlReport() {
         </div>
       </div>
 
+      {ready && <PlAi sheet={plSheet(table, costName, foodKeys, targets, incomplete, empty)} stamp={`${end}:${span}:${table.profit.total}:${table.costTotal.total}`} />}
+      {/* What the colours mean */}
+      {ready && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-sm bg-ok-soft ring-1 ring-ok/40" aria-hidden />
+            {t("pl.glance.ok")}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-sm bg-warn-soft ring-1 ring-warn/40" aria-hidden />
+            {t("pl.glance.near")}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-sm bg-bad-soft ring-1 ring-bad/40" aria-hidden />
+            {t("pl.glance.over")}
+          </span>
+          <span>{t("pl.glance.targets", { food: targets.food, labor: targets.labor, rent: targets.rent })}</span>
+          <span>{t("pl.glance.arrows")}</span>
+          {empty.size > 0 && (
+            <label className="ml-auto flex cursor-pointer items-center gap-1.5">
+              <input type="checkbox" checked={hideEmpty} onChange={(e) => setHideEmpty(e.target.checked)} className="size-4" />
+              {t("pl.glance.hideEmpty", { count: empty.size })}
+            </label>
+          )}
+        </div>
+      )}
+
       {!ready ? (
         <Loader2 className="mx-auto my-10 size-6 animate-spin text-muted-foreground" aria-label="Loading" />
       ) : (
@@ -170,11 +210,22 @@ export function PlReport() {
                 <th scope="col" className="sticky left-0 z-10 bg-card py-3 pr-3 pl-4 text-left text-xs font-medium text-muted-foreground shadow-[inset_-1px_0_0_var(--border),6px_0_8px_-6px_rgb(0_0_0/12%)]">
                   {t("pl.item")}
                 </th>
-                {table.months.map((m) => (
-                  <th key={m} scope="col" className="px-3 py-3 text-right text-xs font-medium whitespace-nowrap text-muted-foreground">
-                    {monthShort(m)}
-                  </th>
-                ))}
+                {shown.map((i) => {
+                  const m = table.months[i];
+                  const why = incomplete.get(m);
+                  return (
+                    <th key={m} scope="col" className="px-3 py-3 text-right text-xs font-medium whitespace-nowrap text-muted-foreground">
+                      {monthShort(m)}
+                      {why && (
+                        <span className="mt-1 block" title={why.map((w) => t(`pl.glance.why.${w}`)).join(" · ")}>
+                          <span className="inline-block rounded-full bg-warn-soft px-1.5 py-px text-[10.5px] font-semibold text-warn">
+                            {t(why.length === 1 && why[0] === "running" ? "pl.glance.running" : "pl.glance.notIn")}
+                          </span>
+                        </span>
+                      )}
+                    </th>
+                  );
+                })}
                 <th scope="col" className="border-l border-border/60 px-3 py-3 text-right text-xs font-semibold whitespace-nowrap">
                   {t("pl.total")}
                 </th>
@@ -183,15 +234,15 @@ export function PlReport() {
             <tbody>
               <SectionRow label={t("pl.sales")} cols={cols} />
               {table.sales.map((r) => (
-                <MoneyRow key={r.key} label={chName(r.key)} r={r} sales={table.salesTotal} view={view} indent />
+                <MoneyRow key={r.key} label={chName(r.key)} r={r} sales={table.salesTotal} view={view} shown={shown} indent />
               ))}
-              <MoneyRow label={t("pl.salesTotal")} r={table.salesTotal} sales={table.salesTotal} view={view} strong />
+              <MoneyRow label={t("pl.salesTotal")} r={table.salesTotal} sales={table.salesTotal} view={view} shown={shown} strong />
               <SectionRow label={t("pl.costs")} cols={cols} />
               {table.costs.map((r) => (
-                <MoneyRow key={r.key} label={r.key === "depreciation" || r.key === "disposal" || r.key === "labor" || r.key === "stock" ? t(`pl.${r.key}`) : catLabel(r.key)} r={r} sales={table.salesTotal} view={view} indent />
+                <MoneyRow key={r.key} label={costName(r.key)} r={r} sales={table.salesTotal} view={view} shown={shown} target={targetOf(r.key, foodKeys, targets)} cost indent />
               ))}
-              <MoneyRow label={t("pl.costTotal")} r={table.costTotal} sales={table.salesTotal} view={view} strong />
-              <MoneyRow label={t("pl.profit")} r={table.profit} sales={table.salesTotal} view={view} strong profit />
+              <MoneyRow label={t("pl.costTotal")} r={table.costTotal} sales={table.salesTotal} view={view} shown={shown} strong />
+              <MoneyRow label={t("pl.profit")} r={table.profit} sales={table.salesTotal} view={view} shown={shown} strong profit unsure={shown.map((i) => incomplete.has(table.months[i]))} />
             </tbody>
           </table>
         </div>
@@ -213,50 +264,82 @@ function SectionRow({ label, cols }: { label: string; cols: number }) {
 
 const pctText = (p: number | null) => (p === null ? "–" : `${p.toFixed(1)}%`);
 
+const LEVEL_BG: Record<Level, string> = { ok: "bg-ok-soft/60", watch: "", near: "bg-warn-soft/80", over: "bg-bad-soft/80", none: "" };
+const LEVEL_TEXT: Record<Level, string> = { ok: "text-ok", watch: "", near: "text-warn", over: "text-bad", none: "" };
+
 function MoneyRow({
   label,
   r,
   sales,
   view,
+  shown,
   strong,
   profit,
   indent,
+  cost,
+  target = null,
+  unsure,
 }: {
   label: string;
   r: PlRow<unknown>;
   sales: PlRow<unknown>;
   view: View;
+  /** The month columns shown (empty months folded away) */
+  shown: number[];
   strong?: boolean;
   profit?: boolean;
   indent?: boolean;
+  /** A cost row: its change against the month before is shown (up = red) */
+  cost?: boolean;
+  /** Its target share of sales, % (lib/pl-insight targetOf) */
+  target?: number | null;
+  /** Profit columns whose costs are not all in */
+  unsure?: boolean[];
 }) {
+  const t = useTranslations("pl.glance");
   const shares = rowShares(r, sales);
-  const pcts = [...shares.values, shares.total];
+  const changes = shareChanges(r, sales);
+  const cells = [
+    ...shown.map((i, k) => ({ v: r.values[i], p: shares.values[i], d: changes[i], u: unsure?.[k] ?? false })),
+    { v: r.total, p: shares.total, d: null as number | null, u: false },
+  ];
   return (
     <tr className={cn("border-b border-border/60", strong && "font-semibold")}>
       <th scope="row" className={cn("sticky left-0 z-10 py-2.5 pr-3 text-left font-[inherit] whitespace-nowrap shadow-[inset_-1px_0_0_var(--border),6px_0_8px_-6px_rgb(0_0_0/12%)]", indent ? "pl-6" : "pl-4", strong ? "bg-muted" : "bg-card")}>
         {label}
       </th>
-      {[...r.values, r.total].map((v, i) => {
-        const pct = v ? pctText(pcts[i]) : "–";
+      {cells.map(({ v, p, d, u }, i) => {
+        const pct = v ? pctText(p) : "–";
+        const level = v ? cellLevel(p, target) : "none";
+        const total = i === cells.length - 1;
         return (
           <td
             key={i}
+            title={target !== null && v ? t("cellTitle", { pct: pctText(p), target }) : u ? t("unsure") : undefined}
             className={cn(
               "px-3 py-2.5 text-right whitespace-nowrap tabular-nums",
               strong && "bg-muted/50",
-              i === r.values.length && "border-l border-border/60 font-semibold",
-              profit && (v < 0 ? "text-bad" : v > 0 ? "text-brand" : ""),
+              total && "border-l border-border/60 font-semibold",
+              LEVEL_BG[level],
+              profit && (v < 0 ? "text-bad" : v > 0 ? "text-ok" : ""),
+              profit && u && "italic opacity-70",
               !v && !strong && "text-muted-foreground/60",
             )}
           >
             {view === "share" ? (
-              pct
+              <span className={cn("block", LEVEL_TEXT[level])}>{pct}</span>
             ) : (
               <>
                 <span className="block">{v ? fmt(v) : "–"}</span>
-                {view === "both" && v !== 0 && <span className={cn("block text-[11px] font-normal", profit ? "" : "text-muted-foreground")}>{pct}</span>}
+                {view === "both" && v !== 0 && <span className={cn("block text-[11px] font-normal", profit ? "" : LEVEL_TEXT[level] || "text-muted-foreground")}>{pct}</span>}
               </>
+            )}
+            {/* A cost share that moved 1 point or more against the month before: up red, down green */}
+            {cost && d !== null && Math.abs(d) >= 1 && (
+              <span className={cn("block text-[10.5px] font-medium", d > 0 ? "text-bad" : "text-ok")}>
+                {d > 0 ? "▲" : "▼"}
+                {Math.abs(d).toFixed(1)}p
+              </span>
             )}
           </td>
         );

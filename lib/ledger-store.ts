@@ -391,6 +391,13 @@ export async function setDisposed(id: string, date: string) {
   patchEntries([id], (e) => ({ ...e, doc: { ...e.doc, disposedOn: date }, updatedAt: Date.now() }));
 }
 
+/** The depreciation period of an equipment document (0 = counted when bought). A closed month is refused by the database. */
+export async function setDepYears(id: string, years: number) {
+  const { error } = await supabaseBrowser().from("documents").update({ dep_years: years }).eq("id", id);
+  if (error) throw error;
+  patchEntries([id], (e) => ({ ...e, doc: { ...e.doc, depYears: years }, updatedAt: Date.now() }));
+}
+
 /** Admin only. The database stamps who and when and refuses anyone else. */
 /** Several documents to the trash with one reason (admins; the database refuses others). Returns how many moved. */
 export async function softDeleteMany(ids: string[], reason: string): Promise<number> {

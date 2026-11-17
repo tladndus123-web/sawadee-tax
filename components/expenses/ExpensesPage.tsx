@@ -32,6 +32,8 @@ import { ClaimDialog } from "./ClaimDialog";
 import { ExpenseOverview } from "./ExpenseOverview";
 import { ExpenseSettingsPanel } from "./ExpenseSettingsPanel";
 import { QuickReview } from "./QuickReview";
+import { ClaimAi, type ClaimVerdict, VERDICT_TONE } from "./ClaimAi";
+import { claimSheet } from "@/lib/claim-review";
 
 type Tab = "pending" | "approved" | "paid" | "rejected" | "all";
 const STATUS_TONE: Record<ClaimStatus, string> = {
@@ -87,6 +89,11 @@ export function ExpensesPage() {
   }, [thumbKey]);
   const flagText = useFlagText();
   const pendingList = mine.filter((c) => c.status === "pending");
+  // AI 결재 도우미: a verdict per waiting claim; "approve the clean ones" = AI ok and no rule flag
+  const catName = useCategoryLabel();
+  const [verdicts, setVerdicts] = useState<Map<string, ClaimVerdict>>(new Map());
+  const aiSheet = claimSheet(pendingList, claims, flags, flagText, (c) => catName(c as Claim["category"]), today);
+  const clean = pendingList.filter((c) => verdicts.get(c.id)?.verdict === "ok" && !(flags.get(c.id) ?? []).length).map((c) => c.id);
   const dayLabel = (d: string) => new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", weekday: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
 
   const approve = async (ids: string[]) => {
@@ -184,6 +191,10 @@ export function ExpensesPage() {
         ))}
       </div>
 
+      {isAdmin && loaded && tab === "pending" && pendingList.length > 0 && (
+        <ClaimAi sheet={aiSheet} ids={aiSheet.claims.map((_, i) => pendingList[i].id)} clean={clean} busy={busy} onReview={setVerdicts} onApproveClean={() => void approve(clean)} />
+      )}
+
       {!loaded ? (
         <Loader2 className="mx-auto size-6 animate-spin text-muted-foreground" aria-hidden />
       ) : list.length === 0 ? (
@@ -212,6 +223,7 @@ export function ExpensesPage() {
               flags={c.status === "pending" || c.status === "approved" ? (flags.get(c.id) ?? []) : []}
               thumb={c.photoPath ? thumbs[c.photoPath] : undefined}
               note={isAdmin && (c.status === "pending" || c.status === "approved") ? notes[c.id] : undefined}
+              verdict={isAdmin && c.status === "pending" ? verdicts.get(c.id) : undefined}
               flagText={flagText}
               onApprove={() => void approve([c.id])}
               onReject={() => setRejecting(c)}
@@ -243,6 +255,7 @@ function ClaimRow({
   onEdit,
   thumb,
   note,
+  verdict,
   flagText,
 }: {
   c: Claim;
@@ -251,6 +264,8 @@ function ClaimRow({
   thumb?: string;
   /** The AI's one line on this claim */
   note?: string;
+  /** AI 결재 도우미's verdict and reason */
+  verdict?: ClaimVerdict;
   flagText: (f: Flag) => string;
   isAdmin: boolean;
   mine: boolean;
@@ -307,6 +322,12 @@ function ClaimRow({
             {!c.photoPath && !flags.length && <span>· {t("noPhoto")}</span>}
           </p>
           <ClaimSteps status={c.status} />
+          {verdict && (
+            <p className="mt-1 flex items-start gap-1.5 text-[12.5px]">
+              <span className={cn("flex-none rounded-full px-2 py-0.5 text-[11px] font-bold", VERDICT_TONE[verdict.verdict])}>{t(`ai.v.${verdict.verdict}`)}</span>
+              <span className="min-w-0 text-foreground/85">{verdict.reason}</span>
+            </p>
+          )}
           {note && (
             <p className="mt-1 flex items-start gap-1.5 rounded-xl bg-primary/8 px-3 py-1.5 text-[12.5px] text-foreground">
               <Sparkles className="mt-0.5 size-3.5 flex-none text-primary" aria-hidden />

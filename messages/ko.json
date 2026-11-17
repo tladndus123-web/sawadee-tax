@@ -1232,7 +1232,31 @@
     "view_amount": "금액",
     "view_share": "%",
     "shareSheet": "매출 대비 %",
-    "stock": "재고 증감"
+    "stock": "재고 증감",
+    "glance": {
+      "ok": "목표 안",
+      "near": "목표 근처",
+      "over": "목표 넘음",
+      "targets": "목표: 재료 {food}% · 인건비 {labor}% · 임대료 {rent}%",
+      "arrows": "▲▼ = 전달 대비 비율 변화(p)",
+      "hideEmpty": "빈 달 {count}개 숨기기",
+      "running": "진행 중",
+      "notIn": "비용 입력 전",
+      "why": {
+        "running": "아직 끝나지 않은 달이에요",
+        "labor": "인건비가 아직 없어요",
+        "purchases": "매입이 다른 달보다 훨씬 적어요"
+      },
+      "cellTitle": "매출의 {pct} · 목표 {target}%",
+      "unsure": "비용이 다 들어오지 않아 이익이 실제보다 커 보일 수 있어요"
+    },
+    "ai": {
+      "title": "AI 한 줄 결론",
+      "hint": "이 표를 AI가 한 줄로 정리하고 이유를 알려 드려요.",
+      "failed": "지금은 결론을 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.",
+      "run": "AI 결론 보기",
+      "again": "다시 정리"
+    }
   },
   "install": {
     "title": "휴대폰에 앱으로 설치",
@@ -1390,6 +1414,18 @@
       "active": "상각 중",
       "done": "상각 끝",
       "disposed": "처분함"
+    },
+    "unset": {
+      "title": "감가상각 기간이 없는 장비 {count}건",
+      "hint": "기간이 없으면 산 달에 전액 비용으로 잡혀서 그 달 손익이 나빠 보여요. 권장 기간으로 나눠 잡을 수 있어요.",
+      "show": "목록 보기",
+      "hide": "접기",
+      "apply": "권장 기간으로 설정",
+      "years": "감가상각 기간",
+      "yearsN": "{count}년",
+      "saved": "{count}건을 설정했어요",
+      "locked": "마감된 달의 {count}건은 바꾸지 못했어요",
+      "fail": "저장하지 못했어요. 다시 해 주세요."
     }
   },
   "memo": {
@@ -2434,7 +2470,23 @@
       "rejected": "반려"
     },
     "payrollWho": "누구 급여와 함께 줄까요?",
-    "payrollPick": "직원 고르기"
+    "payrollPick": "직원 고르기",
+    "ai": {
+      "title": "AI 결재 도우미",
+      "hint": "대기 중인 {n}건을 AI가 보고 승인·확인 필요·반려 권장을 이유와 함께 알려 드려요.",
+      "failed": "지금은 검토하지 못했어요. 잠시 뒤 다시 눌러 주세요.",
+      "run": "AI로 검토",
+      "again": "다시 검토",
+      "cleanHint": "AI가 괜찮다고 하고 자동 경고도 없는 건이 {n}건 있어요.",
+      "sure": "{n}건을 승인할까요? 한 번 더 누르면 승인돼요.",
+      "cancel": "취소",
+      "approveClean": "문제없는 {n}건 승인",
+      "v": {
+        "ok": "AI: 승인",
+        "check": "AI: 확인 필요",
+        "reject": "AI: 반려 권장"
+      }
+    }
   },
   "aiPanel": {
     "title": "AI 비서",

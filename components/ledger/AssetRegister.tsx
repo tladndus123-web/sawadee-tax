@@ -4,7 +4,7 @@
 // ends. "Sold / thrown away" stops the depreciation and puts what is left into that month — only into an open
 // month (the database refuses a closed one, so filed figures never move).
 
-import { ChevronLeft, Loader2, PackageX, Refrigerator, Undo2 } from "lucide-react";
+import { CalendarClock, ChevronLeft, Loader2, PackageX, Refrigerator, Undo2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -12,9 +12,10 @@ import { useScreenDate } from "@/components/ScreenDate";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { useCompany } from "@/lib/company-store";
-import { type AssetRow, assetRegister } from "@/lib/cost-split";
+import { type AssetRow, assetRegister, DEP_CHOICES, needsDepYears, suggestDepYears } from "@/lib/cost-split";
+import type { LedgerDoc } from "@/lib/types";
 import { exportLang } from "@/lib/export";
-import { pick, setDisposed, useLedger } from "@/lib/ledger-store";
+import { pick, setDepYears, setDisposed, useLedger } from "@/lib/ledger-store";
 import { isMonthLocked } from "@/lib/month-lock-store";
 import { baht, fromSatang } from "@/lib/money";
 import { todayBangkok } from "@/lib/thai-tax";
@@ -27,6 +28,7 @@ export function AssetRegister() {
   const { entries, loaded } = useLedger();
   const month = todayBangkok().slice(0, 7);
   const rows = useMemo(() => assetRegister(pick(entries, "ledger").map((e) => e.doc), month, company.taxId), [entries, month, company.taxId]);
+  const unset = useMemo(() => pick(entries, "ledger").map((e) => e.doc).filter(needsDepYears), [entries]);
   const sum = (k: "cost" | "writtenOff" | "bookValue") => fromSatang(rows.reduce((a, r) => a + r[k], 0));
 
   return (
@@ -41,6 +43,8 @@ export function AssetRegister() {
         <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{t("title")}</h1>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("intro")}</p>
       </header>
+
+      {loaded && unset.length > 0 && <UnsetBanner docs={unset} />}
 
       {!loaded ? (
         <Loader2 className="mx-auto my-10 size-6 animate-spin text-muted-foreground" aria-label="Loading" />
@@ -177,4 +181,82 @@ function State({ r }: { r: AssetRow }) {
   const t = useTranslations("assets");
   const cls = r.state === "active" ? "bg-ok-soft text-ok" : "bg-muted text-muted-foreground";
   return <span className={cn("flex-none rounded-full px-2 py-0.5 text-[11px] font-semibold", cls)}>{t(`state.${r.state}`)}</span>;
+}
+
+/**
+ * Equipment saved without a depreciation period (owner 2026-11-18): it is counted all at once in the month bought, so
+ * the P&L of that month looks worse and later months better. Each gets a suggested period (lib/cost-split
+ * suggestDepYears) to change before one tap sets them all.
+ */
+function UnsetBanner({ docs }: { docs: LedgerDoc[] }) {
+  const t = useTranslations("assets.unset");
+  const locale = useLocale();
+  const lang = exportLang(locale);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [years, setYears] = useState<Record<string, number>>({});
+  const yearsOf = (d: LedgerDoc) => years[d.id ?? ""] ?? suggestDepYears(d);
+  const apply = async () => {
+    setBusy(true);
+    let done = 0;
+    let locked = 0;
+    for (const d of docs) {
+      if (!d.id) continue;
+      try {
+        await setDepYears(d.id, yearsOf(d));
+        done++;
+      } catch (e) {
+        if (isMonthLocked(e)) locked++;
+      }
+    }
+    setBusy(false);
+    if (done) toast.success(t("saved", { count: done }));
+    if (locked) toast.error(t("locked", { count: locked }));
+    if (!done && !locked) toast.error(t("fail"));
+  };
+  return (
+    <section className="workspace-panel grid gap-3 border-warn/40 bg-warn-soft/40 p-4 sm:p-5">
+      <div className="flex flex-wrap items-start gap-3">
+        <CalendarClock className="mt-0.5 size-5 flex-none text-warn" aria-hidden />
+        <div className="grid min-w-0 flex-1 gap-0.5">
+          <p className="text-[15px] font-semibold">{t("title", { count: docs.length })}</p>
+          <p className="text-[13px] leading-relaxed text-muted-foreground">{t("hint")}</p>
+        </div>
+        <Button type="button" variant="ghost" className="h-11 rounded-full px-3 text-[13px] pointer-fine:h-9" onClick={() => setOpen((o) => !o)}>
+          {open ? t("hide") : t("show")}
+        </Button>
+        <Button type="button" className="h-11 rounded-full pointer-fine:h-9" disabled={busy} onClick={() => void apply()}>
+          {busy && <Loader2 className="size-4 animate-spin" />}
+          {t("apply")}
+        </Button>
+      </div>
+      {open && (
+        <ul className="grid gap-1.5">
+          {docs.map((d) => {
+            const what = d.items.map((i) => i.desc[lang] || i.desc.en || i.desc.th).find(Boolean) || d.seller.name[lang] || d.seller.name.en || d.docNo || "—";
+            return (
+              <li key={d.id ?? d.docNo} className="flex items-center gap-2 rounded-xl bg-background/70 px-3 py-2 text-[13px]">
+                <Link href={`/documents/${d.id}`} className="min-w-0 flex-1 truncate hover:underline">
+                  {what}
+                  <span className="ml-1.5 text-muted-foreground tabular-nums">{baht(d.totals.net)}</span>
+                </Link>
+                <select
+                  value={yearsOf(d)}
+                  onChange={(e) => setYears((y) => ({ ...y, [d.id ?? ""]: Number(e.target.value) }))}
+                  className="h-11 flex-none rounded-lg border border-border bg-background px-2 text-[13px] pointer-fine:h-8"
+                  aria-label={t("years")}
+                >
+                  {DEP_CHOICES.map((n) => (
+                    <option key={n} value={n}>
+                      {t("yearsN", { count: n })}
+                    </option>
+                  ))}
+                </select>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
 }
