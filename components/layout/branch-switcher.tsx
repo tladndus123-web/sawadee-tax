@@ -58,7 +58,11 @@ export function BranchAvatar({ branch, branches, size = "size-9", className }: {
   );
 }
 
-export function BranchSwitcher() {
+/**
+ * The branch button: a pill in the phone's top bar; in the PC sidebar (`side`) a full-width row under the company,
+ * or only the round badge on the icon rail (`rail`). The same sheet / PIN list opens either way.
+ */
+export function BranchSwitcher({ side = false, rail = false }: { side?: boolean; rail?: boolean } = {}) {
   const t = useTranslations("branch");
   const names = useBranchName();
   const { branches } = useBranches();
@@ -77,12 +81,18 @@ export function BranchSwitcher() {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-label={`${t("switch")}: ${current.label}`}
-        className="press relative flex h-9 max-w-[11rem] after:absolute after:inset-x-0 after:-inset-y-1.5 min-w-0 items-center gap-1.5 rounded-full border bg-card py-1 pr-2 pl-1 text-[13px] font-semibold shadow-sm sm:max-w-[15rem]"
+        title={side && rail ? current.label : undefined}
+        className={cn(
+          "press relative flex min-w-0 items-center gap-1.5 border font-semibold",
+          side
+            ? "sb-branch h-10 w-full rounded-xl bg-card py-1 pr-2 pl-1.5 text-[13px] shadow-[0_1px_2px_rgb(15_23_42/0.05)]"
+            : "h-9 max-w-[11rem] rounded-full bg-card py-1 pr-2 pl-1 text-[13px] shadow-sm after:absolute after:inset-x-0 after:-inset-y-1.5 sm:max-w-[15rem]",
+        )}
         style={current.color ? { borderColor: current.color[0] } : undefined}
       >
         <BranchAvatar branch={current.branch} branches={branches} size="size-7" className="text-xs" />
-        <span className="truncate">{current.label}</span>
-        <ChevronDown className="size-3.5 flex-none text-muted-foreground" aria-hidden />
+        <span className={cn("truncate", side && "sb-text flex-1 text-left")}>{current.label}</span>
+        <ChevronDown className={cn("size-3.5 flex-none text-muted-foreground", side && "sb-hide")} aria-hidden />
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         {open &&

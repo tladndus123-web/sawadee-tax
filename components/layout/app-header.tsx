@@ -1,90 +1,58 @@
 "use client";
 
-import { BookOpen, Building2, CalendarDays, HandCoins, LayoutGrid, LayoutList, Plus, Settings, TrendingUp, WalletCards } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
-import { Fragment, useLayoutEffect, useRef, useState } from "react";
+import { ChevronRight, LayoutList, Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Fragment, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useBranches } from "@/lib/branch-store";
+import { useFoodFeatures } from "@/lib/food-features-store";
+import { activeHref, navTrail, visibleItems } from "@/lib/nav-menu";
 import { useMe } from "@/lib/role-store";
-import { canOpen, screenOf } from "@/lib/screens";
+import { canOpen } from "@/lib/screens";
 import { cn } from "@/lib/utils";
-import { BranchSwitcher, useCurrentBranch } from "./branch-switcher";
+import { AssistantButton } from "@/components/assistant/AssistantButton";
 import { APP_MARK_GLOW, AppMark } from "./app-mark";
+import { BranchSwitcher, useCurrentBranch } from "./branch-switcher";
+import { GlobalSearch } from "./GlobalSearch";
 import { LocaleSwitcher } from "./locale-switcher";
+import { NAV_ICON } from "./nav-icons";
+import { QuickCreate } from "./QuickCreate";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
-import { AssistantButton } from "@/components/assistant/AssistantButton";
 
-const NAV = [
-  { href: "/", key: "dashboard", icon: LayoutGrid },
-  { href: "/ledger", key: "ledger", icon: BookOpen },
-  { href: "/sales", key: "sales", icon: TrendingUp },
-  { href: "/vendors", key: "vendors", icon: Building2 },
-  { href: "/calendar", key: "calendar", icon: CalendarDays, admin: true },
-  { href: "/expenses", key: "expenses", icon: HandCoins },
-  { href: "/payroll", key: "payroll", icon: WalletCards, admin: true },
-  { href: "/settings", key: "settings", icon: Settings },
-] as const;
-
-/** Glass top bar with a segmented nav on md+, and an iOS-style tab bar below md. */
+/**
+ * The top bar. PC (md+, owner 2026-11-18 "판매용 프리미엄처럼"): the menu lives in the left sidebar (AppSidebar), so the bar
+ * shows where you are (group › screen), the search ("/") and "+ 새로 만들기". Phones keep the app name, the branch pill
+ * and the iOS-style tab bar below.
+ */
 export function AppHeader() {
   const t = useTranslations();
-  const locale = useLocale();
   const pathname = usePathname();
-  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
-  // Payroll and the tax calendar are for admins only
   const me = useMe();
-  const isAdmin = me.role === "admin";
-  // …and an owner may limit an admin to some screens (lib/screens)
-  // Until we know who this is, only the dashboard (no menu that flashes and goes)
-  const nav = me.loaded ? NAV.filter((n) => (!("admin" in n) || isAdmin) && canOpen(me, screenOf(n.href))) : NAV.filter((n) => n.href === "/");
+  const items = visibleItems(me, useFoodFeatures().menu);
   const canUpload = me.loaded && canOpen(me, "upload");
-  // Phones: dashboard, ledger, sales on the bar (with the camera between); everything else under "more"
+  const trail = navTrail(items, pathname);
+
+  // Phones: dashboard, ledger, sales on the bar (with the camera between); the rest under "more" (PC-only items stay out)
+  const phone = items.filter((n) => !n.sideOnly);
   const onBar = (href: string) => href === "/" || href === "/ledger" || href === "/sales";
-  const main = nav.filter((n) => onBar(n.href));
-  const rest = nav.filter((n) => !onBar(n.href));
+  const main = phone.filter((n) => onBar(n.href));
+  const rest = phone.filter((n) => !onBar(n.href));
   const [more, setMore] = useState(false);
-  // Detail screens hide the tab bar, like a pushed view on iOS, so their own action bar owns the bottom edge.
+  // Detail screens hide the tab bar, like a pushed view on iOS, so their own action bar owns the bottom edge
   const showTabBar = !pathname.startsWith("/documents");
-  // With several branches the switcher takes the phone's top bar; the app name gives way
   const manyBranches = useBranches().branches.length > 1;
   const branchColor = useCurrentBranch().color;
 
-  // A tapped tab lights up at once, before its page has loaded (it only counts while we're still on the
-  // page it was tapped from), and its icon plays a small bounce.
+  // A tapped tab lights up at once, before its page has loaded, and its icon plays a small bounce
   const [tap, setTap] = useState<{ href: string; from: string; n: number } | null>(null);
-  const current = nav.find((n) => isActive(n.href))?.href;
+  const current = activeHref(phone, pathname);
   const active = tap && tap.from === pathname ? tap.href : current;
   const onTap = (href: string) => (e: React.MouseEvent) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return; // new tab/window
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     setTap((p) => ({ href, from: pathname, n: (p?.n ?? 0) + 1 }));
   };
-  // A new key remounts the icon, which replays its bounce
   const bounceKey = (href: string) => (tap?.href === href ? tap.n : 0);
-
-  // Desktop: one white pill glides under the active tab, like an iOS segmented control
-  const navRef = useRef<HTMLElement>(null);
-  const gliderRef = useRef<HTMLSpanElement>(null);
-  useLayoutEffect(() => {
-    const nav = navRef.current;
-    const glider = gliderRef.current;
-    if (!nav || !glider) return;
-    const place = (animate: boolean) => {
-      const a = nav.querySelector<HTMLElement>('a[data-active="true"]');
-      if (!a || !a.offsetWidth) return void (glider.style.opacity = "0");
-      glider.style.transition = animate ? "" : "none";
-      glider.style.transform = `translateX(${a.offsetLeft}px)`;
-      glider.style.width = `${a.offsetWidth}px`;
-      glider.style.opacity = "1";
-      nav.dataset.glide = "on";
-    };
-    place(nav.dataset.glide === "on");
-    // Widths change with the language and fonts: follow them without sliding
-    const ro = new ResizeObserver(() => place(false));
-    ro.observe(nav);
-    return () => ro.disconnect();
-  }, [active, nav.length]);
-
 
   return (
     <>
@@ -92,29 +60,53 @@ export function AppHeader() {
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-card focus:p-3 focus:text-sm">
           {t("ui.skipToContent")}
         </a>
-        <div className="mx-auto grid h-14 max-w-[1440px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 md:grid-cols-[1fr_auto_1fr] px-4 sm:px-6 md:h-16 lg:px-8">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <Link href="/" className="press relative flex min-w-0 items-center gap-2.5 text-[15px] font-semibold tracking-tight after:absolute after:-inset-2 active:scale-[0.97]">
-              <AppMark className={`size-8 flex-none rounded-[9px] ${APP_MARK_GLOW}`} />
-              <span className={cn("truncate", manyBranches && "max-sm:hidden", (locale === "en" || locale === "th") && "md:max-2xl:hidden")}>{t("app.appName")}</span>
-            </Link>
-          </div>
+        <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-3 px-4 sm:px-6 md:h-16 lg:px-8">
+          {/* Phones: the app */}
+          <Link href="/" className="press relative flex min-w-0 items-center gap-2.5 text-[15px] font-semibold tracking-tight after:absolute after:-inset-2 active:scale-[0.97] md:hidden">
+            <AppMark className={`size-8 flex-none rounded-[9px] ${APP_MARK_GLOW}`} />
+            <span className={cn("truncate", manyBranches && "max-sm:hidden")}>{t("app.appName")}</span>
+          </Link>
 
-          <nav ref={navRef} aria-label={t("nav.menu")} className="nav-pill relative hidden md:flex">
-            <span ref={gliderRef} className="nav-glider" aria-hidden />
-            {nav.map(({ href, key, icon: Icon }) => (
-              <Link key={href} href={href} onClick={onTap(href)} data-active={active === href} aria-current={isActive(href) ? "page" : undefined} title={t(`nav.${key}`)}>
-                <Icon key={bounceKey(href)} className={cn("size-4", bounceKey(href) > 0 && "sym-tap")} aria-hidden />
-                <span className="nav-label">{t(`nav.${key}`)}</span>
-              </Link>
-            ))}
+          {/* PC: where am I */}
+          <nav aria-label={t("nav.where")} className="hidden min-w-0 flex-1 items-center gap-1.5 text-[14px] md:flex lg:max-w-[18rem] xl:max-w-[24rem]">
+            {trail ? (
+              <>
+                <span className="truncate text-muted-foreground">{t(`nav.group.${trail.group}`)}</span>
+                <ChevronRight className="size-3.5 flex-none text-muted-foreground/60" aria-hidden />
+                {trail.detail ? (
+                  <>
+                    <Link href={trail.href} className="truncate text-muted-foreground hover:text-foreground">
+                      {t(`nav.${trail.key}`)}
+                    </Link>
+                    <ChevronRight className="size-3.5 flex-none text-muted-foreground/60" aria-hidden />
+                    <span className="truncate font-semibold">{t("nav.detail")}</span>
+                  </>
+                ) : (
+                  <span className="truncate font-semibold" aria-current="page">
+                    {t(`nav.${trail.key}`)}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="truncate font-semibold">{t("nav.dashboard")}</span>
+            )}
           </nav>
 
-          <div className="flex shrink-0 items-center justify-end gap-1 md:col-start-3">
+          <div className="hidden min-w-0 flex-1 justify-center md:flex">
+            <GlobalSearch items={items} />
+          </div>
+
+          <div className="ml-auto flex shrink-0 items-center justify-end gap-1 md:ml-0">
+            <span className="mr-1 max-md:hidden">
+              <QuickCreate items={items} canUpload={canUpload} />
+            </span>
             <AssistantButton />
-            <BranchSwitcher />
+            {/* Phones only: on PC the branch picker sits in the sidebar */}
+            <span className="md:hidden">
+              <BranchSwitcher />
+            </span>
             <LocaleSwitcher />
-            {/* Phones: light / dark is in the account menu, so the top bar has room for the AI button */}
+            {/* Phones: light / dark is in the account menu */}
             <span className="max-md:hidden">
               <ThemeToggle />
             </span>
@@ -124,28 +116,29 @@ export function AppHeader() {
       </header>
 
       {showTabBar && (
-        // Phones (owner 2026-10-27, "모바일 최적화"): four tabs and the camera in the middle, like an iPhone app —
-        // dashboard, ledger, [+ photo], sales, more; the rest of the menu opens from "more" as a sheet
+        // Phones (owner 2026-10-27): four tabs and the camera in the middle — dashboard, ledger, [+ photo], sales, more
         <nav aria-label={t("nav.menu")} className="tab-bar md:hidden">
           <div className="mx-auto grid max-w-lg grid-cols-5 items-end">
-            {main.map(({ href, key, icon: Icon }, i) => (
-              <Fragment key={href}>
-                {i === 2 && !canUpload && <span aria-hidden />}
-                {i === 2 && canUpload && (
-                  <Link href="/upload" onClick={onTap("/upload")} aria-label={t("nav.upload")} className="tab-plus">
-                    <span>
-                      <Plus className="size-7" strokeWidth={2.4} aria-hidden />
-                    </span>
-                    {t("nav.upload")}
+            {main.map(({ href, key }, i) => {
+              const Icon = NAV_ICON[key];
+              return (
+                <Fragment key={href}>
+                  {i === 2 && !canUpload && <span aria-hidden />}
+                  {i === 2 && canUpload && (
+                    <Link href="/upload" onClick={onTap("/upload")} aria-label={t("nav.upload")} className="tab-plus">
+                      <span>
+                        <Plus className="size-7" strokeWidth={2.4} aria-hidden />
+                      </span>
+                      {t("nav.upload")}
+                    </Link>
+                  )}
+                  <Link href={href} onClick={onTap(href)} data-active={active === href} aria-current={current === href ? "page" : undefined}>
+                    <Icon key={bounceKey(href)} className={cn("size-[22px]", bounceKey(href) > 0 && "sym-tap")} strokeWidth={active === href ? 2.2 : 1.8} aria-hidden />
+                    {t(`nav.${key}`)}
                   </Link>
-                )}
-                <Link href={href} onClick={onTap(href)} data-active={active === href} aria-current={isActive(href) ? "page" : undefined}>
-                  <Icon key={bounceKey(href)} className={cn("size-[22px]", bounceKey(href) > 0 && "sym-tap")} strokeWidth={active === href ? 2.2 : 1.8} aria-hidden />
-                  {t(`nav.${key}`)}
-                </Link>
-              </Fragment>
-            ))}
-            {/* "More" only when there is more (an admin limited to a few screens may have none) */}
+                </Fragment>
+              );
+            })}
             {rest.length > 0 ? (
               <button type="button" onClick={() => setMore(true)} data-active={!!rest.find((n) => n.href === active)} aria-expanded={more} className="tab-more">
                 <LayoutList className="size-[22px]" strokeWidth={rest.some((n) => n.href === active) ? 2.2 : 1.8} aria-hidden />
@@ -161,22 +154,25 @@ export function AppHeader() {
       {more && (
         <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label={t("nav.more")}>
           <button type="button" className="absolute inset-0 bg-black/35" aria-label={t("app.close")} onClick={() => setMore(false)} />
-          <div className="absolute inset-x-0 bottom-0 rounded-t-[26px] bg-background px-4 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl">
+          <div className="absolute inset-x-0 bottom-0 max-h-[80dvh] overflow-y-auto rounded-t-[26px] bg-background px-4 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl">
             <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-muted-foreground/25" aria-hidden />
             <ul className="grid grid-cols-3 gap-2.5">
-              {rest.map(({ href, key, icon: Icon }) => (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    onClick={(e) => (onTap(href)(e), setMore(false))}
-                    data-active={active === href}
-                    className="press flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-2xl bg-card text-[13px] font-medium shadow-[var(--shadow-soft)] ring-1 ring-border data-[active=true]:text-primary data-[active=true]:ring-primary/40"
-                  >
-                    <Icon className="size-6" aria-hidden />
-                    {t(`nav.${key}`)}
-                  </Link>
-                </li>
-              ))}
+              {rest.map(({ href, key }) => {
+                const Icon = NAV_ICON[key];
+                return (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      onClick={(e) => (onTap(href)(e), setMore(false))}
+                      data-active={active === href}
+                      className="press flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-2xl bg-card px-1 text-center text-[13px] font-medium shadow-[var(--shadow-soft)] ring-1 ring-border data-[active=true]:text-primary data-[active=true]:ring-primary/40"
+                    >
+                      <Icon className="size-6" aria-hidden />
+                      {t(`nav.${key}`)}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { dueTone } from "@/lib/status-tone";
 import { CalendarClock, ChevronDown, ListChecks, ChevronRight, CircleCheck, Clock, Inbox, Landmark, Loader2, Lock, QrCode, Receipt, TrendingUp, Undo2, Wallet, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { canPay } from "@/lib/vendors";
@@ -109,7 +110,8 @@ export function Dashboard() {
         text: [filing.daysLeft < 0 ? t("vat.late") : filing.daysLeft === 0 ? t("vat.today") : t("vat.daysLeft", { days: filing.daysLeft }), filingCheck ? t("dash.vatCheck", { count: filingCheck }) : ""]
           .filter(Boolean)
           .join(" · "),
-        tone: filing.daysLeft < 0 ? ("bad" as const) : filing.daysLeft <= 5 || filingCheck ? ("warn" as const) : ("brand" as const),
+        // The shared deadline colours (lib/status-tone): ≤ 3 days red, ≤ 7 amber; documents still to check make it amber at least
+        tone: dueTone(filing.daysLeft) === "brand" && filingCheck ? ("warn" as const) : dueTone(filing.daysLeft),
       };
   const purchases = useMemo(() => docs.map((d) => d.doc), [docs]);
 

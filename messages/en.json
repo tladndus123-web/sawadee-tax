@@ -217,7 +217,26 @@
     "calendar": "Calendar",
     "expenses": "Expenses",
     "upload": "Add",
-    "more": "More"
+    "more": "More",
+    "taxes": "Tax returns",
+    "payables": "To pay",
+    "cash": "Cash",
+    "assets": "Assets",
+    "pl": "Profit & loss",
+    "prices": "Price changes",
+    "contracts": "Contracts",
+    "waste": "Waste log",
+    "collapse": "Collapse menu",
+    "expand": "Expand menu",
+    "where": "Where you are",
+    "detail": "Detail",
+    "group": {
+      "home": "Overview",
+      "books": "Books & tax",
+      "trade": "Sales & trade",
+      "people": "People & schedule",
+      "settings": "Manage"
+    }
   },
   "common": {
     "loading": "Loading…",
@@ -2859,5 +2878,24 @@
     "none": "Nothing to compare this month. Items show once they were bought from the same supplier at least twice.",
     "noneHere": "No items match.",
     "how": "Unit price as printed (else amount ÷ quantity). The month's last purchase is compared with the last one before the month; items whose unit changed are left out. Paid more = (this month's price − earlier price) × this month's quantity."
+  },
+  "topSearch": {
+    "open": "Search",
+    "placeholder": "Search menus, document numbers, suppliers",
+    "hint": "Find a menu, a document number, a seller or a supplier.",
+    "searching": "Searching…",
+    "none": "Nothing found.",
+    "menu": "Menu",
+    "docs": "Ledger documents",
+    "vendors": "Suppliers"
+  },
+  "quickNew": {
+    "open": "New",
+    "upload": "Upload a receipt photo",
+    "manual": "Type one in",
+    "sale": "Enter sales",
+    "claim": "Expense claim",
+    "event": "Add a date",
+    "contract": "Store a contract"
   }
 }

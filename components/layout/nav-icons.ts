@@ -1,0 +1,40 @@
+// One icon per menu item (lib/nav-menu NavKey), shared by the sidebar, the phone's tab bar and the search
+import {
+  BadgeDollarSign,
+  BookOpen,
+  Building2,
+  CalendarDays,
+  FileSignature,
+  HandCoins,
+  Landmark,
+  LayoutGrid,
+  type LucideIcon,
+  Package,
+  PiggyBank,
+  ReceiptText,
+  Settings,
+  Tags,
+  Trash2,
+  TrendingUp,
+  WalletCards,
+} from "lucide-react";
+import type { NavKey } from "@/lib/nav-menu";
+
+export const NAV_ICON: Record<NavKey, LucideIcon> = {
+  dashboard: LayoutGrid,
+  taxes: Landmark,
+  payables: ReceiptText,
+  ledger: BookOpen,
+  cash: PiggyBank,
+  assets: Package,
+  sales: TrendingUp,
+  pl: BadgeDollarSign,
+  vendors: Building2,
+  prices: Tags,
+  contracts: FileSignature,
+  waste: Trash2,
+  payroll: WalletCards,
+  expenses: HandCoins,
+  calendar: CalendarDays,
+  settings: Settings,
+};

@@ -1,5 +1,6 @@
 "use client";
 
+import { dueTone, TONE_SOFT } from "@/lib/status-tone";
 import { Calculator, CalendarClock, CircleCheck, FileText, ListChecks, Lock, TriangleAlert } from "lucide-react";
 import { useScreenDate } from "@/components/ScreenDate";
 import { useTranslations } from "next-intl";
@@ -39,7 +40,6 @@ export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry
   // Everything that still needs a look, any month, oldest first
   const firstToCheck = useMemo(() => reviewQueue(entries, companyTaxId, today)[0], [entries, companyTaxId, today]);
 
-  const urgent = !closed && f.daysLeft <= 5;
   const late = !closed && f.daysLeft < 0;
 
   return (
@@ -62,7 +62,7 @@ export function VatCard({ entries, companyTaxId, today }: { entries: LedgerEntry
           <span
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold tabular-nums",
-              late ? "bg-bad-soft text-bad" : urgent ? "bg-warn-soft text-warn" : "bg-brand-soft text-brand",
+              TONE_SOFT[dueTone(f.daysLeft)],
             )}
           >
             <CalendarClock className="size-3.5" aria-hidden />

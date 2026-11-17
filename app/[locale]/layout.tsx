@@ -8,6 +8,7 @@ import { SmoothScroll } from "@/components/layout/smooth-scroll";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SIDEBAR_SCRIPT } from "@/lib/nav-menu";
 import { type Locale, routing } from "@/i18n/routing";
 import { fontVariables } from "@/lib/fonts";
 import "../globals.css";
@@ -51,6 +52,10 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} translate="no" className={`${fontVariables} notranslate`} suppressHydrationWarning>
+      <head>
+        {/* The sidebar's width choice, before paint (lib/nav-menu) */}
+        <script dangerouslySetInnerHTML={{ __html: SIDEBAR_SCRIPT }} />
+      </head>
       <body className="min-h-dvh antialiased">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <ThemeColor />

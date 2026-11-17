@@ -48,6 +48,10 @@ export function ExpensesPage() {
   const { claims, loaded } = useClaims();
   const [tab, setTab] = useState<Tab>("pending");
   const [editing, setEditing] = useState<Claim | null | "new">(null);
+  // "+ 새로 만들기 → 경비 청구" (components/layout/QuickCreate) opens the form at once
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("new") === "1") setEditing("new");
+  }, []);
   const [paying, setPaying] = useState<Claim[] | null>(null);
   const [rejecting, setRejecting] = useState<Claim | null>(null);
   const [showSettings, setShowSettings] = useState(false);
