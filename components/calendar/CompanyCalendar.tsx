@@ -300,12 +300,13 @@ export function CompanyCalendar() {
                   aria-pressed={day === d}
                   aria-label={`${dateText(d)} ${its.length ? `· ${its.length}` : ""}`}
                   className={cn(
-                    "grid min-h-11 content-start justify-items-center gap-1 rounded-xl p-1 text-left transition-colors sm:min-h-20 sm:justify-items-stretch sm:p-1.5",
-                    day === d ? "bg-primary/10 ring-2 ring-primary/40" : late ? "bg-bad-soft/70 ring-1 ring-bad/40 hover:bg-bad-soft" : busyWeek ? "bg-primary/[0.06] hover:bg-primary/10" : "hover:bg-muted/60",
+                    "grid min-h-12 content-start justify-items-center gap-0.5 rounded-lg p-1 text-left transition-colors sm:min-h-20 sm:justify-items-stretch sm:gap-1 sm:rounded-xl sm:p-1.5",
+                    day === d ? "bg-primary/10 ring-2 ring-primary/40" : late ? "bg-bad-soft ring-1 ring-bad/50 ring-inset hover:bg-bad-soft" : busyWeek ? "bg-primary/[0.06] hover:bg-primary/10" : "hover:bg-muted/60",
                   )}
                 >
-                  <span className="flex w-full items-center justify-between gap-1">
-                    <span className={cn("text-[13px] font-semibold tabular-nums", off && "text-bad", d === today && "grid size-6 place-items-center rounded-full bg-primary text-primary-foreground", late && d !== today && "text-bad")}>
+                  <span className="flex w-full items-center justify-center gap-1 sm:justify-between">
+                    {/* Weekends / holidays in a softer red, so a missed date (strong red, filled) stands out */}
+                    <span className={cn("text-[13px] font-semibold tabular-nums", off && "text-bad/60", d === today && "grid size-6 place-items-center rounded-full bg-primary text-primary-foreground", late && d !== today && "font-bold text-bad")}>
                       {Number(d.slice(8))}
                     </span>
                     {money > 0 && <span className="text-[10px] font-semibold text-foreground/70 tabular-nums max-sm:hidden">{compactBaht(money)}</span>}
@@ -315,8 +316,9 @@ export function CompanyCalendar() {
                       {x.kind === "event" || x.kind === "bill" || x.kind === "doc" ? x.title : t(`short.${x.kind}`)}
                     </span>
                   ))}
-                  {/* Phones: dots only */}
-                  {its.length > 0 && (
+                  {/* Phones: a missed date says so in words; other dates show dots */}
+                  {late && <span className="text-[9.5px] leading-none font-bold text-bad sm:hidden">{t("x.lateLabel")}</span>}
+                  {its.length > 0 && !late && (
                     <span className="flex gap-0.5 sm:hidden">
                       {its.slice(0, 4).map((x) => (
                         <span key={x.key} className={cn("size-1.5 rounded-full", TONE[groupOf(x.kind)].dot)} />
