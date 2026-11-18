@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Sale } from "./sales";
-import { groupSlips, sameDay, sameSlip, slipPlan } from "./sales-slips";
+import { groupSlips, sameDay, sameSlip, slipElsewhere, slipPlan, swappedDate } from "./sales-slips";
 
 const s = (o: Partial<Sale & { part: number }>): Sale & { part: number } => ({
   id: o.id ?? Math.random().toString(36).slice(2),
@@ -54,5 +54,23 @@ describe("several slips a day", () => {
     expect(rest).toHaveLength(1);
     expect(day.slips.map((x) => x.id)).toEqual(["b", "l", dinner.id]);
     expect(day).toMatchObject({ gross: 64200, vat: 4200, bills: 200, docFrom: "A0001", docTo: "A0200" });
+  });
+});
+
+describe("the same report on another day (day and month read swapped)", () => {
+  it("swaps day and month only when that is another real date", () => {
+    expect(swappedDate("2026-11-05")).toBe("2026-05-11");
+    expect(swappedDate("2026-05-05")).toBeNull();
+    expect(swappedDate("2026-11-25")).toBeNull();
+  });
+  it("finds the same figures on the swapped date, and the same receipt numbers on any day", () => {
+    const old = s({ id: "a", date: "2026-05-11", gross: 43268.9, vat: 2830.66, bills: 120 });
+    expect(slipElsewhere([old], s({ date: "2026-11-05", gross: 43268.9, vat: 2830.66, bills: 120 }))?.id).toBe("a");
+    expect(slipElsewhere([old], s({ date: "2026-11-05", gross: 43268.9, vat: 2830.66, bills: 121 }))).toBeNull();
+    expect(slipElsewhere([old], s({ date: "2026-11-06", gross: 43268.9, vat: 2830.66, bills: 120 }))).toBeNull();
+    const r = s({ id: "b", date: "2026-10-02", docFrom: "R001", docTo: "R090", gross: 1000 });
+    expect(slipElsewhere([r], s({ date: "2026-10-20", docFrom: "r001", docTo: "R090", gross: 1000 }))?.id).toBe("b");
+    expect(slipElsewhere([r], s({ date: "2026-10-20", docFrom: "R091", docTo: "R150", gross: 1000 }))).toBeNull();
+    expect(slipElsewhere([r], s({ date: "2026-10-20", channel: "grab", docFrom: "R001", docTo: "R090" }))).toBeNull();
   });
 });

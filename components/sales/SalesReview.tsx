@@ -18,7 +18,7 @@ import { baht, fromSatang, toSatang } from "@/lib/money";
 import { isMonthLocked } from "@/lib/month-lock-store";
 import { CHANNELS, type Channel, type Sale, saleVatOk } from "@/lib/sales";
 import { saveSale } from "@/lib/sales-store";
-import { sameDay, type SlipPlan, slipPlan } from "@/lib/sales-slips";
+import { sameDay, slipElsewhere, type SlipPlan, slipPlan } from "@/lib/sales-slips";
 import { cn } from "@/lib/utils";
 import { useChannelLabel } from "./channel-name";
 import type { SaleDraft } from "./SaleSheet";
@@ -46,7 +46,7 @@ export function SalesReview({ photos, branchId, existing, onClose }: { photos: R
   // Each picked line in order, next to what is already in and the lines before it: add / same / replace
   const plans = useMemo(() => {
     const known: Sale[] = existing.filter((x) => (x.branchId || "") === (branch || ""));
-    const out = new Map<string, SlipPlan & { twin?: boolean }>();
+    const out = new Map<string, SlipPlan & { twin?: boolean; elsewhere?: Sale }>();
     for (const r of rows) {
       if (!r.on) continue;
       const line = asLine(r, `new-${r.key}`);
@@ -54,6 +54,12 @@ export function SalesReview({ photos, branchId, existing, onClose }: { photos: R
       // The same report twice in this batch
       if (plan.mode === "same" && plan.target.id.startsWith("new-")) {
         out.set(r.key, { ...plan, twin: true });
+        continue;
+      }
+      // Already in on another day (the date read with day and month swapped, or the same receipt numbers)
+      const other = plan.mode === "same" ? null : slipElsewhere(known, line);
+      if (other) {
+        out.set(r.key, { ...plan, elsewhere: other });
         continue;
       }
       out.set(r.key, plan);
@@ -65,7 +71,7 @@ export function SalesReview({ photos, branchId, existing, onClose }: { photos: R
   }, [rows, existing, branch]);
   const picked = rows.filter((r) => r.on);
   // A missing date or the same report twice blocks saving; VAT off by more than ฿1 is only shown
-  const bad = picked.filter((r) => !r.date || plans.get(r.key)?.twin);
+  const bad = picked.filter((r) => !r.date || plans.get(r.key)?.twin || plans.get(r.key)?.elsewhere);
   const total = fromSatang(picked.reduce((a, r) => a + toSatang(r.gross), 0));
 
   const save = async () => {
@@ -131,6 +137,7 @@ export function SalesReview({ photos, branchId, existing, onClose }: { photos: R
                       const un = new Set(r.unclear);
                       const plan = r.on ? plans.get(r.key) : undefined;
                       const dup = !!plan?.twin;
+                      const elsewhere = plan?.elsewhere;
                       return (
                         <li key={r.key} className={cn("grid gap-2 rounded-xl bg-card p-3 ring-1 ring-border", !r.on && "opacity-50")}>
                           <div className="grid grid-cols-[auto_minmax(0,1.25fr)_minmax(0,1fr)] items-center gap-2">
@@ -154,7 +161,7 @@ export function SalesReview({ photos, branchId, existing, onClose }: { photos: R
                               ))}
                             </select>
                           </div>
-                          {plan && plan.mode !== "new" && !dup && (
+                          {plan && plan.mode !== "new" && !dup && !elsewhere && (
                             <span className="w-fit rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-semibold text-brand">
                               {plan.mode === "add" ? t("sales.batch.adds", { n: plan.count, total: baht(plan.total) }) : plan.mode === "same" ? t("sales.batch.same") : t("sales.batch.replaces")}
                             </span>
@@ -169,10 +176,10 @@ export function SalesReview({ photos, branchId, existing, onClose }: { photos: R
                               <MoneyInput className={cn("h-10", un.has("vat") && "ring-2 ring-warn")} value={r.vat} onChange={(v) => set(r.key, { vat: Number(v) || 0 })} />
                             </label>
                           </div>
-                          {(dup || r.unclear.length > 0 || !saleVatOk(r)) && (
-                            <p className={cn("flex items-start gap-1.5 text-xs", dup || !saleVatOk(r) ? "text-bad" : "text-warn")}>
+                          {(dup || elsewhere || r.unclear.length > 0 || !saleVatOk(r)) && (
+                            <p className={cn("flex items-start gap-1.5 text-xs", dup || elsewhere || !saleVatOk(r) ? "text-bad" : "text-warn")}>
                               <TriangleAlert className="mt-0.5 size-3.5 flex-none" aria-hidden />
-                              {dup ? t("sales.batch.twice") : !saleVatOk(r) ? t("sales.batch.vatOff") : t("sales.batch.check")}
+                              {dup ? t("sales.batch.twice") : elsewhere ? t("sales.elsewhere", { date: elsewhere.date }) : !saleVatOk(r) ? t("sales.batch.vatOff") : t("sales.batch.check")}
                             </p>
                           )}
                         </li>

@@ -45,6 +45,8 @@ export function GlobalSearch({ items }: { items: NavItem[] }) {
   const [found, setFound] = useState<Hit[]>([]);
   const [busy, setBusy] = useState(false);
   const seq = useRef(0);
+  // Enter pressed while the name search was still running (feedback 2026-11-18): acted on as soon as it finishes
+  const enterWhileBusy = useRef("");
   // AI search ("말로 찾기", lib/ai-search): a sentence → a ledger filter → documents (the caller's own rules)
   const [ai, setAi] = useState<AiResult | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
@@ -151,6 +153,18 @@ export function GlobalSearch({ items }: { items: NavItem[] }) {
   }, [q, items, locale]);
 
   const hits = [...menus, ...found];
+  // The name search finished after an Enter: open its first hit, or ask the AI when there is none
+  useEffect(() => {
+    const wanted = enterWhileBusy.current;
+    if (busy || !wanted) return;
+    enterWhileBusy.current = "";
+    if (wanted !== q.trim()) return;
+    if (hits[0]) {
+      router.push(hits[0].href);
+      close();
+    } else void askAi();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the name search finishes
+  }, [busy]);
   const groups = (["menu", "docs", "vendors"] as const).map((k) => ({ k, list: hits.filter((h) => h.kind === k) })).filter((g) => g.list.length);
   const close = () => {
     setOpen(false);
@@ -185,6 +199,7 @@ export function GlobalSearch({ items }: { items: NavItem[] }) {
                 router.push(first.href);
                 close();
               } else if (!busy) void askAi(); // nothing found by name: Enter asks the AI
+              else enterWhileBusy.current = q.trim(); // the name search is still running: decide when it is done
             }}
             className="flex items-center gap-3 border-b border-border px-4"
           >

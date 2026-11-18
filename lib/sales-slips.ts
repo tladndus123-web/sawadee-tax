@@ -29,6 +29,32 @@ export function sameSlip(a: Slip, b: Slip): boolean {
   return toSatang(a.gross) > 0 && toSatang(a.gross) === toSatang(b.gross) && toSatang(a.vat) === toSatang(b.vat) && (a.bills || 0) === (b.bills || 0);
 }
 
+/** The date with day and month swapped ("2026-05-11" ⇄ "2026-11-05"), when that is another real date */
+export function swappedDate(date: string): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!m || m[2] === m[3] || Number(m[3]) > 12) return null;
+  const out = `${m[1]}-${m[3]}-${m[2]}`;
+  const d = new Date(`${out}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== out ? null : out;
+}
+
+/**
+ * The same report already in on another day (feedback 2026-11-18: 3 pairs went in twice because a date was read with day
+ * and month swapped, and the twin check only looked at the same day): the same receipt numbers on any day, or the very
+ * same figures on the swapped date. Same branch and channel.
+ */
+export function slipElsewhere<T extends Key & Slip & { id?: string }>(sales: readonly Sale[], d: T, head = ""): Sale | null {
+  const b = d.branchId || head;
+  const swapped = swappedDate(d.date);
+  return (
+    sales.find((x) => {
+      if (x.id === d.id || x.date === d.date || x.channel !== d.channel || (x.branchId || head) !== b) return false;
+      if (norm(d.docFrom) && norm(x.docFrom)) return norm(x.docFrom) === norm(d.docFrom) && norm(x.docTo) === norm(d.docTo);
+      return x.date === swapped && sameSlip(x, d);
+    }) ?? null
+  );
+}
+
 export type SlipPlan =
   /** Nothing that day yet */
   | { mode: "new" }

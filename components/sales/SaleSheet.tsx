@@ -17,7 +17,7 @@ import { isMonthLocked } from "@/lib/month-lock-store";
 import { useMe } from "@/lib/role-store";
 import { CHANNELS, type Sale, saleVatOk, vatInsideSales } from "@/lib/sales";
 import { deleteSale, saveSale } from "@/lib/sales-store";
-import { sameDay, slipPlan } from "@/lib/sales-slips";
+import { sameDay, slipElsewhere, slipPlan } from "@/lib/sales-slips";
 import { baht } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { useChannelLabel } from "./channel-name";
@@ -54,6 +54,8 @@ export function SaleSheet({
   // The other slips of this day, branch and channel, and what saving does next to them
   const day = sameDay(all, s);
   const plan = s.id ? null : slipPlan(day, s);
+  // The same report already in on another day (day and month read swapped, or the same receipt numbers)
+  const elsewhere = s.date && plan?.mode !== "same" ? slipElsewhere(all, s) : null;
   const dayTotal = day.reduce((a, x) => a + Math.round(x.gross * 100), 0) / 100;
 
   const save = async () => {
@@ -108,6 +110,12 @@ export function SaleSheet({
           )}
 
           <div className="grid content-start gap-4 text-sm">
+            {elsewhere && (
+              <p className="flex items-start gap-2 rounded-xl bg-bad-soft px-3 py-2 text-xs text-bad">
+                <TriangleAlert className="mt-0.5 size-3.5 flex-none" aria-hidden />
+                {t("sales.elsewhere", { date: elsewhere.date })}
+              </p>
+            )}
             {plan && plan.mode !== "new" && (
               <p className="flex items-start gap-2 rounded-xl bg-brand-soft px-3 py-2 text-xs text-foreground">
                 <TriangleAlert className="mt-0.5 size-3.5 flex-none text-brand" aria-hidden />

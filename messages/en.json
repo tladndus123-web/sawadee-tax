@@ -1145,7 +1145,8 @@
       "retry": "Try again",
       "todo": "Try this",
       "note": "Written by the AI from the sales and cost figures only. Estimates are a guide."
-    }
+    },
+    "elsewhere": "The same report is already in on {date}. The day and month may have been read swapped. Check the date or leave this line out."
   },
   "pos": {
     "button": "POS Excel",
