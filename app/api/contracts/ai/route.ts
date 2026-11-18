@@ -3,18 +3,15 @@
 // owner did not limit (the contract box's rule); the contract and its file are read with the caller's own session, so
 // the database decides. Sonnet reads the PDF / photo as it is.
 
-import Anthropic from "@anthropic-ai/sdk";
 import { adminCaller } from "@/lib/api-admin-server";
 import { isAiLang } from "@/lib/ai-sheet";
-import { DEEP_MODEL } from "@/lib/assistant";
-import { cleanAnswer, cleanContractAi, CONTRACT_ANSWER_SCHEMA, CONTRACT_AI_SCHEMA, contractQuestionPrompt, contractSummaryPrompt } from "@/lib/contract-ai";
+import { cleanAnswer, cleanContractAi } from "@/lib/contract-ai";
+import { askContract } from "@/lib/contract-ai-server";
 import { contractFile } from "@/lib/contract-read-server";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
-
-let client: Anthropic | null = null;
 
 export async function POST(req: Request) {
   const who = await adminCaller({ full: true, perTenMinutes: 15, later: true });
@@ -33,35 +30,13 @@ export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: "noKey" }, { status: 503 });
   if (!who.spend()) return Response.json({ error: "rate" }, { status: 429 });
 
-  const data = file.buf.toString("base64");
-  const source =
-    file.type === "application/pdf"
-      ? { type: "document" as const, source: { type: "base64" as const, media_type: "application/pdf" as const, data } }
-      : { type: "image" as const, source: { type: "base64" as const, media_type: file.type, data } };
-  const saved = `What the owner saved about it: ${JSON.stringify({ title: row.title, party: row.party, kind: row.kind, start: row.start_on, end: row.end_on, autoRenew: row.auto_renew, noticeDays: row.notice_days, note: row.note })}`;
-  try {
-    client ??= new Anthropic({ maxRetries: 1, timeout: 110_000 });
-    const res = await client.messages.create(
-      {
-        model: DEEP_MODEL,
-        max_tokens: question ? 1200 : 3000,
-        output_config: { effort: "low", format: { type: "json_schema", schema: question ? CONTRACT_ANSWER_SCHEMA : CONTRACT_AI_SCHEMA } },
-        system: question ? contractQuestionPrompt(lang) : contractSummaryPrompt(lang),
-        messages: [{ role: "user", content: [source, { type: "text", text: question ? `${saved}\n\nQuestion: ${question}` : saved }] }],
-      },
-      { signal: req.signal },
-    );
-    const parsed = JSON.parse(res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join(""));
-    if (question) {
-      const a = cleanAnswer(parsed);
-      return a ? Response.json({ answer: a }) : Response.json({ error: "failed" }, { status: 502 });
-    }
-    const summary = cleanContractAi(parsed, row.file_path as string);
-    if (!summary) return Response.json({ error: "failed" }, { status: 502 });
-    await db.from("contracts").update({ ai_summary: summary }).eq("id", id);
-    return Response.json({ summary });
-  } catch (e) {
-    console.error("[contracts-ai] failed", e instanceof Error ? e.message : e);
-    return Response.json({ error: "failed" }, { status: 502 });
+  const parsed = await askContract(file, row, lang, question, req.signal);
+  if (question) {
+    const a = parsed ? cleanAnswer(parsed) : null;
+    return a ? Response.json({ answer: a }) : Response.json({ error: "failed" }, { status: 502 });
   }
+  const summary = parsed ? cleanContractAi(parsed, row.file_path as string) : null;
+  if (!summary) return Response.json({ error: "failed" }, { status: 502 });
+  await db.from("contracts").update({ ai_summary: summary }).eq("id", id);
+  return Response.json({ summary });
 }

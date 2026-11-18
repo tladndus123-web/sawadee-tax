@@ -7,25 +7,7 @@
 
 import { ContractAi } from "./ContractAi";
 import { fullAdmin } from "@/lib/screens";
-import {
-  Briefcase,
-  Building2,
-  FileText,
-  Handshake,
-  HeartPulse,
-  Landmark,
-  Loader2,
-  Paperclip,
-  Plus,
-  Repeat,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  Trash2,
-  Truck,
-  Upload,
-  X,
-} from "lucide-react";
+import { Briefcase, Building2, FileText, Handshake, HeartPulse, Landmark, Loader2, MessageCircle, Paperclip, Plus, Repeat, Search, ShieldCheck, Sparkles, Trash2, Truck, Upload, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -148,6 +130,14 @@ export function ContractBox() {
           {t("add")}
         </Button>
       </header>
+
+      {/* LINE works too (owner 2026-11-18): "계약서" then the photo / PDF → read, saved and summed up by AI by itself */}
+      <p className="flex items-start gap-2.5 rounded-2xl border border-border/70 bg-card px-4 py-3 text-[13.5px] leading-relaxed">
+        <MessageCircle className="mt-0.5 size-[18px] flex-none text-[#06c755]" aria-hidden />
+        <span>
+          <b className="font-semibold">{t("lineTitle")}</b> <span className="text-muted-foreground">{t("lineHint")}</span>
+        </span>
+      </p>
 
       {/* Search, state chips, kind */}
       <div className="grid gap-3">

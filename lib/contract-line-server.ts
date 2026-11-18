@@ -6,7 +6,9 @@
 
 import { isFullAdmin } from "./full-admin-server";
 import type { messagingApi } from "@line/bot-sdk";
-import { readContract } from "./contract-read-server";
+import { contractFile, readContract } from "./contract-read-server";
+import { askContract } from "./contract-ai-server";
+import { cleanContractAi } from "./contract-ai";
 import { CONTRACT_MODE_MINUTES, contractFileType, contractWords, savedCardText } from "./contract-line";
 import { contractFilePath, MAX_FILE_BYTES } from "./contracts";
 import { noticeMessage } from "./line-dash";
@@ -50,7 +52,7 @@ async function endContractMode(lineUser: string) {
  * A photo / PDF sent in contract mode → a contract. The caller downloaded it and made sure its LINE event is new.
  * Returns the messages to answer with (never sends itself).
  */
-export async function contractFromLine(lineUser: string, buf: Buffer, appUrl: string, lang: LineLang, signal?: AbortSignal): Promise<messagingApi.Message[]> {
+export async function contractFromLine(lineUser: string, buf: Buffer, appUrl: string, lang: LineLang, signal?: AbortSignal, onSaved?: (id: string) => void): Promise<messagingApi.Message[]> {
   const w = contractWords(lang);
   const m = await lineAdmin(lineUser);
   if (!m || m.disabled_at) return [text(w.notMember)];
@@ -94,5 +96,23 @@ export async function contractFromLine(lineUser: string, buf: Buffer, appUrl: st
   }
   await endContractMode(lineUser);
   console.log(`[line] contract saved${r ? "" : " (not read)"}`);
+  onSaved?.(id);
   return [noticeMessage([savedCardText(r, `${appUrl}/contracts`, lang)], "CONTRACT", lang)];
+}
+
+/**
+ * After the reply: the contract box's AI summary (main terms, notice date) made at once for a contract that came on
+ * LINE, so it is there when the box is opened (owner 2026-11-18). Best effort: a failure leaves the "AI 요약" button.
+ */
+export async function summarizeLineContract(id: string, lang: LineLang): Promise<void> {
+  const admin = supabaseAdmin();
+  const { data: row } = await admin.from("contracts").select("id, title, party, kind, start_on, end_on, auto_renew, notice_days, note, file_path, ai_summary").eq("id", id).maybeSingle();
+  if (!row?.file_path || row.ai_summary || !process.env.ANTHROPIC_API_KEY) return;
+  const file = await contractFile(admin, row.file_path as string);
+  if (!file) return;
+  const parsed = await askContract(file, row, lang, "");
+  const summary = parsed ? cleanContractAi(parsed, row.file_path as string) : null;
+  if (!summary) return;
+  await admin.from("contracts").update({ ai_summary: summary }).eq("id", id);
+  console.log("[line] contract summary kept");
 }

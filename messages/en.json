@@ -3271,7 +3271,9 @@
       "ask": "Ask",
       "failed": "AI couldn't answer. Please try again.",
       "note": "Answers come from the contract file only. For legal decisions, ask a lawyer."
-    }
+    },
+    "lineTitle": "You can send contracts on LINE too.",
+    "lineHint": "Send \"contract\" on LINE, then the photo or PDF: AI reads it, puts it in the contract box by itself and writes the summary."
   },
   "prep": {
     "title": "Tomorrow's prep forecast",
@@ -3319,7 +3321,7 @@
     "ok": "Got it",
     "contracts": {
       "title": "Contracts",
-      "body": "Keep contracts in one place; AI sums up the main terms and the notice date. Send \"contract\" on LINE to upload one."
+      "body": "Keep contracts in one place; AI sums up the main terms and the notice date. LINE works too: send \"contract\", then the photo or PDF, and AI files it for you."
     },
     "food": {
       "title": "Restaurant features",

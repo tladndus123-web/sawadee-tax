@@ -27,7 +27,7 @@ import { extractDocument, MAX_IMAGE_BYTES, readingFor } from "./extract-server";
 import { assistantSay } from "./assistant";
 import { isExpenseWord } from "./expense-line";
 import { contractWords, isContractFileName, isContractWord } from "./contract-line";
-import { contractFromLine, inContractMode, startContractMode } from "./contract-line-server";
+import { contractFromLine, inContractMode, startContractMode, summarizeLineContract } from "./contract-line-server";
 import { isWasteExit, isWasteWord, readWasteLine } from "./waste-line";
 import { cashSavedText, readCashLine } from "./cash-line";
 import { cashBook, type CashMove } from "./petty-cash";
@@ -517,7 +517,11 @@ async function contractFile(event: webhook.MessageEvent, lineUser: string, messa
     .showLoadingAnimation({ chatId: lineUser, loadingSeconds: 60 })
     .catch(() => undefined);
   const buf = await readStream(await lineBlobClient().getMessageContent(messageId));
-  await send(event, lineUser, await contractFromLine(lineUser, buf, appUrl(), await langOf(lineUser)));
+  const lang = await langOf(lineUser);
+  let saved: string | null = null;
+  await send(event, lineUser, await contractFromLine(lineUser, buf, appUrl(), lang, undefined, (id) => (saved = id)));
+  // Then the AI summary (main terms, notice date), so the contract box has it without a tap
+  if (saved) await summarizeLineContract(saved, lang).catch((e) => console.error("[line] contract summary", e instanceof Error ? e.message : e));
 }
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
