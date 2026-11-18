@@ -55,6 +55,38 @@ export function slipElsewhere<T extends Key & Slip & { id?: string }>(sales: rea
   );
 }
 
+/**
+ * Lines already in twice on different days (the banner on the sales screen, owner 2026-11-18: "중복 안내"): each pair
+ * once, the newer line second (usually the copy). Same rules as slipElsewhere.
+ */
+export function elsewherePairs(sales: readonly Sale[], head = ""): { first: Sale; second: Sale }[] {
+  // Indexed so a few thousand lines stay quick: by receipt numbers, and by day + figures
+  const place = (x: Sale) => `${x.branchId || head}|${x.channel}`;
+  const byReceipts = new Map<string, Sale[]>();
+  const byFigures = new Map<string, Sale[]>();
+  const push = (m: Map<string, Sale[]>, k: string, x: Sale) => m.set(k, [...(m.get(k) ?? []), x]);
+  const figures = (x: Sale, date: string) => `${place(x)}|${date}|${toSatang(x.gross)}|${toSatang(x.vat)}|${x.bills || 0}`;
+  for (const x of sales) {
+    if (norm(x.docFrom)) push(byReceipts, `${place(x)}|${norm(x.docFrom)}|${norm(x.docTo)}`, x);
+    else if (toSatang(x.gross) > 0) push(byFigures, figures(x, x.date), x);
+  }
+  const out: { first: Sale; second: Sale }[] = [];
+  const seen = new Set<string>();
+  const add = (a: Sale, b: Sale) => {
+    const key = [a.id, b.id].sort().join("|");
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(a.date <= b.date ? { first: a, second: b } : { first: b, second: a });
+  };
+  for (const list of byReceipts.values()) for (const a of list) for (const b of list) if (a.id < b.id && a.date !== b.date) add(a, b);
+  for (const x of sales) {
+    const swapped = norm(x.docFrom) ? null : swappedDate(x.date);
+    if (!swapped || !(toSatang(x.gross) > 0)) continue;
+    for (const y of byFigures.get(figures(x, swapped)) ?? []) if (y.id !== x.id) add(x, y);
+  }
+  return out.sort((p, q) => q.second.date.localeCompare(p.second.date));
+}
+
 export type SlipPlan =
   /** Nothing that day yet */
   | { mode: "new" }

@@ -33,7 +33,7 @@ import { PosImport } from "./PosImport";
 import { SettlementImport } from "./SettlementImport";
 import { useFoodFeatures } from "@/lib/food-features-store";
 import { type SaleDraft, SaleSheet } from "./SaleSheet";
-import { groupSlips, type SlipGroup } from "@/lib/sales-slips";
+import { elsewherePairs, groupSlips, type SlipGroup } from "@/lib/sales-slips";
 import { type ReadPhoto, SalesReview } from "./SalesReview";
 import { useChannelLabel } from "./channel-name";
 import { CostCard } from "./CostCard";
@@ -268,6 +268,9 @@ export function SalesPage() {
           {progress && progress.total > 1 && <p className="text-sm font-medium text-muted-foreground tabular-nums">{t("sales.batch.progress", progress)}</p>}
         </div>
       )}
+
+      {/* The same report in twice on different days (owner 2026-11-18: "중복 안내") — admins open one and delete the wrong one */}
+      {me.role === "admin" && loaded && <TwiceBanner sales={sales} onOpen={(x) => void openSale(x)} />}
 
       {/* The month is the heading and changes right there (as on the dashboard); the two reports beside it */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -540,5 +543,48 @@ function Fact({ label, value, sub, tone }: { label: string; value: string; sub: 
 function ChannelChip({ channel, label }: { channel: Channel; label: string }) {
   return (
     <span className={cn("max-w-[7rem] flex-none truncate rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap", channel === "store" ? "bg-brand-soft text-brand" : "bg-muted text-foreground")}>{label}</span>
+  );
+}
+
+/** Sales lines that look like the same report entered twice (lib/sales-slips elsewherePairs) */
+function TwiceBanner({ sales, onOpen }: { sales: readonly Sale[]; onOpen: (s: Sale) => void }) {
+  const t = useTranslations("sales.twice");
+  const chName = useChannelLabel();
+  const pairs = useMemo(() => elsewherePairs(sales), [sales]);
+  const [open, setOpen] = useState(false);
+  if (!pairs.length) return null;
+  const line = (x: Sale) => (
+    <button type="button" onClick={() => onOpen(x)} className="press inline-flex h-11 items-center gap-1.5 rounded-full bg-background px-3 text-[13px] font-medium ring-1 ring-border hover:bg-muted pointer-fine:h-8">
+      {x.date}
+      <span className="text-muted-foreground">{t("open")}</span>
+    </button>
+  );
+  return (
+    <section className="grid gap-3 rounded-2xl border border-bad/30 bg-bad-soft/50 p-4 sm:p-5" aria-label={t("title", { count: pairs.length })}>
+      <div className="flex flex-wrap items-start gap-3">
+        <Info className="mt-0.5 size-5 flex-none text-bad" aria-hidden />
+        <div className="grid min-w-0 flex-1 gap-0.5">
+          <p className="text-[15px] font-semibold">{t("title", { count: pairs.length })}</p>
+          <p className="text-[13px] leading-relaxed text-muted-foreground">{t("hint")}</p>
+        </div>
+        <button type="button" onClick={() => setOpen((o) => !o)} className="press h-11 flex-none rounded-full px-3 text-[13px] font-semibold text-bad hover:bg-bad-soft pointer-fine:h-9">
+          {open ? t("hide") : t("show")}
+        </button>
+      </div>
+      {open && (
+        <ul className="grid gap-2">
+          {pairs.map(({ first, second }) => (
+            <li key={`${first.id}|${second.id}`} className="flex flex-wrap items-center gap-2 rounded-xl bg-background/70 px-3 py-2">
+              <span className="min-w-0 basis-full text-[13.5px] whitespace-nowrap sm:flex-1 sm:basis-auto">
+                <b className="tabular-nums">{baht(second.gross)}</b>
+                <span className="ml-1.5 text-muted-foreground">· {chName(second.channel)}</span>
+              </span>
+              {line(first)}
+              {line(second)}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

@@ -1146,7 +1146,14 @@
       "todo": "Try this",
       "note": "Written by the AI from the sales and cost figures only. Estimates are a guide."
     },
-    "elsewhere": "The same report is already in on {date}. The day and month may have been read swapped. Check the date or leave this line out."
+    "elsewhere": "The same report is already in on {date}. The day and month may have been read swapped. Check the date or leave this line out.",
+    "twice": {
+      "title": "{count, plural, one {# pair of sales that look like the same report} other {# pairs of sales that look like the same report}}",
+      "hint": "The day and month may have been read swapped, or the same receipt numbers went in twice. Tap a date to open it and delete the wrong one. Until then the sales are counted twice.",
+      "show": "Show list",
+      "hide": "Hide",
+      "open": "open"
+    }
   },
   "pos": {
     "button": "POS Excel",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Sale } from "./sales";
-import { groupSlips, sameDay, sameSlip, slipElsewhere, slipPlan, swappedDate } from "./sales-slips";
+import { elsewherePairs, groupSlips, sameDay, sameSlip, slipElsewhere, slipPlan, swappedDate } from "./sales-slips";
 
 const s = (o: Partial<Sale & { part: number }>): Sale & { part: number } => ({
   id: o.id ?? Math.random().toString(36).slice(2),
@@ -72,5 +72,17 @@ describe("the same report on another day (day and month read swapped)", () => {
     expect(slipElsewhere([r], s({ date: "2026-10-20", docFrom: "r001", docTo: "R090", gross: 1000 }))?.id).toBe("b");
     expect(slipElsewhere([r], s({ date: "2026-10-20", docFrom: "R091", docTo: "R150", gross: 1000 }))).toBeNull();
     expect(slipElsewhere([r], s({ date: "2026-10-20", channel: "grab", docFrom: "R001", docTo: "R090" }))).toBeNull();
+  });
+});
+
+describe("pairs already in twice (the sales screen banner)", () => {
+  it("lists each pair once, by receipt numbers or swapped-date figures", () => {
+    const a = s({ id: "a", date: "2026-05-11", gross: 43268.9, vat: 2830.66, bills: 120 });
+    const b = s({ id: "b", date: "2026-11-05", gross: 43268.9, vat: 2830.66, bills: 120 });
+    const c = s({ id: "c", date: "2026-10-02", docFrom: "R1", docTo: "R9", gross: 500 });
+    const d = s({ id: "d", date: "2026-10-03", docFrom: "R1", docTo: "R9", gross: 500 });
+    const e = s({ id: "e", date: "2026-11-06", gross: 43268.9, vat: 2830.66, bills: 120 });
+    const pairs = elsewherePairs([a, b, c, d, e]);
+    expect(pairs.map((p) => `${p.first.id}${p.second.id}`).sort()).toEqual(["ab", "cd"]);
   });
 });
