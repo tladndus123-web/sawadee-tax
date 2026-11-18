@@ -29,7 +29,7 @@ export function PayAi({ sheet, onPick }: { sheet: PaySheet; onPick: (numbers: nu
     }
   };
   return (
-    <section className="workspace-panel grid gap-3 p-5 sm:p-6" aria-labelledby="pay-ai-title">
+    <section className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-5 sm:p-6" aria-labelledby="pay-ai-title">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="grid gap-0.5">
           <h2 id="pay-ai-title" className="flex items-center gap-2 text-lg font-semibold tracking-tight">

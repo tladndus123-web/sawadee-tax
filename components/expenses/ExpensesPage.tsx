@@ -150,7 +150,7 @@ export function ExpensesPage() {
 
       {/* Admins: who is owed (what waits and what was paid back are in the overview card) */}
       {isAdmin && owe.length > 0 && (
-        <section className="workspace-panel grid gap-2 p-4 sm:p-5" aria-labelledby="owed-title">
+        <section className="workspace-panel hover-lift [--lift:1.006] grid gap-2 p-4 sm:p-5" aria-labelledby="owed-title">
           <h2 id="owed-title" className="flex items-center gap-2 text-[15px] font-semibold">
             <HandCoins className="size-4 text-primary" aria-hidden />
             {t("owedTitle")}

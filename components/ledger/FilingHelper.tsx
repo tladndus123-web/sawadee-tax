@@ -395,7 +395,7 @@ export function FilingHelper({ month }: { month: string }) {
         </section>
 
         <aside className="grid gap-5">
-          <section className="workspace-panel grid gap-3 p-4 sm:p-5">
+          <section className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-4 sm:p-5">
             <h2 className="text-[15px] font-semibold">{t("check.title")}</h2>
             <ul className="grid gap-3">
               {checks.map((c, i) => (
@@ -419,7 +419,7 @@ export function FilingHelper({ month }: { month: string }) {
             </ul>
           </section>
 
-          <section className="workspace-panel grid gap-3 p-4 sm:p-5">
+          <section className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-4 sm:p-5">
             <h2 className="text-[15px] font-semibold">{t("steps.title")}</h2>
             <ol className="grid list-decimal gap-1.5 pl-5 text-[14px] text-muted-foreground">
               <li>{t("steps.1")}</li>

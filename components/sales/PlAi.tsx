@@ -43,7 +43,7 @@ export function PlAi({ sheet, stamp }: { sheet: PlSheet; stamp: string }) {
   };
   if (sheet.months.length === 0) return null;
   return (
-    <section className="workspace-panel flex flex-wrap items-start gap-3 p-4 sm:p-5" aria-label={t("title")}>
+    <section className="workspace-panel hover-lift [--lift:1.006] flex flex-wrap items-start gap-3 p-4 sm:p-5" aria-label={t("title")}>
       <Sparkles className="mt-0.5 size-5 flex-none text-brand" aria-hidden />
       <div className="grid min-w-0 flex-1 gap-1">
         {c ? (

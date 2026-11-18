@@ -256,7 +256,7 @@ function ContractCard({ c, today, onOpen, onAi }: { c: Contract; today: string; 
   const by = noticeBy(c);
   return (
     <article
-      className={cn("workspace-panel grid h-full content-start gap-3 p-4 sm:p-5", state === "soon" && "ring-1 ring-warn/30", state === "ended" && "opacity-75")}
+      className={cn("workspace-panel hover-lift [--lift:1.015] grid h-full content-start gap-3 p-4 sm:p-5", state === "soon" && "ring-1 ring-warn/30", state === "ended" && "opacity-75")}
     >
       <button type="button" onClick={onOpen} className="grid min-w-0 gap-3 text-left" aria-label={t("editOf", { title: c.title })}>
         <span className="flex min-w-0 items-start gap-3">

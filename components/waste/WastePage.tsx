@@ -99,7 +99,7 @@ export function WastePage() {
         </div>
       </header>
 
-      <section className="workspace-panel grid gap-4 p-5 sm:p-6" aria-label={t("summary")}>
+      <section className="workspace-panel hover-lift [--lift:1.006] grid gap-4 p-5 sm:p-6" aria-label={t("summary")}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           <Stat label={t("total")} value={baht(fromSatang(m.total))} tone={m.total > 0 ? "bad" : "muted"} hint={m.unpriced ? t("unpriced", { count: m.unpriced }) : undefined} />
           <Stat label={t("vsLast")} value={m.change === null ? "–" : `${m.change > 0 ? "+" : ""}${m.change}%`} tone={m.change === null ? "muted" : m.change > 0 ? "bad" : "ok"} hint={t("lastMonth", { amount: baht(fromSatang(m.before)) })} />
@@ -128,7 +128,7 @@ export function WastePage() {
       ) : (
         <ul className="grid gap-3">
           {days.map(([day, list]) => (
-            <li key={day} className="workspace-panel grid gap-1 p-4 sm:p-5">
+            <li key={day} className="workspace-panel hover-lift [--lift:1.01] grid gap-1 p-4 sm:p-5">
               <h2 className="text-sm font-semibold text-muted-foreground tabular-nums">{sd(day)}</h2>
               <ul className="grid divide-y divide-border">
                 {list.map((l) => (

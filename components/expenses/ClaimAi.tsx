@@ -57,7 +57,7 @@ export function ClaimAi({
     }
   };
   return (
-    <section className="workspace-panel grid gap-3 p-4 sm:p-5" aria-label={t("title")}>
+    <section className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-4 sm:p-5" aria-label={t("title")}>
       <div className="flex flex-wrap items-start gap-3">
         <Sparkles className="mt-0.5 size-5 flex-none text-brand" aria-hidden />
         <div className="grid min-w-0 flex-1 gap-0.5">

@@ -111,7 +111,7 @@ function AssetCard({ r }: { r: AssetRow }) {
   };
 
   return (
-    <li className="workspace-panel grid gap-3 p-4 sm:p-5">
+    <li className="workspace-panel hover-lift [--lift:1.01] grid gap-3 p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <span className="grid size-10 flex-none place-items-center rounded-2xl bg-emerald-500/12 text-emerald-700 dark:text-emerald-400" aria-hidden>
           <Refrigerator className="size-5" />
@@ -215,7 +215,7 @@ function UnsetBanner({ docs }: { docs: LedgerDoc[] }) {
     if (!done && !locked) toast.error(t("fail"));
   };
   return (
-    <section className="workspace-panel grid gap-3 border-warn/40 bg-warn-soft/40 p-4 sm:p-5">
+    <section className="workspace-panel hover-lift [--lift:1.006] grid gap-3 border-warn/40 bg-warn-soft/40 p-4 sm:p-5">
       <div className="flex flex-wrap items-start gap-3">
         <CalendarClock className="mt-0.5 size-5 flex-none text-warn" aria-hidden />
         <div className="grid min-w-0 flex-1 gap-0.5">

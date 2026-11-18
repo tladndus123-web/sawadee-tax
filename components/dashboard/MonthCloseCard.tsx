@@ -65,7 +65,7 @@ export function MonthCloseCard() {
   if (!ready || !month || !todo) return null;
 
   return (
-    <section className="workspace-panel grid gap-3 p-4 sm:p-5" aria-labelledby="close-title">
+    <section className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-4 sm:p-5" aria-labelledby="close-title">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="grid gap-0.5">
           <h2 id="close-title" className="text-[15px] font-semibold">

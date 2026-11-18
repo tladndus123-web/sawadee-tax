@@ -239,7 +239,7 @@ function EmployeeForm({ draft, onChange, onDone }: { draft: Employee & { isNew?:
 
   return (
     <form
-      className="workspace-panel grid gap-4 p-4 sm:p-5"
+      className="workspace-panel hover-lift [--lift:1.006] grid gap-4 p-4 sm:p-5"
       onSubmit={(e) => {
         e.preventDefault();
         void save();

@@ -165,7 +165,7 @@ export function TaxesHub() {
         </div>
       </header>
 
-      <section className="workspace-panel grid gap-1 p-5 sm:p-6" aria-label={t("total")}>
+      <section className="workspace-panel hover-lift [--lift:1.006] grid gap-1 p-5 sm:p-6" aria-label={t("total")}>
         <p className="text-sm font-medium text-muted-foreground">{t("total")}</p>
         <p className="text-[34px] leading-tight font-bold tracking-tight tabular-nums">{baht(fromSatang(total))}</p>
         <p className="text-xs text-muted-foreground">{t("totalNote")}</p>
@@ -182,7 +182,7 @@ export function TaxesHub() {
           const status = returnStatus({ filed, nothing: r.nothing, deadline: d.online, today });
           const left = daysLeft(today, d.online);
           return (
-            <li key={r.kind} className="workspace-panel grid gap-3 p-5">
+            <li key={r.kind} className="workspace-panel hover-lift [--lift:1.01] grid gap-3 p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="grid size-10 flex-none place-items-center rounded-xl bg-brand-soft text-brand">

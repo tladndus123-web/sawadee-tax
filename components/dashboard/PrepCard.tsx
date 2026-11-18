@@ -57,7 +57,7 @@ export function PrepCard({ sales, purchases, today }: { sales: Sale[]; purchases
 
   const tomorrow = f.days[0];
   return (
-    <section className="workspace-panel grid gap-4 p-5 sm:p-6" aria-labelledby="prep-title">
+    <section className="workspace-panel hover-lift [--lift:1.006] grid gap-4 p-5 sm:p-6" aria-labelledby="prep-title">
       <SectionTitle id="prep-title" icon={ChefHat}>
         {t("title")}
       </SectionTitle>

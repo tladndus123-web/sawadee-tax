@@ -74,7 +74,7 @@ export function DupReview({ entries }: { entries: LedgerEntry[] }) {
 
       <ul className="grid gap-3">
         {groups.map((g) => (
-          <li key={g.key} className="workspace-panel grid gap-2 p-3 sm:p-4">
+          <li key={g.key} className="workspace-panel hover-lift [--lift:1.01] grid gap-2 p-3 sm:p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 px-1">
               <span className="text-[14px] font-semibold">
                 {g.items[0].entry.doc.seller.name.en || g.items[0].entry.doc.seller.name.th || g.items[0].entry.doc.seller.name.ja} · <span className="font-mono text-[13px]">{g.items[0].docNo}</span>

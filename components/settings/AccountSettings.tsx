@@ -10,7 +10,7 @@ import { saveCompany, useCompany } from "@/lib/company-store";
 import { saveMyName, signOut, useMe } from "@/lib/role-store";
 import { digitsOnly, taxIdOk } from "@/lib/thai-tax";
 
-const card = "workspace-panel grid gap-4 p-5 sm:p-6";
+const card = "workspace-panel hover-lift [--lift:1.006] grid gap-4 p-5 sm:p-6";
 const title = "flex items-center gap-2 text-lg font-semibold tracking-tight";
 
 /** My name and sign-out */

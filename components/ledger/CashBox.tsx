@@ -72,7 +72,7 @@ export function CashBox() {
       </header>
 
       {/* What should be in the box now */}
-      <section className="workspace-panel grid gap-4 p-5 ring-1 ring-brand/25 sm:p-6" aria-labelledby="cash-balance">
+      <section className="workspace-panel hover-lift [--lift:1.006] grid gap-4 p-5 ring-1 ring-brand/25 sm:p-6" aria-labelledby="cash-balance">
         <div className="grid gap-1">
           <span id="cash-balance" className="flex items-center gap-2 text-sm font-semibold text-brand">
             <Coins className="size-4" aria-hidden />
@@ -149,7 +149,7 @@ const signed = (satang: number) => `${satang > 0 ? "+" : satang < 0 ? "−" : ""
 
 function Figure({ label, value, tone, hint, signed: sign }: { label: string; value: number; tone?: "warn" | "bad"; hint?: string; signed?: boolean }) {
   return (
-    <div className="workspace-panel grid min-w-0 content-start gap-0.5 px-3.5 py-3" title={hint}>
+    <div className="workspace-panel hover-lift [--lift:1.015] grid min-w-0 content-start gap-0.5 px-3.5 py-3" title={hint}>
       <span className="truncate text-xs text-muted-foreground">{label}</span>
       <span className={cn("truncate text-[15px] font-semibold tabular-nums", !value && "text-muted-foreground/60", value && tone === "warn" && "text-warn", value && tone === "bad" && "text-bad")}>
         {sign ? signed(value) : baht(fromSatang(value))}

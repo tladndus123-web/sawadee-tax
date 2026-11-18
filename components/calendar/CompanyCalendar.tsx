@@ -263,7 +263,7 @@ export function CompanyCalendar() {
           chart stays just below instead of sitting under a very long agenda. On a phone the list follows the month. */}
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-stretch">
         {/* Month grid */}
-        <section className="workspace-panel grid min-w-0 gap-2 p-3 sm:gap-3 sm:p-5" aria-label={monthName(month)}>
+        <section className="workspace-panel hover-lift [--lift:1.004] grid min-w-0 gap-2 p-3 sm:gap-3 sm:p-5" aria-label={monthName(month)}>
           <div className="flex items-center justify-between">
             <Button type="button" variant="ghost" size="icon" className="size-10 rounded-full" onClick={() => setMonth(shiftMonth(month, -1))} aria-label={t("prev")}>
               <ChevronLeft className="size-5" />
@@ -636,7 +636,7 @@ function RecurringCard({ items }: { items: Recurring[] }) {
   };
   const day = (n: number) => new Intl.NumberFormat(locale).format(n);
   return (
-    <section className="workspace-panel grid gap-3 p-4 sm:p-5" aria-labelledby="rec-title">
+    <section className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-4 sm:p-5" aria-labelledby="rec-title">
       <h2 id="rec-title" className="flex items-center gap-2 text-[15px] font-semibold">
         <Repeat className="size-4 text-primary" aria-hidden />
         {t("recTitle")}

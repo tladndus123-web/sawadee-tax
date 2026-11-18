@@ -88,7 +88,7 @@ export function ExpenseOverview({
   const peopleMax = b.people[0]?.[1] ?? 0;
   return (
     <section className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]" aria-label={t("title", { month: monthName })}>
-      <div className="workspace-panel relative grid content-start gap-4 overflow-hidden p-5 sm:p-6">
+      <div className="workspace-panel hover-lift [--lift:1.006] relative grid content-start gap-4 overflow-hidden p-5 sm:p-6">
         <span className="pointer-events-none absolute -top-16 -right-16 size-48 rounded-full bg-primary/10 blur-2xl" aria-hidden />
         <div className="grid gap-1">
           <span className="text-[13px] font-medium text-muted-foreground">{t("title", { month: monthName })}</span>
@@ -161,7 +161,7 @@ export function ExpenseOverview({
       </div>
 
       {/* The AI's read of the month */}
-      <div className="workspace-panel ai-ring grid content-start gap-3 p-5 sm:p-6">
+      <div className="workspace-panel hover-lift [--lift:1.006] ai-ring grid content-start gap-3 p-5 sm:p-6">
         <span className="flex items-center gap-2 text-[13px] font-semibold text-primary">
           <Sparkles className="size-4" aria-hidden />
           {t("aiTitle")}

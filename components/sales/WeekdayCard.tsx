@@ -27,7 +27,7 @@ export function WeekdayCard({ sales, today }: { sales: Sale[]; today: string }) 
   const order = [1, 2, 3, 4, 5, 6, 0];
 
   return (
-    <section className="workspace-panel flex flex-col gap-4 p-5 sm:p-6" aria-labelledby="weekday-title">
+    <section className="workspace-panel hover-lift [--lift:1.006] flex flex-col gap-4 p-5 sm:p-6" aria-labelledby="weekday-title">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="grid gap-0.5">
           <h2 id="weekday-title" className="flex items-center gap-2 text-sm font-semibold">

@@ -68,7 +68,7 @@ export function PasskeyCard() {
   };
 
   return (
-    <section aria-labelledby="passkey-title" className="workspace-panel grid content-start gap-3 p-5 sm:p-6">
+    <section aria-labelledby="passkey-title" className="workspace-panel hover-lift [--lift:1.006] grid content-start gap-3 p-5 sm:p-6">
       <div className="grid gap-1">
         <h2 id="passkey-title" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
           <KeyRound className="size-5 text-brand" aria-hidden />

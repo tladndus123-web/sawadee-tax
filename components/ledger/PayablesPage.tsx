@@ -65,7 +65,7 @@ export function PayablesPage() {
         <p className="text-sm text-muted-foreground">{t("sub")}</p>
       </header>
 
-      <section className="workspace-panel grid gap-4 p-5 sm:p-6" aria-label={t("total")}>
+      <section className="workspace-panel hover-lift [--lift:1.006] grid gap-4 p-5 sm:p-6" aria-label={t("total")}>
         <div className="grid gap-0.5">
           <p className="text-sm font-medium text-muted-foreground">{t("total")}</p>
           <p className="text-[34px] leading-tight font-bold tracking-tight tabular-nums">{baht(fromSatang(all))}</p>
@@ -106,7 +106,7 @@ export function PayablesPage() {
       ) : (
         <ul className="grid gap-3">
           {groups.map((g) => (
-            <li key={g.key} className="workspace-panel grid gap-2 p-4 sm:p-5">
+            <li key={g.key} className="workspace-panel hover-lift [--lift:1.01] grid gap-2 p-4 sm:p-5">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2.5">
                   <span className="grid size-9 flex-none place-items-center rounded-xl bg-brand-soft text-brand">

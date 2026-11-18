@@ -56,7 +56,7 @@ export function ExcelFormatCard() {
   };
 
   return (
-    <section aria-labelledby="excelfmt-title" className="workspace-panel grid gap-3 p-5">
+    <section aria-labelledby="excelfmt-title" className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-5">
       <h2 id="excelfmt-title" className="flex items-center gap-2 text-lg font-semibold">
         <FileSpreadsheet className="size-5 text-brand" aria-hidden />
         {t("excelFmt.title")}

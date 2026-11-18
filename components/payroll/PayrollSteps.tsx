@@ -74,7 +74,7 @@ export function PayrollSteps({ month, staff, refresh, onTab }: { month: string; 
   };
 
   return (
-    <section className="workspace-panel grid gap-3 p-4 sm:p-5" aria-label={t("title")}>
+    <section className="workspace-panel hover-lift [--lift:1.006] grid gap-3 p-4 sm:p-5" aria-label={t("title")}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-[15px] font-semibold">{t("title")}</h2>
         <span className={cn("text-[13px] font-medium", now === steps.length ? "text-ok" : "text-primary")}>

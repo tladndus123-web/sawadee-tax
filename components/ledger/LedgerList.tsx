@@ -835,7 +835,7 @@ function TrashRow({
   const [busy, setBusy] = useState(false);
   const when = e.deletedAt ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(e.deletedAt) : "";
   return (
-    <li className={cn("workspace-panel grid gap-3 p-3 sm:p-4", checked && "ring-2 ring-primary")}>
+    <li className={cn("workspace-panel hover-lift [--lift:1.01] grid gap-3 p-3 sm:p-4", checked && "ring-2 ring-primary")}>
       <div className="flex min-w-0 items-center gap-3 sm:gap-4">
         {selectable && <Checkbox checked={!!checked} onCheckedChange={() => onToggle?.(e.id)} aria-label={sellerOf(e, docName)} className="size-5 flex-none rounded-md" />}
         <span className="flex-none opacity-60 grayscale">

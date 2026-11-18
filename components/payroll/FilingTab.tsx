@@ -105,7 +105,7 @@ function YearDocs({ year }: { year: number }) {
   const due = annualDeadlines(year);
   const day = (d: string) => new Intl.DateTimeFormat(locale, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
   return (
-    <div className="workspace-panel mt-2 grid gap-3 p-4">
+    <div className="workspace-panel hover-lift [--lift:1.015] mt-2 grid gap-3 p-4">
       <div className="flex items-start gap-3">
         <span className="grid size-10 flex-none place-items-center rounded-2xl bg-muted" aria-hidden>
           <FileBadge className="size-5 text-primary" />
@@ -160,7 +160,7 @@ function SsSettings() {
     </label>
   );
   return (
-    <div className="workspace-panel mt-2 grid gap-3 p-4">
+    <div className="workspace-panel hover-lift [--lift:1.015] mt-2 grid gap-3 p-4">
       <p className="text-sm font-semibold">{t("ssSettings")}</p>
       <p className="text-xs leading-snug text-muted-foreground">{t("ssSettingsHint", { max: fmt((s.ssCeiling * s.ssRate) / 100) })}</p>
       {/* Phones: one under the other, so 17,500.00 fits */}

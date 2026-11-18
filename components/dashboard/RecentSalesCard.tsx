@@ -29,7 +29,7 @@ export function RecentSalesCard({ today }: { today: string }) {
   const pct = r.change === null ? null : Math.round(r.change * 100);
   if (r.total === 0)
     return (
-      <Link href="/sales" className="workspace-panel press flex items-center justify-between gap-3 p-5 sm:p-6">
+      <Link href="/sales" className="workspace-panel hover-lift [--lift:1.006] press flex items-center justify-between gap-3 p-5 sm:p-6">
         <span className="grid gap-0.5">
           <span className="text-lg font-semibold tracking-tight">{t("title")}</span>
           <span className="text-sm text-muted-foreground">{t("empty")}</span>
@@ -42,7 +42,7 @@ export function RecentSalesCard({ today }: { today: string }) {
     );
 
   return (
-    <section className="workspace-panel flex flex-1 flex-col gap-4 p-5 sm:p-6" aria-labelledby="recent-title">
+    <section className="workspace-panel hover-lift [--lift:1.006] flex flex-1 flex-col gap-4 p-5 sm:p-6" aria-labelledby="recent-title">
       <Link href="/sales" className="press flex items-start justify-between gap-3 rounded-lg">
         <span className="grid gap-0.5">
           <h2 id="recent-title" className="flex items-center gap-2 text-lg font-semibold tracking-tight">

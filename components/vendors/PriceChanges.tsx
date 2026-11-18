@@ -124,7 +124,7 @@ export function PriceChanges() {
           ) : (
             <div className="grid gap-3 lg:grid-cols-2">
               {shown.map((v) => (
-                <section key={v.vendorTaxId} className="workspace-panel grid content-start gap-1 p-3 sm:p-4">
+                <section key={v.vendorTaxId} className="workspace-panel hover-lift [--lift:1.015] grid content-start gap-1 p-3 sm:p-4">
                   <div className="flex items-baseline justify-between gap-2 px-1 pb-1">
                     <h2 className="min-w-0 truncate text-[15px] font-semibold">{vendor(v.vendorName)}</h2>
                     {v.extra !== 0 && (

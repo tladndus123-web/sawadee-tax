@@ -127,7 +127,7 @@ export function Dashboard() {
         // Several branches seen together: each branch's month side by side carries the profit
         <BranchTable month={month} companyTaxId={company.taxId} />
       ) : (
-        <section className="workspace-panel grid gap-3 p-5 ring-1 ring-brand/25 sm:p-6" aria-label={t("dash.profitTitle")}>
+        <section className="workspace-panel hover-lift [--lift:1.004] grid gap-3 p-5 ring-1 ring-brand/25 sm:p-6" aria-label={t("dash.profitTitle")}>
           <Link href="/sales" className="press -my-2 flex items-center justify-between gap-3 rounded-lg py-2">
             <span className="flex items-center gap-2 text-sm font-semibold text-brand">
               <TrendingUp className="size-4" aria-hidden />
@@ -187,7 +187,7 @@ export function Dashboard() {
     ),
     // What to do: one card, one line each; a line opens its list
     todo: (
-        <section aria-labelledby="todo-title" className="workspace-panel grid min-w-0 grid-cols-1 content-start px-4 pt-3 pb-1 sm:px-5">
+        <section aria-labelledby="todo-title" className="workspace-panel hover-lift [--lift:1.006] grid min-w-0 grid-cols-1 content-start px-4 pt-3 pb-1 sm:px-5">
           <div className="flex items-center justify-between gap-2 pt-1 pb-1">
             <h2 id="todo-title" className="flex items-center gap-2 px-1 text-lg font-semibold tracking-tight">
               <ListChecks className="size-5 text-brand" aria-hidden />

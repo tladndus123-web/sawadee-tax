@@ -34,7 +34,7 @@ export function SalesInsight({ month, wide = false }: { month: string; wide?: bo
   }, [month, locale, round]);
 
   return (
-    <section className="workspace-panel ai-ring flex flex-col gap-3.5 p-5 sm:p-6" aria-label={t("title")} aria-busy={state === "loading"}>
+    <section className="workspace-panel hover-lift [--lift:1.006] ai-ring flex flex-col gap-3.5 p-5 sm:p-6" aria-label={t("title")} aria-busy={state === "loading"}>
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-[13px] font-semibold text-primary">
           <Sparkles className="size-4" aria-hidden />

@@ -38,7 +38,7 @@ interface Member {
   disableReason: string | null;
 }
 
-const card = "workspace-panel grid gap-4 p-5 sm:p-6";
+const card = "workspace-panel hover-lift [--lift:1.006] grid gap-4 p-5 sm:p-6";
 
 /**
  * Admins: everyone with their status (invite accepted, last sign-in, LINE), invite, change role,

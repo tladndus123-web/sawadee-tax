@@ -23,7 +23,7 @@ export function ClaimsCard({ today }: { today: string }) {
     </span>
   );
   return (
-    <Link href="/expenses" className="workspace-panel press grid gap-3 p-5 sm:p-6" aria-label={t("title")}>
+    <Link href="/expenses" className="workspace-panel hover-lift [--lift:1.006] press grid gap-3 p-5 sm:p-6" aria-label={t("title")}>
       <span className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-2">
           <HandCoins className="size-5 text-brand" aria-hidden />

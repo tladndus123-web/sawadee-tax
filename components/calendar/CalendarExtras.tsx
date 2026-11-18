@@ -43,7 +43,7 @@ export function NextDeadline({
   const late = daysLeft < 0;
   const pct = ready && ready.total ? Math.round((ready.checked / ready.total) * 100) : null;
   return (
-    <section className={cn("workspace-panel relative grid content-start gap-4 overflow-hidden p-5 sm:p-6", late && "ring-1 ring-bad/30 dark:ring-bad/25")} aria-label={t("nextTitle")}>
+    <section className={cn("workspace-panel hover-lift [--lift:1.006] relative grid content-start gap-4 overflow-hidden p-5 sm:p-6", late && "ring-1 ring-bad/30 dark:ring-bad/25")} aria-label={t("nextTitle")}>
       <span className={cn("pointer-events-none absolute -top-24 -right-24 size-60 rounded-full blur-3xl", late ? "bg-bad/10 dark:bg-bad/8" : "bg-primary/10")} aria-hidden />
       <div className="flex items-start justify-between gap-3">
         <div className="grid min-w-0 gap-1">
@@ -135,7 +135,7 @@ export function WeekBrief({ canAi }: { canAi: boolean }) {
     return () => void (live = false);
   }, [canAi, locale]);
   return (
-    <section className="workspace-panel ai-ring grid content-start gap-3 p-5 sm:p-6" aria-label={t("briefTitle")}>
+    <section className="workspace-panel hover-lift [--lift:1.006] ai-ring grid content-start gap-3 p-5 sm:p-6" aria-label={t("briefTitle")}>
       <span className="flex items-center gap-2 text-[13px] font-semibold text-primary">
         <Sparkles className="size-4" aria-hidden />
         {t("briefTitle")}
@@ -219,7 +219,7 @@ export function MoneyOut({
   const max = Math.max(1, ...weeks);
   const short = lastWeekSales !== null && nextWeek > 0 && nextWeek > lastWeekSales;
   return (
-    <section className="workspace-panel grid gap-4 p-5 sm:p-6" aria-label={t("outTitle", { month: monthName })}>
+    <section className="workspace-panel hover-lift [--lift:1.006] grid gap-4 p-5 sm:p-6" aria-label={t("outTitle", { month: monthName })}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="grid gap-0.5">
           <span className="text-[13px] font-semibold text-muted-foreground">{t("outTitle", { month: monthName })}</span>

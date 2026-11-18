@@ -290,7 +290,7 @@ export function PayRunTab({ month }: { month: string }) {
             </span>
           );
           return (
-            <li key={e.id} className={cn(ROW, "workspace-panel overflow-hidden p-0")}>
+            <li key={e.id} className={cn(ROW, "workspace-panel hover-lift [--lift:1.006] overflow-hidden p-0")}>
               <button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : e.id)} className="press w-full px-4 py-3 text-left">
                 {/* Phone: position over name, take-home on the right, pay and deductions below */}
                 <span className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 sm:hidden">
@@ -396,7 +396,7 @@ export function PayRunTab({ month }: { month: string }) {
         })}
       </ul>
 
-      <dl className="workspace-panel grid grid-cols-2 gap-x-4 gap-y-1.5 p-4 text-sm sm:grid-cols-3">
+      <dl className="workspace-panel hover-lift [--lift:1.006] grid grid-cols-2 gap-x-4 gap-y-1.5 p-4 text-sm sm:grid-cols-3">
         {(
           [
             ["gross", total.gross],
