@@ -15,11 +15,26 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { ilikeAny, matchMenu, nameOf, opensSearch, searchTerm } from "@/lib/top-search";
 import { cn } from "@/lib/utils";
 import { NAV_ICON } from "./nav-icons";
+import { ASK_WANTED, OPEN_EVENT, OPEN_WANTED } from "@/components/assistant/AssistantButton";
+import { useBranch } from "@/lib/branch-store";
+import { ALL } from "@/lib/branches";
+import { useMe } from "@/lib/role-store";
+import { fullAdmin } from "@/lib/screens";
 
 type Kind = "menu" | "docs" | "vendors";
 type Hit = { href: string; title: string; sub: string; kind: Kind; icon?: (typeof NAV_ICON)[keyof typeof NAV_ICON] };
 const KIND_ICON = { docs: FileText, vendors: Building2 } as const;
-type AiResult = { q: string; explain: string; count: number; shownTotal: number; docs: { id: string; docNo: string; date: string | null; seller: Record<string, string>; net: number; paid: boolean }[] };
+type AiResult = {
+  q: string;
+  explain: string;
+  count: number;
+  shownTotal: number;
+  docs: { id: string; docNo: string; date: string | null; seller: Record<string, string>; net: number; paid: boolean }[];
+  /** "이번 달 매출" → the sales total of the period (without VAT, like the dashboard) */
+  sales?: { from: string; to: string; value: number; gross: number; days: number };
+  /** A question that needs thinking → offered to the AI assistant */
+  ask?: boolean;
+};
 
 export function GlobalSearch({ items }: { items: NavItem[] }) {
   const t = useTranslations();
@@ -34,14 +49,28 @@ export function GlobalSearch({ items }: { items: NavItem[] }) {
   const [ai, setAi] = useState<AiResult | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiFail, setAiFail] = useState("");
+  const branch = useBranch();
+  const isAdmin = fullAdmin(useMe());
+  // Hand a question to the AI assistant (it opens with the question asked)
+  const askAssistant = (text: string) => {
+    const w = window as unknown as Record<string, unknown>;
+    w[OPEN_WANTED] = true;
+    w[ASK_WANTED] = text;
+    window.dispatchEvent(new Event(OPEN_EVENT));
+    setOpen(false);
+  };
   const askAi = async () => {
     const text = q.trim();
     if (text.length < 2 || aiBusy) return;
     setAiBusy(true);
     setAiFail("");
     try {
-      const res = await fetch("/api/search/ai", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q: text, lang: locale }) });
-      const body = (await res.json().catch(() => ({}))) as { filter?: { explain: string }; docs?: AiResult["docs"]; count?: number; shownTotal?: number; error?: string };
+      const res = await fetch("/api/search/ai", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q: text, lang: locale, branch: branch === ALL ? undefined : branch }) });
+      const body = (await res.json().catch(() => ({}))) as { filter?: { explain: string }; docs?: AiResult["docs"]; count?: number; shownTotal?: number; sales?: AiResult["sales"]; ask?: boolean; error?: string };
+      if (res.ok && (body.sales || body.ask)) {
+        setAi({ q: text, explain: body.filter?.explain ?? "", count: 0, shownTotal: 0, docs: [], sales: body.sales, ask: body.ask });
+        return;
+      }
       if (!res.ok || !body.docs) {
         setAi(null);
         setAiFail(body.error === "none" ? t("topSearch.aiNone") : body.error === "rate" ? t("topSearch.aiRate") : t("topSearch.aiFail"));
@@ -188,7 +217,30 @@ export function GlobalSearch({ items }: { items: NavItem[] }) {
               </button>
             )}
             {aiFail && <p className="px-3 py-2 text-[13px] text-bad">{aiFail}</p>}
-            {ai && ai.q === q.trim() && (
+            {aiBusy && <p className="px-3 py-2 text-[13px] text-muted-foreground">{t("topSearch.aiWorking")}</p>}
+            {/* Sales of a period */}
+            {ai && ai.q === q.trim() && ai.sales && (
+              <Link href="/sales" onClick={close} className="mb-1 grid gap-0.5 rounded-xl px-3 py-2.5 outline-none hover:bg-muted focus-visible:bg-muted">
+                <span className="text-[12px] font-semibold text-brand">{ai.explain || t("topSearch.salesTitle")}</span>
+                <span className="text-[22px] leading-tight font-bold tabular-nums">฿{ai.sales.value.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
+                <span className="text-[12px] text-muted-foreground tabular-nums">
+                  {t("topSearch.salesLine", { from: ai.sales.from, to: ai.sales.to, days: ai.sales.days, gross: `฿${ai.sales.gross.toLocaleString("en-US", { maximumFractionDigits: 2 })}` })}
+                </span>
+              </Link>
+            )}
+            {/* A question: the assistant answers it (admins), others are told where to look */}
+            {ai && ai.q === q.trim() && ai.ask && (
+              <div className="mb-1 grid gap-2 rounded-xl px-3 py-2.5">
+                <p className="text-[13px] text-muted-foreground">{isAdmin ? t("topSearch.askHint") : t("topSearch.askStaff")}</p>
+                {isAdmin && (
+                  <button type="button" onClick={() => askAssistant(ai.q)} className="press inline-flex h-11 w-fit items-center gap-2 rounded-full bg-brand px-4 text-[14px] font-semibold text-white pointer-fine:h-9">
+                    <Sparkles className="size-4" aria-hidden />
+                    {t("topSearch.askButton")}
+                  </button>
+                )}
+              </div>
+            )}
+            {ai && ai.q === q.trim() && !ai.sales && !ai.ask && (
               <section className="grid gap-0.5 py-1">
                 <h3 className="px-3 pt-1 pb-1 text-[12px] font-semibold text-brand">
                   {ai.explain || t("topSearch.aiTitle")} · {t("topSearch.aiCount", { count: ai.count, total: `฿${ai.shownTotal.toLocaleString("en-US", { maximumFractionDigits: 2 })}` })}
@@ -209,7 +261,7 @@ export function GlobalSearch({ items }: { items: NavItem[] }) {
               </section>
             )}
             {!q.trim() && <p className="px-3 py-6 text-center text-[13.5px] text-muted-foreground">{t("topSearch.hint")}</p>}
-            {q.trim() && !groups.length && !(ai && ai.q === q.trim()) && <p className="px-3 py-6 text-center text-[13.5px] text-muted-foreground">{busy ? t("topSearch.searching") : t("topSearch.none")}</p>}
+            {q.trim() && !groups.length && !aiBusy && !(ai && ai.q === q.trim()) && <p className="px-3 py-6 text-center text-[13.5px] text-muted-foreground">{busy ? t("topSearch.searching") : t("topSearch.none")}</p>}
             {groups.map(({ k, list }) => (
               <section key={k} className="grid gap-0.5 py-1">
                 <h3 className="px-3 pt-1 pb-1 text-[12px] font-semibold text-muted-foreground">{t(`topSearch.${k}`)}</h3>

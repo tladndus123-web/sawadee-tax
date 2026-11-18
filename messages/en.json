@@ -812,7 +812,8 @@
       "owed": "To pay back",
       "paid": "Paid back this month",
       "count": "{n}"
-    }
+    },
+    "unpaidNote": "What is actually paid, after withholding"
   },
   "line": {
     "title": "LINE",
@@ -2949,7 +2950,13 @@
     "aiNone": "Couldn't tell what to look for. Try a period, a seller or an item.",
     "aiRate": "Please try again in a moment.",
     "aiFail": "AI search failed.",
-    "unpaid": "unpaid"
+    "unpaid": "unpaid",
+    "aiWorking": "AI is searching… this can take a few seconds.",
+    "salesTitle": "Sales total",
+    "salesLine": "{from} – {to} · {days} days · without VAT (with VAT {gross}) · open sales",
+    "askHint": "This is a question rather than a search. The AI assistant answers it from the books.",
+    "askStaff": "An admin's AI assistant can answer questions like this.",
+    "askButton": "Ask the AI assistant"
   },
   "quickNew": {
     "open": "New",
@@ -3014,7 +3021,8 @@
         "calendar": "Calendar",
         "none": ""
       }
-    }
+    },
+    "counting": "Counting payroll taxes too…"
   },
   "payables": {
     "title": "To pay",
@@ -3052,7 +3060,8 @@
       "retry": "Try again",
       "failed": "Couldn't make a suggestion. Please try again.",
       "pick": "Pick the {count} suggested"
-    }
+    },
+    "afterWht": "what is actually paid, after withholding"
   },
   "food": {
     "title": "Restaurant features",

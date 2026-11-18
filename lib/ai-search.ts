@@ -5,7 +5,14 @@
 
 import { type AiLang, LANG_NAME, str } from "./ai-sheet";
 
+/**
+ * What the sentence is after (feedback 2026-11-18: "이번 달 매출 합계" got purchases): "purchases" = documents of the
+ * ledger, "sales" = the sales total of a period, "ask" = a question for the AI assistant (why, advice, comparisons)
+ */
+export type SearchKind = "purchases" | "sales" | "ask";
+
 export interface SearchFilter {
+  kind: SearchKind;
   from: string;
   to: string;
   seller: string;
@@ -22,8 +29,9 @@ export interface SearchFilter {
 export const SEARCH_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["from", "to", "seller", "item", "category", "minAmount", "maxAmount", "paid", "docNo", "explain"],
+  required: ["kind", "from", "to", "seller", "item", "category", "minAmount", "maxAmount", "paid", "docNo", "explain"],
   properties: {
+    kind: { type: "string", enum: ["purchases", "sales", "ask"] },
     from: { type: "string" },
     to: { type: "string" },
     seller: { type: "string" },
@@ -39,8 +47,11 @@ export const SEARCH_SCHEMA = {
 
 export function searchPrompt(today: string, lang: AiLang, categories: readonly { key: string; name: string }[]): string {
   return (
-    `You turn a search sentence into a filter for a Thai restaurant company's purchase ledger (tax invoices and receipts). ` +
-    `Today is ${today} (Bangkok). Reply as JSON: from / to = the date range as YYYY-MM-DD ("" when none; "last month" = ` +
+    `You turn a search sentence into a filter for a Thai restaurant company's books. Today is ${today} (Bangkok). ` +
+    `Reply as JSON: kind = "sales" when it asks for sales / revenue / takings (매출, 売上, ยอดขาย, sales) of a period — ` +
+    `then only from / to and explain matter (no dates = this month); "ask" when it is a question that needs thinking ` +
+    `(why, how is it going, profit, advice, comparisons) rather than finding documents; otherwise "purchases" = the ` +
+    `purchase ledger (tax invoices and receipts from suppliers). from / to = the date range as YYYY-MM-DD ("" when none; "last month" = ` +
     `the whole previous month, "this year" = Jan 1 to today); seller = the seller's or supplier's name as it would be ` +
     `printed (Latin or Thai, e.g. Makro, แม็คโคร — "" when none); item = one item word in the language most receipts use ` +
     `(Thai or English, e.g. หมู or pork — "" when none); category = one of these keys or "": ${categories.map((c) => `${c.key} (${c.name})`).join(", ")}; ` +
@@ -63,7 +74,9 @@ export function cleanFilter(raw: unknown, categoryKeys: readonly string[]): Sear
   let from = day(r.from);
   let to = day(r.to);
   if (from && to && from > to) [from, to] = [to, from];
+  const kind: SearchKind = r.kind === "sales" || r.kind === "ask" ? r.kind : "purchases";
   const f: SearchFilter = {
+    kind,
     from,
     to,
     seller: plain(r.seller, 60),
@@ -76,7 +89,8 @@ export function cleanFilter(raw: unknown, categoryKeys: readonly string[]): Sear
     explain: str(r.explain, 160),
   };
   const anything = f.from || f.to || f.seller || f.item || f.category || f.minAmount !== null || f.maxAmount !== null || f.paid !== "any" || f.docNo;
-  return anything ? f : null;
+  // Sales without dates = this month (the route fills it); a question needs no condition
+  return anything || kind !== "purchases" ? f : null;
 }
 
 /** The or-filter for a name in any of the three languages of a jsonb column, e.g. seller->name */

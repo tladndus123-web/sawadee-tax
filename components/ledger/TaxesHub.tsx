@@ -167,7 +167,15 @@ export function TaxesHub() {
 
       <section className="workspace-panel hover-lift [--lift:1.006] grid gap-1 p-5 sm:p-6" aria-label={t("total")}>
         <p className="text-sm font-medium text-muted-foreground">{t("total")}</p>
-        <p className="text-[34px] leading-tight font-bold tracking-tight tabular-nums">{baht(fromSatang(total))}</p>
+        {/* Until payroll's part is in, the total would jump (feedback 2026-11-18): show it only when every part is counted */}
+        {payOk ? (
+          <p className="text-[34px] leading-tight font-bold tracking-tight tabular-nums">{baht(fromSatang(total))}</p>
+        ) : (
+          <p className="flex h-[42px] items-center gap-2 text-[15px] text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+            {t("counting")}
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">{t("totalNote")}</p>
       </section>
 

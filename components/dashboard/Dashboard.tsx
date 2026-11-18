@@ -13,9 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { monthKey } from "@/lib/archive";
 import { useCompany } from "@/lib/company-store";
+import { toPay, unpaidBills } from "@/lib/payables";
 import { type Doc, type DueItem, summarize, upcoming, vatFiling } from "@/lib/dashboard";
 import { pick, setQuick, useLedger } from "@/lib/ledger-store";
-import { baht, bahtWhole } from "@/lib/money";
+import { baht, bahtWhole, fromSatang } from "@/lib/money";
 import { todayBangkok } from "@/lib/thai-tax";
 import { cn } from "@/lib/utils";
 import { useMonthLabel } from "@/components/ledger/Stickers";
@@ -103,7 +104,10 @@ export function Dashboard() {
   const hasSales = result.days > 0;
   const pct = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 });
   const unchecked = useMemo(() => pick(entries, "ledger").filter((e) => e.checkedAt === null).length, [entries]);
-  const dueTotal = due.reduce((a, it) => a + Math.round(it.doc.totals.net * 100), 0) / 100;
+  // What is still to pay, the same way as the 줄 돈 screen (lib/payables): after withholding, only bills with something to pay
+  const bills = useMemo(() => unpaidBills(docs, today), [docs, today]);
+  const unpaid = { amount: fromSatang(bills.reduce((a, b) => a + b.amount, 0)), count: bills.length, late: bills.filter((b) => b.bucket === "late").length };
+  const dueTotal = due.reduce((a, it) => a + toPay(it.doc), 0) / 100;
   // The VAT return due next: days left, and what still needs a look in that month
   const locks = useMonthLocks();
   const filing = vatFiling(today);
@@ -167,12 +171,13 @@ export function Dashboard() {
         <Tile
           icon={Clock}
           label={t("app.sUnpaid")}
-          value={s.unpaid}
-          tone={s.overdueCount ? "bad" : undefined}
+          value={unpaid.amount}
+          tone={unpaid.late ? "bad" : undefined}
           note={
             <>
-              {t("dash.unpaidCount", { count: s.unpaidCount })}
-              {s.overdueCount > 0 && <span className="font-semibold text-bad"> · {t("dash.overdueCount", { count: s.overdueCount })}</span>}
+              {t("dash.unpaidCount", { count: unpaid.count })}
+              {unpaid.late > 0 && <span className="font-semibold text-bad"> · {t("dash.overdueCount", { count: unpaid.late })}</span>}
+              <span className="block">{t("dash.unpaidNote")}</span>
             </>
           }
         />
@@ -212,7 +217,7 @@ export function Dashboard() {
             title={t("dash.upcoming")}
             status={
               due.length
-                ? { text: t("dash.dueStatus", { count: due.length, amount: bahtWhole(dueTotal) }), tone: s.overdueCount ? "bad" : "warn" }
+                ? { text: t("dash.dueStatus", { count: due.length, amount: bahtWhole(dueTotal) }), tone: unpaid.late ? "bad" : "warn" }
                 : { text: t("dash.none"), tone: "ok" }
             }
           >

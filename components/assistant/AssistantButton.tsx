@@ -11,6 +11,8 @@ import { fullAdmin } from "@/lib/screens";
 export const OPEN_EVENT = "assistant-open";
 /** Set when the button is tapped; the panel reads and clears it when it mounts */
 export const OPEN_WANTED = "__sawadeeAiOpen";
+/** A question to ask as soon as the panel opens (the top-bar search hands one over) */
+export const ASK_WANTED = "__sawadeeAiAsk";
 
 /** The assistant's mark (public/ai-mark.svg): the app logo's family, a talking face with a sparkle */
 export function AiMark({ className }: { className?: string }) {

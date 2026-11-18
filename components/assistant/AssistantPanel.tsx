@@ -22,7 +22,7 @@ import { bahtWhole, toSatang } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
 import { fullAdmin } from "@/lib/screens";
 import { cn } from "@/lib/utils";
-import { AiMark, OPEN_EVENT, OPEN_WANTED } from "./AssistantButton";
+import { AiMark, ASK_WANTED, OPEN_EVENT, OPEN_WANTED } from "./AssistantButton";
 
 export { AiMark, AssistantButton } from "./AssistantButton";
 
@@ -49,6 +49,8 @@ export function AssistantPanel() {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
+  // A question handed over by the top-bar search, asked once the panel is open
+  const [pending, setPending] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<{ index: number; event: AiEvent } | null>(null);
   const list = useRef<HTMLDivElement>(null);
@@ -72,9 +74,13 @@ export function AssistantPanel() {
 
   // Open: the button, Ctrl/⌘+K; close: Esc
   useEffect(() => {
-    const flags = window as unknown as Record<string, boolean>;
+    const flags = window as unknown as Record<string, unknown>;
     const show = () => {
       flags[OPEN_WANTED] = false;
+      if (typeof flags[ASK_WANTED] === "string" && flags[ASK_WANTED]) {
+        setPending(flags[ASK_WANTED] as string);
+        flags[ASK_WANTED] = "";
+      }
       setOpen(true);
     };
     // Tapped while this panel was still loading (AssistantPanelLazy)
@@ -124,6 +130,12 @@ export function AssistantPanel() {
     },
     [busy, t],
   );
+  useEffect(() => {
+    if (!open || !pending || busy) return;
+    const q = pending;
+    setPending(null);
+    void ask(q);
+  }, [open, pending, busy, ask]);
 
   const save = async (index: number, ev: AiEvent) => {
     try {

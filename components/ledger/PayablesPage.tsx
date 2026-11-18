@@ -69,7 +69,9 @@ export function PayablesPage() {
         <div className="grid gap-0.5">
           <p className="text-sm font-medium text-muted-foreground">{t("total")}</p>
           <p className="text-[34px] leading-tight font-bold tracking-tight tabular-nums">{baht(fromSatang(all))}</p>
-          <p className="text-xs text-muted-foreground">{t("count", { count: bills.length })}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("count", { count: bills.length })} · {t("afterWht")}
+          </p>
         </div>
         {/* The buckets double as filters */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" role="group" aria-label={t("filter")}>
