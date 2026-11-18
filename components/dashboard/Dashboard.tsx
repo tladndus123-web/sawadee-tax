@@ -81,7 +81,8 @@ export function Dashboard() {
   const [month, setMonth] = useState(thisMonth);
 
   const s = useMemo(() => summarize(docs, month, company.taxId, today), [docs, month, company.taxId, today]);
-  const due = useMemo(() => upcoming(docs, today), [docs, today]);
+  // Bills due: the 줄 돈 screen's list (only bills with something to pay), so every unpaid figure here is one number
+  const due = useMemo(() => upcoming(docs, today).filter((it) => toPay(it.doc) > 0), [docs, today]);
   const { sales } = useSales();
   const food = useFoodFeatures();
   const { lines: labor } = useLabor();
@@ -361,7 +362,7 @@ function DueList({ items, docs }: { items: DueItem[]; docs: Doc[] }) {
   // Five at first; the rest one tap away
   const [all, setAll] = useState(false);
   const SHOWN = 5;
-  const total = items.reduce((a, it) => a + Math.round(it.doc.totals.net * 100), 0) / 100;
+  const total = items.reduce((a, it) => a + toPay(it.doc), 0) / 100;
 
   const setPaid = async (it: DueItem, paid: boolean) => {
     setBusy(it.id);
@@ -422,7 +423,7 @@ function DueList({ items, docs }: { items: DueItem[]; docs: Doc[] }) {
                 <Link href={`/documents/${it.id}`} className="truncate text-[15px] font-semibold hover:underline">
                   {name}
                 </Link>
-                <span className="text-right text-[15px] font-semibold tabular-nums">{baht(it.doc.totals.net)}</span>
+                <span className="text-right text-[15px] font-semibold tabular-nums">{baht(toPay(it.doc) / 100)}</span>
                 <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                   <span className={cn("rounded-full px-2 py-0.5 font-semibold", b.cls)}>{b.text}</span>
                   {it.doc.dueDate && <span className="tabular-nums">{sd(it.doc.dueDate)}</span>}

@@ -345,8 +345,8 @@
     "drop": "Drag photos or PDFs here",
     "formats": "JPG · PNG · HEIC (iPhone) · PDF · one document per photo (two in Quick shoot)",
     "camera": "Quick shoot",
-    "limit": "You can upload up to {max} photos at once. {count} were left out.",
-    "full": "All {max} photos are in. Remove one to add another.",
+    "limit": "You can upload up to {max, plural, one {# photo} other {# photos}} at once. {count} were left out.",
+    "full": "All {max, plural, one {# photo} other {# photos}} are in. Remove one to add another.",
     "room": "{count} more can be added",
     "progress": "{done} / {total} read",
     "preparing": "Preparing photo",
@@ -363,7 +363,7 @@
     "network": "The connection dropped. Check your internet and tap Read again.",
     "busy": "The AI is busy right now. Wait a moment and tap Read again.",
     "maxNotice": "Up to {max} · {at} read at once",
-    "count": "{count} / {max} photos",
+    "count": "{count} / {max, plural, one {# photo} other {# photos}}",
     "check": "Check the photo",
     "checkHint": "The AI may misread it. Retake it, or read it as it is.",
     "readAnyway": "Read anyway",
@@ -427,7 +427,7 @@
   "archive": {
     "monthOf": "{month}",
     "noDate": "Undated documents",
-    "docs": "{count} docs",
+    "docs": "{count, plural, one {# doc} other {# docs}}",
     "total": "Total",
     "vat": "VAT",
     "unpaid": "{count} unpaid",
@@ -519,8 +519,8 @@
     "inviteOnly": "Invited people only",
     "language": "Language",
     "removed": "Your access was removed and you were signed out. Contact an admin if you need it back.",
-    "expired": "For security, you were signed out {hours} hours after signing in. Please sign in again.",
-    "keepSigned": "Once signed in, you stay signed in on this device for {hours} hours.",
+    "expired": "For security, you were signed out {hours, plural, one {# hour} other {# hours}} after signing in. Please sign in again.",
+    "keepSigned": "Once signed in, you stay signed in on this device for {hours, plural, one {# hour} other {# hours}}.",
     "codeHint": "Enter the 6-digit code at the start of the email's subject and you're in. If your phone suggests the code, just tap it.",
     "codeLabel": "6-digit code",
     "codeSubmit": "Sign in with code",
@@ -601,7 +601,7 @@
     "screensTitle": "{name} — screens they can open",
     "screensHint": "Only ticked screens show in this admin’s menu and open. All ticked = no limit.",
     "screensAlways": "The dashboard always shows.",
-    "screensBadge": "{count} screens only",
+    "screensBadge": "{count, plural, one {# screen} other {# screens}} only",
     "noAll": "No “all branches”",
     "noAllHint": "Picks one branch at a time (no combined view)",
     "noAllBadge": "No all branches"
@@ -646,7 +646,7 @@
     "price": "Unit price",
     "amount": "Amount",
     "total": "Total",
-    "count": "{count} documents",
+    "count": "{count, plural, one {# document} other {# documents}}",
     "claimableVat": "Claimable input VAT",
     "unpaid": "Unpaid total",
     "yes": "Yes",
@@ -672,7 +672,7 @@
     "hint": "Saving a document registers its seller by tax ID. A corrected name is also used for documents read later.",
     "empty": "No vendors yet. They appear when documents are saved to the ledger.",
     "search": "Search name or tax ID",
-    "docs": "{count} docs",
+    "docs": "{count, plural, one {# doc} other {# docs}}",
     "total": "Total",
     "last": "Latest {date}",
     "edit": "Edit name",
@@ -682,7 +682,7 @@
     "noMatch": "No results.",
     "delete": "Remove vendor",
     "deleteTitle": "Remove {name} from the vendor list?",
-    "deleteDesc": "It only leaves the list. This vendor's {count} documents stay in the ledger as they are. If a document from this vendor is saved later, it is added to the list again.",
+    "deleteDesc": "It only leaves the list. This vendor's {count, plural, one {# document} other {# documents}} stay in the ledger as they are. If a document from this vendor is saved later, it is added to the list again.",
     "deleted": "Removed from the vendor list.",
     "deleteFail": "Couldn't remove it. Only admins can remove vendors.",
     "cancel": "Cancel",
@@ -704,11 +704,11 @@
     "view": "View",
     "viewFolders": "Folders",
     "viewList": "List",
-    "folderCount": "{count} vendors",
+    "folderCount": "{count, plural, one {# vendor} other {# vendors}}",
     "terms": {
       "label": "Payment terms",
       "now": "Paid on the spot",
-      "days": "Credit {n} days",
+      "days": "Credit {n, plural, one {# day} other {# days}}",
       "eom": "End of month",
       "next": "Day {n} of next month",
       "hint": "With payment terms set, this supplier's documents without a printed due date get one automatically."
@@ -721,9 +721,9 @@
     "upcoming": "Bills to pay soon",
     "upcomingHint": "Bills not marked paid yet",
     "upcomingEmpty": "Nothing to pay.",
-    "dueIn": "{days} days left",
+    "dueIn": "{days, plural, one {# day} other {# days}} left",
     "dueToday": "Due today",
-    "overdueBy": "{days} days overdue",
+    "overdueBy": "{days, plural, one {# day} other {# days}} overdue",
     "noDue": "No due date",
     "markPaid": "Mark as paid",
     "markedPaid": "Marked as paid.",
@@ -731,7 +731,7 @@
     "trendHint": "Net total of the documents saved each month",
     "tableView": "Show table",
     "chartView": "Show chart",
-    "docs": "{count} docs",
+    "docs": "{count, plural, one {# doc} other {# docs}}",
     "activity": "Recent activity",
     "activityEmpty": "No activity yet.",
     "history": "History",
@@ -744,7 +744,7 @@
     "toSettings": "Open settings",
     "viewLedger": "Open ledger",
     "sample": "View the sample",
-    "unpaidCount": "{count} docs",
+    "unpaidCount": "{count, plural, one {# doc} other {# docs}}",
     "checkHint": "Documents failing an automatic check",
     "monthDocs": "{count} this month",
     "overdueCount": "{count} overdue",
@@ -887,7 +887,7 @@
     "fail": "Couldn't change it. Only admins can close or reopen a month.",
     "blocked": "This month is closed. To edit, an admin has to reopen it in the ledger.",
     "docBanner": "This document's month is closed. Its contents can't change; only payment and stickers can. To edit, an admin has to reopen the month in the ledger.",
-    "dups": "{count} groups of possible duplicates are left",
+    "dups": "{count, plural, one {# group} other {# groups}} of possible duplicates are left",
     "dupsWhy": "A closed month cannot be fixed. A document saved twice counts its cost and VAT twice.",
     "dupsGo": "Review the duplicates first"
   },
@@ -895,7 +895,7 @@
     "title": "VAT return · {month}",
     "deadline": "Due {due} (e-filing usually until {online})",
     "closed": "Closed",
-    "daysLeft": "{days} days left",
+    "daysLeft": "{days, plural, one {# day} other {# days}} left",
     "today": "Due today",
     "late": "Overdue",
     "onlineOnly": "e-filing only",
@@ -987,7 +987,7 @@
     "titleMany": "Delete {count} for good?",
     "descMany": "The {count} chosen documents and their photos will be deleted permanently and can't be brought back. Only a record stays. Saved documents of a closed month are skipped.",
     "doneMany": "Deleted {count} for good.",
-    "lockedSome": "{count} documents of a closed month were not deleted."
+    "lockedSome": "{count, plural, one {# document} other {# documents}} of a closed month were not deleted."
   },
   "trashBulk": {
     "start": "Select several",
@@ -1007,7 +1007,7 @@
     "hint": "Type in just one language. When you save, the AI translates each changed field into the other two.",
     "failed": "Couldn't translate automatically, so it was saved as typed.",
     "badge": "AI auto-translation",
-    "done": "The AI translated {count} fields into Thai, English and Japanese"
+    "done": "The AI translated {count, plural, one {# field} other {# fields}} into Thai, English and Japanese"
   },
   "manual": {
     "start": "Type it in without a photo",
@@ -1039,9 +1039,9 @@
     "done": "Done",
     "close": "Close",
     "many": "Several",
-    "hintMany": "Lay out up to {max} receipts without overlapping and take one photo. Each is found and read separately. If the text looks too small, take them in parts.",
-    "found": "Found {count} receipts",
-    "tooMany": "Up to {max} receipts per photo. Please take the rest again.",
+    "hintMany": "Lay out up to {max, plural, one {# receipt} other {# receipts}} without overlapping and take one photo. Each is found and read separately. If the text looks too small, take them in parts.",
+    "found": "Found {count, plural, one {# receipt} other {# receipts}}",
+    "tooMany": "Up to {max, plural, one {# receipt} other {# receipts}} per photo. Please take the rest again.",
     "finding": "Finding",
     "findFail": "Couldn't find the receipts. Please try again."
   },
@@ -1069,7 +1069,7 @@
     "resultNote": "Purchases count by invoice date. Labour comes from saved payroll or labour entries; rent and other costs without invoices from Settings → Fixed costs. If either is missing, profit looks higher than it is. Check final figures with your accountant.",
     "days": "Days of sales",
     "empty": "No sales this month yet. Upload a POS closing report or type it in.",
-    "billsN": "{count} bills",
+    "billsN": "{count, plural, one {# bill} other {# bills}}",
     "newTitle": "Add sales",
     "editTitle": "Edit sales",
     "sheetHint": "One closing report is one line. Several reports a day (breakfast · lunch · dinner) add up to the day automatically.",
@@ -1114,7 +1114,7 @@
       "before": "Before records"
     },
     "batch": {
-      "title": "Check {count} sales read",
+      "title": "Check {count, plural, one {# sale} other {# sales}} read",
       "hint": "Check the date, channel and sales read from each photo, then save them together. Yellow fields are ones the AI was unsure of.",
       "include": "Include",
       "replaces": "Already there · replace",
@@ -1123,10 +1123,10 @@
       "check": "Please check the yellow fields.",
       "picked": "{count} picked",
       "save": "Save {count}",
-      "saved": "Saved {count} sales.",
+      "saved": "Saved {count, plural, one {# sale} other {# sales}}.",
       "locked": "{count} are in a closed month and were not saved.",
       "failed": "{count} could not be saved. Please try again.",
-      "max": "Up to {count} photos at a time.",
+      "max": "Up to {count, plural, one {# photo} other {# photos}} at a time.",
       "progress": "Read {done} of {total}",
       "adds": "Adds as report {n} · day {total}",
       "same": "Already in · replaces it"
@@ -1134,8 +1134,8 @@
     "branchCol": "Branch",
     "slipAdd": "Adds as report {n} of this day · day total {total}",
     "slipSame": "This report is already in. It is replaced, not counted twice.",
-    "slipDay": "{n} reports this day · day total {total}",
-    "slipsN": "{count} reports",
+    "slipDay": "{n, plural, one {# report} other {# reports}} this day · day total {total}",
+    "slipsN": "{count, plural, one {# report} other {# reports}}",
     "slipNo": "Report {n}",
     "ai": {
       "title": "AI sales review",
@@ -1158,13 +1158,13 @@
     "defaultChannel": "When no channel",
     "headerRow": "Header row",
     "nothing": "Choose the date and total columns. If it's still empty, try another header row.",
-    "preview": "{days} days · {lines} lines · total {total}",
+    "preview": "{days, plural, one {# day} other {# days}} · {lines, plural, one {# line} other {# lines}} · total {total}",
     "skipped": "{count} total/empty rows skipped",
-    "replacing": "{count} lines already there will be replaced by the file's numbers.",
+    "replacing": "{count, plural, one {# line} other {# lines}} already there will be replaced by the file's numbers.",
     "vatComputed": "The file has no VAT column, so VAT was worked out as 7/107.",
-    "import": "Import {lines} lines",
-    "saved": "Imported {count} lines of sales",
-    "locked": "Skipped {count} lines in closed months",
+    "import": "Import {lines, plural, one {# line} other {# lines}}",
+    "saved": "Imported {count, plural, one {# line} other {# lines}} of sales",
+    "locked": "Skipped {count, plural, one {# line} other {# lines}} in closed months",
     "xls": "Old .xls files can't be opened. Save it as .xlsx in Excel.",
     "readFail": "Couldn't open the file. Check it is .xlsx or .csv.",
     "noHeader": "Couldn't find the header row automatically. Choose the columns below.",
@@ -1178,7 +1178,7 @@
       "bills": "Bills",
       "channel": "Channel"
     },
-    "invalid": "Skipped {count} lines with a negative total or VAT above the sales. Please check them by hand."
+    "invalid": "Skipped {count, plural, one {# line} other {# lines}} with a negative total or VAT above the sales. Please check them by hand."
   },
   "ack": {
     "button": "Mark as fine",
@@ -1223,7 +1223,7 @@
     "until": "Last month",
     "untilMonth": "Until {month}",
     "span": "Period",
-    "months": "{count} months",
+    "months": "{count, plural, one {# month} other {# months}}",
     "note": "% is the share of that month's sales without VAT. Purchases count by invoice date. Labour comes from payroll / labour entries; rent and other costs without invoices from Settings → Fixed costs. Delivery-app fees count only when their tax invoices are uploaded. Check final figures with your accountant.",
     "depreciation": "Depreciation",
     "disposal": "Equipment disposed (what was left)",
@@ -1329,7 +1329,7 @@
     "sheetLine": "This month: sales {sales} · profit {profit}",
     "sheetCost": "This month: costs {cost}",
     "current": "Current",
-    "combined": "All together · {count} branches",
+    "combined": "All together · {count, plural, one {# branch} other {# branches}}",
     "combinedHint": "This month for every branch added up. Tap a branch card below to switch to it.",
     "open": "Switch to this branch",
     "color": "Colour",
@@ -1373,7 +1373,7 @@
   "dep": {
     "label": "Depreciation period",
     "none": "Expense at once",
-    "years": "{count} years",
+    "years": "{count, plural, one {# year} other {# years}}",
     "hint": "Equipment is not a cost all at once in the month it is bought: its cost is spread evenly over the period each month (depreciation). Thai practice: computers 3 years, machines, equipment, furniture and vehicles 5, buildings 20. Its VAT is still claimed in the month of purchase."
   },
   "bulkCat": {
@@ -1381,7 +1381,7 @@
     "hint": "Tick the documents to re-categorise. Documents of a closed month cannot change. Categories set per line stay as they are.",
     "pick": "New category",
     "apply": "Change",
-    "done": "{count} documents changed to {category}.",
+    "done": "{count, plural, one {# document} other {# documents}} changed to {category}.",
     "fail": "Could not change them. A closed month's document may be among them, or the connection dropped.",
     "allShown": "Tick all {count} shown",
     "noneShown": "Untick all"
@@ -1396,7 +1396,7 @@
     "writtenOff": "Written off",
     "bookValue": "Left",
     "monthly": "Monthly",
-    "years": "{count} years",
+    "years": "{count, plural, one {# year} other {# years}}",
     "endsIn": "Ends {month}",
     "doneOn": "Ended {month}",
     "disposedOn": "Disposed of on {date}",
@@ -1417,13 +1417,13 @@
       "disposed": "Disposed"
     },
     "unset": {
-      "title": "{count} pieces of equipment without a depreciation period",
+      "title": "{count, plural, one {# piece} other {# pieces}} of equipment without a depreciation period",
       "hint": "Without a period the whole cost lands in the month bought, so that month looks worse. Spread it over the suggested period.",
       "show": "Show list",
       "hide": "Hide",
       "apply": "Set suggested periods",
       "years": "Depreciation period",
-      "yearsN": "{count} years",
+      "yearsN": "{count, plural, one {# year} other {# years}}",
       "saved": "Set {count}",
       "locked": "{count} in closed months could not be changed",
       "fail": "Could not save. Please try again."
@@ -1553,7 +1553,7 @@
     "more": "Food · labour · rent in detail",
     "less": "Less",
     "rises": {
-      "title": "{count} items dearer than last time",
+      "title": "{count, plural, one {# item} other {# items}} dearer than last time",
       "open": "Open",
       "more": "and {count} more · up 5% or more from the same vendor's last price",
       "all": "See all price changes"
@@ -1713,7 +1713,7 @@
     },
     "legendHint": "Unmarked days: monthly staff count as worked, daily staff as not worked. Red dates are Thai public holidays.",
     "fillWorked": "All worked",
-    "filled": "{count} days marked as worked. Tap the days off to change them.",
+    "filled": "{count, plural, one {# day} other {# days}} marked as worked. Tap the days off to change them.",
     "publicHoliday": "Public holiday",
     "otHoursDay": "Overtime (hours, ×{rate})",
     "otHoursHoliday": "Holiday overtime (hours, ×{rate}) — 8 h holiday work is counted automatically",
@@ -1731,9 +1731,9 @@
     "documentName": "Document (e.g. Work permit)",
     "addDocument": "Add a document",
     "documentNeedsDate": "Enter the document's expiry date.",
-    "expired": "expired {days} days ago",
+    "expired": "expired {days, plural, one {# day} other {# days}} ago",
     "expiresToday": "expires today",
-    "expiresIn": "in {days} days",
+    "expiresIn": "in {days, plural, one {# day} other {# days}}",
     "yearDocs": "Papers for {year}",
     "yearDocsHint": "Give employees their 50 ทวิ certificate by {cert50} and file ภ.ง.ด.1ก (the year's summary) by {pnd1a}. Made from the saved payroll.",
     "printCert50": "Print 50 ทวิ",
@@ -1783,7 +1783,7 @@
       "linkedCount": "{linked} of {all} linked on LINE",
       "send": "Send on LINE ({count})",
       "pdf": "Save PDF",
-      "sentN": "Sent {count} payslips.",
+      "sentN": "Sent {count, plural, one {# payslip} other {# payslips}}.",
       "sentList": "Sent to {count}",
       "notLinkedList": "Not linked on LINE",
       "noPayList": "No pay this month",
@@ -1816,7 +1816,7 @@
       "making": "Making the file…",
       "downloaded": "Saved.",
       "savePage": "Save page {n}",
-      "pagesReady": "{n} pictures. Save the one you want.",
+      "pagesReady": "{n, plural, one {# picture} other {# pictures}}. Save the one you want.",
       "leaveLoading": "Loading this year’s leave. You can save when it finishes.",
       "leaveFail": "Could not load this year’s leave. Refresh the page and try again.",
       "shared": "The share sheet is open. Choose who receives it there.",
@@ -1856,7 +1856,7 @@
       "rate": "Please wait a moment and try again.",
       "fail": "Could not read it. Please try again.",
       "someFailed": "{n} photo(s) could not be read.",
-      "max": "Up to {n} photos at once.",
+      "max": "Up to {n, plural, one {# photo} other {# photos}} at once.",
       "tapFix": "Tap a day to change it: work → off → annual → sick → absent → blank."
     },
     "steps": {
@@ -1891,7 +1891,7 @@
     "shareCalSub": "Appears in the staff’s phone calendars and follows changes.",
     "sheetShareSub": "Save or send this month’s sheet as a picture or PDF.",
     "sumCol": "Total",
-    "sumWork": "{n} days worked",
+    "sumWork": "{n, plural, one {# day} other {# days}} worked",
     "refund": "Expense refund",
     "refundChip": "Expenses +{amount}",
     "refundHint": "{n} expense claims paid back with the pay: added to the month-end payment, without tax or social security.",
@@ -1970,7 +1970,7 @@
   },
   "weekday": {
     "title": "Sales by weekday",
-    "hint": "Last {weeks} weeks, average day with sales (excl. VAT)",
+    "hint": "Last {weeks, plural, one {# week} other {# weeks}}, average day with sales (excl. VAT)",
     "span": "Period",
     "weeks": "{weeks} wk",
     "days": "{count, plural, one {# day} other {# days}}",
@@ -2122,7 +2122,7 @@
     "removeAsk": "Remove “{name}”? That device can no longer use quick sign-in (email still works).",
     "removed": "Removed.",
     "unsupported": "This device (browser) can't use quick sign-in.",
-    "count": "{count} devices",
+    "count": "{count, plural, one {# device} other {# devices}}",
     "offerShort": "Quick sign-in next time"
   },
   "share": {
@@ -2209,7 +2209,7 @@
     },
     "fRemind": "Remind me",
     "remind0": "On the day",
-    "remindN": "{n} days before",
+    "remindN": "{n, plural, one {# day} other {# days}} before",
     "fNote": "Note",
     "cancel": "Cancel",
     "save": "Save",
@@ -2221,7 +2221,7 @@
     "docPick": "Fill from a contract or licence photo",
     "docReading": "AI is looking for dates…",
     "docHint": "Lease, business licence, work permit, insurance policy… snap it and the expiry and renewal dates are found.",
-    "docFound": "{doc} · {n} dates found",
+    "docFound": "{doc} · {n, plural, one {# date} other {# dates}} found",
     "dk": {
       "expiry": "Expiry",
       "renewal": "Renewal",
@@ -2238,7 +2238,7 @@
     "docFail": "Couldn't read it. Please take it again.",
     "recTitle": "Monthly payments found",
     "recSub": "Your ledger and bank show payments around the same day, for about the same amount, every month. Add them and you're reminded 3 days before.",
-    "recLine": "Monthly around day {day} · last {n} months · {amount}",
+    "recLine": "Monthly around day {day} · last {n, plural, one {# month} other {# months}} · {amount}",
     "recAdd": "Add to calendar",
     "recNo": "Not this",
     "recAdded": "Added to the calendar (monthly)",
@@ -2265,7 +2265,7 @@
       "toPay": "To pay (est.)",
       "ready": "How ready",
       "readyLine": "{done} of {total} checked",
-      "toCheck": "{n} documents still need a look",
+      "toCheck": "{n, plural, one {# document} other {# documents}} still need a look",
       "prepare": "Get it ready",
       "briefTitle": "This week · AI briefing",
       "briefAdmins": "The AI briefing is for owners and admins without limits.",
@@ -2443,7 +2443,7 @@
     "over": {
       "title": "Expenses in {month}",
       "vsLast": "{pct}% vs last month",
-      "count": "{n} claims · rejected left out",
+      "count": "{n, plural, one {# claim} other {# claims}} · rejected left out",
       "byCategory": "Where it went",
       "byPerson": "Who claimed most",
       "none": "No claims this month yet.",
@@ -2478,8 +2478,8 @@
       "failed": "Could not review right now. Please try again shortly.",
       "run": "Review with AI",
       "again": "Review again",
-      "cleanHint": "{n} claims look fine to the AI and have no automatic warning.",
-      "sure": "Approve {n} claims? Tap once more to approve.",
+      "cleanHint": "{n, plural, one {# claim} other {# claims}} look fine to the AI and have no automatic warning.",
+      "sure": "Approve {n, plural, one {# claim} other {# claims}}? Tap once more to approve.",
       "cancel": "Cancel",
       "approveClean": "Approve {n} clean claims",
       "v": {
@@ -2530,7 +2530,7 @@
   "excelFmt": {
     "title": "Accountant's Excel layout",
     "sub": "Pick only the columns your accountant wants, put them in their order and use their headings. The app's Excel, the LINE Excel and the accountant link all follow it.",
-    "custom": "Custom · {n} columns",
+    "custom": "Custom · {n, plural, one {# column} other {# columns}}",
     "usual": "Usual layout",
     "namePh": "Keep the name",
     "name": "Heading for {col}",
@@ -2620,9 +2620,9 @@
     "copyBox": "Copy box {no}",
     "from": {
       "title": "Where do these numbers come from?",
-      "sales": "Sales: {days} days with sales, {slips} closing reports",
+      "sales": "Sales: {days, plural, one {# day} other {# days}} with sales, {slips} closing reports",
       "claim": "Purchases: {count} full tax invoices you can claim (our name and tax ID, claimed in this month)",
-      "other": "Left out: {count} purchases whose VAT cannot be claimed ({vat}) — short receipts, not addressed to us",
+      "other": "Left out: {count, plural, one {# purchase} other {# purchases}} whose VAT cannot be claimed ({vat}) — short receipts, not addressed to us",
       "left": "Drafts and the trash are not counted",
       "zero": "The app keeps no 0% sales, so box 2 is 0. Change it if you export"
     },
@@ -2642,13 +2642,13 @@
     "whtTotal": "Total · {count}",
     "check": {
       "title": "Check before filing",
-      "badIds": "{count} payees with a missing or wrong tax ID",
+      "badIds": "{count, plural, one {# payee} other {# payees}} with a missing or wrong tax ID",
       "badIdsSub": "Withholding returns need all 13 digits.",
       "open": "Open document",
-      "toCheck": "{count} documents need a look",
+      "toCheck": "{count, plural, one {# document} other {# documents}} need a look",
       "toCheckSub": "They failed an automatic check. Checking them makes the numbers right.",
       "toLedger": "See in ledger",
-      "drafts": "{count} drafts",
+      "drafts": "{count, plural, one {# draft} other {# drafts}}",
       "draftsSub": "Documents not saved are not counted.",
       "vatOff": "Output VAT is not 7%",
       "vatOffSub": "The VAT on the closing reports differs from 7% of sales by more than 1 baht.",
@@ -2658,7 +2658,7 @@
       "closed": "This month is closed",
       "notClosed": "This month is still open",
       "notClosedSub": "Close the month after filing so the numbers stay.",
-      "saleDays": "{days} days with sales",
+      "saleDays": "{days, plural, one {# day} other {# days}} with sales",
       "saleDaysSub": "{slips} closing reports"
     },
     "steps": {
@@ -2883,7 +2883,7 @@
     "sendsToWeb": "This is a website address. Refuse if you did not start this connection yourself or do not know the address."
   },
   "dupReview": {
-    "title": "Possible duplicates: {groups} groups",
+    "title": "Possible duplicates: {groups, plural, one {# group} other {# groups}}",
     "intro": "Documents with the same seller and number, side by side. Where the date and amount match too, the later-saved ones are already ticked. Check, then tap the button below. They can be restored from the trash.",
     "identical": "same date and amount",
     "differs": "date or amount differs",
@@ -2910,9 +2910,9 @@
     "prev": "Previous month",
     "next": "Next month",
     "paidMore": "Paid more (rises)",
-    "upCount": "{count} items up",
+    "upCount": "{count, plural, one {# item} other {# items}} up",
     "saved": "Saved (falls)",
-    "downCount": "{count} items down",
+    "downCount": "{count, plural, one {# item} other {# items}} down",
     "sameLabel": "Unchanged",
     "sameSub": "under 1 % change",
     "firstLabel": "Bought for the first time",
@@ -2953,10 +2953,11 @@
     "unpaid": "unpaid",
     "aiWorking": "AI is searching… this can take a few seconds.",
     "salesTitle": "Sales total",
-    "salesLine": "{from} – {to} · {days} days · without VAT (with VAT {gross}) · open sales",
+    "salesLine": "{from} – {to} · {days, plural, one {# day} other {# days}} · without VAT (with VAT {gross}) · open sales",
     "askHint": "This is a question rather than a search. The AI assistant answers it from the books.",
     "askStaff": "An admin's AI assistant can answer questions like this.",
-    "askButton": "Ask the AI assistant"
+    "askButton": "Ask the AI assistant",
+    "noneTryAi": "Nothing found by name. Press Enter or \"Find with AI\" above to let AI look."
   },
   "quickNew": {
     "open": "New",
@@ -2978,8 +2979,8 @@
     "totalNote": "Returns marked filed are left out. Check the final amounts with your accountant.",
     "vatNote": "Output VAT {sales} − input VAT {buy}",
     "vatCredit": "Nothing to pay · carry {amount}",
-    "whtNote": "{count} withholdings",
-    "payNote": "Tax on pay {tax} + social security {sso} · {people} lines",
+    "whtNote": "{count, plural, one {# withholding} other {# withholdings}}",
+    "payNote": "Tax on pay {tax} + social security {sso} · {people, plural, one {# line} other {# lines}}",
     "deadline": "e-Filing by {online} (paper {paper})",
     "openNumbers": "See the numbers",
     "openPayroll": "Open payroll",
@@ -3002,7 +3003,7 @@
     "status": {
       "filed": "Filed",
       "none": "Nothing to file",
-      "late": "{days} days late",
+      "late": "{days, plural, one {# day} other {# days}} late",
       "today": "Due today"
     },
     "ai": {
@@ -3030,7 +3031,7 @@
     "adminOnly": "Admins only.",
     "loading": "Loading…",
     "total": "Total to pay",
-    "count": "{count} bills",
+    "count": "{count, plural, one {# bill} other {# bills}}",
     "filter": "Filter by due date",
     "bucket": {
       "late": "Late",
@@ -3044,7 +3045,7 @@
     "pick": "Pick",
     "due": "Due {date}",
     "noDue": "No due date",
-    "late": "{days} days late",
+    "late": "{days, plural, one {# day} other {# days}} late",
     "today": "Today",
     "picked": "{count} · {amount}",
     "clear": "Clear",
@@ -3234,7 +3235,7 @@
     "cancel": "Cancel",
     "save": "Save",
     "badge": {
-      "dDay": "{n} days left",
+      "dDay": "{n, plural, one {# day} other {# days}} left",
       "ended": "Ended",
       "open": "No end",
       "today": "Ends today",
@@ -3336,5 +3337,10 @@
       "title": "Restaurant features",
       "body": "Reading delivery-app settlements, AI prep forecasts and a waste log. Switch on only what you need in Settings → Restaurant features."
     }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The address changed or the page does not exist. Please start again from the home screen.",
+    "home": "Go to home"
   }
 }

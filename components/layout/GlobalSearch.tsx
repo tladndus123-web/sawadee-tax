@@ -184,7 +184,7 @@ export function GlobalSearch({ items }: { items: NavItem[] }) {
               if (first) {
                 router.push(first.href);
                 close();
-              }
+              } else if (!busy) void askAi(); // nothing found by name: Enter asks the AI
             }}
             className="flex items-center gap-3 border-b border-border px-4"
           >
@@ -261,7 +261,7 @@ export function GlobalSearch({ items }: { items: NavItem[] }) {
               </section>
             )}
             {!q.trim() && <p className="px-3 py-6 text-center text-[13.5px] text-muted-foreground">{t("topSearch.hint")}</p>}
-            {q.trim() && !groups.length && !aiBusy && !(ai && ai.q === q.trim()) && <p className="px-3 py-6 text-center text-[13.5px] text-muted-foreground">{busy ? t("topSearch.searching") : t("topSearch.none")}</p>}
+            {q.trim() && !groups.length && !aiBusy && !(ai && ai.q === q.trim()) && <p className="px-3 py-6 text-center text-[13.5px] text-muted-foreground">{busy ? t("topSearch.searching") : q.trim().length >= 2 ? t("topSearch.noneTryAi") : t("topSearch.none")}</p>}
             {groups.map(({ k, list }) => (
               <section key={k} className="grid gap-0.5 py-1">
                 <h3 className="px-3 pt-1 pb-1 text-[12px] font-semibold text-muted-foreground">{t(`topSearch.${k}`)}</h3>

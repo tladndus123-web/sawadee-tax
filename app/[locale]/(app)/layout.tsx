@@ -7,7 +7,6 @@ import { BranchGate } from "@/components/auth/BranchGate";
 import { ScreenGuard } from "@/components/auth/ScreenGuard";
 import { PasskeyOffer } from "@/components/auth/PasskeyOffer";
 import { WhatsNew } from "@/components/layout/WhatsNew";
-import { Warmup } from "@/components/layout/Warmup";
 import { AssistantPanelLazy } from "@/components/assistant/AssistantPanelLazy";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -15,8 +14,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-dvh">
       <SessionWatch />
-      {/* Admins: the dashboard's data starts loading at once, not after the branch gate */}
-      <Warmup />
       {/* PC: the menu on the left (owner 2026-11-18); phones keep the tab bar */}
       <AppSidebar />
       <div className="flex min-w-0 flex-1 flex-col">

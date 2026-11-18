@@ -5,6 +5,7 @@
 import { isUnpaid } from "./archive";
 import { daysTo } from "./company-calendar";
 import type { LedgerDoc } from "./types";
+import { amountToPay } from "./wht";
 
 export type Bucket = "late" | "week" | "month" | "later" | "none";
 export const BUCKETS: readonly Bucket[] = ["late", "week", "month", "later", "none"];
@@ -19,7 +20,8 @@ export interface Bill {
   bucket: Bucket;
 }
 
-export const toPay = (d: LedgerDoc) => Math.round(((d.totals.net || 0) - (d.totals.wht || 0)) * 100);
+/** Satang that go to the supplier: the same rule as the pay QR (lib/wht amountToPay — withholding printed, else by its rate) */
+export const toPay = (d: LedgerDoc) => Math.round(amountToPay(d) * 100);
 
 export function bucketOf(days: number | null): Bucket {
   if (days === null) return "none";
