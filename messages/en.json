@@ -3290,5 +3290,40 @@
     "fromPurchases": "From the last 4 weeks' food purchases and tomorrow's expected sales.",
     "ai": "AI tip",
     "aiRetry": "Ask again"
+  },
+  "whatsNew": {
+    "badge": "Update · 18 Nov",
+    "title": "What's new",
+    "introAdmin": "What got easier, in one minute.",
+    "introStaff": "Here is what is new.",
+    "ai": {
+      "title": "AI helps with more",
+      "body": "AI helps you search in plain words, check before filing taxes, and pick which bills to pay first."
+    },
+    "claims": {
+      "title": "AI approval helper for expense claims",
+      "body": "Each claim gets approve · check first · better reject with the reason, and the clean ones can be approved at once."
+    },
+    "pl": {
+      "title": "The P&L at a glance",
+      "body": "Colours against your targets (green · yellow · red), ▲▼ vs last month, and an AI one-line conclusion."
+    },
+    "cash": {
+      "title": "Cash box on LINE",
+      "body": "Send \"cash 5200\" (what you counted), \"cash in 3000\" or \"cash out 500 ice\" on LINE; it is recorded and the balance comes back. Not counted for 3+ days? You get a morning reminder."
+    },
+    "menu": {
+      "title": "A tidier menu",
+      "body": "On PC the menu is on the left. New: taxes, bills to pay, contracts; cash and assets moved under \"Manage\"."
+    },
+    "ok": "Got it",
+    "contracts": {
+      "title": "Contracts",
+      "body": "Keep contracts in one place; AI sums up the main terms and the notice date. Send \"contract\" on LINE to upload one."
+    },
+    "food": {
+      "title": "Restaurant features",
+      "body": "Reading delivery-app settlements, AI prep forecasts and a waste log. Switch on only what you need in Settings → Restaurant features."
+    }
   }
 }

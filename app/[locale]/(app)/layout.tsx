@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { BranchGate } from "@/components/auth/BranchGate";
 import { ScreenGuard } from "@/components/auth/ScreenGuard";
 import { PasskeyOffer } from "@/components/auth/PasskeyOffer";
+import { WhatsNew } from "@/components/layout/WhatsNew";
 import { AssistantPanelLazy } from "@/components/assistant/AssistantPanelLazy";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -22,6 +23,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <BranchGate>
           {/* After an email sign-in: offer Face ID for next time */}
           <PasskeyOffer />
+          {/* A one-time "what's new" notice, once per person */}
+          <WhatsNew />
           <StoredFormConfig>
             {/* Screens an owner did not let this admin open */}
             <ScreenGuard>{children}</ScreenGuard>
