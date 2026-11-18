@@ -1146,14 +1146,7 @@
       "todo": "Try this",
       "note": "Written by the AI from the sales and cost figures only. Estimates are a guide."
     },
-    "elsewhere": "The same report is already in on {date}. The day and month may have been read swapped. Check the date or leave this line out.",
-    "twice": {
-      "title": "{count, plural, one {# pair of sales that look like the same report} other {# pairs of sales that look like the same report}}",
-      "hint": "The day and month may have been read swapped, or the same receipt numbers went in twice. Tap a date to open it and delete the wrong one. Until then the sales are counted twice.",
-      "show": "Show list",
-      "hide": "Hide",
-      "open": "open"
-    }
+    "elsewhere": "The same report is already in on {date}. The day and month may have been read swapped. Check the date or leave this line out."
   },
   "pos": {
     "button": "POS Excel",
@@ -3350,5 +3343,19 @@
     "title": "Page not found",
     "body": "The address changed or the page does not exist. Please start again from the home screen.",
     "home": "Go to home"
+  },
+  "twiceNotice": {
+    "badge": "Possible duplicates",
+    "title": "Please check possible duplicates",
+    "more": "and {count} more",
+    "go": "Check now",
+    "later": "Later",
+    "open": "open",
+    "intro": "The same paper or report seems to be in twice. Until one is deleted, the amount is counted twice.",
+    "docs": "{count, plural, one {# possible duplicate group in the ledger} other {# possible duplicate groups in the ledger}}",
+    "docsHint": "Same seller, same document number. Check them in the ledger's duplicate review and move them to the trash at once ({count, plural, one {# later copy is} other {# later copies are}} ticked for you).",
+    "sales": "{count, plural, one {# possible duplicate sales pair} other {# possible duplicate sales pairs}}",
+    "salesHint": "The day and month may have been read swapped. Tap a date to open it and delete the wrong one.",
+    "goLedger": "Review in the ledger at once"
   }
 }

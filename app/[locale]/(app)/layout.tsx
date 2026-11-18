@@ -7,6 +7,7 @@ import { BranchGate } from "@/components/auth/BranchGate";
 import { ScreenGuard } from "@/components/auth/ScreenGuard";
 import { PasskeyOffer } from "@/components/auth/PasskeyOffer";
 import { WhatsNew } from "@/components/layout/WhatsNew";
+import { TwiceNotice } from "@/components/layout/TwiceNotice";
 import { AssistantPanelLazy } from "@/components/assistant/AssistantPanelLazy";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +26,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <PasskeyOffer />
           {/* A one-time "what's new" notice, once per person */}
           <WhatsNew />
+          {/* Admins: sales that look entered twice, asked once per visit */}
+          <TwiceNotice />
           <StoredFormConfig>
             {/* Screens an owner did not let this admin open */}
             <ScreenGuard>{children}</ScreenGuard>
