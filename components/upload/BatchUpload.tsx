@@ -149,7 +149,7 @@ export function BatchUpload() {
           add(e.dataTransfer.files);
         }}
         className={cn(
-          "workspace-panel ai-ring upload-drop grid justify-items-center gap-5 rounded-[1.75rem] px-6 py-8 text-center transition-transform sm:py-14",
+          "workspace-panel ai-ring grid justify-items-center gap-5 rounded-[1.75rem] px-6 py-8 text-center transition-transform sm:py-14",
           dragging && "scale-[1.01]",
           room <= 0 && "opacity-70",
         )}

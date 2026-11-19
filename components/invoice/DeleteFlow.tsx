@@ -162,7 +162,7 @@ function PaperFace({ paper }: { paper: PaperInfo }) {
   return (
     <div className="shred-paper grid content-start gap-3 p-5">
       <div className="flex items-center gap-2">
-        <span className="size-5 rounded-md bg-[linear-gradient(160deg,#3b8bff,#0071e3_52%,#0a5ce6)]" />
+        <span className="ai-fill size-5 rounded-md" />
         <span className="h-2 w-16 rounded-full bg-black/10" />
       </div>
       <p className="truncate text-[15px] font-semibold text-black">{paper.seller}</p>

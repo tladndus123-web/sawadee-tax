@@ -394,7 +394,7 @@ docs/            지시서, 참고 파일, 검수 · 인수인계 문서, review
 ## 8. 알아 두면 좋은 것
 
 **디자인**
-- 애플풍: 배경 `#f5f5f7`, 카드 흰색, 포인트 시스템 블루(`--primary`). AI 테두리·마크·글자(`--ai-gradient`)도 앱 아이콘과 같은 파랑만 써요(`#3b8bff` → `#0071e3` → `#0a5ce6`, 2026-11-05). 회색 소프트 마크(`.intelligence-mark.is-soft`)와 노란 경고색은 그대로예요. 사진 올리기 칸·로그인 이름·카드 바깥 빛도 같은 파랑(`.upload-drop` · `.upload-orb` · `text-primary` · `.login-glow`). 로그인에서 언어만 바꾸면 카드가 다시 떠오르지 않아요(`sawadee_login_stay` 쿠키, 2026-11-05).
+- 애플풍: 배경 `#f5f5f7`, 카드 흰색, 포인트 시스템 블루(`--primary`). AI 테두리·마크·글자(`--ai-gradient`)는 밝은 파랑 `#3b8bff`에서 브랜드 파랑 `#0071e3`을 가운데에 길게 두고, 진한 끝은 같은 빛깔의 `#0066cc`예요. 보라로 보이던 `#0a5ce6`은 이 테두리에서 뺐어요(2026-11-05). 회색 소프트 마크(`.intelligence-mark.is-soft`)와 노란 경고색은 그대로예요. 사진 올리기 칸의 테두리와 로그인 카드 바깥 빛도 이 색을 따라요(`.login-glow`). 로그인에서 언어만 바꾸면 카드가 다시 떠오르지 않아요(`sawadee_login_stay` 쿠키, 2026-11-05).
 - `globals.css`의 공용 클래스를 쓰면 모양이 맞아요: `.workspace-panel`(카드), `.ai-ring`(그라데이션 테두리), `.segmented-control`(iOS 토글), `.review-actions`(떠 있는 하단 버튼 바).
 - 스타일 규칙을 레이어 밖(unlayered)에 쓰면 Tailwind 유틸리티(`hidden` 등)를 이겨 버려요. 실제로 `.nav-pill`의 `display:flex` 때문에 휴대폰에서 가로 넘침이 났어요 — display는 유틸리티로 주세요.
 - 한국어는 `word-break: keep-all`(음절 중간에서 줄바꿈 안 함).
