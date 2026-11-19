@@ -3348,7 +3348,6 @@
     "badge": "Possible duplicates",
     "title": "Please check possible duplicates",
     "more": "and {count} more",
-    "go": "Check now",
     "later": "Later",
     "open": "open",
     "intro": "The same paper or report seems to be in twice. Until one is deleted, the amount is counted twice.",
@@ -3356,6 +3355,9 @@
     "docsHint": "Same seller, same document number. Check them in the ledger's duplicate review and move them to the trash at once ({count, plural, one {# later copy is} other {# later copies are}} ticked for you).",
     "sales": "{count, plural, one {# possible duplicate sales pair} other {# possible duplicate sales pairs}}",
     "salesHint": "The day and month may have been read swapped. Tap a date to open it and delete the wrong one.",
-    "goLedger": "Review in the ledger at once"
+    "check": "Check",
+    "fine": "No problem",
+    "extraAmount": "+{amount}",
+    "answersHint": "Check: opens the review and hides this for you only · No problem: hides it for everyone"
   }
 }

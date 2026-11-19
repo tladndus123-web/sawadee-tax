@@ -1,30 +1,33 @@
 "use client";
 
-// "중복 확인 부탁드립니다" (owner 2026-11-18: "딱 들어가자마자 중복 안내"): admins are asked once per visit, right after the
-// branch gate, when something looks entered twice — ledger documents with the same seller and document number
-// (lib/dup-groups, the 장부 "중복 의심" review) and sales reports in on two days (lib/sales-slips elsewherePairs).
-// "지금 확인하러 가기" opens the ledger's duplicate review (tick, check, move to the trash at once — owner: "장부에서 한 번에
-// 지울 수 있도록, 검수도"); a sales date opens that line. In each reader's own app language. Counted live, so once
-// someone deletes them nobody is asked again. "나중에" / ✕ waits for the next visit; it never stacks on "what's new".
+// "중복 안내 확인 부탁드립니다" (owner 2026-11-18/19): right after the branch gate, admins see the possible duplicates —
+// ledger documents with the same seller and document number, sales reports in on two days — worked out on the server
+// (/api/dups, lib/dup-notice), so this downloads a short list, not the books. Two answers:
+//   "확인하기"  → the ledger's duplicate review (tick, check, trash at once) or the sales line; gone for this person only
+//                (their checked keys live in their sign-in, lib/user-prefs), the others are still asked;
+//   "문제없음"  → they are fine: kept for everyone (dup_acks), nobody is asked about them again.
+// A new copy has a new key, so it is asked about again. ✕ waits for the next visit. In each reader's app language;
+// never on top of the one-time "what's new" notice.
 
 import { CopyX, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AppMark } from "@/components/layout/app-mark";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useRouter } from "@/i18n/navigation";
-import { dupGroups, likelyCopies } from "@/lib/dup-groups";
-import { pick, useLedger } from "@/lib/ledger-store";
+import { type DupNotice, noticeKeys, notSeen } from "@/lib/dup-notice";
 import { baht } from "@/lib/money";
 import { useMe } from "@/lib/role-store";
-import { elsewherePairs } from "@/lib/sales-slips";
-import { useSales } from "@/lib/sales-store";
 import { usePref } from "@/lib/user-prefs";
 
-const ASKED = "sawadee.twice-asked";
+const LATER = "sawadee.dups-later";
 /** The same key as components/layout/WhatsNew (seen = true) */
 const NOTICE = "notice-2026-11-18";
+/** Keys this person checked ("확인하기"), newest last, at most 300 */
+const SEEN = "dups-seen";
+/** Wait this long after the page opens before asking the server (ms) */
+const ASK_AFTER = 6000;
 
 export function TwiceNotice() {
   const me = useMe();
@@ -34,41 +37,66 @@ export function TwiceNotice() {
 function Ask() {
   const t = useTranslations("twiceNotice");
   const router = useRouter();
-  const { sales, loaded: salesLoaded } = useSales();
-  const { entries, loaded: ledgerLoaded } = useLedger();
   const [noticeSeen] = usePref<boolean>(NOTICE, (v) => v === true, false);
-  const pairs = useMemo(() => (salesLoaded ? elsewherePairs(sales) : []), [sales, salesLoaded]);
-  // The ledger review's own groups (components/ledger/DupReview): same seller tax ID + document number
-  const docs = useMemo(() => {
-    if (!ledgerLoaded) return { groups: 0, copies: 0, extra: 0 };
-    const saved = pick(entries, "ledger");
-    const groups = dupGroups(saved.map((e) => ({ id: e.id, sellerTaxId: e.doc.seller.taxId, docNo: e.doc.docNo, date: e.doc.date, total: e.doc.totals.net, createdAt: e.createdAt })));
-    const copies = new Set(likelyCopies(groups));
-    const extra = groups.flatMap((g) => g.items).filter((x) => copies.has(x.id)).reduce((a, x) => a + x.total, 0);
-    return { groups: groups.length, copies: copies.size, extra };
-  }, [entries, ledgerLoaded]);
-  const [asked, setAsked] = useState(true);
-  // Stepped aside while things are being checked (asks again on the next visit)
-  const [away, setAway] = useState(false);
+  const [seen, setSeen] = usePref<string[]>(SEEN, (v) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []), []);
+  const [list, setList] = useState<DupNotice | null>(null);
+  const [closed, setClosed] = useState(true);
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
+    let later = false;
     try {
-      setAsked(sessionStorage.getItem(ASKED) === "1");
-    } catch {
-      setAsked(false);
-    }
-  }, []);
+      later = sessionStorage.getItem(LATER) === "1";
+    } catch {}
+    if (later || !noticeSeen) return;
+    let live = true;
+    // After the screen has its own numbers (measured 2026-11-19: asked at once, it slowed the first dashboard visit
+    // from 6 to 11 seconds by competing with it)
+    const timer = window.setTimeout(() => {
+      void fetch("/api/dups")
+        .then((r) => (r.ok ? (r.json() as Promise<DupNotice>) : null))
+        .then((n) => {
+          if (!live || !n) return;
+          setList(n);
+          setClosed(false);
+        })
+        .catch(() => undefined);
+    }, ASK_AFTER);
+    return () => {
+      live = false;
+      window.clearTimeout(timer);
+    };
+  }, [noticeSeen]);
+  if (closed || !list) return null;
+  const shown = notSeen(list, new Set(seen));
+  const keys = noticeKeys(shown);
+  if (!keys.length) return null;
+
   const later = () => {
     try {
-      sessionStorage.setItem(ASKED, "1");
+      sessionStorage.setItem(LATER, "1");
     } catch {}
-    setAsked(true);
+    setClosed(true);
   };
-  if (asked || away || !noticeSeen || !salesLoaded || !ledgerLoaded || (!docs.groups && !pairs.length)) return null;
-  const go = (href: string) => {
-    setAway(true);
+  // "확인하기": gone for this person only
+  const check = (href: string) => {
+    setSeen([...seen.filter((k) => !keys.includes(k)), ...keys].slice(-300));
+    setClosed(true);
     router.push(href);
   };
-  const salesExtra = pairs.reduce((a, p) => a + p.second.gross, 0);
+  // "문제없음": fine for everyone
+  const fine = async () => {
+    setBusy(true);
+    try {
+      await fetch("/api/dups", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ keys }) });
+    } catch {}
+    setBusy(false);
+    setClosed(true);
+  };
+  const docGroups = shown.docs.length;
+  const docExtra = shown.docs.reduce((a, d) => a + d.extra, 0);
+  const docCopies = shown.docs.reduce((a, d) => a + d.copies, 0);
+  const salesExtra = shown.sales.reduce((a, p) => a + p.second.gross, 0);
+
   return (
     <Dialog open onOpenChange={(open) => !open && later()}>
       <DialogContent showCloseButton={false} className="flex max-h-[88dvh] flex-col gap-0 overflow-hidden rounded-3xl p-0 shadow-xl sm:max-w-[420px]">
@@ -86,30 +114,33 @@ function Ask() {
         </div>
 
         <div className="min-h-0 divide-y divide-border/70 overflow-y-auto border-y border-border/70 px-6">
-          {docs.groups > 0 && (
+          {docGroups > 0 && (
             <div className="grid gap-1 py-3.5">
               <p className="flex items-baseline justify-between gap-3 text-[14.5px] font-medium">
-                {t("docs", { count: docs.groups })}
-                {docs.extra > 0 && <span className="text-[13px] font-semibold text-bad tabular-nums">+{baht(docs.extra)}</span>}
+                {t("docs", { count: docGroups })}
+                {docExtra > 0 && <span className="text-[13px] font-semibold text-bad tabular-nums">{t("extraAmount", { amount: baht(docExtra) })}</span>}
               </p>
-              <p className="text-[13px] leading-relaxed text-muted-foreground">{t("docsHint", { count: docs.copies })}</p>
+              <p className="text-[13px] leading-relaxed text-muted-foreground">{t("docsHint", { count: docCopies })}</p>
             </div>
           )}
-          {pairs.length > 0 && (
+          {shown.sales.length > 0 && (
             <div className="grid gap-2 py-3.5">
               <p className="flex items-baseline justify-between gap-3 text-[14.5px] font-medium">
-                {t("sales", { count: pairs.length })}
-                <span className="text-[13px] font-semibold text-bad tabular-nums">+{baht(salesExtra)}</span>
+                {t("sales", { count: shown.sales.length })}
+                <span className="text-[13px] font-semibold text-bad tabular-nums">{t("extraAmount", { amount: baht(salesExtra) })}</span>
               </p>
               <p className="text-[13px] leading-relaxed text-muted-foreground">{t("salesHint")}</p>
-              {pairs.slice(0, 3).map(({ first, second }) => (
-                <span key={`${first.id}|${second.id}`} className="flex flex-wrap items-center gap-2">
+              {shown.sales.slice(0, 3).map(({ key, first, second }) => (
+                <span key={key} className="flex flex-wrap items-center gap-2">
                   <b className="basis-full text-[13.5px] tabular-nums">{baht(second.gross)}</b>
                   {[first, second].map((x) => (
                     <button
                       key={x.id}
                       type="button"
-                      onClick={() => go(`/sales?open=${x.id}`)}
+                      onClick={() => {
+                        setClosed(true);
+                        router.push(`/sales?open=${x.id}`);
+                      }}
                       className="press inline-flex h-11 items-center gap-1.5 rounded-full bg-muted px-3.5 text-[13px] font-medium tabular-nums hover:bg-muted/70 pointer-fine:h-8"
                     >
                       {x.date}
@@ -118,18 +149,19 @@ function Ask() {
                   ))}
                 </span>
               ))}
-              {pairs.length > 3 && <p className="text-[13px] text-muted-foreground">{t("more", { count: pairs.length - 3 })}</p>}
+              {shown.sales.length > 3 && <p className="text-[13px] text-muted-foreground">{t("more", { count: shown.sales.length - 3 })}</p>}
             </div>
           )}
         </div>
 
         <div className="grid gap-2 px-6 py-4">
-          <Button type="button" className="h-11 w-full rounded-full text-[14.5px]" onClick={() => go(docs.groups ? "/ledger?status=dup" : `/sales?open=${pairs[0].second.id}`)}>
-            {docs.groups ? t("goLedger") : t("go")}
+          <Button type="button" className="h-11 w-full rounded-full text-[14.5px]" onClick={() => check(docGroups ? "/ledger?status=dup" : `/sales?open=${shown.sales[0].second.id}`)}>
+            {t("check")}
           </Button>
-          <Button type="button" variant="ghost" className="h-11 w-full rounded-full text-[14px] text-muted-foreground" onClick={later}>
-            {t("later")}
+          <Button type="button" variant="outline" className="h-11 w-full rounded-full text-[14px]" disabled={busy} onClick={() => void fine()}>
+            {t("fine")}
           </Button>
+          <p className="text-center text-[12px] leading-relaxed text-muted-foreground">{t("answersHint")}</p>
         </div>
       </DialogContent>
     </Dialog>

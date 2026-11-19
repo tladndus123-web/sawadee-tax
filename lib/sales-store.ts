@@ -12,6 +12,7 @@ import { supabaseBrowser } from "./supabase/client";
 import { ALL } from "./branches";
 import { subscribeBranch, branchNow } from "./branch-store";
 import { allRows } from "./fetch-all";
+import { cacheGet, cacheSet } from "./idb-cache";
 
 interface SaleRow {
   id: string;
@@ -52,12 +53,31 @@ let started = false;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
+/** Only the columns the screens use (not who / when it was typed) */
+const COLUMNS = "id, branch_id, sale_date, channel, doc_from, doc_to, bills, gross, vat, exempt, note, photo_path, source, part";
+const CACHE = (user: string) => `sales:v1:${user}`;
+
+/**
+ * Speed (owner 2026-11-19, "최적화"): the sales of the last visit are kept on this device (lib/idb-cache, like the
+ * ledger) and shown at once, then the fresh list replaces them a moment later. Cleared on sign-out with the rest.
+ */
 async function reload() {
-  const { data, error } = await allRows<SaleRow>(() => supabaseBrowser().from("sales").select("*").order("sale_date", { ascending: false }));
+  const supabase = supabaseBrowser();
+  const user = (await supabase.auth.getSession()).data.session?.user.id ?? null;
+  if (!loaded && user) {
+    const kept = await cacheGet<SaleRow[]>(CACHE(user));
+    if (kept?.length && !loaded) {
+      sales = kept.map(toSale);
+      loaded = true;
+      emit();
+    }
+  }
+  const { data, error } = await allRows<SaleRow>(() => supabase.from("sales").select(COLUMNS).order("sale_date", { ascending: false }));
   if (error) throw error;
   sales = (data as SaleRow[]).map(toSale);
   loaded = true;
   emit();
+  if (user) void cacheSet(CACHE(user), data);
 }
 
 // The branch the person works in: only that branch's days (cached per list and choice, so React sees a stable value)
