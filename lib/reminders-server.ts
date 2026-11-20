@@ -9,6 +9,7 @@
 // - the tax calendar (2026-10-27): the company's own dates and the yearly filings only (lib/calendar-remind) — the
 //   monthly ones above are never repeated.
 
+import { holidaysMissing, holidaysText, readingText, readingTrouble } from "./upkeep";
 import { countOverdue, countReminder } from "./cash-line";
 import { monthKey } from "./archive";
 import { DOC_LIST_COLUMNS, type DocumentRow, type ItemRow, rowToDoc } from "./db-map";
@@ -108,5 +109,18 @@ export async function reminderTexts(admin: Admin, today: string, opts: { test?: 
   const { data: cash } = await allRows<{ day: string; kind: string }>(() => admin.from("cash_moves").select("id, day, kind").gte("day", since));
   const overdue = countOverdue((cash ?? []) as { day: string; kind: string }[], today);
   if (overdue !== null) cashCount = countReminder(overdue, `${url}ledger/cash`);
-  return [vat, pay, wht, docTexts, cal, cashCount].filter((x): x is string => !!x);
+  // Things that go wrong as time passes (lib/upkeep): the coming year's holidays, the AI reading failing for a day
+  const missing = holidaysMissing(today);
+  const holidays = missing ? holidaysText(missing) : null;
+  const since24 = new Date(Date.now() - 86_400_000).toISOString();
+  const { data: health } = await admin.from("ai_health").select("ok, code").gte("at", since24).limit(1000);
+  const trouble = readingTrouble((health ?? []) as { ok: boolean; code: string }[]);
+  const reading = trouble ? readingText(trouble) : null;
+  // Health lines are kept 30 days
+  void admin
+    .from("ai_health")
+    .delete()
+    .lt("at", new Date(Date.now() - 30 * 86_400_000).toISOString())
+    .then(({ error }) => error && console.error("[ai-health] cleanup", error.message));
+  return [vat, pay, wht, docTexts, cal, cashCount, holidays, reading].filter((x): x is string => !!x);
 }

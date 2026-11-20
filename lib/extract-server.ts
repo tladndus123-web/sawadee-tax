@@ -12,6 +12,7 @@ import { serverCategories } from "./categories-server";
 import { applyOurCompany, ourCompanyHint } from "./our-company";
 import { readingHints } from "./reading-hints-server";
 import type { LedgerDoc } from "./types";
+import { supabaseAdmin } from "./supabase/admin";
 
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export type ImageType = (typeof IMAGE_TYPES)[number];
@@ -141,7 +142,24 @@ async function photoBlocks(image: Buffer, type: ImageType, maxSide = readSide())
   }
 }
 
-export async function extractDocument(
+/**
+ * Every reading leaves one health line (worked or not, the error code; nothing about the document) for the morning
+ * reminder's "AI 읽기가 계속 실패해요" (lib/upkeep, table ai_health). A cancelled reading or a photo that is not a
+ * document is not a failure of the AI.
+ */
+export async function extractDocument(...args: Parameters<typeof readOnce>): Promise<ExtractOutcome> {
+  const out = await readOnce(...args);
+  const counts = out.ok || (out.code !== "aborted" && out.code !== "notDoc" && out.code !== "badImage" && out.code !== "rate");
+  if (counts) {
+    void supabaseAdmin()
+      .from("ai_health")
+      .insert({ ok: out.ok, code: out.ok ? "" : out.code, detail: out.ok ? "" : (out.detail ?? "").slice(0, 300) })
+      .then(({ error }) => error && console.error("[ai-health]", error.message));
+  }
+  return out;
+}
+
+async function readOnce(
   image: Buffer,
   type: SourceType,
   opts: { signal?: AbortSignal; model?: string; effort?: Effort; cutOut?: boolean; maxSide?: number } = {},

@@ -6,6 +6,7 @@
 // the cost control. The list shows each person's position, name, pay, deductions and take-home, and whether the office
 // checked that saved pay (stamped who and when; new figures clear it).
 
+import { settingsForMonth } from "@/lib/upkeep";
 import { CalendarCheck, Check, ChevronDown, CircleCheck, Loader2, Lock, Plus, Printer, Undo2, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
@@ -44,7 +45,8 @@ export function PayRunTab({ month }: { month: string }) {
   const t = useTranslations("pay");
   const { employees, loaded, branch } = useBranchEmployees();
   const company = useCompany();
-  const settings = useMemo(() => payrollSettingsOf(company.payrollSettings), [company.payrollSettings]);
+  // The legal social security ceiling of the month's year when the saved one is lower (lib/upkeep)
+  const settings = useMemo(() => settingsForMonth(payrollSettingsOf(company.payrollSettings), month), [company.payrollSettings, month]);
   const locked = useMonthLocks().has(month);
   const [inputs, setInputs] = useState<Inputs>({});
   const [saved, setSaved] = useState<Set<string>>(new Set());

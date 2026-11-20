@@ -4,6 +4,7 @@
 // the app worked out per period (so payslips never change afterwards) and puts the month's labour cost of each branch
 // into the cost control (public.labor_costs: pay and the company's social security share; "other" is left as typed).
 
+import { settingsForMonth } from "./upkeep";
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { ALL } from "./branches";
 import { useBranch } from "./branch-store";
@@ -217,7 +218,7 @@ export async function savePayrollMonth(month: string, input: { employee: Employe
     // With named allowances, their totals are the allowance of each half (the names and the pay never disagree)
     const first = allowances ? { ...f, allowance: allowanceTotal(allowances, "first") } : f;
     const second = allowances ? { ...g, allowance: allowanceTotal(allowances, "second") } : g;
-    const m = monthPay(e, first, second, s);
+    const m = monthPay(e, first, second, settingsForMonth(s, month));
     const x = lineRates(s.ot ?? LEGAL_OT, e.payType);
     const line = (period: 1 | 2, p: PeriodInput) => ({
       employee_id: e.id,
