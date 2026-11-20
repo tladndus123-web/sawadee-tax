@@ -14,6 +14,8 @@ import { profileLang } from "@/lib/line-menu";
 import { isMonthEndDay, isReportDay, sendMonthEnd, sendReport } from "@/lib/report-server";
 import { sendPush, toPush } from "@/lib/push-server";
 import { reminderTexts } from "@/lib/reminders-server";
+
+const FIVE_DAY_REPORT = false;
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { todayBangkok } from "@/lib/thai-tax";
 
@@ -31,8 +33,9 @@ export async function GET(req: Request) {
   const admins = { data: full };
   const to = (admins.data ?? []).map((m) => m.line_user_id as string | null).filter((x): x is string => !!x);
 
-  // The 5-day report (its own message, whatever else there is to say)
-  const report = lineConfig().channelAccessToken && isReportDay(today) ? await sendReport(admin, appUrl(), today, to).catch((e) => (console.error("[cron] 5-day report failed", e), 0)) : 0;
+  // The 5-day report (its own message) — off since 2026-11-21 (owner: "정말 중요한 것만"; five a month, the month-end
+  // report covers it). Set FIVE_DAY_REPORT to true to bring it back.
+  const report = FIVE_DAY_REPORT && lineConfig().channelAccessToken && isReportDay(today) ? await sendReport(admin, appUrl(), today, to).catch((e) => (console.error("[cron] 5-day report failed", e), 0)) : 0;
   // The 1st: last month's month-end report
   const monthEnd = lineConfig().channelAccessToken && isMonthEndDay(today) ? await sendMonthEnd(admin, appUrl(), today, to).catch((e) => (console.error("[cron] month-end report failed", e), 0)) : 0;
   if (!texts.length) return Response.json({ sent: 0, report, monthEnd });

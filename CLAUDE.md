@@ -43,7 +43,7 @@ checks → company ledger. Used by one company's staff (admin + staff). **Full h
   aliases `sawadee-admin-<lang>`, layout `lib/line-menu.ts`; remake: `npx.cmd tsx scripts/line-menu.ts`): month summary ·
   bills due in 7 days · VAT return / yesterday's sales · Excel (1-hour signed link, private bucket `line-exports`) ·
   upload (camera buttons). Answers are dashboard cards (`lib/line-dash.ts`; since 2026-11-14 white with the icon's blue gradient hero, the app icon beside the eyebrow, one size smaller). Short words
-  ("요약", "売上" …) work too (`lib/line-ask.ts`). On the 5th / 10th / 15th / 20th / 25th the daily cron also pushes the **5-day report** (`lib/report-server.ts`,
+  ("요약", "売上" …) work too (`lib/line-ask.ts`). (OFF since 2026-11-21, owner: "정말 중요한 것만" — `FIVE_DAY_REPORT` in app/api/cron/due-reminders; the morning message also dropped the cash-count line, the holiday-list warning is sent on the 1st only, and an expired staff document is repeated every 7 days) On the 5th / 10th / 15th / 20th / 25th the daily cron also pushed the **5-day report** (`lib/report-server.ts`,
   four cards to swipe: last 5 days · month so far + forecast TIP · ✨ 3 Claude suggestions · 🔍 anything unusual from
   `lib/anomalies.ts` — receipt twice, ≥3× the usual of its category (≥ ฿5,000), new supplier + tax ID check).
   On the 1st the **month-end report** (`sendMonthEnd`, `lib/month-end-server.ts` — the P&L screen's numbers: what was

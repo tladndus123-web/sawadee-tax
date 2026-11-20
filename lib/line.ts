@@ -89,9 +89,9 @@ export function branchButtons(docId: string, branches: { id: string; no: string;
 /** Days before a document expires on which the admins are reminded */
 export const DOC_REMIND_DAYS = [30, 7, 1, 0];
 
-/** Work permits, visas … about to run out, on the reminder days only */
+/** Work permits, visas … about to run out, on the reminder days only; once expired, every 7 days (owner 2026-11-21: "정말 중요한 것만" — it was every day) */
 export function documentReminder(items: { name: string; doc: string; daysLeft: number }[], url: string, opts: { force?: boolean } = {}): string | null {
-  const due = items.filter((i) => opts.force || DOC_REMIND_DAYS.includes(i.daysLeft) || i.daysLeft < 0);
+  const due = items.filter((i) => opts.force || DOC_REMIND_DAYS.includes(i.daysLeft) || (i.daysLeft < 0 && -i.daysLeft % 7 === 0));
   if (!due.length) return null;
   const th = (d: number) => (d < 0 ? `หมดอายุแล้ว ${-d} วัน` : d === 0 ? "หมดอายุวันนี้" : `อีก ${d} วัน`);
   const ja = (d: number) => (d < 0 ? `期限切れ ${-d}日` : d === 0 ? "本日期限" : `あと${d}日`);
